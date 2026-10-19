@@ -552,7 +552,6 @@ def _get_original_fqn(fqn, relocations):
         return apply_shade_relocations(fqn, relocations)
 
 
-
 def _map_shaded_class_resource(resource, relocations, dependency_packages, match_cache):
     """
     Try to map a single ".class" resource to a Maven dependency package.

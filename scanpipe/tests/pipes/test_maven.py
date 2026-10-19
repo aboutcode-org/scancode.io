@@ -28,7 +28,6 @@ from django.test import TestCase
 from packageurl import PackageURL
 
 from scanpipe.models import DiscoveredDependency
-from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.pipes import flag
 from scanpipe.pipes import maven
@@ -72,7 +71,7 @@ class ScanPipeMavenPipesTest(TestCase):
             type="maven",
             namespace="org.apache.htrace",
             name="htrace-core",
-            version="4.0.0-incubating"
+            version="4.0.0-incubating",
         )
         commons = make_package(
             project,
@@ -80,7 +79,7 @@ class ScanPipeMavenPipesTest(TestCase):
             type="maven",
             namespace="commons-logging",
             name="commons-logging",
-            version="1.1.1"
+            version="1.1.1",
         )
         jackson = make_package(
             project,
@@ -88,7 +87,7 @@ class ScanPipeMavenPipesTest(TestCase):
             type="maven",
             namespace="com.fasterxml.jackson.core",
             name="jackson-annotations",
-            version="2.4.0"
+            version="2.4.0",
         )
         self._add_pom_resource(
             project,
@@ -414,7 +413,7 @@ class ScanPipeMavenPipesTest(TestCase):
             type="maven",
             namespace="org.apache.htrace",
             name="htrace-core",
-            version="4.0.0-incubating"
+            version="4.0.0-incubating",
         )
         dep_commons = make_package(
             self.project,
@@ -422,7 +421,7 @@ class ScanPipeMavenPipesTest(TestCase):
             type="maven",
             namespace="commons-logging",
             name="commons-logging",
-            version="1.1.1"
+            version="1.1.1",
         )
         dep_jackson = make_package(
             self.project,
@@ -430,7 +429,7 @@ class ScanPipeMavenPipesTest(TestCase):
             type="maven",
             namespace="com.fasterxml.jackson.core",
             name="jackson-annotations",
-            version="2.4.0"
+            version="2.4.0",
         )
         # Non-Maven package should not be returned.
         make_package(
@@ -462,7 +461,7 @@ class ScanPipeMavenPipesTest(TestCase):
             type="maven",
             namespace="org.apache.htrace",
             name="htrace-core",
-            version="4.0.0-incubating"
+            version="4.0.0-incubating",
         )
         dependency = make_dependency(
             project=self.project,
@@ -497,7 +496,7 @@ class ScanPipeMavenPipesTest(TestCase):
             type="maven",
             namespace="org.apache.htrace",
             name="htrace-core",
-            version="4.0.0-incubating"
+            version="4.0.0-incubating",
         )
         resolved = make_package(
             self.project,
@@ -505,7 +504,7 @@ class ScanPipeMavenPipesTest(TestCase):
             type="maven",
             namespace="commons-logging",
             name="commons-logging",
-            version="1.1.1"
+            version="1.1.1",
         )
         make_dependency(
             project=self.project,
@@ -583,9 +582,7 @@ class ScanPipeMavenPipesTest(TestCase):
         relocations = {
             "org.apache.htrace.commons.logging": "org.apache.commons.logging"
         }
-        self.assertIsNone(
-            maven.apply_shade_relocations("org.example.Foo", relocations)
-        )
+        self.assertIsNone(maven.apply_shade_relocations("org.example.Foo", relocations))
 
     def test_scanpipe_maven_apply_shade_relocations_longest_pattern_wins(self):
         relocations = {
@@ -598,9 +595,7 @@ class ScanPipeMavenPipesTest(TestCase):
         )
 
     def test_scanpipe_maven_apply_shade_relocations_empty(self):
-        self.assertIsNone(
-            maven.apply_shade_relocations("org.example.Foo", {})
-        )
+        self.assertIsNone(maven.apply_shade_relocations("org.example.Foo", {}))
 
     def test_scanpipe_maven_fuzzy_segment_match(self):
         # Plural vs singular
@@ -647,7 +642,7 @@ class ScanPipeMavenPipesTest(TestCase):
             type="maven",
             namespace="commons-logging",
             name="commons-logging",
-            version="1.1.1"
+            version="1.1.1",
         )
         score, signals = maven.score_dependency(
             "org.apache.commons.logging.impl", package
@@ -665,7 +660,7 @@ class ScanPipeMavenPipesTest(TestCase):
             type="maven",
             namespace="com.fasterxml.jackson.core",
             name="jackson-annotations",
-            version="2.4.0"
+            version="2.4.0",
         )
         score, signals = maven.score_dependency(
             "com.fasterxml.jackson.annotation", package
@@ -684,7 +679,7 @@ class ScanPipeMavenPipesTest(TestCase):
             type="maven",
             namespace="commons-logging",
             name="commons-logging",
-            version="1.1.1"
+            version="1.1.1",
         )
         self.assertEqual(maven.score_dependency("", package), (0, set()))
 
@@ -695,7 +690,7 @@ class ScanPipeMavenPipesTest(TestCase):
             type="maven",
             namespace="commons-logging",
             name="commons-logging",
-            version="1.1.1"
+            version="1.1.1",
         )
         jackson = make_package(
             self.project,
@@ -703,7 +698,7 @@ class ScanPipeMavenPipesTest(TestCase):
             type="maven",
             namespace="com.fasterxml.jackson.core",
             name="jackson-annotations",
-            version="2.4.0"
+            version="2.4.0",
         )
         result = maven.match_shaded_class_to_package(
             "org.apache.commons.logging.impl",
@@ -722,7 +717,7 @@ class ScanPipeMavenPipesTest(TestCase):
             type="maven",
             namespace="org.apache.commons",
             name="commons-lang3",
-            version="3.12.0"
+            version="3.12.0",
         )
         # Yields score 5. MIN is 6.
         result = maven.match_shaded_class_to_package(
@@ -739,7 +734,7 @@ class ScanPipeMavenPipesTest(TestCase):
             type="maven",
             namespace="commons-logging",
             name="commons-logging",
-            version="1.1.1"
+            version="1.1.1",
         )
         make_package(
             self.project,
@@ -747,7 +742,7 @@ class ScanPipeMavenPipesTest(TestCase):
             type="maven",
             namespace="commons-logging",
             name="commons-logging",
-            version="1.2.0"
+            version="1.2.0",
         )
         packages = list(self.project.discoveredpackages.filter(type="maven"))
         result = maven.match_shaded_class_to_package(
@@ -852,11 +847,12 @@ class ScanPipeMavenPipesTest(TestCase):
             "pkg:maven/org.apache.htrace/htrace-core@4.0.0-incubating"
         )
         main_package = make_package(
-            project, package_url="pkg:maven/org.apache.htrace/htrace-core@4.0.0-incubating",
+            project,
+            package_url="pkg:maven/org.apache.htrace/htrace-core@4.0.0-incubating",
             type="maven",
             namespace="org.apache.htrace",
             name="htrace-core",
-            version="4.0.0-incubating"
+            version="4.0.0-incubating",
         )
         make_dependency(
             project=project,
@@ -913,7 +909,7 @@ class ScanPipeMavenPipesTest(TestCase):
             type="maven",
             namespace="org.apache.htrace",
             name="htrace-core",
-            version="4.0.0-incubating"
+            version="4.0.0-incubating",
         )
         resolved = make_package(
             project,
@@ -921,7 +917,7 @@ class ScanPipeMavenPipesTest(TestCase):
             type="maven",
             namespace="commons-logging",
             name="commons-logging",
-            version="1.1.1"
+            version="1.1.1",
         )
         make_dependency(
             project=project,
