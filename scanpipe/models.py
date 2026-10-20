@@ -5110,7 +5110,8 @@ class OriginMatch(UUIDPKModel, ProjectRelatedModel, ExtraDataFieldMixin):
         blank=True,
         help_text=_(
             "Matched line ranges, as a list of mappings with the 'lines' of the "
-            "resource and the corresponding 'origin_lines' of the origin file."
+            "resource and, when the tool reports them, the corresponding "
+            "'origin_lines' of the origin file."
         ),
     )
     similarity = models.PositiveSmallIntegerField(

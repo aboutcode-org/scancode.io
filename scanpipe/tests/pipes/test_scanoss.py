@@ -136,6 +136,7 @@ class ScanOSSPipesTest(TestCase):
             "file_hash": "71e8581c332473a17735159487901fb5",
             "source_hash": "71e8581c332473a17735159487901fb5",
             "hits": None,
+            "kb_version": {"daily": "26.10.19", "monthly": "26.09"},
         }
         self.assertEqual(expected, extra_data)
 

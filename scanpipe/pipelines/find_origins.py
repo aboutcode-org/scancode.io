@@ -89,7 +89,8 @@ class FindOrigins(Pipeline):
             return
 
         results_location = self.project.get_output_file_path("scanoss", "json")
-        with self.save_errors(subprocess.SubprocessError):
+        # A missing or invalid results file is recorded as a SCANOSS failure.
+        with self.save_errors(subprocess.SubprocessError, OSError, ValueError):
             scanoss.scan_codebase(self.project.codebase_path, results_location)
 
             origin_match_count = scanoss.load_scanoss_results(

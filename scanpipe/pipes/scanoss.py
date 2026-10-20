@@ -167,6 +167,7 @@ def get_origin_match_extra_data(scanoss_match, component):
         "file_hash": scanoss_match.get("file_hash", ""),
         "source_hash": scanoss_match.get("source_hash", ""),
         "hits": scanoss_match.get("hits"),
+        "kb_version": scanoss_match.get("server", {}).get("kb_version", {}),
     }
 
 

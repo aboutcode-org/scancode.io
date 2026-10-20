@@ -1626,6 +1626,33 @@ class PipelinesIntegrationTest(TestCase):
         ]
         self.assertEqual(expected, sorted(error_descriptions))
 
+    @mock.patch("scanpipe.pipes.scanoss.scan_codebase")
+    @mock.patch("scanpipe.pipes.scanoss.get_uvx_location")
+    @mock.patch("scanpipe.pipes.scanoss.is_configured")
+    @mock.patch("scanpipe.pipes.matchcode.is_configured")
+    def test_scanpipe_find_origins_pipeline_record_missing_scanoss_results(
+        self,
+        mock_matchcode_is_configured,
+        mock_scanoss_is_configured,
+        mock_get_uvx_location,
+        mock_scan_codebase,
+    ):
+        pipeline_name = "find_origins"
+        project1 = make_project()
+        mock_matchcode_is_configured.return_value = False
+        mock_scanoss_is_configured.return_value = True
+        mock_get_uvx_location.return_value = "/usr/bin/uvx"
+        mock_scan_codebase.return_value = None
+
+        run = project1.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+
+        message = project1.projectmessages.get()
+        self.assertEqual("find_origins", message.model)
+        self.assertIn("No such file or directory", message.description)
+
     @mock.patch("scanpipe.pipes.scanoss.get_uvx_location")
     @mock.patch("scanpipe.pipes.scanoss.is_configured")
     @mock.patch("scanpipe.pipes.matchcode.is_configured")
