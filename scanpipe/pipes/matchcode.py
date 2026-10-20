@@ -23,6 +23,7 @@
 import json
 import logging
 from collections import defaultdict
+from functools import partial
 from pathlib import Path
 
 from django.conf import settings
@@ -39,6 +40,7 @@ from summarycode.classify import LEGAL_STARTS_ENDS
 
 from scanpipe.models import OriginMatch
 from scanpipe.pipes import codebase
+from scanpipe.pipes import create_origin_matches
 from scanpipe.pipes import flag
 from scanpipe.pipes import poll_until_success
 from scanpipe.pipes.output import to_json
@@ -450,7 +452,11 @@ def match_codebase(project):
     fingerprint_codebase_directories(project)
     match_url, run_url = send_project_json_to_matchcode(project)
     poll_run_url_status(run_url)
-    return get_match_results(match_url)
+
+    match_results = get_match_results(match_url)
+    if not match_results:
+        raise MatchCodeIOException("Cannot fetch the match results from MatchCode.io")
+    return match_results
 
 
 def save_match_results(project, match_results):
@@ -461,8 +467,7 @@ def save_match_results(project, match_results):
 
 def get_resource_line_by_pos(resource):
     """Return the mapping of token positions to line numbers of a ``resource``."""
-    with open(resource.location) as resource_file:
-        return get_line_by_pos(resource_file.read())
+    return get_line_by_pos(resource.location_path.read_text())
 
 
 def get_snippet_line_ranges(match_detections, line_by_pos):
@@ -492,7 +497,7 @@ def get_line_coverage(line_ranges, line_by_pos):
 
 
 def is_legal_file_path(path):
-    """Return True if the file name of ``path`` is the one of a legal file."""
+    """Return True if ``path`` is a legal file, such as a license or a notice."""
     file_path = Path(path.lower())
     return (
         file_path.name.startswith(LEGAL_STARTS_ENDS)
@@ -620,27 +625,19 @@ def load_matchcode_results(project, match_results):
     package_data_by_purl = {
         package_data["purl"]: package_data for package_data in packages_data
     }
-    tool_version = match_results["headers"][0]["tool_version"]
-
-    resources_results = [
-        resource_results
+    results_by_path = {
+        resource_results["path"]: resource_results
         for resource_results in match_results.get("files", [])
         if resource_results.get("for_packages")
-    ]
-    matched_paths = [resource_results["path"] for resource_results in resources_results]
-    resources = project.codebaseresources.filter(path__in=matched_paths)
-    resources_by_path = {resource.path: resource for resource in resources}
+    }
+    make_matchcode_origin_matches = partial(
+        make_origin_matches,
+        package_data_by_uid=package_data_by_uid,
+        package_data_by_purl=package_data_by_purl,
+        tool_version=match_results["headers"][0]["tool_version"],
+    )
 
-    origin_matches = [
-        origin_match
-        for resource_results in resources_results
-        for origin_match in make_origin_matches(
-            resources_by_path[resource_results["path"]],
-            resource_results,
-            package_data_by_uid,
-            package_data_by_purl,
-            tool_version,
-        )
-    ]
-    OriginMatch.objects.bulk_create(origin_matches, ignore_conflicts=True)
-    return len(origin_matches)
+    origin_match_count, _ = create_origin_matches(
+        project, results_by_path, make_matchcode_origin_matches
+    )
+    return origin_match_count

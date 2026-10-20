@@ -23,6 +23,7 @@
 import io
 import json
 import os
+import subprocess
 import sys
 import tempfile
 from contextlib import redirect_stderr
@@ -51,6 +52,7 @@ from scanpipe.pipelines.find_origins import FindOrigins
 from scanpipe.pipelines.find_vulnerabilities import FindVulnerabilities
 from scanpipe.pipes import d2d
 from scanpipe.pipes import flag
+from scanpipe.pipes import matchcode
 from scanpipe.pipes import output
 from scanpipe.pipes import scancode
 from scanpipe.pipes.input import copy_input
@@ -1586,6 +1588,43 @@ class PipelinesIntegrationTest(TestCase):
         values = origin_matches.values_list("resource__path", "purl", "tool")
         self.assertEqual(expected, list(values))
         self.assertEqual(1, len(list(project1.output_path.glob("matchcode-*.json"))))
+
+    @mock.patch("scanpipe.pipes.scanoss.scan_codebase")
+    @mock.patch("scanpipe.pipes.scanoss.get_uvx_location")
+    @mock.patch("scanpipe.pipes.scanoss.is_configured")
+    @mock.patch("scanpipe.pipes.matchcode.match_codebase")
+    @mock.patch("scanpipe.pipes.matchcode.is_configured")
+    def test_scanpipe_find_origins_pipeline_record_tool_failures(
+        self,
+        mock_matchcode_is_configured,
+        mock_match_codebase,
+        mock_scanoss_is_configured,
+        mock_get_uvx_location,
+        mock_scan_codebase,
+    ):
+        pipeline_name = "find_origins"
+        project1 = make_project()
+        mock_matchcode_is_configured.return_value = True
+        mock_match_codebase.side_effect = matchcode.MatchCodeIOException(
+            "Cannot fetch the match results from MatchCode.io"
+        )
+        mock_scanoss_is_configured.return_value = True
+        mock_get_uvx_location.return_value = "/usr/bin/uvx"
+        mock_scan_codebase.side_effect = subprocess.SubprocessError("SCANOSS failed")
+
+        run = project1.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+
+        error_descriptions = project1.projectmessages.values_list(
+            "description", flat=True
+        )
+        expected = [
+            "Cannot fetch the match results from MatchCode.io",
+            "SCANOSS failed",
+        ]
+        self.assertEqual(expected, sorted(error_descriptions))
 
     @mock.patch("scanpipe.pipes.scanoss.get_uvx_location")
     @mock.patch("scanpipe.pipes.scanoss.is_configured")

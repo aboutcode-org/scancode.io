@@ -477,6 +477,10 @@ class MatchCodePipesTest(TestCase):
         mock_poll_run_url_status.assert_called_once_with("run_url")
         mock_get_match_results.assert_called_once_with("match_url")
 
+        mock_get_match_results.return_value = None
+        with self.assertRaises(matchcode.MatchCodeIOException):
+            matchcode.match_codebase(self.project1)
+
     def test_scanpipe_pipes_matchcode_save_match_results(self):
         match_results = {"files": [{"path": "six.py"}]}
         matchcode.save_match_results(self.project1, match_results)
@@ -583,6 +587,63 @@ class MatchCodePipesTest(TestCase):
             )
         )
         self.assertEqual(100, origin_matches[0].similarity)
+
+    def test_scanpipe_pipes_matchcode_make_origin_matches(self):
+        resource = self.make_scheduler_resource("scheduler.js")
+        package_data = {"purl": "pkg:npm/lodash@4.17.21", "package_uid": "uid1"}
+        package_data_by_uid = {"uid1": package_data}
+        package_data_by_purl = {"pkg:npm/lodash@4.17.21": package_data}
+
+        file_results = {
+            "status": "matched-to-purldb-resource",
+            "for_packages": ["uid1"],
+            "extra_data": {},
+        }
+        origin_matches = list(
+            matchcode.make_origin_matches(
+                resource,
+                file_results,
+                package_data_by_uid,
+                package_data_by_purl,
+                "38.1.0",
+            )
+        )
+        self.assertEqual(OriginMatch.MatchType.FILE, origin_matches[0].match_type)
+
+        snippet_results = {
+            "status": "scanned",
+            "for_packages": ["uid1"],
+            "extra_data": {
+                "matched_snippets": [
+                    {
+                        "package": "pkg:npm/lodash@4.17.21",
+                        "resource": "package/debounce.js",
+                        "similarity": 0.005,
+                        "match_detections": [59, 60, 61],
+                    }
+                ]
+            },
+        }
+        origin_matches = list(
+            matchcode.make_origin_matches(
+                resource,
+                snippet_results,
+                package_data_by_uid,
+                package_data_by_purl,
+                "38.1.0",
+            )
+        )
+        self.assertEqual(OriginMatch.MatchType.SNIPPET, origin_matches[0].match_type)
+
+        unknown_status_results = {**file_results, "status": "scanned"}
+        origin_matches = matchcode.make_origin_matches(
+            resource,
+            unknown_status_results,
+            package_data_by_uid,
+            package_data_by_purl,
+            "38.1.0",
+        )
+        self.assertEqual([], list(origin_matches))
 
     def test_scanpipe_pipes_matchcode_load_matchcode_results(self):
         results_location = self.data / "find-origins" / "matchcode-results.json"

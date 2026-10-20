@@ -20,6 +20,8 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
+import subprocess
+
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import matchcode
 from scanpipe.pipes import scanoss
@@ -62,13 +64,15 @@ class FindOrigins(Pipeline):
             self.log("MatchCode.io is not configured, skipping.")
             return
 
-        match_results = matchcode.match_codebase(self.project)
-        matchcode.save_match_results(self.project, match_results)
+        # A tool failure is recorded and does not prevent running the other tools.
+        with self.save_errors(matchcode.MatchCodeIOException):
+            match_results = matchcode.match_codebase(self.project)
+            matchcode.save_match_results(self.project, match_results)
 
-        origin_match_count = matchcode.load_matchcode_results(
-            self.project, match_results
-        )
-        self.log(f"{origin_match_count:,d} MatchCode.io origin matches processed.")
+            origin_match_count = matchcode.load_matchcode_results(
+                self.project, match_results
+            )
+            self.log(f"{origin_match_count:,d} MatchCode.io origin matches processed.")
 
     def find_scanoss_origin_matches(self):
         """Scan the codebase with SCANOSS and store the reported origin matches."""
@@ -85,9 +89,10 @@ class FindOrigins(Pipeline):
             return
 
         results_location = self.project.get_output_file_path("scanoss", "json")
-        scanoss.scan_codebase(self.project.codebase_path, results_location)
+        with self.save_errors(subprocess.SubprocessError):
+            scanoss.scan_codebase(self.project.codebase_path, results_location)
 
-        origin_match_count = scanoss.load_scanoss_results(
-            self.project, results_location
-        )
-        self.log(f"{origin_match_count:,d} SCANOSS origin matches processed.")
+            origin_match_count = scanoss.load_scanoss_results(
+                self.project, results_location
+            )
+            self.log(f"{origin_match_count:,d} SCANOSS origin matches processed.")

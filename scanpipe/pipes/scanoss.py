@@ -31,6 +31,7 @@ from django.conf import settings
 from packageurl import PackageURL
 
 from scanpipe.models import OriginMatch
+from scanpipe.pipes import create_origin_matches
 from scanpipe.pipes import run_command_safely
 
 TOOL_NAME = "scanoss"
@@ -208,21 +209,15 @@ def load_scanoss_results(project, results_location):
     SCANOSS matches. Return the number of processed origin matches.
     """
     scanoss_results = json.loads(Path(results_location).read_text())
-    resources = project.codebaseresources.filter(path__in=scanoss_results.keys())
-    resources_by_path = {resource.path: resource for resource in resources}
+    origin_match_count, missing_paths = create_origin_matches(
+        project, scanoss_results, make_origin_matches
+    )
 
-    missing_paths = sorted(set(scanoss_results) - set(resources_by_path))
     if missing_paths:
         project.add_warning(
             description="SCANOSS results for paths missing from the codebase",
             model="OriginMatch",
-            details={"paths": missing_paths},
+            details={"paths": sorted(missing_paths)},
         )
 
-    origin_matches = [
-        origin_match
-        for path, resource in resources_by_path.items()
-        for origin_match in make_origin_matches(resource, scanoss_results[path])
-    ]
-    OriginMatch.objects.bulk_create(origin_matches, ignore_conflicts=True)
-    return len(origin_matches)
+    return origin_match_count
