@@ -22,6 +22,7 @@
 
 import datetime
 import io
+import subprocess
 from pathlib import Path
 from unittest import mock
 
@@ -64,6 +65,20 @@ class ScanPipePipesTest(TestCase):
         for path in input_paths:
             self.assertEqual(expected, pipes.strip_root(path))
             self.assertEqual(expected, pipes.strip_root(Path(path)))
+
+    def test_scanpipe_pipes_run_command_safely_env(self):
+        output = pipes.run_command_safely(
+            ["/usr/bin/env"], env={"ORIGIN_TOOL_API_KEY": "secret-value"}
+        )
+        self.assertEqual("ORIGIN_TOOL_API_KEY=secret-value\n", output)
+
+        with self.assertRaises(subprocess.SubprocessError) as context:
+            pipes.run_command_safely(
+                ["/usr/bin/env", "missing-command"],
+                env={"ORIGIN_TOOL_API_KEY": "secret-value"},
+            )
+        self.assertIn("missing-command", str(context.exception))
+        self.assertNotIn("secret-value", str(context.exception))
 
     @mock.patch("scanpipe.pipes.datetime", mocked_now)
     def test_scanpipe_pipes_filename_now(self):
