@@ -142,14 +142,10 @@ def _map_checksum_resource(to_resource, from_resources, checksum_field):
 
 def map_checksum(project, checksum_field, logger=None):
     """Map using checksum."""
-    from_resources = (
-        project.codebaseresources.files().from_codebase().has_value(checksum_field)
-    )
+    project_files = project.codebaseresources.files().no_status()
+    from_resources = project_files.from_codebase().has_value(checksum_field)
     to_resources = (
-        project.codebaseresources.files()
-        .to_codebase()
-        .has_value(checksum_field)
-        .has_no_relation()
+        project_files.to_codebase().has_value(checksum_field).has_no_relation()
     )
     resource_count = to_resources.count()
 
@@ -276,7 +272,7 @@ def find_jvm_packages(project, jvm_lang: jvm.JvmLanguage, logger=None):
 
     Note: we use the same API as the ScanCode scans by design
     """
-    resources = project.codebaseresources.files().from_codebase()
+    resources = project.codebaseresources.files().no_status().from_codebase()
 
     from_jvm_resources = resources.filter(extension__in=jvm_lang.source_extensions)
 
@@ -528,8 +524,9 @@ def _map_path_resource(
 
 def map_path(project, logger=None):
     """Map using path suffix similarities."""
-    from_resources = project.codebaseresources.files().from_codebase()
-    to_resources = project.codebaseresources.files().to_codebase().has_no_relation()
+    project_files = project.codebaseresources.files().no_status()
+    from_resources = project_files.from_codebase()
+    to_resources = project_files.to_codebase().has_no_relation()
     resource_count = to_resources.count()
 
     if logger:
@@ -1902,7 +1899,7 @@ def map_paths_resource(
             if logger:
                 logger(
                     f"WARNING: #{len(paths_not_mapped)} {map_type} paths NOT "
-                    f" mapped for: {to_resource.path!r}"
+                    f"mapped for: {to_resource.path!r}"
                 )
         to_resource.save()
 
@@ -2081,17 +2078,9 @@ def map_elfs_with_dwarf_paths(project, logger=None):
             f"with {from_resources.count():,d} from/ resources."
         )
 
-    # Build the path index, adding virtual aliases for .in template files
-    from_paths = []
-    for res_id, path in from_resources.values_list("id", "path"):
-        from_paths.append((res_id, path))
-        # If the source file is a template ending in '.in', also index its
-        # target name
-        if path.endswith(".in"):
-            target_path = path[:-3]  # Removes the trailing '.in'
-            from_paths.append((res_id, target_path))
-
-    from_resources_index = pathmap.build_index(from_paths, with_subpaths=True)
+    from_resources_index = pathmap.build_index(
+        from_resources.values_list("id", "path"), with_subpaths=True
+    )
 
     if logger:
         logger("Done building from/ resources index.")
@@ -2182,7 +2171,7 @@ def map_go_paths(project, logger=None):
 
 def update_from_to_tag(project):
     """Update 'from' or 'to' tag to resources based on their path."""
-    for resource in project.codebaseresources.files():
+    for resource in project.codebaseresources.all():
         if resource.path.startswith("from/"):
             resource.update(tag="from")
         elif resource.path.startswith("to/"):
@@ -2376,6 +2365,10 @@ def map_binaries_with_symbols(
     logger=None,
 ):
     """Map Binaries to their source using symbols in ``project``."""
+    if not to_resources:
+        if logger:
+            logger(f"No to/ resources to map using {', '.join(map_types)}.")
+        return
     symbols.collect_and_store_tree_sitter_symbols_and_strings(
         project=project,
         logger=logger,

@@ -107,14 +107,14 @@ class CommonStepsMixin:
                 details=details,
             )
 
-    def extract_archives(self, location=None, recurse=True):
+    def extract_archives(self, location=None):
         """Extract archives located in the codebase/ directory with extractcode."""
         from scanpipe.pipes import scancode
 
         if not location:
             location = self.project.codebase_path
 
-        extract_errors = scancode.extract_archives(location=location, recurse=recurse)
+        extract_errors = scancode.extract_archives(location=location, recurse=True)
 
         for resource_path, errors in extract_errors.items():
             self.project.add_error(

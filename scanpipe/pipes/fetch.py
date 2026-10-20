@@ -83,12 +83,6 @@ def get_request_session(uri):
     """Return a Requests session setup with authentication and headers."""
     session = requests.Session()
 
-    # Set a default User-Agent to avoid 403 Forbidden errors on strict
-    # registries that block default python-requests headers.
-    session.headers.update(
-        {"User-Agent": "ScanCode.io (https://github.com/aboutcode-org/scancode.io)"}
-    )
-
     netloc = urlparse(uri).netloc
 
     if credentials := scanpipe_settings.FETCH_BASIC_AUTH.get(netloc):
