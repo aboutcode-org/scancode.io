@@ -3743,6 +3743,11 @@ class DiscoveredPackage(
     notes = models.TextField(blank=True)
     source_packages = models.JSONField(default=list, blank=True)
     tag = models.CharField(blank=True, max_length=50)
+    has_license_issue = models.BooleanField(
+        default=False,
+        db_index=True,
+        help_text=_("True when the declared and detected licenses disagree."),
+    )
 
     objects = DiscoveredPackageQuerySet.as_manager()
 

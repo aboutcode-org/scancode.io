@@ -20,10 +20,12 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
-import atexit
 import hashlib
+import json
 import logging
 import os
+import re
+import shlex
 import shutil
 import subprocess
 import tempfile
@@ -36,7 +38,11 @@ import requests
 from fetchcode import fetch_json_response
 from packageurl import PackageURL
 
+from scanpipe import pipes
+from scanpipe.pipes import fetch
 from scanpipe.pipes import utils
+from scanpipe.pipes.resolve import convert_spdx_expression
+from scanpipe.settings import scanpipe_settings
 
 logger = logging.getLogger(__name__)
 
@@ -59,6 +65,8 @@ _DOCKER_BUILD_TIMEOUT = 1800
 _DOCKER_IO_TIMEOUT = 600
 _DOCKER_EVAL_TIMEOUT = 300
 
+_binfmt_emulation_is_installed_cache = None
+
 
 # Markers to identify meaningful failure lines in `nix-build` stderr.
 _NIX_ERROR_MARKERS = (
@@ -66,6 +74,29 @@ _NIX_ERROR_MARKERS = (
     "error: Cannot build",
     "error: builder failed",
 )
+
+
+# The name, commit, system, and output values are used in Nix code, shell
+# scripts, git commands, and file paths. They must be carefully checked
+# before use.
+# NIX_NAME_RE keeps the value free of whitespace, "/", and shell
+# metacharacters, so that `pkgs.{name}` cannot break out of the
+# expression into arbitrary Nix or shell syntax.
+NIX_NAME_RE = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9_\-+.]*$")
+# A git commit ID under SHA-1 is exactly 40 lowercase hex characters.
+COMMIT_RE = re.compile(r"^[0-9a-f]{40}$")
+# A Nix system name has the form <arch>-<os>, e.g. x86_64-linux or
+# aarch64-darwin.
+SYSTEM_RE = re.compile(r"^[a-z0-9_]+-[a-z0-9_]+$")
+# Common Nix output names: "out", "dev", "doc", "bin", "lib", "libexec",
+# "share", "man", plus multi-output variants such as "lib32" and "lib64".
+# The first character must be a letter so that "." and ".." are rejected.
+OUTPUT_RE = re.compile(r"^[a-z][a-z0-9]*$")
+
+# Official repository used to verify that a commit is not from a fork.
+NIXPKGS_OWNER = "NixOS"
+NIXPKGS_REPO = "nixpkgs"
+NIXPKGS_DEFAULT_BRANCH = "nixos-unstable"
 
 
 def _summarize_nix_build_error(stderr, max_lines=10):
@@ -111,24 +142,43 @@ def _summarize_nix_build_error(stderr, max_lines=10):
 # The timestamp file is not a lock: it records when the Nix store GC
 # (Garbage Collector) last ran, so GC runs at most once per interval
 # instead of on every scan.
-_NIXPKGS_CACHE_DIR = Path(
-    os.environ.get(
-        "SCANCODE_NIXPKGS_CACHE_DIR",
-        str(Path(os.path.expanduser("~")) / ".cache" / "scancode-nix"),
-    )
-)
-_NIXPKGS_BARE_REPO = _NIXPKGS_CACHE_DIR / "nixpkgs.git"
-_NIXPKGS_REPO_URL = os.environ.get(
-    "SCANCODE_NIXPKGS_REPO_URL",
-    "https://github.com/NixOS/nixpkgs.git",
-)
+def _nixpkgs_cache_dir():
+    """Return the nixpkgs cache directory resolved from scanpipe_settings."""
+    return Path(scanpipe_settings.NIXPKGS_CACHE_DIR)
+
+
+def _nixpkgs_bare_repo():
+    """Return the path of the local bare nixpkgs repository."""
+    return _nixpkgs_cache_dir() / "nixpkgs.git"
+
+
+def _nixpkgs_repo_url():
+    """Return the nixpkgs git repository URL from settings."""
+    return scanpipe_settings.NIXPKGS_REPO_URL
+
+
+def _nix_image_lock_path():
+    """Return the lock file path for the custom Nix image build."""
+    return _nixpkgs_cache_dir() / "nix-image.lock"
+
+
+def _nixpkgs_repo_lock_path():
+    """Return the lock file path for the nixpkgs bare repository."""
+    return _nixpkgs_cache_dir() / "nixpkgs-repo.lock"
+
+
+def _nixpkgs_gc_lock_path():
+    """Return the lock file path for the Nix store garbage collection."""
+    return _nixpkgs_cache_dir() / "nixpkgs-gc.lock"
+
+
+def _nixpkgs_gc_timestamp_path():
+    """Return the timestamp file path for the last Nix store GC run."""
+    return _nixpkgs_cache_dir() / "nixpkgs-gc.timestamp"
+
+
 _NIXPKGS_CONTAINER_PATH = "/nixpkgs-local"
 _NIXPKGS_WORKTREE_CACHE = {}
-
-_NIX_IMAGE_LOCK_PATH = _NIXPKGS_CACHE_DIR / "nix-image.lock"
-_NIXPKGS_REPO_LOCK_PATH = _NIXPKGS_CACHE_DIR / "nixpkgs-repo.lock"
-_NIX_GC_LOCK_PATH = _NIXPKGS_CACHE_DIR / "nix-gc.lock"
-_NIX_GC_TIMESTAMP_PATH = _NIXPKGS_CACHE_DIR / "nix-gc.timestamp"
 
 
 # `extract_nar_archive()` needs zstd and xz to decompress `.nar.zst` or
@@ -145,9 +195,12 @@ _NIX_GC_TIMESTAMP_PATH = _NIXPKGS_CACHE_DIR / "nix-gc.timestamp"
 # nix-* commands) as GC roots. Without this, `nix-collect-garbage` running
 # against the shared `nix-eval-cache` volume would delete the image's own
 # dependencies and leave `/bin/sh` pointing at a removed store path.
-_NIX_IMAGE_DOCKERFILE = """\
-FROM nixos/nix
-RUN nix-channel --add https://nixos.org/channels/nixos-24.05 nixpkgs \\
+_NIX_IMAGE_CHANNEL = "nixos-26.05"
+_NIX_DOCKER_BASE_IMAGE = "nixos/nix:2.35.3"
+
+_NIX_IMAGE_DOCKERFILE = f"""\
+FROM {_NIX_DOCKER_BASE_IMAGE}
+RUN nix-channel --add https://nixos.org/channels/{_NIX_IMAGE_CHANNEL} nixpkgs \\
  && nix-channel --update \\
  && nix-env -iA nixpkgs.zstd nixpkgs.xz nixpkgs.bzip2 nixpkgs.gzip \\
  && GCROOTS=/nix/var/nix/gcroots/base \\
@@ -182,7 +235,7 @@ def _ensure_nix_image():
         return _resolved_nix_image
 
     # Lock the file to avoid crashing during concurrent runs.
-    with utils.file_lock(_NIX_IMAGE_LOCK_PATH):
+    with utils.file_lock(_nix_image_lock_path()):
         # Another process may have built it while we waited for the lock.
         if utils.docker_image_exists(NIX_IMAGE):
             _resolved_nix_image = NIX_IMAGE
@@ -228,44 +281,48 @@ def _ensure_nix_image():
 # grows as more distinct packages are scanned. To keep it from growing
 # forever, we periodically run:
 #
-#     nix-collect-garbage --delete-older-than <SCANCODE_NIX_GC_OLDER_THAN>
+#     nix-collect-garbage --delete-older-than <SCANCODEIO_NIXPKGS_GC_OLDER_THAN>
 #
 # inside the custom image, against the shared volume. This removes store
 # paths that have not been read or written for the defined period.
 #
 # A timestamp file limits how often GC runs: at most once every
-# `SCANCODE_NIX_GC_INTERVAL_HOURS` hours, and only for store paths older
-# than `SCANCODE_NIX_GC_OLDER_THAN`. Defaults: 3 hours and 12 hours.
+# `SCANCODEIO_NIXPKGS_GC_INTERVAL_HOURS` hours, and only for store paths
+# older than `SCANCODEIO_NIXPKGS_GC_OLDER_THAN`. Defaults: 3 hours and
+# 12 hours.
 #
 # The GC does NOT touch the custom Nix image. The image is built once and
 # survives GC, host reboots, and even full volume deletion.
 #
-#   SCANCODE_NIX_GC_INTERVAL_HOURS — run GC at most this often. 0 disables.
-#   SCANCODE_NIX_GC_OLDER_THAN     — passed to `--delete-older-than`.
-
-_NIX_GC_INTERVAL_HOURS = int(os.environ.get("SCANCODE_NIX_GC_INTERVAL_HOURS", "3"))
-_NIX_GC_OLDER_THAN = os.environ.get("SCANCODE_NIX_GC_OLDER_THAN", "12h")
+#   SCANCODEIO_NIXPKGS_GC_INTERVAL_HOURS — run GC at most this often. 0 disables.
+#   SCANCODEIO_NIXPKGS_GC_OLDER_THAN     — passed to `--delete-older-than`.
 
 
 def _gc_due(now):
     """Return True if GC has not run for at least the configured interval."""
-    if not _NIX_GC_TIMESTAMP_PATH.exists():
+    interval = scanpipe_settings.NIXPKGS_GC_INTERVAL_HOURS
+    if interval <= 0:
+        return False
+
+    timestamp_path = _nixpkgs_gc_timestamp_path()
+    if not timestamp_path.exists():
         return True
     try:
-        last_run = float(_NIX_GC_TIMESTAMP_PATH.read_text().strip())
+        last_run = float(timestamp_path.read_text().strip())
     except (ValueError, OSError):
         # Corrupt or unreadable timestamp; treat as "due".
         return True
-    return (now - last_run) >= _NIX_GC_INTERVAL_HOURS * 3600
+    return (now - last_run) >= interval * 3600
 
 
-def _run_nix_gc_if_due():
+def _run_nixpkgs_gc_if_due():
     """
     Run `nix-collect-garbage --delete-older-than
-    <SCANCODE_NIX_GC_OLDER_THAN>` on the shared Nix store cache, but at
-    most once per `SCANCODE_NIX_GC_INTERVAL_HOURS`.
+    <SCANCODEIO_NIXPKGS_GC_OLDER_THAN>` on the shared Nix store cache, but
+    at most once per `SCANCODEIO_NIXPKGS_GC_INTERVAL_HOURS`.
     """
-    if _NIX_GC_INTERVAL_HOURS <= 0:
+    interval = scanpipe_settings.NIXPKGS_GC_INTERVAL_HOURS
+    if interval <= 0:
         return
 
     now = time.time()
@@ -274,13 +331,14 @@ def _run_nix_gc_if_due():
 
     nix_image = _ensure_nix_image()
 
-    with utils.file_lock(_NIX_GC_LOCK_PATH):
+    with utils.file_lock(_nixpkgs_gc_lock_path()):
         if not _gc_due(now):
             return
 
+        older_than = scanpipe_settings.NIXPKGS_GC_OLDER_THAN
         logger.info(
             f"Running nix-collect-garbage --delete-older-than "
-            f"{_NIX_GC_OLDER_THAN} on the shared Nix store cache."
+            f"{older_than} on the shared Nix store cache."
         )
         cmd = [
             "docker",
@@ -292,7 +350,7 @@ def _run_nix_gc_if_due():
             nix_image,
             "nix-collect-garbage",
             "--delete-older-than",
-            _NIX_GC_OLDER_THAN,
+            older_than,
         ]
         try:
             subprocess.run(  # noqa: S603
@@ -306,15 +364,55 @@ def _run_nix_gc_if_due():
             return
 
         try:
-            _NIX_GC_TIMESTAMP_PATH.write_text(str(now))
+            _nixpkgs_gc_timestamp_path().write_text(str(now))
         except OSError as e:
             logger.debug(f"Could not write GC timestamp: {e}")
 
 
+def binfmt_emulation_is_installed():
+    """Return True if multi-arch binfmt handlers are registered on the host."""
+    global _binfmt_emulation_is_installed_cache
+    if _binfmt_emulation_is_installed_cache is not None:
+        return _binfmt_emulation_is_installed_cache
+    cmd = [
+        "docker",
+        "run",
+        "--rm",
+        "--init",
+        "--privileged",
+        "tonistiigi/binfmt",
+    ]
+    try:
+        result = subprocess.run(  # noqa: S603
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=30,
+            check=True,
+        )
+        _binfmt_emulation_is_installed_cache = "qemu" in result.stdout
+        return _binfmt_emulation_is_installed_cache
+    except FileNotFoundError:
+        logger.debug("docker CLI not found; cannot check binfmt emulation.")
+    except subprocess.CalledProcessError as e:
+        logger.debug(
+            f"binfmt check container exited with {e.returncode}: {e.stderr.strip()}"
+        )
+    except subprocess.TimeoutExpired:
+        logger.debug("binfmt check container timed out after 30s.")
+    except subprocess.SubprocessError as e:
+        logger.debug(f"binfmt check failed: {e}")
+    _binfmt_emulation_is_installed_cache = False
+    return _binfmt_emulation_is_installed_cache
+
+
 def prepare_nix_environment():
-    """Ensure the custom Nix image exists and run the periodic store GC."""
+    """
+    Prepare the Nix runtime for a scan.
+    Ensure the custom Nix image exists and run the periodic store GC.
+    """
     _ensure_nix_image()
-    _run_nix_gc_if_due()
+    _run_nixpkgs_gc_if_due()
 
 
 # Nixpkgs is a huge repo, and evaluating a package needs the full tree at
@@ -332,10 +430,9 @@ def _clone_nixpkgs_bare_repo():
     Clone the nixpkgs bare repo.
     Return the repo path, or "" on failure.
     """
-    _NIXPKGS_CACHE_DIR.mkdir(parents=True, exist_ok=True)
-    logger.info(
-        f"First run: creating a local bare clone of nixpkgs at {_NIXPKGS_BARE_REPO}."
-    )
+    _nixpkgs_cache_dir().mkdir(parents=True, exist_ok=True)
+    bare_repo = _nixpkgs_bare_repo()
+    logger.info(f"First run: creating a local bare clone of nixpkgs at {bare_repo}.")
 
     cmd = [
         "git",
@@ -343,8 +440,8 @@ def _clone_nixpkgs_bare_repo():
         "--bare",
         "--filter=blob:none",
         "--no-tags",
-        _NIXPKGS_REPO_URL,
-        str(_NIXPKGS_BARE_REPO),
+        _nixpkgs_repo_url(),
+        str(bare_repo),
     ]
     try:
         subprocess.run(  # noqa: S603
@@ -354,24 +451,24 @@ def _clone_nixpkgs_bare_repo():
             text=True,
             timeout=3600,
         )
-        return str(_NIXPKGS_BARE_REPO)
+        return str(bare_repo)
     except subprocess.CalledProcessError as e:
         logger.error(
             f"Failed to create nixpkgs bare clone: {e.stderr.strip()}. "
             f"Falling back to fetchTarball."
         )
-        shutil.rmtree(_NIXPKGS_BARE_REPO, ignore_errors=True)
+        shutil.rmtree(bare_repo, ignore_errors=True)
     except subprocess.TimeoutExpired:
         logger.error(
             "Timeout creating nixpkgs bare clone; falling back to fetchTarball."
         )
-        shutil.rmtree(_NIXPKGS_BARE_REPO, ignore_errors=True)
+        shutil.rmtree(bare_repo, ignore_errors=True)
     return ""
 
 
 def _ensure_nixpkgs_bare_repo():
     """Ensure a local bare clone of nixpkgs exists."""
-    if os.environ.get("SCANCODE_NIXPKGS_USE_LOCAL_CACHE", "1") == "0":
+    if not scanpipe_settings.NIXPKGS_USE_LOCAL_CACHE:
         return ""
 
     if not shutil.which("git"):
@@ -381,14 +478,15 @@ def _ensure_nixpkgs_bare_repo():
         )
         return ""
 
-    if _NIXPKGS_BARE_REPO.exists():
-        return str(_NIXPKGS_BARE_REPO)
+    bare_repo = _nixpkgs_bare_repo()
+    if bare_repo.exists():
+        return str(bare_repo)
 
-    with utils.file_lock(_NIXPKGS_REPO_LOCK_PATH):
+    with utils.file_lock(_nixpkgs_repo_lock_path()):
         # Re-check inside the lock: another process may have cloned while
         # we were waiting.
-        if _NIXPKGS_BARE_REPO.exists():
-            return str(_NIXPKGS_BARE_REPO)
+        if bare_repo.exists():
+            return str(bare_repo)
         return _clone_nixpkgs_bare_repo()
 
 
@@ -401,11 +499,11 @@ def _prepare_nixpkgs_worktree(commit_hash):
     if not bare_repo:
         return ""
 
-    worktree_dir = _NIXPKGS_CACHE_DIR / "worktrees"
+    worktree_dir = _nixpkgs_cache_dir() / "worktrees"
     worktree_dir.mkdir(parents=True, exist_ok=True)
     worktree_path = worktree_dir / f"{commit_hash}-{uuid.uuid4().hex[:8]}"
 
-    with utils.file_lock(_NIXPKGS_REPO_LOCK_PATH):
+    with utils.file_lock(_nixpkgs_repo_lock_path()):
         try:
             fetch_cmd = [
                 "git",
@@ -477,12 +575,12 @@ def _remove_nixpkgs_worktree(worktree_path):
     if not worktree_path:
         return
 
-    bare_repo = str(_NIXPKGS_BARE_REPO)
+    bare_repo = str(_nixpkgs_bare_repo())
     if not Path(bare_repo).exists():
         shutil.rmtree(worktree_path, ignore_errors=True)
         return
 
-    with utils.file_lock(_NIXPKGS_REPO_LOCK_PATH):
+    with utils.file_lock(_nixpkgs_repo_lock_path()):
         try:
             cmd = [
                 "git",
@@ -523,9 +621,6 @@ def cleanup_nixpkgs_worktrees():
     for path in list(_NIXPKGS_WORKTREE_CACHE.values()):
         _remove_nixpkgs_worktree(path)
     _NIXPKGS_WORKTREE_CACHE.clear()
-
-
-atexit.register(cleanup_nixpkgs_worktrees)
 
 
 def _nixpkgs_mount_args(worktree_path):
@@ -579,18 +674,71 @@ def _system_barrier_message(system):
     )
 
 
+def verify_commit_in_nixpkgs(commit_hash):
+    """
+    Verify that ``commit_hash`` is an ancestor of the official NixOS/nixpkgs
+    default branch, not a commit that exists only in a fork.
+
+    Return True if the commit is part of the official repository, False otherwise.
+    """
+    if not COMMIT_RE.match(commit_hash):
+        return False
+
+    # Compare the commit against the default branch. If the commit is an
+    # ancestor, the Compare API returns status "behind" or "identical".
+    # If the commit is not in the official history, GitHub returns 404.
+    compare_url = (
+        f"https://api.github.com/repos/{NIXPKGS_OWNER}/{NIXPKGS_REPO}"
+        f"/compare/{commit_hash}...{NIXPKGS_DEFAULT_BRANCH}"
+    )
+    try:
+        response = requests.get(compare_url, timeout=30)
+        if response.status_code == 404:
+            return False
+        response.raise_for_status()
+        data = response.json()
+        # status is "behind" or "identical" when the commit is an ancestor
+        # of the default branch.
+        return data.get("status") in ("behind", "identical")
+    except requests.RequestException:
+        # On network error, we cannot verify; treat as unsafe.
+        return False
+
+
+def _validate_purl_qualifiers(purl):
+    """Validate the PURL qualifiers and return the commit hash."""
+    qualifiers = purl.qualifiers or {}
+
+    if not purl.version and "commit" not in qualifiers:
+        raise ValueError("Version or a 'commit' qualifier is required.")
+
+    if "system" not in qualifiers:
+        raise ValueError(
+            "The 'system' qualifier is required to resolve system-specific binaries."
+        )
+    if not SYSTEM_RE.match(qualifiers["system"]):
+        raise ValueError(f"Invalid system: {qualifiers['system']!r}")
+
+    if "output" in qualifiers and not OUTPUT_RE.match(qualifiers["output"]):
+        raise ValueError(f"Invalid output: {qualifiers['output']!r}")
+
+    commit_hash = qualifiers.get("commit", "")
+    if commit_hash and not COMMIT_RE.match(commit_hash):
+        raise ValueError(f"Invalid commit hash: {commit_hash!r}")
+
+    return commit_hash
+
+
 def check_input_and_return_purl(project):
     """Validate the input and return a Nix PURL."""
     input_sources = project.inputsources.all()
     if len(input_sources) != 1:
-        error_msg = "Only 1 nix purl is accepted."
-        raise ValueError(error_msg)
+        raise ValueError("Only 1 nix purl is accepted.")
 
     project_input = str(input_sources[0])
     input_purl = PackageURL.from_string(project_input)
     if input_purl.type != "nix":
-        error_msg = "Only nix purl is supported."
-        raise ValueError(error_msg)
+        raise ValueError("Only nix purl is supported.")
 
     namespace = input_purl.namespace
     if not namespace or namespace.lower() != "nixpkgs":
@@ -598,13 +746,17 @@ def check_input_and_return_purl(project):
             "Only official nixpkgs repository is supported (i.e. namespace=nixpkgs)."
         )
 
-    qualifiers = input_purl.qualifiers or {}
-    if not input_purl.version and "commit" not in qualifiers:
-        raise ValueError("Version or a 'commit' qualifier is required.")
+    if not NIX_NAME_RE.match(input_purl.name):
+        raise ValueError(f"Invalid Nix package name: {input_purl.name!r}")
 
-    if "system" not in qualifiers:
+    commit_hash = _validate_purl_qualifiers(input_purl)
+
+    # Verify the commit exists in the official NixOS/nixpkgs history so that
+    # a commit pointing to a fork cannot be used to inject arbitrary Nix code.
+    if commit_hash and not verify_commit_in_nixpkgs(commit_hash):
         raise ValueError(
-            "The 'system' qualifier is required to resolve system-specific binaries."
+            f"The commit {commit_hash!r} was not found in the official "
+            f"NixOS/nixpkgs repository history. Commits from forks are not allowed."
         )
 
     return input_purl
@@ -614,8 +766,8 @@ def fetch_inputs(purl, output_dir):
     """
     Fetch the system specific binary and the exact source tree with the
     patches and configurations applied for the given input purl. Return a
-    tuple of (source_path, binary_path, output_format, error_messages,
-    warning_messages).
+    tuple of (source_path, binary_path, output_format,
+    concluded_commit_hash, error_messages, warning_messages).
     """
     data = get_package_data(purl)
     name = purl.name
@@ -638,81 +790,226 @@ def fetch_inputs(purl, output_dir):
 
     concluded_commit_hash = release_commit_hash or commit_hash
 
-    bin_path = ""
-    nix_bin_download_url = get_nix_download_url(path) if path else ""
-    if nix_bin_download_url:
-        bin_path = utils.fetch_path(nix_bin_download_url)
+    bin_path, bin_warning_msgs, bin_error_msgs = _fetch_or_build_binary(
+        name, purl, output_dir, system, concluded_commit_hash, output_format, path
+    )
+    warning_messages.extend(bin_warning_msgs)
+    error_messages.extend(bin_error_msgs)
 
-    if bin_path:
-        logger.info(f"Downloaded binary for {purl} to {bin_path}")
-    else:
-        if concluded_commit_hash:
-            logger.info(
-                f"Binary not found in cache for {purl}. Attempting local Nix build..."
-            )
-            bin_path, error_message = build_binary_with_docker(
-                name, output_dir, system, concluded_commit_hash, output_format
-            )
-            if error_message:
-                error_messages.append(error_message)
-        if bin_path:
-            logger.info(f"Successfully built binary for {purl} to {bin_path}")
-            warning_message = (
-                f"Binary not found in cache for {purl}. Built locally using "
-                f"commit {concluded_commit_hash} with a Linux-based Nix "
-                f"Docker container."
-            )
-            logger.warning(warning_message)
-            warning_messages.append(warning_message)
-        else:
-            error_message = f"Failed to fetch or build the binary for {purl}"
-            logger.error(error_message)
-            error_messages.append(error_message)
-
-    patched_source_path = ""
-    if concluded_commit_hash:
-        source_result = get_patched_source_with_docker(
-            name, output_dir, system, concluded_commit_hash
-        )
-        patched_source_path = source_result.path
-
-        if not source_result.path:
-            detail = (
-                f" Reason: {source_result.failure_detail}"
-                if source_result.failure_detail
-                else ""
-            )
-            source_error = (
-                f"Failed to fetch the patched source for {purl} "
-                f"(commit={concluded_commit_hash}, system={system}).{detail} "
-                f"D2D scan will be disabled."
-            )
-            logger.error(source_error)
-            error_messages.append(source_error)
-
-        if source_result.used_fallback:
-            detail = (
-                f" Reason: {source_result.fallback_reason}."
-                if source_result.fallback_reason
-                else ""
-            )
-            fallback_warning = (
-                f"The patched source build for {name} failed; D2D will run "
-                f"against the raw upstream source (pkg.src) without nixpkgs "
-                f"patches.{detail} Mismatches between the source and binary "
-                f"trees may include files that were only added or modified by "
-                f"patches."
-            )
-            logger.warning(fallback_warning)
-            warning_messages.append(fallback_warning)
+    patched_source_path, source_warning_msgs, source_error_msgs = _fetch_patched_source(
+        name, purl, output_dir, system, concluded_commit_hash
+    )
+    warning_messages.extend(source_warning_msgs)
+    error_messages.extend(source_error_msgs)
 
     return (
         patched_source_path,
         bin_path,
         output_format,
+        concluded_commit_hash,
         error_messages,
         warning_messages,
     )
+
+
+def get_nix_package_metadata(purl, commit_hash):
+    """
+    Return a dict with ``license``, ``homepage``, and ``description``
+    of nixpkgs metadata for the target package ``name``.
+    """
+    name = purl.name
+    system = purl.qualifiers.get("system", "")
+
+    if not name or not commit_hash:
+        return {}
+
+    system_config = f'system = "{system}";' if system else ""
+    config_str = "config = { allowBroken = true; allowUnfree = true; };"
+
+    worktree_path = _get_nixpkgs_worktree(commit_hash)
+    nixpkgs_import = _nixpkgs_import_expr(
+        commit_hash, worktree_path, system_config, config_str
+    )
+
+    nix_expression = f"""
+    let
+        pkgs = {nixpkgs_import};
+        target = pkgs."{name}";
+        meta = target.meta or {{}};
+        license = meta.license or {{}};
+        licenseId =
+            if builtins.isAttrs license && license ? spdxId then license.spdxId
+            else if builtins.isString license then license
+            else null;
+    in
+    {{
+        license = licenseId;
+        homepage = meta.homepage or null;
+        description = meta.description or null;
+    }}
+    """
+
+    container_name = f"nix-meta-{uuid.uuid4().hex[:12]}"
+    nix_image = _ensure_nix_image()
+    cmd = [
+        "docker",
+        "run",
+        "--rm",
+        "--init",
+        "--name",
+        container_name,
+        "-v",
+        "nix-eval-cache:/nix",
+        *_nixpkgs_mount_args(worktree_path),
+        nix_image,
+        "nix-instantiate",
+        "--eval",
+        "--strict",
+        "--json",
+        "-E",
+        nix_expression,
+    ]
+
+    task_description = f"Evaluating metadata for {name}"
+    try:
+        result = utils.run_docker_container(
+            cmd, container_name, _DOCKER_EVAL_TIMEOUT, task_description
+        )
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Error evaluating metadata for '{name}': {e.stderr}")
+        return {}
+    except subprocess.TimeoutExpired:
+        logger.error(f"Timeout evaluating metadata for '{name}'")
+        return {}
+
+    try:
+        return json.loads(result.stdout)
+    except json.JSONDecodeError:
+        logger.warning(f"Could not parse metadata JSON for '{name}': {result.stdout!r}")
+        return {}
+
+
+def create_package_from_nix_metadata(project, purl, metadata):
+    """
+    Create a DiscoveredPackage for the Nix package using the declared
+    license found in nixpkgs ``meta.license``.
+    """
+    spdx_id = (metadata.get("license") or "").strip()
+    declared_expression = ""
+    if spdx_id:
+        try:
+            declared_expression = convert_spdx_expression(spdx_id)
+        except Exception as e:
+            logger.warning(
+                f"Could not convert SPDX id {spdx_id!r} to a ScanCode "
+                f"license expression: {e}"
+            )
+            declared_expression = spdx_id
+
+    homepage = metadata.get("homepage") or ""
+    if isinstance(homepage, list):
+        homepage = homepage[0] if homepage else ""
+
+    package_data = {
+        "type": "nix",
+        "name": purl.name,
+        "version": purl.version or "",
+        "namespace": purl.namespace,
+        "declared_license_expression": declared_expression,
+        "declared_license_expression_spdx": spdx_id,
+        "homepage_url": homepage,
+        "description": metadata.get("description") or "",
+        "datasource_id": "nixpkgs_meta",
+    }
+    return pipes.update_or_create_package(project, package_data)
+
+
+def _fetch_or_build_binary(
+    name, purl, output_dir, system, concluded_commit_hash, output_format, path
+):
+    """Fetch the binary from cache or build it locally and return its path."""
+    nix_bin_download_url = get_nix_download_url(path) if path else ""
+    bin_path = ""
+    warning_messages = []
+    error_messages = []
+
+    if nix_bin_download_url:
+        try:
+            bin_path = fetch.fetch_url(nix_bin_download_url).path
+        except (ValueError, requests.RequestException) as e:
+            logger.warning(f"Failed to fetch package: {nix_bin_download_url} - {e}")
+
+    if bin_path:
+        logger.info(f"Downloaded binary for {purl} to {bin_path}")
+        return bin_path, warning_messages, error_messages
+
+    if concluded_commit_hash:
+        logger.info(
+            f"Binary not found in cache for {purl}. Attempting local Nix build..."
+        )
+        bin_path, error_message = build_binary_with_docker(
+            name, output_dir, system, concluded_commit_hash, output_format
+        )
+        if error_message:
+            error_messages.append(error_message)
+    if bin_path:
+        logger.info(f"Successfully built binary for {purl} to {bin_path}")
+        warning_messages.append(
+            f"Binary not found in cache for {purl}. Built locally using "
+            f"commit {concluded_commit_hash} with a Linux-based Nix "
+            f"Docker container."
+        )
+    else:
+        error_message = f"Failed to fetch or build the binary for {purl}"
+        logger.error(error_message)
+        error_messages.append(error_message)
+
+    return bin_path, warning_messages, error_messages
+
+
+def _fetch_patched_source(name, purl, output_dir, system, concluded_commit_hash):
+    """Fetch the patched source tree. Return its path, or empty on failure."""
+    warning_messages = []
+    error_messages = []
+
+    if not concluded_commit_hash:
+        return "", warning_messages, error_messages
+
+    source_result = get_patched_source_with_docker(
+        name, output_dir, system, concluded_commit_hash
+    )
+
+    if not source_result.path:
+        detail = (
+            f" Reason: {source_result.failure_detail}"
+            if source_result.failure_detail
+            else ""
+        )
+        source_error = (
+            f"Failed to fetch the patched source for {purl} "
+            f"(commit={concluded_commit_hash}, system={system}).{detail} "
+            f"D2D scan will be disabled."
+        )
+        logger.error(source_error)
+        error_messages.append(source_error)
+
+    if source_result.used_fallback:
+        detail = (
+            f" Reason: {source_result.fallback_reason}."
+            if source_result.fallback_reason
+            else ""
+        )
+        fallback_warning = (
+            f"The patched source build for {name} failed; D2D will run "
+            f"against the raw upstream source (pkg.src) without nixpkgs "
+            f"patches.{detail} Mismatches between the source and binary "
+            f"trees may include files that were only added or modified by "
+            f"patches."
+        )
+        logger.warning(fallback_warning)
+        warning_messages.append(fallback_warning)
+
+    return source_result.path, warning_messages, error_messages
 
 
 def build_binary_with_docker(name, output_dir, system, commit_hash, output_format):
@@ -757,21 +1054,23 @@ def build_binary_with_docker(name, output_dir, system, commit_hash, output_forma
     nix_expression = (
         f"let "
         f"  pkgs = {nixpkgs_import}; "
-        f"  target = pkgs.{name}; "
+        f'  target = pkgs."{name}"; '
         f"  hasIt = builtins.isAttrs target && "
         f'builtins.hasAttr "{effective_output}" target; '
         f"in if hasIt then target.{effective_output} else target"
     )
 
     # Build the Nix package, verify it succeeded, and export the output as
-    # a .nar file.
+    # a .nar file. `shlex.quote` makes the filename safe to use in a shell
+    # command on its own. `NIX_NAME_RE` already guarantees this, but quoting
+    # keeps the line safe even if the pattern changes later.
     container_script = f"""
     OUT_PATH=$(nix-build --no-out-link -E '{nix_expression}')
     if [ -z "$OUT_PATH" ] || [ ! -e "$OUT_PATH" ]; then
         echo "Error: nix-build failed to return a valid store path." >&2
         exit 1
     fi
-    nix-store --dump "$OUT_PATH" > /build_output/{nar_filename}
+    nix-store --dump "$OUT_PATH" > /build_output/{shlex.quote(nar_filename)}
     """
 
     container_name = f"nix-bin-build-{uuid.uuid4().hex[:12]}"
@@ -894,7 +1193,7 @@ def get_nix_store_path_with_nix(name, system, output, commit_hash):
     nix_expression = (
         "let "
         f"  pkgs = {nixpkgs_import}; "
-        f"  target = pkgs.{name}; "
+        f'  target = pkgs."{name}"; '
         f'  hasIt = builtins.isAttrs target && builtins.hasAttr "{output}" target; '
         f'in if hasIt then target.{output}.outPath else ""'
     )
@@ -1028,15 +1327,19 @@ def _decompress_pipeline_for(archive_name):
     `nix-shell -p <tool>` is involved, so no fetch from
     "cache.nixos.org" happens at extraction time.
     """
+    # `shlex.quote` makes the archive path safe to use in a shell command on
+    # its own. The filename comes from the remote cache's `narinfo`, so no
+    # local pattern constrains it.
+    safe_path = shlex.quote(f"/input/{archive_name}")
     if archive_name.endswith(".zst"):
-        return f"zstdcat /input/{archive_name}"
+        return f"zstdcat {safe_path}"
     if archive_name.endswith(".xz"):
-        return f"xzcat /input/{archive_name}"
+        return f"xzcat {safe_path}"
     if archive_name.endswith(".bz2"):
-        return f"bzcat /input/{archive_name}"
+        return f"bzcat {safe_path}"
     if archive_name.endswith(".gz"):
-        return f"zcat /input/{archive_name}"
-    return f"cat /input/{archive_name}"
+        return f"zcat {safe_path}"
+    return f"cat {safe_path}"
 
 
 def extract_nar_archive(archive_path, output_dir, output):
@@ -1054,8 +1357,15 @@ def extract_nar_archive(archive_path, output_dir, output):
     archive_name = archive_path.name
     extracted_path = output_dir / "to" / output
 
+    # `shlex.quote` makes the output name safe to use in a shell command on
+    # its own. `OUTPUT_RE` already guarantees this, but quoting keeps the line
+    # safe even if the pattern changes later.
+    safe_output = shlex.quote(output)
+
     decompress_cmd = _decompress_pipeline_for(archive_name)
-    restore_pipeline = f"{decompress_cmd} | nix-store --restore /output/to/{output}"
+    restore_pipeline = (
+        f"{decompress_cmd} | nix-store --restore /output/to/{safe_output}"
+    )
 
     # nix-store --restore runs as root inside the container and preserves the
     # NAR's ownership metadata, so the extracted tree ends up owned by root.
@@ -1065,7 +1375,7 @@ def extract_nar_archive(archive_path, output_dir, output):
     host_gid = os.getgid()
 
     container_script = (
-        f"rm -rf /output/to/{output} "
+        f"rm -rf /output/to/{safe_output} "
         f"&& mkdir -p /output/to "
         f"&& {restore_pipeline} "
         f"&& chown -R {host_uid}:{host_gid} /output/to "
@@ -1111,6 +1421,27 @@ def extract_nar_archive(archive_path, output_dir, output):
     return ""
 
 
+def extract_nar_archive_to_codebase(archive_path, codebase_path, output_format):
+    """
+    Extract the NAR archive into the project's codebase/ directory.
+
+    Return a tuple ``(success, error_message)``. When the extraction
+    produces no files, the empty ``to/`` directory is removed and
+    ``success=False`` is returned.
+    """
+    extracted_path = extract_nar_archive(archive_path, codebase_path, output_format)
+
+    to_dir = Path(codebase_path) / "to"
+    is_empty = to_dir.exists() and not list(to_dir.rglob("*"))
+
+    if not extracted_path or is_empty:
+        if to_dir.exists():
+            shutil.rmtree(to_dir)
+        return False, "Failed to extract NAR archive, D2D scan disabled."
+
+    return True, ""
+
+
 def get_patched_source_with_docker(name, output_dir, system, commit_hash):
     """
     Fetch a Nix package source and apply its official patches, falling back
@@ -1143,16 +1474,19 @@ def get_patched_source_with_docker(name, output_dir, system, commit_hash):
         commit_hash, worktree_path, system_config, config_str
     )
 
+    # Safely format the derivation name for Nix.
+    patched_name_literal = json.dumps(f"{name}-patched-src")
+
     # `applyPatches` unpacks `pkg.src`, applies `pkg.patches`, and copies
     # the resulting tree to `$out`.
     nix_expression = f"""
     let
         pkgs = {nixpkgs_import};
-        pkg = pkgs.{name};
+        pkg = pkgs."{name}";
     in
     if !(pkg ? src) then pkg
     else pkgs.applyPatches {{
-        name = "{name}-patched-src";
+        name = {patched_name_literal};
         src = pkg.src;
         patches = pkg.patches or [];
         prePatch = pkg.prePatch or "";
@@ -1162,29 +1496,37 @@ def get_patched_source_with_docker(name, output_dir, system, commit_hash):
     fallback_expression = f"""
     let
         pkgs = {nixpkgs_import};
-        pkg = pkgs.{name};
+        pkg = pkgs."{name}";
     in
         if pkg ? gemFile then pkg.gemFile
         else if pkg ? src then pkg.src
         else pkg
     """
 
+    # A quoted heredoc ("<< 'DELIM'") passes its body literally, with no
+    # shell expansion. That keeps the multi-line Nix expression intact and
+    # means any shell-looking text in it is treated as data. The delimiter
+    # is random so the expression cannot contain a line matching it and
+    # end the heredoc early.
+    heredoc_delimiter = f"SCANCODE_NIX_{uuid.uuid4().hex[:16]}"
+
     # This bash script must NOT be indented in Python.
-    # If EOF has spaces before it, bash will fail to parse it.
-    # The following script first attempts a standard patched build; if that
-    # fails (or yields no files), it falls back to fetching the raw source
-    # archive. The result is copied to the mounted `from/` directory with
-    # correct ownership so the host can extract and process it.
+    # If the closing heredoc line has spaces before it, bash will fail to
+    # parse it. The following script first attempts a standard patched
+    # build; if that fails (or yields no files), it falls back to fetching
+    # the raw source archive. The result is copied to the mounted `from/`
+    # directory with correct ownership so the host can extract and process
+    # it.
     container_script = f"""
 set -e
 
-cat << 'EOF' > /tmp/expr.nix
+cat << '{heredoc_delimiter}' > /tmp/expr.nix
 {nix_expression}
-EOF
+{heredoc_delimiter}
 
-cat << 'EOF' > /tmp/fallback.nix
+cat << '{heredoc_delimiter}' > /tmp/fallback.nix
 {fallback_expression}
-EOF
+{heredoc_delimiter}
 
 # Try standard patched build
 OUT_PATH=$(nix-build --no-out-link /tmp/expr.nix || true)
@@ -1293,29 +1635,3 @@ rm -f /tmp/expr.nix /tmp/fallback.nix
         fallback_reason="",
         failure_detail=failure_detail,
     )
-
-
-def ensure_multiarch_emulation():
-    """
-    Configure Docker host with binfmt emulators to support
-    multi-architecture execution and builds.
-    """
-    cmd = [
-        "docker",
-        "run",
-        "--privileged",
-        "--rm",
-        "--init",
-        "tonistiigi/binfmt",
-        "--install",
-        "all",
-    ]
-    try:
-        subprocess.run(cmd, capture_output=True, text=True, check=True, timeout=60)  # noqa: S603
-        return True
-    except subprocess.CalledProcessError as e:
-        logger.warning(f"Could not install binfmt multi-arch emulators: {e.stderr}")
-        return False
-    except subprocess.TimeoutExpired:
-        logger.warning("Timeout trying to setup binfmt emulators. Skipping.")
-        return False

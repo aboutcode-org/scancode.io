@@ -23,8 +23,10 @@
 import io
 import json
 import os
+import shutil
 import sys
 import tempfile
+import uuid
 from contextlib import redirect_stderr
 from pathlib import Path
 from unittest import mock
@@ -48,6 +50,7 @@ from scanpipe.pipelines import deploy_to_develop
 from scanpipe.pipelines import is_pipeline
 from scanpipe.pipelines import scan_single_package
 from scanpipe.pipelines.find_vulnerabilities import FindVulnerabilities
+from scanpipe.pipelines.scan_nix_package import ScanNixPackage
 from scanpipe.pipes import d2d
 from scanpipe.pipes import flag
 from scanpipe.pipes import output
@@ -66,6 +69,8 @@ from scanpipe.tests.pipelines.steps_as_attribute import StepsAsAttribute
 from scanpipe.tests.pipelines.with_groups import WithGroups
 
 from_docker_image = os.environ.get("FROM_DOCKER_IMAGE")
+
+nix_pipeline_unavailable_reason = ScanNixPackage.get_availability()
 
 
 class ScanPipePipelinesTest(TestCase):
@@ -2151,3 +2156,41 @@ class PipelinesIntegrationTest(TestCase):
         )
         expected_file = self.data / "benchmark" / "alpine-3.22.1-expected-benchmark.txt"
         self.assertEqual(expected_file.read_text(), result_file.read_text())
+
+    @skipIf(
+        nix_pipeline_unavailable_reason is not None,
+        f"Nix pipeline unavailable: {nix_pipeline_unavailable_reason}",
+    )
+    @mock.patch(
+        "scanpipe.models.Project.work_directory", new_callable=mock.PropertyMock
+    )
+    def test_scanpipe_scan_nix_package_pipeline_integration(self, mock_work_directory):
+        shared_workspace = Path("/var/scancodeio/workspace/tests/") / uuid.uuid4().hex
+        mock_work_directory.return_value = str(shared_workspace)
+
+        # Register cleanup to delete the folder automatically when the test ends
+        self.addCleanup(shutil.rmtree, shared_workspace, ignore_errors=True)
+
+        pipeline_name = "scan_nix_package"
+        project1 = make_project()
+
+        project1.codebase_path.mkdir(parents=True, exist_ok=True)
+        project1.input_path.mkdir(parents=True, exist_ok=True)
+        project1.output_path.mkdir(parents=True, exist_ok=True)
+
+        run = project1.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+
+        download_url = "pkg:nix/nixpkgs/hello@2.12.3?system=x86_64-linux"
+        project1.add_input_source(download_url=download_url)
+
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+
+        self.assertEqual(702, project1.codebaseresources.count())
+        self.assertEqual(48, project1.codebaserelations.count())
+
+        scancode_file = project1.get_latest_output(filename="scancode")
+        expected_file = self.data / "nix" / "hello-2.12.3-sctk.json"
+
+        self.assertPipelineResultEqual(expected_file, scancode_file)

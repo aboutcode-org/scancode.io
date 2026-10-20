@@ -20,18 +20,17 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
-import shutil
 from pathlib import Path
 
 from scanpipe.pipelines.deploy_to_develop import DeployToDevelop
 from scanpipe.pipelines.scan_codebase import ScanCodebase
 from scanpipe.pipelines.scan_single_package import ScanSinglePackage
-from scanpipe.pipes import d2d
+from scanpipe.pipes import d2d_config
 from scanpipe.pipes import flag
+from scanpipe.pipes import license_validation
 from scanpipe.pipes import nix
+from scanpipe.pipes import scancode
 from scanpipe.pipes import utils
-from scanpipe.pipes.nix import check_input_and_return_purl
-from scanpipe.pipes.nix import fetch_inputs
 
 
 class ScanNixPackage(ScanSinglePackage, DeployToDevelop, ScanCodebase):
@@ -43,66 +42,116 @@ class ScanNixPackage(ScanSinglePackage, DeployToDevelop, ScanCodebase):
 
     Scan the sources and confirm that the detected license aligns with
     the declared license that is detected from the nix package.
+
+    The ``commit`` qualifier in the Nix PURL is validated against the
+    official NixOS/nixpkgs repository history. Commits that exist only in
+    forks are rejected.
+
+    Requirements:
+
+    - A Docker daemon reachable from the ``web`` and ``worker`` containers.
+      In the default Compose stack this is provided by the ``dind`` service;
+      enable it with the ``dind`` profile (``docker compose --profile dind up``).
+
+    - Multi-architecture emulation (``binfmt``) configured on the Docker host.
+      This is a **one-time administrative setup step**, not a pipeline step::
+
+          docker run --privileged --rm --init tonistiigi/binfmt --install all
+
+    - The directory referenced by ``SCANCODEIO_NIXPKGS_CACHE_DIR`` must be
+      writable and visible to both the ``worker`` container and the ``dind``
+      daemon. The default Compose stack handles this by placing it under the
+      shared ``workspace`` volume.
     """
 
     download_inputs = False
+
+    # A Nix derivation can target any language, so we load every ecosystem
+    # the D2D mappers support.
+    # Keep this list in sync with the `d2d_*` calls in `d2d_steps`.
+    D2D_ECOSYSTEM_OPTIONS = [
+        "Java",
+        "Kotlin",
+        "Scala",
+        "Grammar",
+        "Groovy",
+        "AspectJ",
+        "Clojure",
+        "Xtend",
+        "JavaScript",
+        "Haskell",
+        "Rust",
+        "Go",
+        "Elf",
+        "MacOS",
+        "Windows",
+        "Python",
+    ]
+
+    @classmethod
+    def get_availability(cls):
+        if not utils.check_docker_command():
+            return (
+                "Docker is required and its daemon must be running. "
+                "Start the stack with the 'dind' Compose profile, or install "
+                "and start a Docker daemon reachable through DOCKER_HOST."
+            )
+        if not nix.binfmt_emulation_is_installed():
+            return (
+                "Multi-arch binfmt emulation is not installed on the Docker "
+                "host. Run: docker run --privileged --rm --init "
+                "tonistiigi/binfmt --install all"
+            )
+        return None
 
     @classmethod
     def steps(cls):
         return (
             cls.check_input_and_return_purl,
-            cls.check_docker_command,
+            cls.prepare_nix_environment,
             cls.fetch_inputs,
             cls.collect_input_info,
             cls.extract_input_to_codebase_directory,
-            cls.extract_codebase_archives,
-            cls.run_scan,
-            cls.load_inventory_from_toolkit_scan,
-            cls.add_from_to_tag,
+            cls.extract_archives,
+            cls.collect_and_create_codebase_resources,
+            cls.fingerprint_codebase_directories,
+            cls.flag_empty_files,
+            cls.flag_whitespace_files,
+            cls.flag_ignored_resources,
             cls.d2d_steps,
+            cls.perform_from_codebase_scans,
+            cls.create_package_from_nix_metadata,
             cls.validate_package_license_integrity,
-            cls.flag_mapped_status,
-            cls.make_summary_from_scan_results,
         )
 
     def check_input_and_return_purl(self):
-        """Validate the input is a PURL string and return the PURL object."""
-        self.purl = check_input_and_return_purl(self.project)
+        """Validate the input is a Nix PURL string and return the PURL object."""
+        self.purl = nix.check_input_and_return_purl(self.project)
 
-    def check_docker_command(self):
-        """Check if the Docker command is available and multiarch is ready."""
-        if not utils.check_docker_command():
-            raise RuntimeError("Docker is required and its daemon must be running.")
-        if not nix.ensure_multiarch_emulation():
-            raise RuntimeError(
-                "Could not install binfmt multi-arch emulators. "
-                "Cross-architecture Nix builds will not work."
-            )
+    def prepare_nix_environment(self):
+        """Ensure the custom Nix image exists and run the periodic store GC."""
         nix.prepare_nix_environment()
 
     def fetch_inputs(self):
         """Fetch the binary and source of the given PURL."""
-        from_file = ""
-        to_file = ""
-        output_format = ""
         try:
-            from_file, to_file, output_format, error_messages, warning_messages = (
-                fetch_inputs(self.purl, self.project.codebase_path)
-            )
+            (
+                self.from_file,
+                self.to_file,
+                self.output_format,
+                self.concluded_commit_hash,
+                error_messages,
+                warning_messages,
+            ) = nix.fetch_inputs(self.purl, self.project.codebase_path)
+
+            self.d2d_enable = bool(self.from_file and self.to_file)
         finally:
             nix.cleanup_nixpkgs_worktrees()
-        self.from_file = from_file
-        self.to_file = to_file
-        self.output_format = output_format
 
-        self.d2d_enable = bool(self.from_file and self.to_file)
-
-        if error_messages:
-            for error_message in error_messages:
-                self.project.add_error(error_message)
-        if warning_messages:
-            for warning_message in warning_messages:
-                self.project.add_warning(warning_message)
+        for error_message in error_messages:
+            self.project.add_error(error_message)
+        for warning_message in warning_messages:
+            self.project.add_warning(warning_message)
 
     def collect_input_info(self):
         """Collect information about the input."""
@@ -113,38 +162,19 @@ class ScanNixPackage(ScanSinglePackage, DeployToDevelop, ScanCodebase):
 
     def extract_input_to_codebase_directory(self):
         """Extract input to project codebase/ directory."""
-        if self.input_path:
-            extracted_path = nix.extract_nar_archive(
-                self.input_path, self.project.codebase_path, self.output_format
-            )
+        if not self.input_path:
+            return
 
-            to_dir = Path(self.project.codebase_path) / "to"
-            # If the extraction failed (returned "") or we found it was empty
-            if not extracted_path or (to_dir.exists() and not list(to_dir.rglob("*"))):
-                if to_dir.exists():
-                    shutil.rmtree(to_dir)
-                self.d2d_enable = False
-                self.project.add_error(
-                    "Failed to extract NAR archive, D2D scan disabled."
-                )
+        success, error_message = nix.extract_nar_archive_to_codebase(
+            archive_path=self.input_path,
+            codebase_path=self.project.codebase_path,
+            output_format=self.output_format,
+        )
+        if not success:
+            self.d2d_enable = False
+            self.project.add_error(error_message)
 
-            self.env = self.project.get_env()
-
-    def extract_codebase_archives(self):
-        """Perform extraction of the codebase resources."""
-        self.extract_archives(recurse=True)
-
-    def clear_to_codebase_status(self):
-        """
-        Clear the status of the to codebase resources in the project as
-        having status will prevent D2D from running.
-        """
-        flag.clear_status(self.project.codebaseresources.to_codebase())
-
-    def add_from_to_tag(self):
-        """Update 'from' and 'to' tag to resources based on their path."""
-        if self.d2d_enable:
-            d2d.update_from_to_tag(self.project)
+        self.env = self.project.get_env()
 
     def d2d_steps(self):
         """
@@ -152,13 +182,10 @@ class ScanNixPackage(ScanSinglePackage, DeployToDevelop, ScanCodebase):
         binary are available.
         """
         if self.d2d_enable:
-            self.flag_empty_files()
-            self.flag_whitespace_files()
-            self.flag_ignored_resources()
+            self.d2d_ecosystem_config()
             self.map_about_files()
             self.map_checksum()
             self.match_archives_to_purldb()
-            self.load_ecosystem_config()
             self.d2d_java()
             self.d2d_scala()
             self.d2d_kotlin()
@@ -170,6 +197,11 @@ class ScanNixPackage(ScanSinglePackage, DeployToDevelop, ScanCodebase):
             self.d2d_javascript()
             self.d2d_haskell()
             self.d2d_process()
+
+    def d2d_ecosystem_config(self):
+        d2d_config.load_ecosystem_config(
+            pipeline=self, options=self.D2D_ECOSYSTEM_OPTIONS
+        )
 
     def d2d_java(self):
         self.find_java_packages()
@@ -233,25 +265,58 @@ class ScanNixPackage(ScanSinglePackage, DeployToDevelop, ScanCodebase):
         self.map_javascript_colocation()
         self.map_thirdparty_npm_packages()
         self.map_path()
+        self.flag_generated_code()
         self.flag_mapped_resources_archives_and_ignored_directories()
         self.perform_house_keeping_tasks()
         self.match_purldb_resources_post_process()
         self.remove_packages_without_resources()
-        self.scan_ignored_to_files()
-        self.scan_unmapped_to_files()
-        self.scan_mapped_from_for_files()
         self.collect_and_create_license_detections()
         self.flag_deployed_from_resources_with_missing_license()
-        self.create_local_files_packages()
+
+    def perform_from_codebase_scans(self):
+        """
+        Scan the source codebase for application packages and file details with
+        filtering out resources that are flagged as generated or ignored.
+        """
+        from_resource_qs = (
+            self.project.codebaseresources.from_codebase()
+            .exclude(status=flag.GENERATED)
+            .exclude(status__startswith="ignored")
+        )
+        scancode.scan_for_application_packages(
+            project=self.project, resource_qs=from_resource_qs, progress_logger=self.log
+        )
+
+        scancode.scan_for_files(
+            project=self.project, resource_qs=from_resource_qs, progress_logger=self.log
+        )
+
+    def create_package_from_nix_metadata(self):
+        """
+        Create a DiscoveredPackage for the Nix package using the declared
+        license from nixpkgs ``meta.license``. This is used to compare the
+        declared license against the licenses detected in the source and
+        binary trees.
+        """
+        metadata = nix.get_nix_package_metadata(
+            purl=self.purl, commit_hash=self.concluded_commit_hash
+        )
+        if not metadata:
+            return
+
+        package = nix.create_package_from_nix_metadata(
+            self.project, self.purl, metadata
+        )
+        if not package:
+            return
+
+        from_resources = self.project.codebaseresources.from_codebase()
+        if from_resources.exists():
+            package.codebase_resources.add(*from_resources)
 
     def validate_package_license_integrity(self):
         """
         Validate the correctness of the package license compared with the
         detected license from the codebase.
         """
-        utils.validate_package_license_integrity(self.project)
-
-    def flag_mapped_status(self):
-        """Flag the from codebase resources that were mapped."""
-        if self.d2d_enable:
-            flag.flag_mapped_resources(self.project)
+        license_validation.validate_package_license_integrity(self.project)

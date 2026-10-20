@@ -74,6 +74,91 @@ It defaults to a :guilabel:`var/` directory in the local ScanCode.io codebase.
 
 See :ref:`project_workspace` for more details.
 
+.. _scancodeio_settings_nixpkgs_use_local_cache:
+
+SCANCODEIO_NIXPKGS_USE_LOCAL_CACHE
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Whether  the ``scan_nix_package`` pipeline maintains a local bare clone of
+the nixpkgs git repository. When ``True`` (the default), the first scan
+performs a one-time clone under
+:ref:`SCANCODEIO_NIXPKGS_CACHE_DIR <scancodeio_settings_nixpkgs_cache_dir>`
+and later scans reuse it::
+
+    SCANCODEIO_NIXPKGS_USE_LOCAL_CACHE=True
+
+Default: ``True``
+
+.. warning::
+    Setting this to ``False`` makes the pipeline fetch a nixpkgs tarball
+    from GitHub on every scan instead of using the local clone. This is
+    intended only as a debugging escape hatch for environments where the
+    local clone cannot be created. It is much slower and may experience
+    GitHub rate limiting in production.
+
+.. _scancodeio_settings_nixpkgs_cache_dir:
+
+SCANCODEIO_NIXPKGS_CACHE_DIR
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Directory where the ``scan_nix_package`` pipeline keeps its local bare
+clone of the nixpkgs git repository and the temporary per-commit worktrees.
+
+For a **Docker Compose deployment**, this **must** be a path on the shared
+``workspace`` volume, because both the ``worker`` container and the
+``dind`` daemon need to read the worktrees::
+
+    SCANCODEIO_NIXPKGS_CACHE_DIR=/var/scancodeio/workspace/.cache/scancode-nix
+
+The Docker Compose stack already sets this value in ``docker.env``.
+
+For a **local (non-Docker) install**, any writable directory works::
+
+    SCANCODEIO_NIXPKGS_CACHE_DIR=/home/user/.cache/scancode-nix
+
+Default (local install): ``~/.cache/scancode-nix``
+
+.. note::
+    This directory can grow over time and should be on a filesystem with
+    enough free space for a full nixpkgs checkout per concurrent scan.
+
+.. _scancodeio_settings_nixpkgs_repo_url:
+
+SCANCODEIO_NIXPKGS_REPO_URL
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+URL of the nixpkgs git repository cloned by the ``scan_nix_package``
+pipeline. Override only if you mirror nixpkgs internally::
+
+    SCANCODEIO_NIXPKGS_REPO_URL=https://github.com/NixOS/nixpkgs.git
+
+Default: ``https://github.com/NixOS/nixpkgs.git``
+
+.. _scancodeio_settings_nixpkgs_gc_interval_hours:
+
+SCANCODEIO_NIXPKGS_GC_INTERVAL_HOURS
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+How often the ``scan_nix_package`` pipeline runs ``nix-collect-garbage``
+on the shared Nix store. Set to ``0`` to disable automatic garbage
+collection::
+
+    SCANCODEIO_NIXPKGS_GC_INTERVAL_HOURS=3
+
+Default: ``3``
+
+.. _scancodeio_settings_nixpkgs_gc_older_than:
+
+SCANCODEIO_NIXPKGS_GC_OLDER_THAN
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Value passed to ``nix-collect-garbage --delete-older-than``. Accepts any
+value the Nix CLI accepts (e.g. ``12h``, ``3d``, ``7d``)::
+
+    SCANCODEIO_NIXPKGS_GC_OLDER_THAN=12h
+
+Default: ``12h``
+
 .. _scancodeio_settings_config_dir:
 
 SCANCODEIO_CONFIG_DIR
