@@ -119,6 +119,7 @@ dependencies = [
   "cffi==2.1.1",
   "stevedore==5.9.1",
   "sqlparse==0.6.0",
+  "pluggy==1.6.0",
 ]
 
 [project.optional-dependencies]
