@@ -120,6 +120,8 @@ dependencies = [
   "stevedore==5.9.1",
   "sqlparse==0.6.0",
   "pluggy==1.6.0",
+  # Required to run the query (CPG reachability tool).
+  "neo4j==6.4.1",
 ]
 
 [project.optional-dependencies]
