@@ -476,6 +476,21 @@ def get_snippet_line_ranges(match_detections, line_by_pos):
     ]
 
 
+def get_line_coverage(line_ranges, line_by_pos):
+    """
+    Return the percentage of the code lines covered by the (start_line, end_line)
+    ``line_ranges``, the code lines being the lines with tokens in ``line_by_pos``.
+    This matches the SCANOSS similarity: the percentage of the file matched.
+    """
+    code_lines = set(line_by_pos.values())
+    covered_lines = {
+        line
+        for start_line, end_line in line_ranges
+        for line in range(start_line, end_line + 1)
+    }
+    return round(100 * len(covered_lines & code_lines) / len(code_lines))
+
+
 def is_legal_file_path(path):
     """Return True if the file name of ``path`` is the one of a legal file."""
     file_path = Path(path.lower())
@@ -505,8 +520,8 @@ def make_snippet_origin_matches(
     Yield unsaved OriginMatch instances for the ``resource`` snippet matches.
     Snippets matched in legal files are skipped, as a license text is a
     license clue, not an origin.
-    MatchCode snippet similarity is kept as extra data only, as its scale is not
-    comparable with the other match types.
+    The MatchCode snippet similarity is kept as extra data only, as its scale is
+    not comparable with the other tools.
     """
     line_by_pos = get_resource_line_by_pos(resource)
 
@@ -515,11 +530,12 @@ def make_snippet_origin_matches(
         if is_legal_file_path(origin_path):
             continue
 
+        snippet_line_ranges = get_snippet_line_ranges(
+            matched_snippet["match_detections"], line_by_pos
+        )
         line_ranges = [
             {"lines": [start_line, end_line]}
-            for start_line, end_line in get_snippet_line_ranges(
-                matched_snippet["match_detections"], line_by_pos
-            )
+            for start_line, end_line in snippet_line_ranges
         ]
 
         purl = matched_snippet["package"]
@@ -535,6 +551,7 @@ def make_snippet_origin_matches(
             tool_version=tool_version,
             origin_path=origin_path,
             line_ranges=line_ranges,
+            similarity=get_line_coverage(snippet_line_ranges, line_by_pos),
             extra_data=extra_data,
         )
 
