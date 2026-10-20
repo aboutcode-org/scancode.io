@@ -77,13 +77,17 @@ class FindOrigins(Pipeline):
             return
 
         if not scanoss.get_uvx_location():
-            self.log("The uvx executable required by SCANOSS is missing, skipping.")
+            message = "The uvx executable required by SCANOSS is missing, skipping."
+            self.log(message)
+            self.project.add_warning(
+                description=message, model="find_scanoss_origin_matches"
+            )
             return
 
         results_location = self.project.get_output_file_path("scanoss", "json")
         scanoss.scan_codebase(self.project.codebase_path, results_location)
 
-        origin_match_count = scanoss.load_scanoss_results_from_file(
+        origin_match_count = scanoss.load_scanoss_results(
             self.project, results_location
         )
         self.log(f"{origin_match_count:,d} SCANOSS origin matches processed.")

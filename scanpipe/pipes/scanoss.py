@@ -126,14 +126,18 @@ def parse_similarity(matched):
 def get_versioned_purl(component):
     """
     Return the versioned PURL string of a SCANOSS ``component``, or an empty
-    string when the component has no PURL.
+    string when the component has no valid PURL.
     SCANOSS reports versionless PURLs with the version in a separate field.
     """
     purls = component.get("purl")
     if not purls:
         return ""
 
-    package_url = PackageURL.from_string(purls[0])
+    try:
+        package_url = PackageURL.from_string(purls[0])
+    except ValueError:
+        return ""
+
     package_url_data = package_url.to_dict()
     package_url_data["version"] = package_url.version or component.get("version")
     return PackageURL(**package_url_data).to_string()
@@ -197,12 +201,13 @@ def make_origin_matches(resource, scanoss_matches):
             )
 
 
-def load_scanoss_results(project, scanoss_results):
+def load_scanoss_results(project, results_location):
     """
-    Create OriginMatch records for the ``project`` resources from the
-    ``scanoss_results`` mapping of resource path to SCANOSS matches.
-    Return the number of processed origin matches.
+    Create OriginMatch records for the ``project`` resources from the SCANOSS
+    raw JSON results file at ``results_location``, a mapping of resource path to
+    SCANOSS matches. Return the number of processed origin matches.
     """
+    scanoss_results = json.loads(Path(results_location).read_text())
     resources = project.codebaseresources.filter(path__in=scanoss_results.keys())
     resources_by_path = {resource.path: resource for resource in resources}
 
@@ -221,9 +226,3 @@ def load_scanoss_results(project, scanoss_results):
     ]
     OriginMatch.objects.bulk_create(origin_matches, ignore_conflicts=True)
     return len(origin_matches)
-
-
-def load_scanoss_results_from_file(project, input_location):
-    """Load the SCANOSS raw JSON results file at ``input_location``."""
-    scanoss_results = json.loads(Path(input_location).read_text())
-    return load_scanoss_results(project, scanoss_results)

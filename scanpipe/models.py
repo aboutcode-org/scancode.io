@@ -5052,14 +5052,11 @@ class ScorecardCheck(UUIDPKModel, ScorecardChecksMixin):
 
 
 class OriginMatchQuerySet(ProjectRelatedQuerySet):
-    def for_tool(self, tool):
-        return self.filter(tool=tool)
-
     def exact_matches(self):
-        return self.filter(similarity=100)
+        return self.filter(match_type__in=self.model.EXACT_MATCH_TYPES)
 
     def partial_matches(self):
-        return self.filter(similarity__lt=100)
+        return self.exclude(match_type__in=self.model.EXACT_MATCH_TYPES)
 
 
 class OriginMatch(UUIDPKModel, ProjectRelatedModel, ExtraDataFieldMixin):
@@ -5071,6 +5068,9 @@ class OriginMatch(UUIDPKModel, ProjectRelatedModel, ExtraDataFieldMixin):
         DIRECTORY = "directory"
         APPROXIMATE = "approximate"
         SNIPPET = "snippet"
+
+    # A directory match can be approximate, so only these types are exact.
+    EXACT_MATCH_TYPES = [MatchType.PACKAGE, MatchType.FILE]
 
     resource = models.ForeignKey(
         CodebaseResource,

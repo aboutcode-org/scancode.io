@@ -3084,15 +3084,15 @@ class ScanPipeModelsTest(TestCase):
             tool="matchcode",
             similarity=100,
         )
-        partial_match = OriginMatch.objects.create(
+        snippet_match = OriginMatch.objects.create(
             project=self.project1,
             resource=resource,
             purl="pkg:pypi/six@1.16.0",
             match_type=OriginMatch.MatchType.SNIPPET,
             tool="scanoss",
-            similarity=87,
+            similarity=100,
         )
-        unscored_match = OriginMatch.objects.create(
+        directory_match = OriginMatch.objects.create(
             project=self.project1,
             resource=directory,
             purl="pkg:npm/ms@2.1.3",
@@ -3101,12 +3101,10 @@ class ScanPipeModelsTest(TestCase):
         )
 
         origin_matches = self.project1.originmatchs.order_by("purl")
-        self.assertQuerySetEqual(
-            origin_matches.for_tool("matchcode"), [unscored_match, exact_match]
-        )
-        self.assertQuerySetEqual(origin_matches.for_tool("scanoss"), [partial_match])
         self.assertQuerySetEqual(origin_matches.exact_matches(), [exact_match])
-        self.assertQuerySetEqual(origin_matches.partial_matches(), [partial_match])
+        self.assertQuerySetEqual(
+            origin_matches.partial_matches(), [directory_match, snippet_match]
+        )
 
 
 class ScanPipeModelsTransactionTest(TransactionTestCase):

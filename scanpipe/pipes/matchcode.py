@@ -83,8 +83,6 @@ MATCH_TYPE_BY_STATUS = {
     flag.APPROXIMATE_MATCHED_TO_PURLDB_RESOURCE: OriginMatch.MatchType.APPROXIMATE,
 }
 
-EXACT_MATCH_TYPES = [OriginMatch.MatchType.PACKAGE, OriginMatch.MatchType.FILE]
-
 
 def is_configured():
     """Return True if the required MatchCode.io settings have been set."""
@@ -545,7 +543,7 @@ def make_package_origin_matches(
     resource, match_type, package_uids, package_data_by_uid, tool_version
 ):
     """Yield unsaved OriginMatch instances for the ``resource`` matched packages."""
-    similarity = 100 if match_type in EXACT_MATCH_TYPES else None
+    similarity = 100 if match_type in OriginMatch.EXACT_MATCH_TYPES else None
     seen_purls = set()
 
     for package_uid in package_uids:
