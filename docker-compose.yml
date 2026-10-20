@@ -31,15 +31,57 @@ services:
       timeout: 5s
       retries: 5
 
-  # Add the Docker-in-Docker daemon
+  # Opt-in Docker-in-Docker daemon.
+  # It is not started by default. Enable it with:
+  #     docker compose --profile dind up
+  #
+  # The privileged mode is required by the DinD daemon. The image is
+  # pinned to a specific version to avoid silent upgrades.
+  #
+  # TLS is enabled (DOCKER_TLS_CERTDIR=/certs) so the daemon listens on
+  # port 2376 with mutual TLS instead of port 2375 without encryption.
+  # Client certificates are generated on first start under /certs/client
+  # and shared with the web/worker services through the `dind_certs`
+  # volume. See `dind-certs-perms` below for the non-root readability fix.
   dind:
-    image: docker.io/library/docker:dind
+    profiles:
+      - dind
+    image: docker.io/library/docker:29.8.1-dind
+    hostname: dind
     privileged: true
     environment:
-      - DOCKER_TLS_CERTDIR=
+      - DOCKER_TLS_CERTDIR=/certs
     volumes:
       - dind_data:/var/lib/docker
+      - dind_certs:/certs
       - workspace:/var/scancodeio/workspace/
+      - nix_eval_cache:/nix
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "docker info && test -f /certs/client/ca.pem"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # One-shot helper: the dind daemon writes the client certificates with
+  # mode 0600 owned by root. The ScanCode.io containers run as a non-root
+  # user and cannot read them. This service runs once after
+  # dind is healthy and makes the certs readable.
+  dind-certs-perms:
+    profiles:
+      - dind
+    image: docker.io/library/alpine:3.24.2
+    command:
+      - sh
+      - -c
+      - chmod -R a+rX /certs/client /certs/server
+    volumes:
+      - dind_certs:/certs
+    depends_on:
+      dind:
+        condition: service_healthy
+    restart: "no"
 
   web:
     build: .
@@ -48,9 +90,6 @@ services:
         ./manage.py collectstatic --no-input --verbosity 0 --clear &&
         gunicorn scancodeio.wsgi:application --bind :8000 --timeout 600 \
           --workers ${GUNICORN_WORKERS:-8} --worker-tmp-dir /dev/shm"
-    environment:
-      - DOCKER_HOST=tcp://dind:2375  # Point to the DinD container
-      - SCANCODE_NIXPKGS_CACHE_DIR=/var/scancodeio/workspace/.scancode-nix
     env_file:
       - docker.env
     expose:
@@ -61,23 +100,26 @@ services:
       - workspace:/var/scancodeio/workspace/
       - static:/var/scancodeio/static/
       - healthycode_venv:/opt/healthycode
+      - dind_certs:/certs:ro
     restart: always
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_healthy
+      dind:
+        condition: service_healthy
+        required: false
+      dind-certs-perms:
+        condition: service_completed_successfully
+        required: false
 
   worker:
     build: .
-    # Ensure that potential db migrations run first by waiting until "web" is up
     command: wait-for-it --strict --timeout=600 web:8000 -- sh -c "
         ./manage.py rqworker --worker-class scancodeio.worker.ScanCodeIOWorker
                              --queue-class scancodeio.worker.ScanCodeIOQueue
                              --verbosity 1"
-    environment:
-      - DOCKER_HOST=tcp://dind:2375  # Point to the DinD container
-      - SCANCODE_NIXPKGS_CACHE_DIR=/var/scancodeio/workspace/.scancode-nix
     env_file:
       - docker.env
     volumes:
@@ -85,6 +127,7 @@ services:
       - /etc/scancodeio/:/etc/scancodeio/
       - workspace:/var/scancodeio/workspace/
       - healthycode_venv:/opt/healthycode
+      - dind_certs:/certs:ro
     restart: always
     depends_on:
       db:
@@ -94,7 +137,11 @@ services:
       web:
         condition: service_started
       dind:
-        condition: service_started
+        condition: service_healthy
+        required: false
+      dind-certs-perms:
+        condition: service_completed_successfully
+        required: false
 
   nginx:
     image: docker.io/library/nginx:1.31.4-alpine
@@ -127,10 +174,15 @@ services:
 
 volumes:
   db_data:
+  dind_data:
+  dind_certs:
   redis_data:
   clamav_data:
   static:
   workspace:
   webroot:
-  dind_data:
   healthycode_venv:
+  nix_eval_cache:
+    # Keep this name in sync with the volume name used by
+    # scanpipe/pipes/nix.py
+    name: nix-eval-cache

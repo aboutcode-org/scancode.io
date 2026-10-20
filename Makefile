@@ -32,13 +32,25 @@ run:
 	@echo "-> Run the Docker compose services in dev mode (hot reload on code changes)"
 	${COMPOSE} up
 
+run-dind:
+	@echo "-> Run the Docker compose services with the dind profile (foreground)"
+	${COMPOSE} --profile dind up
+
 start:
 	@echo "-> Start the Docker compose services in background"
 	${COMPOSE} up -d
 
+start-dind:
+	@echo "-> Start the Docker compose services with the dind profile (background)"
+	${COMPOSE} --profile dind up -d
+
 stop:
 	@echo "-> Stop the Docker compose services"
 	${COMPOSE} stop
+
+stop-dind:
+	@echo "-> Stop the Docker compose services (dind profile)"
+	${COMPOSE} --profile dind stop
 
 bash:
 	# Open a bash session in the running web container
@@ -229,4 +241,4 @@ offline-package: docker-images
 	@mkdir -p dist/
 	@tar -cf dist/scancodeio-offline-package-`git describe --tags`.tar build/
 
-.PHONY: virtualenv conf dev envfile install doc8 check valid check-deploy clean migrate lock makemigrations restart-worker postgresdb sqlitedb backupdb run test fasttest regen-fixtures fix docs build build-core build-full bash start shell docker-images offline-package
+.PHONY: virtualenv conf dev envfile install doc8 check valid check-deploy clean migrate lock makemigrations restart-worker postgresdb sqlitedb backupdb run test fasttest regen-fixtures fix docs build build-core build-full bash start shell docker-images offline-package run-dind start-dind stop-dind
