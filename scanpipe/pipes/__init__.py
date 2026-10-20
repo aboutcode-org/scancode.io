@@ -39,6 +39,7 @@ from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredLicense
 from scanpipe.models import DiscoveredPackage
+from scanpipe.models import OriginMatch
 from scanpipe.pipes import scancode
 
 logger = logging.getLogger("scanpipe.pipes")
@@ -577,7 +578,7 @@ def poll_until_success(check, sleep=10, **kwargs):
         time.sleep(sleep)
 
 
-def run_command_safely(command_args):
+def run_command_safely(command_args, env=None):
     """
     Execute the external commands following security best practices.
 
@@ -591,6 +592,8 @@ def run_command_safely(command_args):
     - This does not use the Shell (shell=False) to prevent injection vulnerabilities.
     - The command should be provided as a list of ``command_args`` arguments.
     - Only full paths to executable commands should be provided to avoid any ambiguity.
+    - Secrets go in the optional ``env`` mapping, as the ``command_args`` are
+      included in the error message.
 
     WARNING: If you're incorporating user input into the command, make
     sure to sanitize and validate the input to prevent any malicious commands from
@@ -602,6 +605,7 @@ def run_command_safely(command_args):
         command_args,
         capture_output=True,
         text=True,
+        env=env,
     )
 
     if completed_process.returncode:
@@ -612,3 +616,37 @@ def run_command_safely(command_args):
         raise subprocess.SubprocessError(error_msg)
 
     return completed_process.stdout
+
+
+def create_origin_matches(
+    project, results_by_path, make_origin_matches, batch_size=2000
+):
+    """
+    Create OriginMatch records for the ``project`` resources from the
+    ``results_by_path`` mapping of resource path to origin tool results.
+    The ``make_origin_matches(resource, results)`` function yields the unsaved
+    OriginMatch instances of a resource. Resources are processed by batches of
+    ``batch_size`` paths.
+    Return the number of processed origin matches and the list of paths missing
+    from the project codebase.
+    """
+    paths = iter(results_by_path)
+    origin_match_count = 0
+    missing_paths = []
+
+    while batch_paths := list(islice(paths, batch_size)):
+        resources = project.codebaseresources.filter(path__in=batch_paths)
+        resources_by_path = {resource.path: resource for resource in resources}
+        missing_paths.extend(
+            path for path in batch_paths if path not in resources_by_path
+        )
+
+        origin_matches = [
+            origin_match
+            for path, resource in resources_by_path.items()
+            for origin_match in make_origin_matches(resource, results_by_path[path])
+        ]
+        OriginMatch.objects.bulk_create(origin_matches, ignore_conflicts=True)
+        origin_match_count += len(origin_matches)
+
+    return origin_match_count, missing_paths
