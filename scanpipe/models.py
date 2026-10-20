@@ -42,7 +42,6 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.core.exceptions import ValidationError
 from django.core.serializers.json import DjangoJSONEncoder
 from django.core.validators import EMPTY_VALUES
-from django.core.validators import MaxValueValidator
 from django.db import models
 from django.db import transaction
 from django.db.models import Case
@@ -5059,7 +5058,7 @@ class OriginMatchQuerySet(ProjectRelatedQuerySet):
         return self.exclude(match_type__in=self.model.EXACT_MATCH_TYPES)
 
 
-class OriginMatch(UUIDPKModel, ProjectRelatedModel, ExtraDataFieldMixin):
+class OriginMatch(UUIDPKModel, ProjectRelatedModel, ExtraDataFieldMixin, AdminURLMixin):
     """A candidate origin package for a resource, as reported by an origin tool."""
 
     class MatchType(models.TextChoices):
@@ -5117,9 +5116,8 @@ class OriginMatch(UUIDPKModel, ProjectRelatedModel, ExtraDataFieldMixin):
     similarity = models.PositiveSmallIntegerField(
         null=True,
         blank=True,
-        validators=[MaxValueValidator(100)],
         help_text=_(
-            "Similarity between the resource and the origin file, from 0 to 100. "
+            "Percentage of the resource matched by the origin file, from 0 to 100. "
             "Empty when the tool does not report it."
         ),
     )
@@ -5127,7 +5125,6 @@ class OriginMatch(UUIDPKModel, ProjectRelatedModel, ExtraDataFieldMixin):
     objects = OriginMatchQuerySet.as_manager()
 
     class Meta:
-        ordering = ["resource__path", "-similarity", "purl"]
         indexes = [
             models.Index(fields=["purl"]),
             models.Index(fields=["match_type"]),
@@ -5138,6 +5135,10 @@ class OriginMatch(UUIDPKModel, ProjectRelatedModel, ExtraDataFieldMixin):
             models.UniqueConstraint(
                 fields=["resource", "purl", "match_type", "tool", "origin_path"],
                 name="%(app_label)s_%(class)s_unique_origin_match",
+            ),
+            models.CheckConstraint(
+                condition=Q(similarity__lte=100),
+                name="%(app_label)s_%(class)s_similarity_max_100",
             ),
         ]
 

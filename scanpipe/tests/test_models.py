@@ -3474,3 +3474,17 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
         other_tool_data = {**origin_match_data, "tool": "scanoss"}
         OriginMatch.objects.create(**other_tool_data)
         self.assertEqual(2, resource.origin_matches.count())
+
+    def test_scanpipe_origin_match_model_similarity_max_100(self):
+        project1 = make_project("Analysis")
+        resource = make_resource_file(project1, path="six.py")
+
+        with self.assertRaises(IntegrityError):
+            OriginMatch.objects.create(
+                project=project1,
+                resource=resource,
+                purl="pkg:pypi/six@1.17.0",
+                match_type=OriginMatch.MatchType.SNIPPET,
+                tool="scanoss",
+                similarity=101,
+            )
