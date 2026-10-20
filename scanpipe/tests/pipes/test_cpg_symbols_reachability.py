@@ -126,6 +126,7 @@ class CPGQueryReachabilityPipesTest(TestCase):
             file_path=file_path,
         )
 
+    @patch("scanpipe.pipes.cpg.check_symbol_reachability")
     @patch("neo4j.GraphDatabase.driver")
     @patch("scanpipe.pipelines.cpg_symbols_reachability.run_command_safely")
     @patch(
@@ -142,6 +143,7 @@ class CPGQueryReachabilityPipesTest(TestCase):
         mock_repo,
         mock_run_command,
         mock_driver,
+        mock_check_reachability,
     ):
         python_dir = self.project1.codebase_path / "python"
         shutil.copytree(TEST_DATA_PYTHON, python_dir)
@@ -153,36 +155,25 @@ class CPGQueryReachabilityPipesTest(TestCase):
                 codebase_resource.save()
         resource = self.project1.codebaseresources.get(path="python/main/app.py")
 
-        patchers = [
-            patch(
-                "scanpipe.pipes.cpg.fetch_declarations",
-                lambda session: [
-                    {
-                        "node_id": "build_file_path",
-                        "labels": ["Function"],
-                        "name": "app.serve_report.build_file_path",
-                        "full_name": "app.serve_report.build_file_path",
-                        "file": "file:/project/python/main/app.py",
-                        "name_delimiter": ".",
-                    }
-                ],
-            ),
-            patch(
-                "scanpipe.pipes.cpg.fetch_entry_point_ids",
-                lambda session: ["handle_request"],
-            ),
-            patch.object(
-                cpg.ResourcePatchMatcher,
-                "reachable_path",
-                lambda matcher, declaration: [
-                    "app.handle_request",
-                    "app.serve_report.build_file_path",
-                ],
-            ),
-        ]
-        for patcher in patchers:
-            patcher.start()
-            self.addCleanup(patcher.stop)
+        def check_reachability(session, target_name, file_path=None):
+            if "build_file_path" in target_name:
+                return {
+                    "symbol_name": target_name,
+                    "is_defined": True,
+                    "is_reachable": True,
+                    "eog_path": [
+                        "app.handle_request",
+                        "app.serve_report.build_file_path",
+                    ],
+                }
+            return {
+                "symbol_name": target_name,
+                "is_defined": False,
+                "is_reachable": False,
+                "eog_path": [],
+            }
+
+        mock_check_reachability.side_effect = check_reachability
 
         vulnerable, fixed, language = self.get_patch_symbols(
             TEST_DATA_PYTHON, "vuln-app.py", "fixed-app.py", "app.py"
@@ -220,6 +211,26 @@ class CPGQueryReachabilityPipesTest(TestCase):
             [detail["symbol_name"] for detail in results[0]["tool_details"]],
         )
 
+        build_file_path_calls = [
+            call_args
+            for call_args in mock_check_reachability.call_args_list
+            if "build_file_path" in call_args.args[1]
+        ]
+        self.assertEqual(1, len(build_file_path_calls))
+        self.assertEqual("app.py", build_file_path_calls[0].args[2])
+
+        symbol_details = [
+            detail
+            for detail in results[0]["tool_details"]
+            if detail["symbol_name"] == "serve_report.build_file_path"
+        ]
+        self.assertEqual(1, len(symbol_details))
+        self.assertEqual(
+            ["app.handle_request", "app.serve_report.build_file_path"],
+            symbol_details[0]["eog_path"],
+        )
+
+    @patch("scanpipe.pipes.cpg.check_symbol_reachability")
     @patch("neo4j.GraphDatabase.driver")
     @patch("scanpipe.pipelines.cpg_symbols_reachability.run_command_safely")
     @patch(
@@ -236,6 +247,7 @@ class CPGQueryReachabilityPipesTest(TestCase):
         mock_repo,
         mock_run_command,
         mock_driver,
+        mock_check_reachability,
     ):
         java_dir = self.project1.codebase_path / "java"
         shutil.copytree(TEST_DATA_JAVA, java_dir)
@@ -246,33 +258,23 @@ class CPGQueryReachabilityPipesTest(TestCase):
                 codebase_resource.programming_language = "Java"
                 codebase_resource.save()
         resource = self.project1.codebaseresources.get(path="java/main/app.java")
-        patchers = [
-            patch(
-                "scanpipe.pipes.cpg.fetch_declarations",
-                lambda session: [
-                    {
-                        "node_id": "build_file_path",
-                        "labels": ["Method"],
-                        "name": "App.buildFilePath",
-                        "full_name": "App.buildFilePath",
-                        "file": "file:/project/java/main/app.java",
-                        "name_delimiter": ".",
-                    }
-                ],
-            ),
-            patch(
-                "scanpipe.pipes.cpg.fetch_entry_point_ids",
-                lambda session: ["serve_report"],
-            ),
-            patch.object(
-                cpg.ResourcePatchMatcher,
-                "reachable_path",
-                lambda matcher, declaration: ["App.serveReport", "App.buildFilePath"],
-            ),
-        ]
-        for patcher in patchers:
-            patcher.start()
-            self.addCleanup(patcher.stop)
+
+        def check_reachability(session, target_name, file_path=None):
+            if "buildFilePath" in target_name:
+                return {
+                    "symbol_name": target_name,
+                    "is_defined": True,
+                    "is_reachable": True,
+                    "eog_path": ["App.serveReport", "App.buildFilePath"],
+                }
+            return {
+                "symbol_name": target_name,
+                "is_defined": False,
+                "is_reachable": False,
+                "eog_path": [],
+            }
+
+        mock_check_reachability.side_effect = check_reachability
 
         vulnerable, fixed, language = self.get_patch_symbols(
             TEST_DATA_JAVA, "vuln-app.java", "fixed-app.java", "app.java"
@@ -306,3 +308,22 @@ class CPGQueryReachabilityPipesTest(TestCase):
         self.assertEqual(results[0]["is_reachable"], ReachabilityStatus.REACHABLE.value)
         self.assertEqual(results[0]["advisory_uids"], ["pypi/app/JAVA-0001"])
         self.assertIn("app.java::App.buildFilePath", results[0]["vulnerable_symbols"])
+
+        build_file_path_calls = [
+            call_args
+            for call_args in mock_check_reachability.call_args_list
+            if "buildFilePath" in call_args.args[1]
+        ]
+        self.assertEqual(1, len(build_file_path_calls))
+        self.assertEqual("app.java", build_file_path_calls[0].args[2])
+
+        symbol_details = [
+            detail
+            for detail in results[0]["tool_details"]
+            if detail["symbol_name"] == "App.buildFilePath"
+        ]
+        self.assertEqual(1, len(symbol_details))
+        self.assertEqual(
+            ["App.serveReport", "App.buildFilePath"],
+            symbol_details[0]["eog_path"],
+        )
