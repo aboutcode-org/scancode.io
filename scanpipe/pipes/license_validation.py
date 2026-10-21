@@ -122,9 +122,6 @@ def contains_ignore_pattern(resource_path, ignore_patterns):
 
 def filter_ignored_licenses(license_expression, licensing):
     """Filter out ignored licenses from a license expression."""
-    if license_expression is None:
-        return None
-
     if isinstance(license_expression, licensing.Symbol):
         if (
             hasattr(license_expression, "key")
