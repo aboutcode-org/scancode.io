@@ -2189,7 +2189,8 @@ class ScanPipeD2DPipesTest(TestCase):
             file_type="ELF 64-bit LSB executable",
         )
 
-        d2d.map_elfs_with_dwarf_paths(self.project1)
+        buffer = io.StringIO()
+        d2d.map_elfs_with_dwarf_paths(self.project1, logger=buffer.write)
 
         relation = self.project1.codebaserelations.get(
             from_resource=from_resource,
@@ -2198,8 +2199,9 @@ class ScanPipeD2DPipesTest(TestCase):
         self.assertEqual("dwarf_included_paths", relation.map_type)
         self.assertEqual(
             "include/openssl/asn1.h",
-            relation.extra_data.get("dwarf_included_paths"),
+            relation.extra_data["dwarf_included_paths"],
         )
+        self.assertIn("Created 1 mappings using", buffer.getvalue())
 
     @skipIf(sys.platform == "darwin", "Test is failing on macOS")
     def test_scanpipe_pipes_d2d_map_macho_symbols(self):
