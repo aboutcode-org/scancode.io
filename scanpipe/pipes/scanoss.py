@@ -32,6 +32,7 @@ from packageurl import PackageURL
 
 from scanpipe.models import OriginMatch
 from scanpipe.pipes import create_origin_matches
+from scanpipe.pipes import make_origin_match
 from scanpipe.pipes import run_command_safely
 
 TOOL_NAME = "scanoss"
@@ -189,13 +190,12 @@ def make_origin_matches(resource, scanoss_matches):
             if not purl:
                 continue
 
-            yield OriginMatch(
-                project=resource.project,
-                resource=resource,
+            yield make_origin_match(
+                resource,
+                TOOL_NAME,
+                tool_version,
                 purl=purl,
                 match_type=match_type,
-                tool=TOOL_NAME,
-                tool_version=tool_version,
                 origin_path=component.get("file", ""),
                 line_ranges=line_ranges,
                 similarity=similarity,

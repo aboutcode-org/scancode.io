@@ -512,7 +512,7 @@ class MatchCodePipesTest(TestCase):
         self.assertTrue(matchcode.is_legal_file_path("docs/mit.license"))
         self.assertFalse(matchcode.is_legal_file_path("package/debounce.js"))
 
-    def test_scanpipe_pipes_matchcode_get_package_extra_data(self):
+    def test_scanpipe_pipes_matchcode_get_origin_match_extra_data(self):
         package_data = {
             "purl": "pkg:npm/ms@2.1.3",
             "package_uid": "pkg:npm/ms@2.1.3?uuid=1",
@@ -526,7 +526,7 @@ class MatchCodePipesTest(TestCase):
             "declared_license_expression": "mit",
             "download_url": "https://registry.npmjs.org/ms/-/ms-2.1.3.tgz",
         }
-        self.assertEqual(expected, matchcode.get_package_extra_data(package_data))
+        self.assertEqual(expected, matchcode.get_origin_match_extra_data(package_data))
 
     def test_scanpipe_pipes_matchcode_make_snippet_origin_matches(self):
         resource = self.make_scheduler_resource("scheduler.js")

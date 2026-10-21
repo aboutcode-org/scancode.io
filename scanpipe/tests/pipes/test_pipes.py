@@ -122,6 +122,26 @@ class ScanPipePipesTest(TestCase):
             six_resource.origin_matches.filter(pk=other_tool_match.pk).exists()
         )
 
+    def test_scanpipe_pipes_make_origin_match(self):
+        project1 = make_project()
+        resource = make_resource_file(project1, "six.py")
+
+        origin_match = pipes.make_origin_match(
+            resource,
+            "scanoss",
+            "5.4.27",
+            purl="pkg:pypi/six@1.17.0",
+            match_type=OriginMatch.MatchType.FILE,
+            similarity=100,
+        )
+        self.assertEqual(0, OriginMatch.objects.count())
+        self.assertEqual(project1, origin_match.project)
+        self.assertEqual(resource, origin_match.resource)
+        self.assertEqual("scanoss", origin_match.tool)
+        self.assertEqual("5.4.27", origin_match.tool_version)
+        self.assertEqual("pkg:pypi/six@1.17.0", origin_match.purl)
+        self.assertEqual(100, origin_match.similarity)
+
     def test_scanpipe_pipes_create_origin_matches_is_atomic(self):
         project1 = make_project()
         six_resource = make_resource_file(project1, "six.py")

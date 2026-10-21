@@ -42,6 +42,7 @@ from scanpipe.models import OriginMatch
 from scanpipe.pipes import codebase
 from scanpipe.pipes import create_origin_matches
 from scanpipe.pipes import flag
+from scanpipe.pipes import make_origin_match
 from scanpipe.pipes import poll_until_success
 from scanpipe.pipes.output import to_json
 from scanpipe.pipes.scancode import _scan_resource
@@ -506,7 +507,7 @@ def is_legal_file_path(path):
     )
 
 
-def get_package_extra_data(package_data):
+def get_origin_match_extra_data(package_data):
     """Return the MatchCode package data kept as OriginMatch extra data."""
     return {
         "package_uid": package_data.get("package_uid", ""),
@@ -544,16 +545,15 @@ def make_snippet_origin_matches(
         ]
 
         purl = matched_snippet["package"]
-        extra_data = get_package_extra_data(package_data_by_purl.get(purl, {}))
+        extra_data = get_origin_match_extra_data(package_data_by_purl.get(purl, {}))
         extra_data["snippet_similarity"] = matched_snippet["similarity"]
 
-        yield OriginMatch(
-            project=resource.project,
-            resource=resource,
+        yield make_origin_match(
+            resource,
+            TOOL_NAME,
+            tool_version,
             purl=purl,
             match_type=OriginMatch.MatchType.SNIPPET,
-            tool=TOOL_NAME,
-            tool_version=tool_version,
             origin_path=origin_path,
             line_ranges=line_ranges,
             similarity=get_line_coverage(snippet_line_ranges, line_by_pos),
@@ -575,15 +575,14 @@ def make_package_origin_matches(
             continue
         seen_purls.add(purl)
 
-        yield OriginMatch(
-            project=resource.project,
-            resource=resource,
+        yield make_origin_match(
+            resource,
+            TOOL_NAME,
+            tool_version,
             purl=purl,
             match_type=match_type,
-            tool=TOOL_NAME,
-            tool_version=tool_version,
             similarity=similarity,
-            extra_data=get_package_extra_data(package_data),
+            extra_data=get_origin_match_extra_data(package_data),
         )
 
 

@@ -619,6 +619,17 @@ def run_command_safely(command_args, env=None):
     return completed_process.stdout
 
 
+def make_origin_match(resource, tool, tool_version, **origin_match_data):
+    """Return an unsaved OriginMatch of the ``resource`` reported by ``tool``."""
+    return OriginMatch(
+        project=resource.project,
+        resource=resource,
+        tool=tool,
+        tool_version=tool_version,
+        **origin_match_data,
+    )
+
+
 def create_origin_matches(
     project, tool, results_by_path, make_origin_matches, batch_size=2000
 ):
