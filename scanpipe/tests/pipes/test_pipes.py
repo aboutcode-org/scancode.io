@@ -22,6 +22,7 @@
 
 import datetime
 import io
+import subprocess
 from pathlib import Path
 from unittest import mock
 
@@ -32,6 +33,7 @@ from aboutcode.pipeline import LoopProgress
 from scanpipe import pipes
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
+from scanpipe.models import OriginMatch
 from scanpipe.models import Project
 from scanpipe.pipes import flag
 from scanpipe.pipes import get_resource_diff_ratio
@@ -64,6 +66,50 @@ class ScanPipePipesTest(TestCase):
         for path in input_paths:
             self.assertEqual(expected, pipes.strip_root(path))
             self.assertEqual(expected, pipes.strip_root(Path(path)))
+
+    def test_scanpipe_pipes_run_command_safely_env(self):
+        output = pipes.run_command_safely(
+            ["/usr/bin/env"], env={"ORIGIN_TOOL_API_KEY": "secret-value"}
+        )
+        self.assertEqual("ORIGIN_TOOL_API_KEY=secret-value\n", output)
+
+        with self.assertRaises(subprocess.SubprocessError) as context:
+            pipes.run_command_safely(
+                ["/usr/bin/env", "missing-command"],
+                env={"ORIGIN_TOOL_API_KEY": "secret-value"},
+            )
+        self.assertIn("missing-command", str(context.exception))
+        self.assertNotIn("secret-value", str(context.exception))
+
+    def test_scanpipe_pipes_create_origin_matches(self):
+        project1 = make_project()
+        six_resource = make_resource_file(project1, "six.py")
+        ini_resource = make_resource_file(project1, "ini.c")
+        results_by_path = {
+            "six.py": ["pkg:pypi/six@1.17.0"],
+            "missing.py": ["pkg:pypi/missing@1.0"],
+            "ini.c": ["pkg:github/benhoyt/inih@r62"],
+        }
+
+        def make_origin_matches(resource, purls):
+            for purl in purls:
+                yield OriginMatch(
+                    project=project1,
+                    resource=resource,
+                    purl=purl,
+                    match_type=OriginMatch.MatchType.FILE,
+                    tool="test",
+                )
+
+        origin_match_count, missing_paths = pipes.create_origin_matches(
+            project1, results_by_path, make_origin_matches, batch_size=2
+        )
+        self.assertEqual(2, origin_match_count)
+        self.assertEqual(["missing.py"], missing_paths)
+        self.assertEqual("pkg:pypi/six@1.17.0", six_resource.origin_matches.get().purl)
+        self.assertEqual(
+            "pkg:github/benhoyt/inih@r62", ini_resource.origin_matches.get().purl
+        )
 
     @mock.patch("scanpipe.pipes.datetime", mocked_now)
     def test_scanpipe_pipes_filename_now(self):
