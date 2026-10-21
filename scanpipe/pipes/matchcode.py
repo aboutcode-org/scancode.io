@@ -448,8 +448,13 @@ def match_codebase(project):
     """
     Fingerprint the ``project`` codebase, send it to MatchCode.io, wait for the
     matching run to complete, and return the match results.
+    The file fingerprints of a previous run are kept and not computed again, as
+    computing them is costly and the files do not change within a project.
     """
-    fingerprint_codebase_resources(project)
+    text_files = project.codebaseresources.filter(is_text=True)
+    fingerprint_codebase_resources(
+        project, resource_qs=text_files.without_file_fingerprints()
+    )
     fingerprint_codebase_directories(project)
     match_url, run_url = send_project_json_to_matchcode(project)
     poll_run_url_status(run_url)

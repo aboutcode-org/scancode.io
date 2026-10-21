@@ -468,10 +468,14 @@ class MatchCodePipesTest(TestCase):
         mock_send_project_json.return_value = ("match_url", "run_url")
         mock_poll_run_url_status.return_value = True
         mock_get_match_results.return_value = {"files": []}
+        make_resource_file(self.project1, "fingerprinted.js", extra_data={"halo1": "0"})
+        new_file = make_resource_file(self.project1, "new.js")
 
         match_results = matchcode.match_codebase(self.project1)
         self.assertEqual({"files": []}, match_results)
-        mock_fingerprint_resources.assert_called_once_with(self.project1)
+        fingerprint_call = mock_fingerprint_resources.call_args
+        self.assertEqual((self.project1,), fingerprint_call.args)
+        self.assertQuerySetEqual(fingerprint_call.kwargs["resource_qs"], [new_file])
         mock_fingerprint_directories.assert_called_once_with(self.project1)
         mock_send_project_json.assert_called_once_with(self.project1)
         mock_poll_run_url_status.assert_called_once_with("run_url")

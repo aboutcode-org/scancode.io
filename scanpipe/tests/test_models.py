@@ -2850,6 +2850,15 @@ class ScanPipeModelsTest(TestCase):
         results = self.project1.codebaseresources.has_directory_content_fingerprint()
         self.assertQuerySetEqual(expected, results, ordered=False)
 
+    def test_scanpipe_codebase_resource_queryset_without_file_fingerprints(self):
+        make_resource_file(
+            self.project1, path="fingerprinted.js", extra_data={"halo1": "0"}
+        )
+        new_file = make_resource_file(self.project1, path="new.js")
+
+        results = self.project1.codebaseresources.without_file_fingerprints()
+        self.assertQuerySetEqual(results, [new_file])
+
     def test_scanpipe_codebase_resource_queryset_elfs(self):
         project = make_project("Test")
         resource_starting_with_elf_and_executable_in_file_type = CodebaseResource(
