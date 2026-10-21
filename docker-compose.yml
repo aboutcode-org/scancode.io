@@ -144,7 +144,7 @@ services:
         required: false
 
   nginx:
-    image: docker.io/library/nginx:1.31.6-alpine
+    image: docker.io/library/nginx:1.31.7-alpine
     ports:
       - "${NGINX_PUBLISHED_HTTP_PORT:-80}:80"
       - "${NGINX_PUBLISHED_HTTPS_PORT:-443}:443"
