@@ -225,6 +225,86 @@ class ScanPipeLicenseValidationTest(TestCase):
                 else:
                     self.assertEqual(str(result), expected)
 
+    @mock.patch(
+        "scanpipe.pipes.license_validation.match_is_license_text",
+        return_value=False,
+    )
+    def test_scanpipe_license_validation_preserves_existing_resource_status(
+        self, mock_match_is_license_text
+    ):
+        package = make_package(
+            self.project,
+            "pkg:pypi/test@1.0",
+            declared_license_expression="mit",
+            datafile_paths=["src/main.py"],
+        )
+        resource = make_resource_file(
+            self.project,
+            path="src/main.py",
+            detected_license_expression="gpl-3.0",
+            status=flag.REQUIRES_REVIEW,
+            license_detections=[
+                {
+                    "license_expression": "gpl-3.0",
+                    "matches": [
+                        {
+                            "license_expression": "gpl-3.0",
+                            "rule_identifier": "gpl-3.0.LICENSE",
+                        }
+                    ],
+                }
+            ],
+        )
+        resource.update(tag="from")
+        package.add_resources([resource])
+
+        license_validation.validate_package_license_integrity(self.project)
+
+        package.refresh_from_db()
+        resource.refresh_from_db()
+
+        self.assertTrue(package.has_license_issue)
+        self.assertEqual(resource.status, flag.REQUIRES_REVIEW)
+        # Mismatch info still recorded on the resource.
+        self.assertIn("issues", resource.extra_data)
+
+    @mock.patch(
+        "scanpipe.pipes.license_validation.match_is_license_text",
+        return_value=False,
+    )
+    def test_scanpipe_license_validation_missing_datafile_does_not_crash(
+        self, mock_match_is_license_text
+    ):
+        package = make_package(
+            self.project,
+            "pkg:pypi/test@1.0",
+            declared_license_expression="mit",
+            datafile_paths=["src/main.py", "src/does-not-exist.py"],
+        )
+        resource = make_resource_file(
+            self.project,
+            path="src/main.py",
+            detected_license_expression="gpl-3.0",
+            license_detections=[
+                {
+                    "license_expression": "gpl-3.0",
+                    "matches": [
+                        {
+                            "license_expression": "gpl-3.0",
+                            "rule_identifier": "gpl-3.0.LICENSE",
+                        }
+                    ],
+                }
+            ],
+        )
+        resource.update(tag="from")
+        package.add_resources([resource])
+
+        license_validation.validate_package_license_integrity(self.project)
+
+        package.refresh_from_db()
+        self.assertTrue(package.has_license_issue)
+
     def test_scanpipe_license_validation_handle_operator_expression_passthrough(self):
         """With no licenses filtered, the operator expression is preserved."""
         for operator, expression in [

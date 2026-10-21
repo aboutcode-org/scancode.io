@@ -122,13 +122,23 @@ def _clear_package_issues(package):
 
 
 def _flag_datafiles_with_issue(project, package, issue):
-    """Flag the datafile resources of ``package`` with the given ``issue``."""
-    for datafile_path in package.datafile_paths:
-        if datafile_path.startswith("https://"):
-            continue
-        data_path = project.codebaseresources.get(path=datafile_path)
-        data_path.update(status=flag.LICENSE_MISMATCH)
-        data_path.update_extra_data({"issues": [issue]})
+    """
+    Attach the license mismatch ``issue`` to the package's datafile resources
+    without discarding any status set by an earlier pipeline step.
+    """
+    local_paths = [
+        path for path in package.datafile_paths if not path.startswith("https://")
+    ]
+    if not local_paths:
+        return
+
+    for resource in project.codebaseresources.filter(path__in=local_paths):
+        update_fields = {
+            "extra_data": {**resource.extra_data, "issues": [issue]},
+        }
+        if not resource.status:
+            update_fields["status"] = flag.LICENSE_MISMATCH
+        resource.update(**update_fields)
 
 
 def filter_ignored_licenses(license_expression, licensing):
