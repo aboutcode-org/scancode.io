@@ -211,7 +211,7 @@ def load_scanoss_results(project, results_location):
     """
     scanoss_results = json.loads(Path(results_location).read_text())
     origin_match_count, missing_paths = create_origin_matches(
-        project, scanoss_results, make_origin_matches
+        project, TOOL_NAME, scanoss_results, make_origin_matches
     )
 
     if missing_paths:

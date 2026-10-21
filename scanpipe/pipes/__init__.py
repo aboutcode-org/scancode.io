@@ -619,17 +619,21 @@ def run_command_safely(command_args, env=None):
 
 
 def create_origin_matches(
-    project, results_by_path, make_origin_matches, batch_size=2000
+    project, tool, results_by_path, make_origin_matches, batch_size=2000
 ):
     """
     Create OriginMatch records for the ``project`` resources from the
-    ``results_by_path`` mapping of resource path to origin tool results.
+    ``results_by_path`` mapping of resource path to ``tool`` results.
     The ``make_origin_matches(resource, results)`` function yields the unsaved
     OriginMatch instances of a resource. Resources are processed by batches of
     ``batch_size`` paths.
+    The previous origin matches of ``tool`` are replaced, so a candidate that the
+    tool does not report anymore is not kept.
     Return the number of processed origin matches and the list of paths missing
     from the project codebase.
     """
+    project.originmatchs.filter(tool=tool).delete()
+
     paths = iter(results_by_path)
     origin_match_count = 0
     missing_paths = []

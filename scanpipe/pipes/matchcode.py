@@ -638,6 +638,6 @@ def load_matchcode_results(project, match_results):
     )
 
     origin_match_count, _ = create_origin_matches(
-        project, results_by_path, make_matchcode_origin_matches
+        project, TOOL_NAME, results_by_path, make_matchcode_origin_matches
     )
     return origin_match_count

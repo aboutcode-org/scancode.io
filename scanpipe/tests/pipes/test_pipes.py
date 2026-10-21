@@ -91,24 +91,35 @@ class ScanPipePipesTest(TestCase):
             "ini.c": ["pkg:github/benhoyt/inih@r62"],
         }
 
-        def make_origin_matches(resource, purls):
+        def make_origin_matches(resource, purls, tool="test"):
             for purl in purls:
                 yield OriginMatch(
                     project=project1,
                     resource=resource,
                     purl=purl,
                     match_type=OriginMatch.MatchType.FILE,
-                    tool="test",
+                    tool=tool,
                 )
 
+        stale_match = next(make_origin_matches(six_resource, ["pkg:pypi/six@1.16.0"]))
+        stale_match.save()
+        other_tool_match = next(
+            make_origin_matches(six_resource, ["pkg:pypi/six@1.16.0"], tool="other")
+        )
+        other_tool_match.save()
+
         origin_match_count, missing_paths = pipes.create_origin_matches(
-            project1, results_by_path, make_origin_matches, batch_size=2
+            project1, "test", results_by_path, make_origin_matches, batch_size=2
         )
         self.assertEqual(2, origin_match_count)
         self.assertEqual(["missing.py"], missing_paths)
-        self.assertEqual("pkg:pypi/six@1.17.0", six_resource.origin_matches.get().purl)
+        six_test_match = six_resource.origin_matches.get(tool="test")
+        self.assertEqual("pkg:pypi/six@1.17.0", six_test_match.purl)
         self.assertEqual(
             "pkg:github/benhoyt/inih@r62", ini_resource.origin_matches.get().purl
+        )
+        self.assertTrue(
+            six_resource.origin_matches.filter(pk=other_tool_match.pk).exists()
         )
 
     @mock.patch("scanpipe.pipes.datetime", mocked_now)
