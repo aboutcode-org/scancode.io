@@ -2073,9 +2073,17 @@ def map_elfs_with_dwarf_paths(project, logger=None):
             f"with {from_resources.count():,d} from/ resources."
         )
 
-    from_resources_index = pathmap.build_index(
-        from_resources.values_list("id", "path"), with_subpaths=True
-    )
+    # Build the path index, adding virtual aliases for .in template files
+    from_paths = []
+    for res_id, path in from_resources.values_list("id", "path"):
+        from_paths.append((res_id, path))
+        # If the source file is a template ending in '.in', also index its
+        # target name
+        if path.endswith(".in"):
+            target_path = path.removesuffix(".in")
+            from_paths.append((res_id, target_path))
+
+    from_resources_index = pathmap.build_index(from_paths, with_subpaths=True)
 
     if logger:
         logger("Done building from/ resources index.")

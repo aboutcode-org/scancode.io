@@ -2169,6 +2169,38 @@ class ScanPipeD2DPipesTest(TestCase):
         )
 
     @skipIf(sys.platform == "darwin", "Test is failing on macOS")
+    @mock.patch("scanpipe.pipes.d2d.get_elf_file_dwarf_paths")
+    def test_scanpipe_pipes_d2d_map_elf_symbols_to_in_templates(self, mock_get_dwarf_paths):
+        mock_get_dwarf_paths.return_value = {
+            "dwarf_included_paths": ["include/openssl/asn1.h"]
+        }
+
+        from_resource = make_resource_file(
+            self.project1,
+            path="from/include/openssl/asn1.h.in",
+        )
+
+        to_resource = make_resource_file(
+            self.project1,
+            path="to/some_binary.elf",
+            is_binary=True,
+            file_type="ELF 64-bit LSB executable",
+        )
+
+        d2d.map_elfs_with_dwarf_paths(self.project1)
+
+        relation = self.project1.codebaserelations.get(
+            from_resource=from_resource,
+            to_resource=to_resource,
+        )
+        self.assertEqual("dwarf_included_paths", relation.map_type)
+        self.assertEqual(
+            "include/openssl/asn1.h",
+            relation.extra_data.get("dwarf_included_paths"),
+        )
+
+
+    @skipIf(sys.platform == "darwin", "Test is failing on macOS")
     def test_scanpipe_pipes_d2d_map_macho_symbols(self):
         input_dir = self.project1.input_path
         input_resources = [
