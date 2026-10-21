@@ -63,7 +63,6 @@ from aboutcode.api_auth.views import BaseGenerateAPIKeyView
 from aboutcode.api_auth.views import BaseRevokeAPIKeyView
 from django_filters.views import FilterView
 from django_htmx.http import HttpResponseClientRedirect
-from licensedcode.spans import Span
 from packageurl.contrib.django.models import PACKAGE_URL_FIELDS
 
 from scancodeio.auth import ConditionalLoginRequired
@@ -103,6 +102,7 @@ from scanpipe.models import RunInProgressError
 from scanpipe.pipes import compliance
 from scanpipe.pipes import count_group_by
 from scanpipe.pipes import filename_now
+from scanpipe.pipes import matchcode
 from scanpipe.pipes import output
 from scanpipe.pipes import purldb
 from scanpipe.settings import scanpipe_settings
@@ -2160,6 +2160,9 @@ class CodebaseResourceDetailsView(
         if not matched_snippets:
             return []
 
+        # line_by_pos is stored as JSON and keys in JSON are always strings
+        line_by_pos = {int(position): line for position, line in line_by_pos.items()}
+
         snippet_annotations = []
         for snippet in matched_snippets:
             package = snippet.get("package", "")
@@ -2169,14 +2172,14 @@ class CodebaseResourceDetailsView(
                 f"package: {package}\nresource: {resource}\nsimilarity: {similarity}\n"
             )
 
-            # convert qspan from list of ints to Spans
-            qspan = Span(snippet["match_detections"])
-            for span in qspan.subspans():
-                # line_by_pos is stored as JSON and keys in JSON are always strings
+            line_ranges = matchcode.get_snippet_line_ranges(
+                snippet["match_detections"], line_by_pos
+            )
+            for start_line, end_line in line_ranges:
                 snippet_annotations.append(
                     {
-                        "start_line": line_by_pos[str(span.start)],
-                        "end_line": line_by_pos[str(span.end)],
+                        "start_line": start_line,
+                        "end_line": end_line,
                         "text": text,
                     }
                 )
