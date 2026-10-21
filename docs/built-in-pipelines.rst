@@ -140,6 +140,20 @@ Enrich With PurlDB (addon)
     :members:
     :member-order: bysource
 
+.. _pipeline_find_origins:
+
+Find Origins (addon)
+--------------------
+.. warning::
+    This pipeline requires access to at least one origin detection tool.
+    Refer to :ref:`scancodeio_settings_matchcodeio` and
+    :ref:`scancodeio_settings_scanoss` to configure access to MatchCode.io and
+    SCANOSS in your ScanCode.io instance.
+
+.. autoclass:: scanpipe.pipelines.find_origins.FindOrigins()
+    :members:
+    :member-order: bysource
+
 .. _pipeline_find_vulnerabilities:
 
 Find Vulnerabilities (addon)

@@ -2457,6 +2457,10 @@ class CodebaseResourceQuerySet(ComplianceAlertQuerySetMixin, ProjectRelatedQuery
             and ~Q(extra_data__directory_content__in=IGNORED_DIRECTORY_FINGERPRINTS)
         )
 
+    def without_file_fingerprints(self):
+        """Resources that do not have the `halo1` file fingerprint in `extra_data`."""
+        return self.exclude(extra_data__has_key="halo1")
+
     def elfs(self):
         """
         ELF executable and shared object Resources.

@@ -478,6 +478,36 @@ API key using ``MATCHCODEIO_API_KEY``::
 
     MATCHCODEIO_API_KEY=insert_your_api_key_here
 
+.. _scancodeio_settings_scanoss:
+
+SCANOSS
+^^^^^^^
+
+`SCANOSS <https://www.scanoss.com/>`_ identifies the origin of files and code
+snippets. You can use the free public service, a premium service, or your own
+instance.
+
+To configure your local environment, set the ``SCANOSS_URL`` in your ``.env``
+file::
+
+    SCANOSS_URL=https://api.osskb.org
+
+If your SCANOSS service requires authentication, you can provide the API key
+using ``SCANOSS_API_KEY``::
+
+    SCANOSS_API_KEY=insert_your_api_key_here
+
+The latest version of the SCANOSS client is used by default. You can pin a
+version using ``SCANOSS_PY_VERSION``::
+
+    SCANOSS_PY_VERSION=1.54.2
+
+.. note::
+    The SCANOSS client is installed in a temporary environment for each scan,
+    using the ``uvx`` executable, which requires access to PyPI.
+    Only the file paths, checksums, sizes, and fingerprints are sent to the
+    SCANOSS service, not the file contents.
+
 .. _scancodeio_settings_federatedcode:
 
 FEDERATEDCODE
