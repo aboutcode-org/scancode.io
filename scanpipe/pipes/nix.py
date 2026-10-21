@@ -33,6 +33,7 @@ import time
 import uuid
 from collections import namedtuple
 from pathlib import Path
+from urllib.parse import urlencode
 
 import requests
 from fetchcode import fetch_json_response
@@ -1143,7 +1144,7 @@ def get_nix_store_path(data, name, version, system, commit_hash, user_output):
 
     if not path:
         if not commit_hash:
-            raise Exception(
+            raise ValueError(
                 "Please provide a 'commit' qualifier in the PURL "
                 "for Nix to determine the download URL or build it locally."
             )
@@ -1158,12 +1159,8 @@ def get_commit_hash_nix_store_path(data, system, output, version, commit_hash=""
     based on the qualifiers.
     """
     releases = data.get("releases") or []
-    releases = [r for r in releases if r.get("version") == version]
-
+    releases = [release for release in releases if release.get("version") == version]
     for release in releases:
-        release_version = release.get("version", "")
-        if version and release_version != version:
-            continue
         for platform in release.get("platforms", []):
             release_commit_hash = platform.get("commit_hash", "")
             if platform.get("system") != system:
@@ -1179,10 +1176,10 @@ def get_commit_hash_nix_store_path(data, system, output, version, commit_hash=""
 
 def get_package_data(purl):
     """Fetch package data from https://search.devbox.sh/."""
-    api_url = f"https://search.devbox.sh/v2/pkg?name={purl.name}"
+    api_url = f"https://search.devbox.sh/v2/pkg?{urlencode({'name': purl.name})}"
     try:
         return fetch_json_response(api_url)
-    except Exception as e:
+    except (requests.RequestException, json.JSONDecodeError) as e:
         logger.warning(f"Failed to fetch package data for {purl}: {e}")
         return None
 
@@ -1358,6 +1355,9 @@ def _decompress_pipeline_for(archive_name):
 
 def extract_nar_archive(archive_path, output_dir, output):
     """Extract a compressed Nix NAR archive."""
+    if not OUTPUT_RE.match(output):
+        raise ValueError(f"Invalid output: {output!r}")
+
     archive_path = Path(archive_path).resolve()
     output_dir = Path(output_dir).resolve()
     output_dir.mkdir(parents=True, exist_ok=True)

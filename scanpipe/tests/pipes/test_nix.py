@@ -128,7 +128,8 @@ class ScanPipeNixPipesTest(TestCase):
         mock_fetch.return_value = mock_data
         self.assertEqual(nix.get_package_data(purl), mock_data)
         mock_fetch.assert_called_once_with("https://search.devbox.sh/v2/pkg?name=hello")
-        mock_fetch.side_effect = Exception("network error")
+
+        mock_fetch.side_effect = requests.RequestException("network error")
         with self.assertLogs("scanpipe.pipes.nix", level="WARNING"):
             self.assertIsNone(nix.get_package_data(purl))
 
