@@ -32,6 +32,8 @@ from scanpipe.pipes import flag
 
 logger = logging.getLogger(__name__)
 
+# Paths excluded from package license validation. The goal is to skip files
+# whose detected license is not representative of the package's licensing.
 LICENSE_VALIDATION_IGNORE_PATTERNS = [
     "*/tests/*",
     "*/test/*",
