@@ -133,6 +133,18 @@ class ScanPipeNixPipesTest(TestCase):
         with self.assertLogs("scanpipe.pipes.nix", level="WARNING"):
             self.assertIsNone(nix.get_package_data(purl))
 
+    @mock.patch("scanpipe.pipes.nix.fetch_json_response")
+    def test_scanpipe_nix_get_package_data_url_encodes_name(self, mock_fetch):
+        mock_fetch.return_value = {}
+        purl = mock.Mock()
+        purl.name = "gtk+"
+
+        nix.get_package_data(purl)
+
+        mock_fetch.assert_called_once_with(
+            "https://search.devbox.sh/v2/pkg?name=gtk%2B"
+        )
+
     def test_scanpipe_nix_get_commit_hash_nix_store_path(self):
         data = {
             "releases": [
@@ -195,6 +207,29 @@ class ScanPipeNixPipesTest(TestCase):
             Exception, "Please provide a 'commit' qualifier in the PURL"
         ):
             nix.get_nix_store_path({}, "hello", "2.12.1", "x86_64-linux", "", "")
+
+    def test_scanpipe_nix_nixpkgs_import_expr(self):
+        with_worktree = nix._nixpkgs_import_expr(
+            "1234abcd", "/worktree", 'system = "x86_64-linux";', "config = {};"
+        )
+        self.assertIn("import /nixpkgs-local", with_worktree)
+        self.assertNotIn("fetchTarball", with_worktree)
+
+        without_worktree = nix._nixpkgs_import_expr(
+            "1234abcd", "", 'system = "x86_64-linux";', "config = {};"
+        )
+        self.assertIn("fetchTarball", without_worktree)
+        self.assertIn("1234abcd", without_worktree)
+
+    @mock.patch("scanpipe.pipes.nix._get_nixpkgs_worktree", return_value="")
+    def test_scanpipe_nix_build_nixpkgs_import(self, mock_wt):
+        linux_import = nix._build_nixpkgs_import("1234abcd", "x86_64-linux")
+        self.assertIn('crossSystem = "x86_64-linux"', linux_import)
+        self.assertIn("allowUnsupportedSystem = true", linux_import)
+
+        macos_import = nix._build_nixpkgs_import("1234abcd", "aarch64-darwin")
+        self.assertNotIn("crossSystem", macos_import)
+        self.assertIn("allowUnsupportedSystem = true", macos_import)
 
     @mock.patch("scanpipe.pipes.nix.get_narinfo_url")
     def test_scanpipe_nix_get_nix_download_url(self, mock_get_narinfo):

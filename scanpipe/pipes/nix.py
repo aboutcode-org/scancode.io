@@ -652,6 +652,27 @@ def _nixpkgs_import_expr(commit_hash, worktree_path, system_config, config_str):
     )
 
 
+def _build_nixpkgs_import(commit_hash, system):
+    """Return the Nix expression that imports nixpkgs when running a build."""
+    if _is_non_linux_system(system):
+        system_config = ""
+    else:
+        system_config = (
+            f'localSystem = builtins.currentSystem; crossSystem = "{system}";'
+        )
+
+    config_str = (
+        "config = { "
+        "allowBroken = true; "
+        "allowUnfree = true; "
+        "allowUnsupportedSystem = true; "
+        "};"
+    )
+
+    worktree_path = _get_nixpkgs_worktree(commit_hash)
+    return _nixpkgs_import_expr(commit_hash, worktree_path, system_config, config_str)
+
+
 def _is_non_linux_system(system):
     """Return True if the target system is not a Linux variant."""
     target_os = system.split("-")[-1] if "-" in system else system
@@ -1031,26 +1052,7 @@ def build_binary_with_docker(name, output_dir, system, commit_hash, output_forma
     absolute_out_dir = str(Path(output_dir).resolve())
     error_msg = ""
 
-    # Handle architecture and system incompatibilities.
-    if _is_non_linux_system(system):
-        system_config = ""
-    else:
-        system_config = (
-            f'localSystem = builtins.currentSystem; crossSystem = "{system}";'
-        )
-
-    config_str = (
-        "config = { "
-        "allowBroken = true; "
-        "allowUnfree = true; "
-        "allowUnsupportedSystem = true; "
-        "};"
-    )
-
-    worktree_path = _get_nixpkgs_worktree(commit_hash)
-    nixpkgs_import = _nixpkgs_import_expr(
-        commit_hash, worktree_path, system_config, config_str
-    )
+    nixpkgs_import = _build_nixpkgs_import(commit_hash, system)
 
     # Defaulting to 'debug' if none is specified.
     effective_output = output_format or "debug"
@@ -1092,7 +1094,7 @@ def build_binary_with_docker(name, output_dir, system, commit_hash, output_forma
         container_name,
         "-v",
         "nix-eval-cache:/nix",
-        *_nixpkgs_mount_args(worktree_path),
+        *_nixpkgs_mount_args(_get_nixpkgs_worktree(commit_hash)),
         "-v",
         f"{absolute_out_dir}:/build_output",
         nix_image,
@@ -1468,25 +1470,7 @@ def get_patched_source_with_docker(name, output_dir, system, commit_hash):
     host_uid = os.getuid()
     host_gid = os.getgid()
 
-    if _is_non_linux_system(system):
-        system_config = ""
-    else:
-        system_config = (
-            f'localSystem = builtins.currentSystem; crossSystem = "{system}";'
-        )
-
-    config_str = (
-        "config = { "
-        "allowBroken = true; "
-        "allowUnfree = true; "
-        "allowUnsupportedSystem = true; "
-        "};"
-    )
-
-    worktree_path = _get_nixpkgs_worktree(commit_hash)
-    nixpkgs_import = _nixpkgs_import_expr(
-        commit_hash, worktree_path, system_config, config_str
-    )
+    nixpkgs_import = _build_nixpkgs_import(commit_hash, system)
 
     # `applyPatches` unpacks `pkg.src`, applies `pkg.patches`, and copies
     # the resulting tree to `$out`.
@@ -1598,7 +1582,7 @@ rm -f /tmp/expr.nix /tmp/fallback.nix
         f"HOST_GID={host_gid}",
         "-v",
         "nix-eval-cache:/nix",
-        *_nixpkgs_mount_args(worktree_path),
+        *_nixpkgs_mount_args(_get_nixpkgs_worktree(commit_hash)),
         "-v",
         f"{absolute_out_dir}:/build_output",
         nix_image,
