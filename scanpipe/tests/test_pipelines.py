@@ -23,6 +23,7 @@
 import io
 import json
 import os
+import subprocess
 import sys
 import tempfile
 from contextlib import redirect_stderr
@@ -47,9 +48,11 @@ from scanpipe.pipelines import analyze_root_filesystem
 from scanpipe.pipelines import deploy_to_develop
 from scanpipe.pipelines import is_pipeline
 from scanpipe.pipelines import scan_single_package
+from scanpipe.pipelines.find_origins import FindOrigins
 from scanpipe.pipelines.find_vulnerabilities import FindVulnerabilities
 from scanpipe.pipes import d2d
 from scanpipe.pipes import flag
+from scanpipe.pipes import matchcode
 from scanpipe.pipes import output
 from scanpipe.pipes import scancode
 from scanpipe.pipes.input import copy_input
@@ -58,6 +61,7 @@ from scanpipe.tests import FIXTURES_REGEN
 from scanpipe.tests import make_mock_response
 from scanpipe.tests import make_package
 from scanpipe.tests import make_project
+from scanpipe.tests import make_resource_file
 from scanpipe.tests import package_data1
 from scanpipe.tests.pipelines.do_nothing import DoNothing
 from scanpipe.tests.pipelines.download_inputs import DownloadInput
@@ -160,6 +164,21 @@ class ScanPipePipelinesTest(TestCase):
 
         self.assertTrue(info["is_available"])
         self.assertEqual("", info["unavailable_reason"])
+
+    @mock.patch("scanpipe.pipes.scanoss.is_configured")
+    @mock.patch("scanpipe.pipes.matchcode.is_configured")
+    def test_scanpipe_find_origins_get_availability(
+        self, mock_matchcode_is_configured, mock_scanoss_is_configured
+    ):
+        mock_matchcode_is_configured.return_value = False
+        mock_scanoss_is_configured.return_value = False
+        self.assertEqual(
+            "No origin detection tool is configured: MatchCode.io or SCANOSS.",
+            FindOrigins.get_availability(),
+        )
+
+        mock_scanoss_is_configured.return_value = True
+        self.assertIsNone(FindOrigins.get_availability())
 
     def test_scanpipe_pipeline_class_get_summary(self):
         expected = "Do nothing, in 2 steps."
@@ -1511,6 +1530,159 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual("ossf-scorecard", scorecard_entry.scoring_tool)
         self.assertEqual("v5.2.1", scorecard_entry.scoring_tool_version)
         self.assertTrue(scorecard_entry.score)
+
+    @mock.patch("scanpipe.pipes.scanoss.scan_codebase")
+    @mock.patch("scanpipe.pipes.scanoss.get_uvx_location")
+    @mock.patch("scanpipe.pipes.scanoss.is_configured")
+    @mock.patch("scanpipe.pipes.matchcode.match_codebase")
+    @mock.patch("scanpipe.pipes.matchcode.is_configured")
+    def test_scanpipe_find_origins_pipeline_integration(
+        self,
+        mock_matchcode_is_configured,
+        mock_match_codebase,
+        mock_scanoss_is_configured,
+        mock_get_uvx_location,
+        mock_scan_codebase,
+    ):
+        pipeline_name = "find_origins"
+        project1 = make_project()
+        six_path = "exact-copy/myapp/_vendor/six.py"
+        make_resource_file(project1, six_path)
+        make_resource_file(project1, "modified-copy/src/inih/ini.c")
+        find_origins_data = self.data / "find-origins"
+
+        match_results = json.loads(
+            (find_origins_data / "matchcode-results.json").read_text()
+        )
+        match_results["files"] = [
+            resource
+            for resource in match_results["files"]
+            if resource["path"] == six_path
+        ]
+        mock_matchcode_is_configured.return_value = True
+        mock_match_codebase.return_value = match_results
+
+        def write_scanoss_results(codebase_path, output_location):
+            scanoss_results = (find_origins_data / "scanoss-results.json").read_text()
+            Path(output_location).write_text(scanoss_results)
+
+        mock_scanoss_is_configured.return_value = True
+        mock_get_uvx_location.return_value = "/usr/bin/uvx"
+        mock_scan_codebase.side_effect = write_scanoss_results
+
+        run = project1.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+
+        origin_matches = project1.originmatchs.order_by("tool", "resource__path")
+        expected = [
+            (six_path, "pkg:pypi/six@1.17.0", "matchcode"),
+            (six_path, "pkg:github/benjaminp/six@1.17.0", "scanoss"),
+            (
+                "modified-copy/src/inih/ini.c",
+                "pkg:github/benhoyt/inih@498f34b",
+                "scanoss",
+            ),
+        ]
+        values = origin_matches.values_list("resource__path", "purl", "tool")
+        self.assertEqual(expected, list(values))
+        self.assertEqual(1, len(list(project1.output_path.glob("matchcode-*.json"))))
+
+    @mock.patch("scanpipe.pipes.scanoss.scan_codebase")
+    @mock.patch("scanpipe.pipes.scanoss.get_uvx_location")
+    @mock.patch("scanpipe.pipes.scanoss.is_configured")
+    @mock.patch("scanpipe.pipes.matchcode.match_codebase")
+    @mock.patch("scanpipe.pipes.matchcode.is_configured")
+    def test_scanpipe_find_origins_pipeline_record_tool_failures(
+        self,
+        mock_matchcode_is_configured,
+        mock_match_codebase,
+        mock_scanoss_is_configured,
+        mock_get_uvx_location,
+        mock_scan_codebase,
+    ):
+        pipeline_name = "find_origins"
+        project1 = make_project()
+        mock_matchcode_is_configured.return_value = True
+        mock_match_codebase.side_effect = matchcode.MatchCodeIOException(
+            "Cannot fetch the match results from MatchCode.io"
+        )
+        mock_scanoss_is_configured.return_value = True
+        mock_get_uvx_location.return_value = "/usr/bin/uvx"
+        mock_scan_codebase.side_effect = subprocess.SubprocessError("SCANOSS failed")
+
+        run = project1.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+
+        error_descriptions = project1.projectmessages.values_list(
+            "description", flat=True
+        )
+        expected = [
+            "Cannot fetch the match results from MatchCode.io",
+            "SCANOSS failed",
+        ]
+        self.assertEqual(expected, sorted(error_descriptions))
+
+    @mock.patch("scanpipe.pipes.scanoss.scan_codebase")
+    @mock.patch("scanpipe.pipes.scanoss.get_uvx_location")
+    @mock.patch("scanpipe.pipes.scanoss.is_configured")
+    @mock.patch("scanpipe.pipes.matchcode.is_configured")
+    def test_scanpipe_find_origins_pipeline_record_missing_scanoss_results(
+        self,
+        mock_matchcode_is_configured,
+        mock_scanoss_is_configured,
+        mock_get_uvx_location,
+        mock_scan_codebase,
+    ):
+        pipeline_name = "find_origins"
+        project1 = make_project()
+        mock_matchcode_is_configured.return_value = False
+        mock_scanoss_is_configured.return_value = True
+        mock_get_uvx_location.return_value = "/usr/bin/uvx"
+        mock_scan_codebase.return_value = None
+
+        run = project1.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+
+        message = project1.projectmessages.get()
+        self.assertEqual("find_origins", message.model)
+        self.assertIn("No such file or directory", message.description)
+
+    @mock.patch("scanpipe.pipes.scanoss.get_uvx_location")
+    @mock.patch("scanpipe.pipes.scanoss.is_configured")
+    @mock.patch("scanpipe.pipes.matchcode.is_configured")
+    def test_scanpipe_find_origins_pipeline_skip_unavailable_tools(
+        self,
+        mock_matchcode_is_configured,
+        mock_scanoss_is_configured,
+        mock_get_uvx_location,
+    ):
+        pipeline_name = "find_origins"
+        project1 = make_project()
+        mock_matchcode_is_configured.return_value = False
+        mock_scanoss_is_configured.return_value = True
+        mock_get_uvx_location.return_value = None
+
+        run = project1.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+
+        run.refresh_from_db()
+        self.assertIn("MatchCode.io is not configured, skipping.", run.log)
+        uvx_missing_message = (
+            "The uvx executable required by SCANOSS is missing, skipping."
+        )
+        self.assertIn(uvx_missing_message, run.log)
+        message = project1.projectmessages.get()
+        self.assertEqual(uvx_missing_message, message.description)
+        self.assertEqual("find_scanoss_origin_matches", message.model)
+        self.assertEqual(0, project1.originmatchs.count())
 
     def test_scanpipe_resolve_dependencies_pipeline_integration(self):
         pipeline_name = "resolve_dependencies"
