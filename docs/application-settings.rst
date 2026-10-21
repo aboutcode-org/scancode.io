@@ -400,6 +400,11 @@ using ``SCANOSS_API_KEY``::
 
     SCANOSS_API_KEY=insert_your_api_key_here
 
+The latest version of the SCANOSS client is used by default. You can pin a
+version using ``SCANOSS_PY_VERSION``::
+
+    SCANOSS_PY_VERSION=1.54.2
+
 .. note::
     The SCANOSS client is installed in a temporary environment for each scan,
     using the ``uvx`` executable, which requires access to PyPI.

@@ -41,8 +41,9 @@ SCANOSS_URL = getattr(settings, "SCANOSS_URL", "")
 SCANOSS_API_KEY = getattr(settings, "SCANOSS_API_KEY", "")
 
 # The scanoss-py client is installed in a temporary environment for each scan,
-# to keep its dependencies isolated from ScanCode.io.
-SCANOSS_PY_VERSION = "1.54.2"
+# to keep its dependencies isolated from ScanCode.io. The latest version is used
+# unless a version is pinned with this setting.
+SCANOSS_PY_VERSION = getattr(settings, "SCANOSS_PY_VERSION", "")
 
 # Engine flag to report all the candidate components instead of the best match.
 DISABLE_BEST_MATCH_FLAG = 256
@@ -63,6 +64,13 @@ def get_uvx_location():
     return shutil.which("uvx")
 
 
+def get_scanoss_requirement():
+    """Return the scanoss-py requirement, pinned when a version is configured."""
+    if SCANOSS_PY_VERSION:
+        return f"scanoss=={SCANOSS_PY_VERSION}"
+    return "scanoss"
+
+
 def scan_codebase(codebase_path, output_location):
     """
     Scan the ``codebase_path`` directory with SCANOSS and write the raw JSON
@@ -81,7 +89,7 @@ def scan_codebase(codebase_path, output_location):
         command_args = [
             get_uvx_location(),
             f"--cache-dir={cache_directory}",
-            f"--from=scanoss=={SCANOSS_PY_VERSION}",
+            f"--from={get_scanoss_requirement()}",
             "scanoss-py",
             "scan",
             "--quiet",

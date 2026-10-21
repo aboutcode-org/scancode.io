@@ -53,6 +53,13 @@ class ScanOSSPipesTest(TestCase):
         self.assertEqual("/usr/bin/uvx", scanoss.get_uvx_location())
         mock_which.assert_called_once_with("uvx")
 
+    def test_scanpipe_pipes_scanoss_get_scanoss_requirement(self):
+        with mock.patch.object(scanoss, "SCANOSS_PY_VERSION", ""):
+            self.assertEqual("scanoss", scanoss.get_scanoss_requirement())
+
+        with mock.patch.object(scanoss, "SCANOSS_PY_VERSION", "1.54.2"):
+            self.assertEqual("scanoss==1.54.2", scanoss.get_scanoss_requirement())
+
     @mock.patch("scanpipe.pipes.scanoss.run_command_safely")
     @mock.patch("scanpipe.pipes.scanoss.get_uvx_location")
     def test_scanpipe_pipes_scanoss_scan_codebase(
@@ -70,7 +77,7 @@ class ScanOSSPipesTest(TestCase):
         command_args = mock_run_command_safely.call_args.args[0]
         scanoss_env = mock_run_command_safely.call_args.kwargs["env"]
         self.assertEqual("/usr/bin/uvx", command_args[0])
-        self.assertIn(f"--from=scanoss=={scanoss.SCANOSS_PY_VERSION}", command_args)
+        self.assertIn("--from=scanoss", command_args)
         self.assertIn("--apiurl=https://api.osskb.org", command_args)
         self.assertIn("--flags=256", command_args)
         self.assertEqual(

@@ -358,6 +358,7 @@ MATCHCODEIO_API_KEY = env.str("MATCHCODEIO_API_KEY", default="")
 
 SCANOSS_URL = env.str("SCANOSS_URL", default="").rstrip("/")
 SCANOSS_API_KEY = env.str("SCANOSS_API_KEY", default="")
+SCANOSS_PY_VERSION = env.str("SCANOSS_PY_VERSION", default="")
 
 # FederatedCode integration
 
