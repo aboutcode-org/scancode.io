@@ -2168,7 +2168,6 @@ class ScanPipeD2DPipesTest(TestCase):
             ).count(),
         )
 
-    @skipIf(sys.platform == "darwin", "Test is failing on macOS")
     @mock.patch("scanpipe.pipes.d2d.get_elf_file_dwarf_paths")
     def test_scanpipe_pipes_d2d_map_elfs_dwarf_paths_to_in_templates(
         self, mock_get_dwarf_paths
