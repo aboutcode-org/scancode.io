@@ -21,13 +21,13 @@
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 import logging
-from fnmatch import fnmatch
 
 from license_expression import ExpressionError
 from license_expression import Licensing
 from license_expression import combine_expressions
 from licensedcode.cache import get_index
 
+from scanpipe.models import convert_glob_to_django_regex
 from scanpipe.pipes import flag
 
 logger = logging.getLogger(__name__)
@@ -51,30 +51,25 @@ def validate_package_license_integrity(project):
     """Validate the correctness of the package license."""
     licensing = Licensing()
 
+    # Pre-filter at SQL: only from_codebase resources that have a license
+    # expression, minus paths matching the ignore patterns. None of this
+    # depends on the package, so it is applied once, outside the loop.
+    base_resources_qs = (
+        project.codebaseresources.from_codebase().has_license_expression()
+    )
+    for pattern in LICENSE_VALIDATION_IGNORE_PATTERNS:
+        base_resources_qs = base_resources_qs.exclude(
+            path__regex=convert_glob_to_django_regex(pattern)
+        )
+
     for package in project.discoveredpackages.all():
         package_lic = package.get_declared_license_expression()
         if not package_lic:
             continue
 
-        if package.type == "cargo":
-            # A single cargo package only has one Cargo.toml file
-            # meaning only one package is defined. Therefore, we don't
-            # need to check for the package_uid
-            # In addition, the package_uid is not populated to source files:
-            # https://github.com/aboutcode-org/scancode.io/issues/2169
-            # so we set package_uid to None to consider all resources
-            # in the codebase for license validation.
-            package_uid = None
-        else:
-            package_uid = package.package_uid
-
-        resources = project.codebaseresources.from_codebase().has_license_expression()
-        detected_expr = collect_detected_licenses(
-            resources,
-            LICENSE_VALIDATION_IGNORE_PATTERNS,
-            package_uid,
-            licensing=licensing,
-        )
+        resources_qs = _get_package_resources_qs(package, base_resources_qs)
+        detections = resources_qs.values_list("path", "license_detections")
+        detected_expr = collect_detected_licenses(detections, licensing)
 
         if detected_expr is None:
             continue
@@ -82,14 +77,7 @@ def validate_package_license_integrity(project):
         detected_lic_exp = str(licensing.dedup(detected_expr))
 
         if licensing.is_equivalent(detected_expr, package_lic):
-            # Clear any previous mismatch state so re-runs are idempotent.
-            if package.has_license_issue or package.extra_data.get("issues"):
-                extra_data = {
-                    key: value
-                    for key, value in package.extra_data.items()
-                    if key != "issues"
-                }
-                package.update(has_license_issue=False, extra_data=extra_data)
+            _clear_package_issues(package)
             continue
 
         issue = {
@@ -103,21 +91,44 @@ def validate_package_license_integrity(project):
             extra_data={**package.extra_data, "issues": [issue]},
             has_license_issue=True,
         )
-
-        for datafile_path in package.datafile_paths:
-            if datafile_path.startswith("https://"):
-                continue
-            data_path = project.codebaseresources.get(path=datafile_path)
-            data_path.update(status=flag.LICENSE_MISMATCH)
-            data_path.update_extra_data({"issues": [issue]})
+        _flag_datafiles_with_issue(project, package, issue)
 
 
-def contains_ignore_pattern(resource_path, ignore_patterns):
-    """Check if the resource path matches any of the ignore patterns."""
-    for pattern in ignore_patterns:
-        if fnmatch(resource_path, pattern):
-            return True
-    return False
+def _get_package_resources_qs(package, base_resources_qs):
+    """Return the resources queryset to use for the given package."""
+    if package.type == "cargo":
+        # A single cargo package only has one Cargo.toml file, meaning
+        # only one package is defined. The package_uid is not populated
+        # on source files, so consider all resources in the codebase for
+        # license validation.
+        # https://github.com/aboutcode-org/scancode.io/issues/2169
+        return base_resources_qs
+    if package.package_uid:
+        # SQL filter: only resources linked to this package through the
+        # `discovered_packages` M2M.
+        return base_resources_qs.filter(
+            discovered_packages__package_uid=package.package_uid
+        )
+    return base_resources_qs
+
+
+def _clear_package_issues(package):
+    """Clear any previous mismatch state so re-runs are idempotent."""
+    if package.has_license_issue or package.extra_data.get("issues"):
+        extra_data = {
+            key: value for key, value in package.extra_data.items() if key != "issues"
+        }
+        package.update(has_license_issue=False, extra_data=extra_data)
+
+
+def _flag_datafiles_with_issue(project, package, issue):
+    """Flag the datafile resources of ``package`` with the given ``issue``."""
+    for datafile_path in package.datafile_paths:
+        if datafile_path.startswith("https://"):
+            continue
+        data_path = project.codebaseresources.get(path=datafile_path)
+        data_path.update(status=flag.LICENSE_MISMATCH)
+        data_path.update_extra_data({"issues": [issue]})
 
 
 def filter_ignored_licenses(license_expression, licensing):
@@ -175,13 +186,12 @@ def match_is_license_text(match):
     return bool(rule and rule.is_license_text)
 
 
-def collect_match_expressions(resource, licensing):
+def _iter_match_expressions(license_detections, licensing, path):
     """
-    Yield (is_text, expression) pairs for each match on the resource,
-    where expression is a parsed and filtered LicenseExpression for that
-    individual match.
+    Yield ``(is_text, expression)`` pairs for each match in a
+    ``license_detections`` array.
     """
-    for detection in resource.license_detections:
+    for detection in license_detections:
         for match in detection.get("matches"):
             expression = match.get("license_expression")
             if not expression:
@@ -190,9 +200,7 @@ def collect_match_expressions(resource, licensing):
                 parsed = licensing.parse(expression)
             except ExpressionError:
                 logger.warning(
-                    "Failed to parse the license expression: %s at %s",
-                    expression,
-                    resource.path,
+                    f"Failed to parse the license expression: {expression} at {path}"
                 )
                 continue
             filtered = filter_ignored_licenses(parsed, licensing)
@@ -228,28 +236,21 @@ def combine_license_groups(text_licenses, other_licenses, licensing):
     return combine_expressions(parts, relation="AND", licensing=licensing)
 
 
-def collect_detected_licenses(
-    resources, ignore_patterns, package_uid=None, licensing=None
-):
+def collect_detected_licenses(detections, licensing):
     """
-    Collect detected licenses from resources, ignoring the defined patterns.
+    Collect detected licenses from an iterable of ``(path,
+    license_detections)`` tuples.
 
     Return a single LicenseExpression combining both groups with AND, or
     None if there is nothing to combine.
     """
-    licensing = licensing or Licensing()
-
     text_licenses = []
     other_licenses = []
 
-    for resource in resources:
-        if contains_ignore_pattern(resource.path, ignore_patterns):
-            continue
-
-        if package_uid and package_uid not in resource.for_packages:
-            continue
-
-        for is_text, filtered in collect_match_expressions(resource, licensing):
+    for path, license_detections in detections:
+        for is_text, filtered in _iter_match_expressions(
+            license_detections, licensing, path=path
+        ):
             if is_text:
                 if filtered not in text_licenses:
                     text_licenses.append(filtered)

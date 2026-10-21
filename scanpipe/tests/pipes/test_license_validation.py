@@ -33,6 +33,11 @@ from scanpipe.tests import make_project
 from scanpipe.tests import make_resource_file
 
 
+def _as_detections(resources):
+    """Return ``(path, license_detections)`` tuples, as the SQL query would."""
+    return [(r.path, r.license_detections) for r in resources]
+
+
 class ScanPipeLicenseValidationTest(TestCase):
     def setUp(self):
         self.project = make_project("license-validation")
@@ -165,23 +170,42 @@ class ScanPipeLicenseValidationTest(TestCase):
         package.refresh_from_db()
         self.assertTrue(package.has_license_issue)
 
-    def test_scanpipe_license_validation_contains_ignore_pattern(self):
-        ignore_patterns = license_validation.LICENSE_VALIDATION_IGNORE_PATTERNS
-        self.assertTrue(
-            license_validation.contains_ignore_pattern(
-                "project/test/test_main.py", ignore_patterns
-            )
+    @mock.patch(
+        "scanpipe.pipes.license_validation.match_is_license_text",
+        return_value=False,
+    )
+    def test_scanpipe_license_validation_ignores_patterns_at_sql_level(
+        self,
+        mock_match_is_license_text,
+    ):
+        package = make_package(
+            self.project,
+            "pkg:pypi/test@1.0",
+            declared_license_expression="mit",
         )
-        self.assertTrue(
-            license_validation.contains_ignore_pattern(
-                "project/scripts/build.sh", ignore_patterns
-            )
+        ignored = make_resource_file(
+            self.project,
+            path="project/test/test_main.py",
+            detected_license_expression="gpl-3.0",
+            license_detections=[
+                {
+                    "license_expression": "gpl-3.0",
+                    "matches": [
+                        {
+                            "license_expression": "gpl-3.0",
+                            "rule_identifier": "gpl-3.0.LICENSE",
+                        }
+                    ],
+                }
+            ],
         )
-        self.assertFalse(
-            license_validation.contains_ignore_pattern(
-                "project/src/main.py", ignore_patterns
-            )
-        )
+        ignored.update(tag="from")
+        package.add_resources([ignored])
+
+        license_validation.validate_package_license_integrity(self.project)
+
+        package.refresh_from_db()
+        self.assertFalse(package.has_license_issue)
 
     def test_scanpipe_license_validation_filter_ignored_licenses(self):
         """Ignored licenses are dropped; expressions become None if nothing remains."""
@@ -252,19 +276,6 @@ class ScanPipeLicenseValidationTest(TestCase):
         )
         resource2 = make_resource_file(
             self.project,
-            path="project/test/test_main.py",
-            detected_license_expression="gpl-3.0",
-            license_detections=[
-                {
-                    "license_expression": "gpl-3.0",
-                    "matches": [
-                        {"license_expression": "gpl-3.0", "rule_identifier": "t"}
-                    ],
-                }
-            ],
-        )
-        resource3 = make_resource_file(
-            self.project,
             path="project/src/other.py",
             detected_license_expression="apache-2.0",
             license_detections=[
@@ -277,11 +288,9 @@ class ScanPipeLicenseValidationTest(TestCase):
             ],
         )
 
-        resources = [resource1, resource2, resource3]
-        ignore_patterns = license_validation.LICENSE_VALIDATION_IGNORE_PATTERNS
-
+        detections = [(r.path, r.license_detections) for r in [resource1, resource2]]
         result = license_validation.collect_detected_licenses(
-            resources, ignore_patterns, package_uid=None
+            detections, self.licensing
         )
         self.assertEqual(str(result), "mit AND apache-2.0")
 
@@ -320,7 +329,7 @@ class ScanPipeLicenseValidationTest(TestCase):
         )
 
         result = license_validation.collect_detected_licenses(
-            [resource1, resource2], []
+            _as_detections([resource1, resource2]), self.licensing
         )
         self.assertTrue(self.licensing.is_equivalent(result, "apache-2.0 OR lgpl-2.1"))
 
@@ -387,7 +396,7 @@ class ScanPipeLicenseValidationTest(TestCase):
         )
 
         result = license_validation.collect_detected_licenses(
-            [resource1, resource2, resource3], []
+            _as_detections([resource1, resource2, resource3]), self.licensing
         )
         self.assertTrue(
             self.licensing.is_equivalent(result, "(apache-2.0 OR mit) AND bsd-new")
@@ -414,7 +423,9 @@ class ScanPipeLicenseValidationTest(TestCase):
             ],
         )
 
-        result = license_validation.collect_detected_licenses([resource], [])
+        result = license_validation.collect_detected_licenses(
+            _as_detections([resource]), self.licensing
+        )
         self.assertIsNone(result)
 
     @mock.patch("scanpipe.pipes.license_validation.get_index")
@@ -449,78 +460,6 @@ class ScanPipeLicenseValidationTest(TestCase):
             )
         )
         self.assertFalse(license_validation.match_is_license_text({}))
-
-    @mock.patch("scanpipe.pipes.license_validation.match_is_license_text")
-    def test_scanpipe_license_validation_collect_match_expressions(
-        self, mock_match_is_license_text
-    ):
-        """Ignored-license matches are filtered out; only valid ones are yielded."""
-        mock_match_is_license_text.return_value = False
-
-        resource = make_resource_file(
-            self.project,
-            path="src/main.py",
-            license_detections=[
-                {
-                    "matches": [
-                        {"license_expression": "mit", "rule_identifier": "a"},
-                        {"license_expression": "unknown", "rule_identifier": "b"},
-                    ],
-                }
-            ],
-        )
-
-        results = list(
-            license_validation.collect_match_expressions(resource, self.licensing)
-        )
-
-        self.assertEqual(len(results), 1)
-        is_text, expression = results[0]
-        self.assertFalse(is_text)
-        self.assertEqual(str(expression), "mit")
-
-    @mock.patch("scanpipe.pipes.license_validation.match_is_license_text")
-    def test_scanpipe_license_validation_collect_match_expressions_mixed_detection(
-        self, mock_match_is_license_text
-    ):
-        """Each match's text/non-text flag is propagated to the caller."""
-        text_by_rule = {
-            "mit.LICENSE": True,
-            "some-notice.RULE": False,
-        }
-
-        def is_license_text(match):
-            return text_by_rule[match["rule_identifier"]]
-
-        mock_match_is_license_text.side_effect = is_license_text
-
-        resource = make_resource_file(
-            self.project,
-            path="src/main.rs",
-            license_detections=[
-                {
-                    "license_expression": "mit AND apache-2.0",
-                    "matches": [
-                        {
-                            "license_expression": "mit",
-                            "rule_identifier": "mit.LICENSE",
-                        },
-                        {
-                            "license_expression": "apache-2.0",
-                            "rule_identifier": "some-notice.RULE",
-                        },
-                    ],
-                }
-            ],
-        )
-
-        results = list(
-            license_validation.collect_match_expressions(resource, self.licensing)
-        )
-
-        self.assertEqual(len(results), 2)
-        self.assertEqual(results[0], (True, self.licensing.parse("mit")))
-        self.assertEqual(results[1], (False, self.licensing.parse("apache-2.0")))
 
     def test_scanpipe_license_validation_combine_license_groups(self):
         """(text OR text) AND (other AND other), with each group optional."""
