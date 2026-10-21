@@ -159,6 +159,22 @@ value the Nix CLI accepts (e.g. ``12h``, ``3d``, ``7d``)::
 
 Default: ``12h``
 
+
+.. note::
+    The ``scan_nix_package`` pipeline runs a ``--privileged`` container
+    (``tonistiigi/binfmt``, pinned by digest) to detect whether multi-arch
+    binfmt handlers are registered on the Docker host. This is a
+    **read-only** check — no handlers are installed by the pipeline, and
+    the result is cached per worker process.
+
+    Installing the handlers is a one-time administrative setup task::
+
+        docker run --privileged --rm --init tonistiigi/binfmt --install all
+
+    If the handlers are not installed, the pipeline will fail immediately.
+    The pipeline does not install them itself.
+
+
 .. _scancodeio_settings_config_dir:
 
 SCANCODEIO_CONFIG_DIR

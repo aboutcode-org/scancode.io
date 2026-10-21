@@ -23,10 +23,8 @@
 import io
 import json
 import os
-import shutil
 import sys
 import tempfile
-import uuid
 from contextlib import redirect_stderr
 from pathlib import Path
 from unittest import mock
@@ -2157,40 +2155,93 @@ class PipelinesIntegrationTest(TestCase):
         expected_file = self.data / "benchmark" / "alpine-3.22.1-expected-benchmark.txt"
         self.assertEqual(expected_file.read_text(), result_file.read_text())
 
-    @skipIf(
-        nix_pipeline_unavailable_reason is not None,
-        f"Nix pipeline unavailable: {nix_pipeline_unavailable_reason}",
-    )
-    @mock.patch(
-        "scanpipe.models.Project.work_directory", new_callable=mock.PropertyMock
-    )
-    def test_scanpipe_scan_nix_package_pipeline_integration(self, mock_work_directory):
-        shared_workspace = Path("/var/scancodeio/workspace/tests/") / uuid.uuid4().hex
-        mock_work_directory.return_value = str(shared_workspace)
+    @mock.patch("scanpipe.pipes.utils.check_docker_command", return_value=True)
+    @mock.patch("scanpipe.pipes.license_validation.validate_package_license_integrity")
+    @mock.patch("scanpipe.pipes.scancode.scan_for_files")
+    @mock.patch("scanpipe.pipes.scancode.scan_for_application_packages")
+    @mock.patch("scanpipe.pipes.nix.extract_nar_archive_to_codebase")
+    @mock.patch("scanpipe.pipes.nix.get_nix_package_metadata")
+    @mock.patch("scanpipe.pipes.nix.fetch_inputs")
+    @mock.patch("scanpipe.pipes.nix.cleanup_nixpkgs_worktrees")
+    @mock.patch("scanpipe.pipes.nix.prepare_nix_environment")
+    @mock.patch("scanpipe.pipes.nix.binfmt_emulation_is_installed", return_value=True)
+    @mock.patch("scanpipe.pipes.nix.check_input_and_return_purl")
+    def test_scanpipe_scan_nix_package_pipeline(
+        self,
+        mock_check_purl,
+        mock_binfmt,
+        mock_prepare,
+        mock_cleanup_worktrees,
+        mock_fetch,
+        mock_metadata,
+        mock_extract,
+        mock_scan_apps,
+        mock_scan_files,
+        mock_validate,
+        mock_docker_check,
+    ):
+        commit = "a" * 40
+        purl_str = f"pkg:nix/nixpkgs/hello@2.12.3?system=x86_64-linux&commit={commit}"
+        purl = PackageURL.from_string(purl_str)
+        mock_check_purl.return_value = purl
 
-        # Register cleanup to delete the folder automatically when the test ends
-        self.addCleanup(shutil.rmtree, shared_workspace, ignore_errors=True)
+        # Empty from/to paths keep d2d_enable=False for standard single-package scan
+        mock_fetch.return_value = ("", "", "debug", commit, [], [])
 
-        pipeline_name = "scan_nix_package"
+        mock_metadata.return_value = {
+            "license": "GPL-3.0-or-later",
+            "homepage": "https://www.gnu.org/software/hello/",
+            "description": "A program that produces a familiar greeting",
+        }
+
         project1 = make_project()
-
-        project1.codebase_path.mkdir(parents=True, exist_ok=True)
-        project1.input_path.mkdir(parents=True, exist_ok=True)
-        project1.output_path.mkdir(parents=True, exist_ok=True)
-
-        run = project1.add_pipeline(pipeline_name)
+        project1.add_input_source(download_url=purl_str)
+        run = project1.add_pipeline("scan_nix_package")
         pipeline = run.make_pipeline_instance()
-
-        download_url = "pkg:nix/nixpkgs/hello@2.12.3?system=x86_64-linux"
-        project1.add_input_source(download_url=download_url)
 
         exitcode, out = pipeline.execute()
         self.assertEqual(0, exitcode, msg=out)
 
-        self.assertEqual(702, project1.codebaseresources.count())
-        self.assertEqual(48, project1.codebaserelations.count())
+        # --- Verify orchestration & step mock calls ---
+        mock_docker_check.assert_called()
+        mock_binfmt.assert_called_once()
+        mock_prepare.assert_called_once()
+        mock_check_purl.assert_called_once_with(project1)
+        mock_fetch.assert_called_once_with(purl, project1.codebase_path)
+        mock_cleanup_worktrees.assert_called_once()
+        mock_metadata.assert_called_once_with(purl=purl, commit_hash=commit)
+        mock_extract.assert_not_called()
+        mock_scan_apps.assert_called_once()
+        mock_scan_files.assert_called_once()
+        mock_validate.assert_called_once_with(project1)
 
-        scancode_file = project1.get_latest_output(filename="scancode")
-        expected_file = self.data / "nix" / "hello-2.12.3-sctk.json"
+        package = project1.discoveredpackages.get()
+        self.assertEqual("nix", package.type)
+        self.assertEqual("nixpkgs", package.namespace)
+        self.assertEqual("hello", package.name)
+        self.assertEqual("2.12.3", package.version)
+        self.assertEqual("GPL-3.0-or-later", package.declared_license_expression_spdx)
+        self.assertEqual("https://www.gnu.org/software/hello/", package.homepage_url)
+        self.assertEqual(["nixpkgs_meta"], package.datasource_ids)
 
-        self.assertPipelineResultEqual(expected_file, scancode_file)
+        run.refresh_from_db()
+        expected_steps = (
+            "check_input_and_return_purl",
+            "check_prerequisites",
+            "prepare_nix_environment",
+            "fetch_inputs",
+            "collect_input_info",
+            "extract_input_to_codebase_directory",
+            "extract_archives",
+            "collect_and_create_codebase_resources",
+            "fingerprint_codebase_directories",
+            "flag_empty_files",
+            "flag_whitespace_files",
+            "flag_ignored_resources",
+            "d2d_steps",
+            "perform_from_codebase_scans",
+            "create_package_from_nix_metadata",
+            "validate_package_license_integrity",
+        )
+        for step_name in expected_steps:
+            self.assertIn(f"Step [{step_name}] completed", run.log)

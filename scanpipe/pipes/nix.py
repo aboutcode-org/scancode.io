@@ -68,6 +68,16 @@ _DOCKER_EVAL_TIMEOUT = 300
 
 _binfmt_emulation_is_installed_cache = None
 
+# `tonistiigi/binfmt` runs a `--privileged` container to read the host
+# kernel's `/proc/sys/fs/binfmt_misc`. Pinned by digest so a tag update
+# on the registry cannot silently swap the privileged container image.
+# Update deliberately; refresh with:
+#   docker inspect --format='{{index .RepoDigests 0}}' tonistiigi/binfmt
+_BINFMT_CHECK_IMAGE = (
+    "tonistiigi/binfmt@"
+    "sha256:400a4873b838d1b89194d982c45e5fb3cda4593fbfd7e08a02e76b03b21166f0"
+)
+
 
 # Markers to identify meaningful failure lines in `nix-build` stderr.
 _NIX_ERROR_MARKERS = (
@@ -382,7 +392,7 @@ def binfmt_emulation_is_installed():
         "--rm",
         "--init",
         "--privileged",
-        "tonistiigi/binfmt",
+        _BINFMT_CHECK_IMAGE,
     ]
     try:
         result = subprocess.run(  # noqa: S603

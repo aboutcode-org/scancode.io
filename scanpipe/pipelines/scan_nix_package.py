@@ -58,6 +58,15 @@ class ScanNixPackage(ScanSinglePackage, DeployToDevelop, ScanCodebase):
 
           docker run --privileged --rm --init tonistiigi/binfmt --install all
 
+      To detect whether handlers are installed, the pipeline runs the same
+      image **read-only** with ``--privileged`` and no arguments. The
+      privilege is required because Docker masks
+      ``/proc/sys/fs/binfmt_misc`` in unprivileged containers, so the host
+      state cannot be read any other way. The container exits immediately
+      after printing the registered handlers; nothing is installed. The
+      image is pinned by digest, and the check result is cached per worker
+      process.
+
     - The directory referenced by ``SCANCODEIO_NIXPKGS_CACHE_DIR`` must be
       writable and visible to both the ``worker`` container and the ``dind``
       daemon. The default Compose stack handles this by placing it under the
@@ -96,18 +105,13 @@ class ScanNixPackage(ScanSinglePackage, DeployToDevelop, ScanCodebase):
                 "Start the stack with the 'dind' Compose profile, or install "
                 "and start a Docker daemon reachable through DOCKER_HOST."
             )
-        if not nix.binfmt_emulation_is_installed():
-            return (
-                "Multi-arch binfmt emulation is not installed on the Docker "
-                "host. Run: docker run --privileged --rm --init "
-                "tonistiigi/binfmt --install all"
-            )
         return None
 
     @classmethod
     def steps(cls):
         return (
             cls.check_input_and_return_purl,
+            cls.check_prerequisites,
             cls.prepare_nix_environment,
             cls.fetch_inputs,
             cls.collect_input_info,
@@ -127,6 +131,15 @@ class ScanNixPackage(ScanSinglePackage, DeployToDevelop, ScanCodebase):
     def check_input_and_return_purl(self):
         """Validate the input is a Nix PURL string and return the PURL object."""
         self.purl = nix.check_input_and_return_purl(self.project)
+
+    def check_prerequisites(self):
+        """Verify Docker-host prerequisites for cross-architecture builds."""
+        if not nix.binfmt_emulation_is_installed():
+            raise RuntimeError(
+                "Multi-arch binfmt emulation is not installed on the Docker "
+                "host. Run: docker run --privileged --rm --init "
+                "tonistiigi/binfmt --install all"
+            )
 
     def prepare_nix_environment(self):
         """Ensure the custom Nix image exists and run the periodic store GC."""

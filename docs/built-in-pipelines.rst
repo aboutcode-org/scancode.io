@@ -304,6 +304,12 @@ Scan Nix Package
 
    See the class documentation below for the full list of requirements.
 
+   This pipeline also runs a read-only ``--privileged`` container
+   (``tonistiigi/binfmt``, pinned by digest) to detect whether the
+   handlers are installed. Nothing is installed by the pipeline itself;
+   if the handlers are missing, the pipeline fails at its first step
+   with the command to install them.
+
 .. autoclass:: scanpipe.pipelines.scan_nix_package.ScanNixPackage()
     :members:
     :member-order: bysource
