@@ -24,9 +24,9 @@ Ctags Symbols
   Check the **"Execute pipeline now"** option and validate with the **"Add pipeline"**
   button.
 
-.. warning::
-    The ``collect_symbols_ctags`` pipeline requires ``universal-ctags``, please refer
-    to the :ref:`system_dependencies`.
+.. note::
+    The ``collect_symbols_ctags`` pipeline requires ``universal-ctags``, included in
+    the Docker image. See :ref:`run_with_docker`.
 
 - Once the pipeline run completes with success, you can reach the **Resources** list view
   by clicking the count number under the **"RESOURCES"** header:
@@ -47,9 +47,9 @@ Xgettext Strings
   Check the **"Execute pipeline now"** option and validate with the **"Add pipeline"**
   button.
 
-.. warning::
-    The ``collect_strings_gettext`` pipeline requires ``gettext``, please refer
-    to the :ref:`system_dependencies`.
+.. note::
+    The ``collect_strings_gettext`` pipeline requires ``gettext``, included in the
+    Docker image. See :ref:`run_with_docker`.
 
 - Once the pipeline run completes with success, you can reach the **Resources** list view
   by clicking the count number under the **"RESOURCES"** header:

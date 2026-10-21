@@ -705,6 +705,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
             self.codebaserelations,
             self.discovereddependencies,
             self.discoveredlicenses,
+            self.originmatchs,
             self.codebaseresources,
             self.runs,
         ]
@@ -2455,6 +2456,10 @@ class CodebaseResourceQuerySet(ComplianceAlertQuerySetMixin, ProjectRelatedQuery
             ~Q(extra_data__directory_content="")
             and ~Q(extra_data__directory_content__in=IGNORED_DIRECTORY_FINGERPRINTS)
         )
+
+    def without_file_fingerprints(self):
+        """Resources that do not have the `halo1` file fingerprint in `extra_data`."""
+        return self.exclude(extra_data__has_key="halo1")
 
     def elfs(self):
         """
@@ -5047,3 +5052,106 @@ class ScorecardCheck(UUIDPKModel, ScorecardChecksMixin):
             details=check.details or [],
             package_score=package_score,
         )
+
+
+class OriginMatchQuerySet(ProjectRelatedQuerySet):
+    def exact_matches(self):
+        return self.filter(match_type__in=self.model.EXACT_MATCH_TYPES)
+
+    def partial_matches(self):
+        return self.exclude(match_type__in=self.model.EXACT_MATCH_TYPES)
+
+
+class OriginMatch(UUIDPKModel, ProjectRelatedModel, ExtraDataFieldMixin, AdminURLMixin):
+    """
+    A candidate origin package for a resource, as reported by an origin tool.
+
+    An origin tool can report several candidates for the same resource, and
+    several tools can report candidates for the same resource. A candidate is not
+    a conclusion: only the origin selected after review becomes a discovered
+    package. Origin matches are not included in the output files yet.
+    """
+
+    class MatchType(models.TextChoices):
+        PACKAGE = "package"
+        FILE = "file"
+        DIRECTORY = "directory"
+        APPROXIMATE = "approximate"
+        SNIPPET = "snippet"
+
+    # A directory match can be approximate, so only these types are exact.
+    EXACT_MATCH_TYPES = [MatchType.PACKAGE, MatchType.FILE]
+
+    resource = models.ForeignKey(
+        CodebaseResource,
+        related_name="origin_matches",
+        on_delete=models.CASCADE,
+        editable=False,
+        help_text=_("The matched file or directory."),
+    )
+    purl = models.CharField(
+        max_length=2048,
+        help_text=_("Package URL (PURL) of the candidate origin package."),
+    )
+    match_type = models.CharField(
+        max_length=20,
+        choices=MatchType.choices,
+        help_text=_(
+            "How the resource matched the origin package: the whole package "
+            "archive, an exact file, a directory, an approximate file, or a snippet."
+        ),
+    )
+    tool = models.CharField(
+        max_length=50,
+        help_text=_("Name of the tool that reported this match."),
+    )
+    tool_version = models.CharField(
+        max_length=100,
+        blank=True,
+        help_text=_("Version of the tool that reported this match."),
+    )
+    origin_path = models.CharField(
+        max_length=2000,
+        blank=True,
+        help_text=_("Path of the matched file in the origin package."),
+    )
+    line_ranges = models.JSONField(
+        default=list,
+        blank=True,
+        help_text=_(
+            "Matched line ranges, as a list of mappings with the 'lines' of the "
+            "resource and, when the tool reports them, the corresponding "
+            "'origin_lines' of the origin file."
+        ),
+    )
+    similarity = models.PositiveSmallIntegerField(
+        null=True,
+        blank=True,
+        help_text=_(
+            "Percentage of the resource matched by the origin file, from 0 to 100. "
+            "Empty when the tool does not report it."
+        ),
+    )
+
+    objects = OriginMatchQuerySet.as_manager()
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["purl"]),
+            models.Index(fields=["match_type"]),
+            models.Index(fields=["tool"]),
+            models.Index(fields=["similarity"]),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["resource", "purl", "match_type", "tool", "origin_path"],
+                name="%(app_label)s_%(class)s_unique_origin_match",
+            ),
+            models.CheckConstraint(
+                condition=Q(similarity__lte=100),
+                name="%(app_label)s_%(class)s_similarity_max_100",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.purl} ({self.match_type} match by {self.tool})"

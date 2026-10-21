@@ -122,24 +122,13 @@ SCANCODEIO_ASYNC
 When enabled, pipeline runs are **executed asynchronously**, meaning that users can
 continue using the app while the pipeline are run in the background.
 
-The ASYNC mode is **enabled by default in a "Run with Docker" configuration** but
-**disabled in a "Local development" setup**.
+The ASYNC mode is **enabled by default** in the Docker setups: pipeline runs are sent
+to a task queue and executed by the ``worker`` service.
 
-It is possible to enable ASYNC mode in a "local development" setup with the following
-setting::
+To execute the pipeline runs synchronously in the web server process instead, add
+the following setting to your ``.env`` file::
 
-    SCANCODEIO_ASYNC=True
-
-Once enabled, pipeline runs will be sent to a task queue instead of being executed
-synchronously in the web server process.
-
-.. warning::
-    The ASYNC mode required a **Redis server** and running a **tasks worker** using
-    ``$ make worker``.
-
-    On macOS, the ASYNC mode requires the following line in your environment::
-
-        export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
+    SCANCODEIO_ASYNC=False
 
 SCANCODEIO_TASK_TIMEOUT
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -260,13 +249,7 @@ Or, in the context of running a :ref:`scanpipe command <command_line_interface>`
 
 .. code-block:: console
 
-    $ SCANCODEIO_LOG_LEVEL=DEBUG bin/scanpipe [command]
-
-The web server can be started in DEBUG mode with:
-
-.. code-block:: console
-
-    $ SCANCODEIO_LOG_LEVEL=DEBUG make run
+    $ docker compose exec -e SCANCODEIO_LOG_LEVEL=DEBUG web scanpipe [command]
 
 .. _scancodeio_settings_site_url:
 
@@ -398,6 +381,36 @@ API key using ``MATCHCODEIO_API_KEY``::
 
     MATCHCODEIO_API_KEY=insert_your_api_key_here
 
+.. _scancodeio_settings_scanoss:
+
+SCANOSS
+^^^^^^^
+
+`SCANOSS <https://www.scanoss.com/>`_ identifies the origin of files and code
+snippets. You can use the free public service, a premium service, or your own
+instance.
+
+To configure your local environment, set the ``SCANOSS_URL`` in your ``.env``
+file::
+
+    SCANOSS_URL=https://api.osskb.org
+
+If your SCANOSS service requires authentication, you can provide the API key
+using ``SCANOSS_API_KEY``::
+
+    SCANOSS_API_KEY=insert_your_api_key_here
+
+The latest version of the SCANOSS client is used by default. You can pin a
+version using ``SCANOSS_PY_VERSION``::
+
+    SCANOSS_PY_VERSION=1.54.2
+
+.. note::
+    The SCANOSS client is installed in a temporary environment for each scan,
+    using the ``uvx`` executable, which requires access to PyPI.
+    Only the file paths, checksums, sizes, and fingerprints are sent to the
+    SCANOSS service, not the file contents.
+
 .. _scancodeio_settings_federatedcode:
 
 FEDERATEDCODE
@@ -418,6 +431,55 @@ Also provide the name and email that will be used to sign off on commits to Git 
     FEDERATEDCODE_GIT_SERVICE_NAME=insert_name_here
 
     FEDERATEDCODE_GIT_SERVICE_EMAIL=insert_email_here
+
+.. _scancodeio_settings_grimoirelab:
+
+GrimoireLab
+^^^^^^^^^^^^^
+
+GrimoireLab is a platform for software development analytics and insights.
+
+Before launching the GrimoireLab service, ensure that your GrimoireLab
+instance is version 2.x and that OpenSearch is running.
+
+See https://github.com/chaoss/grimoirelab#getting-started for more details
+on the installation.
+
+To configure your local environment, set the following in your ``.env`` file::
+
+    GRIMOIRELAB_METRICS_EXECUTABLE="./healthycode/venv/bin/grimoirelab-metrics"
+    GRIMOIRELAB_URL="http://example.com:8000"
+    GRIMOIRELAB_USERNAME="username"
+    GRIMOIRELAB_PASSWORD="password"
+    GRIMOIRELAB_OPENSEARCH_URL="https://example.com:9200"
+    GRIMOIRELAB_OPENSEARCH_INDEX="events"
+    GRIMOIRELAB_OPENSEARCH_USERNAME="opensearch_username"
+    GRIMOIRELAB_OPENSEARCH_PASSWORD="opensearch_password"
+    GRIMOIRELAB_ECOSYSTEM="npmlargerecosystem"
+    GRIMOIRELAB_PROJECT="NPMMostUsed"
+
+The following variables configure the connection to the GrimoireLab instance:
+
+- ``GRIMOIRELAB_METRICS_EXECUTABLE``: Path to the grimoirelab-metrics executable, See
+  here for more details on how to set up
+  the grimoirelab-metrics executable: https://github.com/aboutcode-org/healthycode#installation
+
+- ``GRIMOIRELAB_URL``: URL of the GrimoireLab instance.
+- ``GRIMOIRELAB_USERNAME``: Username used to authenticate with GrimoireLab.
+- ``GRIMOIRELAB_PASSWORD``: Password used to authenticate with GrimoireLab.
+
+The following variables configure the connection to OpenSearch:
+
+- ``GRIMOIRELAB_OPENSEARCH_URL``: URL of the OpenSearch instance.
+- ``GRIMOIRELAB_OPENSEARCH_INDEX``: OpenSearch index containing the GrimoireLab events.
+- ``GRIMOIRELAB_OPENSEARCH_USERNAME``: Username used to authenticate with OpenSearch.
+- ``GRIMOIRELAB_OPENSEARCH_PASSWORD``: Password used to authenticate with OpenSearch.
+
+The following variables specify the GrimoireLab project where the project
+data is stored:
+
+- ``GRIMOIRELAB_ECOSYSTEM``: Ecosystem containing the project data.
+- ``GRIMOIRELAB_PROJECT``: Name of the GrimoireLab project containing the project data.
 
 
 .. _scancodeio_settings_fetch_authentication:

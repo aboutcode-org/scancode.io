@@ -32,6 +32,7 @@ from django.urls import clear_url_caches
 from django.urls import reverse
 from django.urls.exceptions import NoReverseMatch
 
+from scanpipe.models import OriginMatch
 from scanpipe.models import Project
 from scanpipe.tests import make_dependency
 from scanpipe.tests import make_package
@@ -89,9 +90,21 @@ class ScanPipeAdminTest(TestCase):
             f"/admin/scanpipe/discovereddependency/{dependency.id}/change/",
             dependency.get_admin_url(),
         )
+        origin_match = OriginMatch.objects.create(
+            project=self.project1,
+            resource=resource,
+            purl="pkg:pypi/six@1.17.0",
+            match_type=OriginMatch.MatchType.FILE,
+            tool="matchcode",
+        )
+        self.assertEqual(
+            f"/admin/scanpipe/originmatch/{origin_match.uuid}/change/",
+            origin_match.get_admin_url(),
+        )
 
         with override_settings(SCANPIPE={"ENABLE_ADMIN_SITE": False}):
             refresh_url_cache()
             self.assertIsNone(resource.get_admin_url())
             self.assertIsNone(package.get_admin_url())
             self.assertIsNone(dependency.get_admin_url())
+            self.assertIsNone(origin_match.get_admin_url())

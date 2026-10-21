@@ -614,7 +614,11 @@ def save_resource_reachability_report(resource, commit_hash, vcs_url, new_report
         old_commit_hash = patch_info.get("commit_hash")
         old_vcs_url = patch_info.get("vcs_url")
 
-        if old_commit_hash == commit_hash and old_vcs_url == vcs_url:
+        if (
+            old_commit_hash == commit_hash
+            and old_vcs_url == vcs_url
+            and old_report.get("tool_name") == new_report.get("tool_name")
+        ):
             if not replaced:
                 cleaned_reports.append(new_report)
                 replaced = True

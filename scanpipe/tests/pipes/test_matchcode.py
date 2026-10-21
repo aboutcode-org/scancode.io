@@ -30,9 +30,11 @@ from django.test import TestCase
 
 from scanpipe.models import AbstractTaskFieldsModel
 from scanpipe.models import CodebaseResource
+from scanpipe.models import OriginMatch
 from scanpipe.models import Project
 from scanpipe.pipes import matchcode
 from scanpipe.pipes.input import copy_input
+from scanpipe.tests import make_resource_directory
 from scanpipe.tests import make_resource_file
 
 
@@ -41,6 +43,14 @@ class MatchCodePipesTest(TestCase):
 
     def setUp(self):
         self.project1 = Project.objects.create(name="Analysis")
+
+    def make_scheduler_resource(self, path):
+        """Create a resource at ``path`` with the scheduler.js fixture content."""
+        resource = make_resource_file(self.project1, path)
+        resource.location_path.parent.mkdir(parents=True, exist_ok=True)
+        scheduler_location = self.data / "find-origins" / "scheduler.js"
+        resource.location_path.write_text(scheduler_location.read_text())
+        return resource
 
     def test_scanpipe_pipes_matchcode_fingerprint_codebase_directories(self):
         fixtures = self.data / "asgiref" / "asgiref-3.3.0_fixtures.json"
@@ -441,3 +451,237 @@ class MatchCodePipesTest(TestCase):
         self.assertEqual(expected_extra_data, codebase_resource3.extra_data)
         self.assertFalse(codebase_resource1.extra_data)
         self.assertFalse(codebase_resource2.extra_data)
+
+    @mock.patch("scanpipe.pipes.matchcode.get_match_results")
+    @mock.patch("scanpipe.pipes.matchcode.poll_run_url_status")
+    @mock.patch("scanpipe.pipes.matchcode.send_project_json_to_matchcode")
+    @mock.patch("scanpipe.pipes.matchcode.fingerprint_codebase_directories")
+    @mock.patch("scanpipe.pipes.matchcode.fingerprint_codebase_resources")
+    def test_scanpipe_pipes_matchcode_match_codebase(
+        self,
+        mock_fingerprint_resources,
+        mock_fingerprint_directories,
+        mock_send_project_json,
+        mock_poll_run_url_status,
+        mock_get_match_results,
+    ):
+        mock_send_project_json.return_value = ("match_url", "run_url")
+        mock_poll_run_url_status.return_value = True
+        mock_get_match_results.return_value = {"files": []}
+        make_resource_file(self.project1, "fingerprinted.js", extra_data={"halo1": "0"})
+        new_file = make_resource_file(self.project1, "new.js")
+
+        match_results = matchcode.match_codebase(self.project1)
+        self.assertEqual({"files": []}, match_results)
+        fingerprint_call = mock_fingerprint_resources.call_args
+        self.assertEqual((self.project1,), fingerprint_call.args)
+        self.assertQuerySetEqual(fingerprint_call.kwargs["resource_qs"], [new_file])
+        mock_fingerprint_directories.assert_called_once_with(self.project1)
+        mock_send_project_json.assert_called_once_with(self.project1)
+        mock_poll_run_url_status.assert_called_once_with("run_url")
+        mock_get_match_results.assert_called_once_with("match_url")
+
+        mock_get_match_results.return_value = None
+        with self.assertRaises(matchcode.MatchCodeIOException):
+            matchcode.match_codebase(self.project1)
+
+    def test_scanpipe_pipes_matchcode_save_match_results(self):
+        match_results = {"files": [{"path": "six.py"}]}
+        matchcode.save_match_results(self.project1, match_results)
+
+        output_file = next(self.project1.output_path.glob("matchcode-*.json"))
+        self.assertEqual(match_results, json.loads(output_file.read_text()))
+
+    def test_scanpipe_pipes_matchcode_get_resource_line_by_pos(self):
+        resource = make_resource_file(self.project1, "words.txt")
+        resource.location_path.write_text("alpha beta\ngamma\n\ndelta\n")
+
+        expected = {0: 1, 1: 1, 2: 2, 3: 4}
+        self.assertEqual(expected, matchcode.get_resource_line_by_pos(resource))
+
+    def test_scanpipe_pipes_matchcode_get_snippet_line_ranges(self):
+        line_by_pos = {0: 1, 1: 1, 2: 2, 3: 2, 4: 3, 5: 4, 6: 5}
+        line_ranges = matchcode.get_snippet_line_ranges([0, 1, 2, 5, 6], line_by_pos)
+        self.assertEqual([(1, 2), (4, 5)], line_ranges)
+
+    def test_scanpipe_pipes_matchcode_get_line_coverage(self):
+        line_by_pos = {0: 1, 1: 2, 2: 4, 3: 5}
+        self.assertEqual(50, matchcode.get_line_coverage([(1, 3)], line_by_pos))
+        self.assertEqual(100, matchcode.get_line_coverage([(1, 5)], line_by_pos))
+
+    def test_scanpipe_pipes_matchcode_is_legal_file_path(self):
+        self.assertTrue(matchcode.is_legal_file_path("package/LICENSE"))
+        self.assertTrue(matchcode.is_legal_file_path("crate-1.0/LICENSE-MIT"))
+        self.assertTrue(matchcode.is_legal_file_path("COPYING.txt"))
+        self.assertTrue(matchcode.is_legal_file_path("docs/mit.license"))
+        self.assertFalse(matchcode.is_legal_file_path("package/debounce.js"))
+
+    def test_scanpipe_pipes_matchcode_get_origin_match_extra_data(self):
+        package_data = {
+            "purl": "pkg:npm/ms@2.1.3",
+            "package_uid": "pkg:npm/ms@2.1.3?uuid=1",
+            "release_date": None,
+            "declared_license_expression": "mit",
+            "download_url": "https://registry.npmjs.org/ms/-/ms-2.1.3.tgz",
+        }
+        expected = {
+            "package_uid": "pkg:npm/ms@2.1.3?uuid=1",
+            "release_date": "",
+            "declared_license_expression": "mit",
+            "download_url": "https://registry.npmjs.org/ms/-/ms-2.1.3.tgz",
+        }
+        self.assertEqual(expected, matchcode.get_origin_match_extra_data(package_data))
+
+    def test_scanpipe_pipes_matchcode_make_snippet_origin_matches(self):
+        resource = self.make_scheduler_resource("scheduler.js")
+        matched_snippets = [
+            {
+                "package": "pkg:npm/lodash@4.17.21",
+                "resource": "package/debounce.js",
+                "similarity": 0.005,
+                "match_detections": [59, 60, 61],
+            },
+            {
+                "package": "pkg:npm/lodash@4.17.21",
+                "resource": "package/LICENSE",
+                "similarity": 0.028,
+                "match_detections": [0, 1, 2],
+            },
+        ]
+
+        origin_matches = list(
+            matchcode.make_snippet_origin_matches(
+                resource, matched_snippets, {}, "38.1.0"
+            )
+        )
+        self.assertEqual(1, len(origin_matches))
+        origin_match = origin_matches[0]
+        self.assertEqual(OriginMatch.MatchType.SNIPPET, origin_match.match_type)
+        self.assertEqual("package/debounce.js", origin_match.origin_path)
+        self.assertEqual(0.005, origin_match.extra_data["snippet_similarity"])
+        self.assertEqual("38.1.0", origin_match.tool_version)
+
+    def test_scanpipe_pipes_matchcode_make_package_origin_matches(self):
+        resource = make_resource_file(self.project1, "index.js")
+        package_data_by_uid = {
+            "uid1": {"purl": "pkg:npm/ms@2.1.3", "package_uid": "uid1"},
+            "uid2": {"purl": "pkg:npm/ms@2.1.3", "package_uid": "uid2"},
+        }
+
+        origin_matches = list(
+            matchcode.make_package_origin_matches(
+                resource,
+                OriginMatch.MatchType.DIRECTORY,
+                ["uid1", "uid2"],
+                package_data_by_uid,
+                "38.1.0",
+            )
+        )
+        self.assertEqual(1, len(origin_matches))
+        self.assertEqual("pkg:npm/ms@2.1.3", origin_matches[0].purl)
+        self.assertIsNone(origin_matches[0].similarity)
+
+        origin_matches = list(
+            matchcode.make_package_origin_matches(
+                resource,
+                OriginMatch.MatchType.FILE,
+                ["uid1"],
+                package_data_by_uid,
+                "38.1.0",
+            )
+        )
+        self.assertEqual(100, origin_matches[0].similarity)
+
+    def test_scanpipe_pipes_matchcode_make_origin_matches(self):
+        resource = self.make_scheduler_resource("scheduler.js")
+        package_data = {"purl": "pkg:npm/lodash@4.17.21", "package_uid": "uid1"}
+        package_data_by_uid = {"uid1": package_data}
+        package_data_by_purl = {"pkg:npm/lodash@4.17.21": package_data}
+
+        file_results = {
+            "status": "matched-to-purldb-resource",
+            "for_packages": ["uid1"],
+            "extra_data": {},
+        }
+        origin_matches = list(
+            matchcode.make_origin_matches(
+                resource,
+                file_results,
+                package_data_by_uid,
+                package_data_by_purl,
+                "38.1.0",
+            )
+        )
+        self.assertEqual(OriginMatch.MatchType.FILE, origin_matches[0].match_type)
+
+        snippet_results = {
+            "status": "scanned",
+            "for_packages": ["uid1"],
+            "extra_data": {
+                "matched_snippets": [
+                    {
+                        "package": "pkg:npm/lodash@4.17.21",
+                        "resource": "package/debounce.js",
+                        "similarity": 0.005,
+                        "match_detections": [59, 60, 61],
+                    }
+                ]
+            },
+        }
+        origin_matches = list(
+            matchcode.make_origin_matches(
+                resource,
+                snippet_results,
+                package_data_by_uid,
+                package_data_by_purl,
+                "38.1.0",
+            )
+        )
+        self.assertEqual(OriginMatch.MatchType.SNIPPET, origin_matches[0].match_type)
+
+        unknown_status_results = {**file_results, "status": "scanned"}
+        origin_matches = matchcode.make_origin_matches(
+            resource,
+            unknown_status_results,
+            package_data_by_uid,
+            package_data_by_purl,
+            "38.1.0",
+        )
+        self.assertEqual([], list(origin_matches))
+
+    def test_scanpipe_pipes_matchcode_load_matchcode_results(self):
+        results_location = self.data / "find-origins" / "matchcode-results.json"
+        match_results = json.loads(results_location.read_text())
+        make_resource_directory(self.project1, "embedded-package/vendor/ms")
+        make_resource_file(self.project1, "embedded-package/vendor/ms/index.js")
+        make_resource_file(self.project1, "exact-copy/myapp/_vendor/six.py")
+        make_resource_file(self.project1, "no-origin/src/greenhouse_watering.py")
+        self.make_scheduler_resource("snippet/src/scheduler.js")
+
+        origin_match_count = matchcode.load_matchcode_results(
+            self.project1, match_results
+        )
+        self.assertEqual(5, origin_match_count)
+
+        origin_matches = self.project1.originmatchs.order_by("resource__path", "purl")
+        expected = [
+            ("embedded-package/vendor/ms", "pkg:npm/ms@2.1.3", "directory", None),
+            (
+                "embedded-package/vendor/ms/index.js",
+                "pkg:npm/ms@2.1.3",
+                "directory",
+                None,
+            ),
+            ("exact-copy/myapp/_vendor/six.py", "pkg:pypi/six@1.17.0", "file", 100),
+            ("snippet/src/scheduler.js", "pkg:npm/lodash@4.17.21", "snippet", 75),
+            ("snippet/src/scheduler.js", "pkg:npm/lodash@4.17.21", "snippet", 75),
+        ]
+        values = origin_matches.values_list(
+            "resource__path", "purl", "match_type", "similarity"
+        )
+        self.assertEqual(expected, list(values))
+
+        snippet_origin_match = origin_matches.get(origin_path__endswith="debounce.js")
+        self.assertEqual([{"lines": [26, 140]}], snippet_origin_match.line_ranges)
+        self.assertEqual("matchcode", snippet_origin_match.tool)
+        self.assertEqual("38.1.0", snippet_origin_match.tool_version)
