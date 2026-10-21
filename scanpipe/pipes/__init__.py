@@ -31,6 +31,7 @@ from datetime import datetime
 from itertools import islice
 from pathlib import Path
 
+from django.db import transaction
 from django.db.models import Count
 
 from scanpipe.models import AbstractTaskFieldsModel
@@ -628,29 +629,31 @@ def create_origin_matches(
     OriginMatch instances of a resource. Resources are processed by batches of
     ``batch_size`` paths.
     The previous origin matches of ``tool`` are replaced, so a candidate that the
-    tool does not report anymore is not kept.
+    tool does not report anymore is not kept. The replacement is atomic: on error,
+    the previous origin matches are kept unchanged.
     Return the number of processed origin matches and the list of paths missing
     from the project codebase.
     """
-    project.originmatchs.filter(tool=tool).delete()
-
     paths = iter(results_by_path)
     origin_match_count = 0
     missing_paths = []
 
-    while batch_paths := list(islice(paths, batch_size)):
-        resources = project.codebaseresources.filter(path__in=batch_paths)
-        resources_by_path = {resource.path: resource for resource in resources}
-        missing_paths.extend(
-            path for path in batch_paths if path not in resources_by_path
-        )
+    with transaction.atomic():
+        project.originmatchs.filter(tool=tool).delete()
 
-        origin_matches = [
-            origin_match
-            for path, resource in resources_by_path.items()
-            for origin_match in make_origin_matches(resource, results_by_path[path])
-        ]
-        OriginMatch.objects.bulk_create(origin_matches, ignore_conflicts=True)
-        origin_match_count += len(origin_matches)
+        while batch_paths := list(islice(paths, batch_size)):
+            resources = project.codebaseresources.filter(path__in=batch_paths)
+            resources_by_path = {resource.path: resource for resource in resources}
+            missing_paths.extend(
+                path for path in batch_paths if path not in resources_by_path
+            )
+
+            origin_matches = [
+                origin_match
+                for path, resource in resources_by_path.items()
+                for origin_match in make_origin_matches(resource, results_by_path[path])
+            ]
+            OriginMatch.objects.bulk_create(origin_matches, ignore_conflicts=True)
+            origin_match_count += len(origin_matches)
 
     return origin_match_count, missing_paths

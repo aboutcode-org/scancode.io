@@ -122,6 +122,40 @@ class ScanPipePipesTest(TestCase):
             six_resource.origin_matches.filter(pk=other_tool_match.pk).exists()
         )
 
+    def test_scanpipe_pipes_create_origin_matches_is_atomic(self):
+        project1 = make_project()
+        six_resource = make_resource_file(project1, "six.py")
+        make_resource_file(project1, "ini.c")
+        previous_match = OriginMatch.objects.create(
+            project=project1,
+            resource=six_resource,
+            purl="pkg:pypi/six@1.16.0",
+            match_type=OriginMatch.MatchType.FILE,
+            tool="test",
+        )
+        results_by_path = {
+            "six.py": ["pkg:pypi/six@1.17.0"],
+            "ini.c": ["pkg:github/benhoyt/inih@r62"],
+        }
+
+        def make_origin_matches(resource, purls):
+            if resource.path == "ini.c":
+                raise ValueError("Invalid results")
+            for purl in purls:
+                yield OriginMatch(
+                    project=project1,
+                    resource=resource,
+                    purl=purl,
+                    match_type=OriginMatch.MatchType.FILE,
+                    tool="test",
+                )
+
+        with self.assertRaises(ValueError):
+            pipes.create_origin_matches(
+                project1, "test", results_by_path, make_origin_matches, batch_size=1
+            )
+        self.assertQuerySetEqual(project1.originmatchs.all(), [previous_match])
+
     @mock.patch("scanpipe.pipes.datetime", mocked_now)
     def test_scanpipe_pipes_filename_now(self):
         self.assertEqual("2010-10-10-10-10-10", pipes.filename_now())
