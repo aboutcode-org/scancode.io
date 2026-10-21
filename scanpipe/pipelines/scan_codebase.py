@@ -20,6 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
+from aboutcode.pipeline import optional_step
 from scanpipe import pipes
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import scancode
@@ -35,9 +36,12 @@ class ScanCodebase(Pipeline):
     of a package. It does not scan for system (Linux distro) packages.
     """
 
+    use_cached_results = False
+
     @classmethod
     def steps(cls):
         return (
+            cls.enable_sctk_results_cache,
             cls.copy_inputs_to_codebase_directory,
             cls.extract_archives,
             cls.collect_and_create_codebase_resources,
@@ -47,6 +51,10 @@ class ScanCodebase(Pipeline):
             cls.scan_for_files,
             cls.collect_and_create_license_detections,
         )
+
+    @optional_step("use cached sctk results")
+    def enable_sctk_results_cache(self):
+        self.use_cached_results = True
 
     def copy_inputs_to_codebase_directory(self):
         """
@@ -61,11 +69,19 @@ class ScanCodebase(Pipeline):
 
     def scan_for_application_packages(self):
         """Scan unknown resources for packages information."""
-        scancode.scan_for_application_packages(self.project, progress_logger=self.log)
+        scancode.scan_for_application_packages(
+            self.project,
+            progress_logger=self.log,
+            use_cached_results=self.use_cached_results,
+        )
 
     def scan_for_files(self):
         """Scan unknown resources for copyrights, licenses, emails, and urls."""
-        scancode.scan_for_files(self.project, progress_logger=self.log)
+        scancode.scan_for_files(
+            self.project,
+            progress_logger=self.log,
+            use_cached_results=self.use_cached_results,
+        )
 
     def collect_and_create_license_detections(self):
         """

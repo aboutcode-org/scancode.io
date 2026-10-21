@@ -219,10 +219,10 @@ def _scan_resource(
     Return a dictionary of scan `results` and a list of `errors`.
     The `with_threading` needs to be enabled for the timeouts support.
     """
-    # `rid` is not needed in this context, yet required in the scan_resource args
-    location_rid = location, 0
+    # `path` is not needed in this context, yet required in the scan_resource args
+    location_path = location, location
     _, _, errors, _, results, _ = scancode_cli.scan_resource(
-        location_rid,
+        location_path,
         scanners,
         timeout=timeout,
         with_threading=with_threading,
@@ -231,7 +231,13 @@ def _scan_resource(
     return results, errors
 
 
-def scan_file(location, with_threading=True, min_license_score=0, **kwargs):
+def scan_file(
+    location,
+    with_threading=True,
+    min_license_score=0,
+    use_cached_results=False,
+    **kwargs,
+):
     """
     Run a license, copyright, email, and url scan on a provided `location`,
     using the scancode-toolkit direct API.
@@ -249,7 +255,12 @@ def scan_file(location, with_threading=True, min_license_score=0, **kwargs):
         Scanner("emails", scancode_api.get_emails),
         Scanner("urls", scancode_api.get_urls),
     ]
-    return _scan_resource(location, scanners, with_threading=with_threading)
+    return _scan_resource(
+        location,
+        scanners,
+        with_threading=with_threading,
+        use_cached_results=use_cached_results,
+    )
 
 
 def scan_for_package_data(
@@ -257,6 +268,7 @@ def scan_for_package_data(
     with_threading=True,
     package_only=False,
     compiled=False,
+    use_cached_results=False,
     **kwargs,
 ):
     """
@@ -272,7 +284,12 @@ def scan_for_package_data(
     scanners = [
         Scanner("package_data", scancode_get_packages),
     ]
-    return _scan_resource(location, scanners, with_threading=with_threading)
+    return _scan_resource(
+        location,
+        scanners,
+        with_threading=with_threading,
+        use_cached_results=use_cached_results,
+    )
 
 
 def save_scan_file_results(codebase_resource, scan_results, scan_errors):
@@ -312,6 +329,7 @@ def scan_resources(
     scan_func_kwargs=None,
     progress_logger=None,
     file_size_limit=None,
+    use_cached_results=False,
 ):
     """
     Run the `scan_func` on the codebase resources of the provided `resource_qs`.
@@ -355,7 +373,10 @@ def scan_resources(
             progress.log_progress()
             logger.debug(f"{scan_func.__name__} pk={resource.pk}")
             scan_results, scan_errors = scan_func(
-                resource.location, with_threading, **scan_func_kwargs
+                resource.location,
+                with_threading,
+                use_cached_results=use_cached_results,
+                **scan_func_kwargs,
             )
             save_func(resource, scan_results, scan_errors)
         return
@@ -364,7 +385,12 @@ def scan_resources(
 
     with futures.ProcessPoolExecutor(max_workers) as executor:
         future_to_resource = {
-            executor.submit(scan_func, resource.location, **scan_func_kwargs): resource
+            executor.submit(
+                scan_func,
+                resource.location,
+                use_cached_results=use_cached_results,
+                **scan_func_kwargs,
+            ): resource
             for resource in resource_iterator
         }
 
@@ -388,7 +414,9 @@ def scan_resources(
             save_func(resource, scan_results, scan_errors)
 
 
-def scan_for_files(project, resource_qs=None, progress_logger=None):
+def scan_for_files(
+    project, resource_qs=None, progress_logger=None, use_cached_results=False
+):
     """
     Run a license, copyright, email, and url scan on files without a status for
     a `project`.
@@ -412,6 +440,7 @@ def scan_for_files(project, resource_qs=None, progress_logger=None):
         save_func=save_scan_file_results,
         progress_logger=progress_logger,
         file_size_limit=file_size_limit,
+        use_cached_results=use_cached_results,
     )
 
 
@@ -422,6 +451,7 @@ def scan_for_application_packages(
     package_only=False,
     resource_qs=None,
     progress_logger=logger.info,
+    use_cached_results=False,
 ):
     """
     Run a package scan on resources without a status for a `project`,
@@ -453,6 +483,7 @@ def scan_for_application_packages(
         save_func=save_scan_package_results,
         progress_logger=progress_logger,
         scan_func_kwargs=scan_func_kwargs,
+        use_cached_results=use_cached_results,
     )
 
     # Iterate through CodebaseResources with Package data and handle them using

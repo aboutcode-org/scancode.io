@@ -59,7 +59,7 @@ dependencies = [
   # Docker
   "container-inspector==33.1.0",
   # ScanCode-toolkit
-  "scancode-toolkit-devel[packages] @ git+http://github.com/aboutcode-org/scancode-toolkit@d7dd2467358afb0670d3d889bf9ec0f3de576205",
+  "scancode-toolkit-devel[packages] @ git+http://github.com/aboutcode-org/scancode-toolkit@556fde3d72b9da7afb9ef3cec4b8ceb62c618dde",
   "extractcode[full]==31.1.0",
   "commoncode==32.5.2",
   "beautifulsoup4[chardet]==4.15.0",
