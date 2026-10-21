@@ -50,6 +50,15 @@ CodebaseRelation
     :undoc-members:
     :member-order: groupwise
 
+.. _data_models_origin_match:
+
+OriginMatch
+-----------
+.. autoclass:: scanpipe.models.OriginMatch()
+    :members:
+    :undoc-members:
+    :member-order: groupwise
+
 .. _data_models_project_message:
 
 ProjectMessage

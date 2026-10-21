@@ -5064,7 +5064,14 @@ class OriginMatchQuerySet(ProjectRelatedQuerySet):
 
 
 class OriginMatch(UUIDPKModel, ProjectRelatedModel, ExtraDataFieldMixin, AdminURLMixin):
-    """A candidate origin package for a resource, as reported by an origin tool."""
+    """
+    A candidate origin package for a resource, as reported by an origin tool.
+
+    An origin tool can report several candidates for the same resource, and
+    several tools can report candidates for the same resource. A candidate is not
+    a conclusion: only the origin selected after review becomes a discovered
+    package. Origin matches are not included in the output files yet.
+    """
 
     class MatchType(models.TextChoices):
         PACKAGE = "package"
