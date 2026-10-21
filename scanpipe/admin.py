@@ -27,6 +27,7 @@ from django.utils.html import format_html
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
+from scanpipe.models import OriginMatch
 from scanpipe.models import Project
 
 
@@ -165,6 +166,32 @@ class DiscoveredDependencyAdmin(ScanPipeBaseAdmin):
     ordering = ["project", "dependency_uid"]
 
 
+class OriginMatchAdmin(ScanPipeBaseAdmin):
+    list_display = [
+        "purl",
+        "match_type",
+        "similarity",
+        "tool",
+        "resource",
+        "project",
+    ]
+    search_fields = [
+        "uuid",
+        "purl",
+        "origin_path",
+        "resource__path",
+    ]
+    list_filter = ["project", "match_type", "tool"]
+    list_select_related = ["resource", "project"]
+    ordering = ["project", "resource__path", "-similarity", "purl"]
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
 class ScanCodeIOAdminSite(admin.AdminSite):
     site_header = "ScanCode.io administration"
     site_title = "ScanCode.io administration"
@@ -175,3 +202,4 @@ admin_site.register(Project, ProjectAdmin)
 admin_site.register(CodebaseResource, CodebaseResourceAdmin)
 admin_site.register(DiscoveredPackage, DiscoveredPackageAdmin)
 admin_site.register(DiscoveredDependency, DiscoveredDependencyAdmin)
+admin_site.register(OriginMatch, OriginMatchAdmin)
