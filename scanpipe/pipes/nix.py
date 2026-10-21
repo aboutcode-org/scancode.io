@@ -80,8 +80,9 @@ _NIX_ERROR_MARKERS = (
 # scripts, git commands, and file paths. They must be carefully checked
 # before use.
 # NIX_NAME_RE keeps the value free of whitespace, "/", and shell
-# metacharacters, so that `pkgs.{name}` cannot break out of the
-# expression into arbitrary Nix or shell syntax.
+# metacharacters. It is the primary defense against injection; every Nix
+# expression below also passes user input via `--argstr`, which treats
+# the value as data, never as code.
 NIX_NAME_RE = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9_\-+.]*$")
 # A git commit ID under SHA-1 is exactly 40 lowercase hex characters.
 COMMIT_RE = re.compile(r"^[0-9a-f]{40}$")
@@ -832,9 +833,10 @@ def get_nix_package_metadata(purl, commit_hash):
     )
 
     nix_expression = f"""
+    {{ name }}:
     let
         pkgs = {nixpkgs_import};
-        target = pkgs."{name}";
+        target = pkgs.${{name}};
         meta = target.meta or {{}};
         license = meta.license or {{}};
         licenseId =
@@ -866,6 +868,9 @@ def get_nix_package_metadata(purl, commit_hash):
         "--eval",
         "--strict",
         "--json",
+        "--argstr",
+        "name",
+        name,
         "-E",
         nix_expression,
     ]
@@ -1052,20 +1057,22 @@ def build_binary_with_docker(name, output_dir, system, commit_hash, output_forma
     # Fall back to the default target if the effective_output is not
     # defined in the recipe for this package.
     nix_expression = (
-        f"let "
+        "{ name, output }: "
+        "let "
         f"  pkgs = {nixpkgs_import}; "
-        f'  target = pkgs."{name}"; '
-        f"  hasIt = builtins.isAttrs target && "
-        f'builtins.hasAttr "{effective_output}" target; '
-        f"in if hasIt then target.{effective_output} else target"
+        f"  target = pkgs.${{name}}; "
+        "  hasIt = builtins.isAttrs target && builtins.hasAttr output target; "
+        f"in if hasIt then target.${{output}} else target"
     )
 
     # Build the Nix package, verify it succeeded, and export the output as
-    # a .nar file. `shlex.quote` makes the filename safe to use in a shell
-    # command on its own. `NIX_NAME_RE` already guarantees this, but quoting
-    # keeps the line safe even if the pattern changes later.
+    # a .nar file. `shlex.quote` makes the values shell-safe on the command
+    # line.
     container_script = f"""
-    OUT_PATH=$(nix-build --no-out-link -E '{nix_expression}')
+    OUT_PATH=$(nix-build --no-out-link \\
+      --argstr name {shlex.quote(name)} \\
+      --argstr output {shlex.quote(effective_output)} \\
+      -E '{nix_expression}')
     if [ -z "$OUT_PATH" ] || [ ! -e "$OUT_PATH" ]; then
         echo "Error: nix-build failed to return a valid store path." >&2
         exit 1
@@ -1191,11 +1198,12 @@ def get_nix_store_path_with_nix(name, system, output, commit_hash):
     )
 
     nix_expression = (
+        "{ name, output }: "
         "let "
         f"  pkgs = {nixpkgs_import}; "
-        f'  target = pkgs."{name}"; '
-        f'  hasIt = builtins.isAttrs target && builtins.hasAttr "{output}" target; '
-        f'in if hasIt then target.{output}.outPath else ""'
+        f"  target = pkgs.${{name}}; "
+        "  hasIt = builtins.isAttrs target && builtins.hasAttr output target; "
+        f'in if hasIt then target.${{output}}.outPath else ""'
     )
 
     container_name = f"nix-eval-{uuid.uuid4().hex[:12]}"
@@ -1214,6 +1222,12 @@ def get_nix_store_path_with_nix(name, system, output, commit_hash):
         "nix-instantiate",
         "--eval",
         "--raw",
+        "--argstr",
+        "name",
+        name,
+        "--argstr",
+        "output",
+        output,
         "-E",
         nix_expression,
     ]
@@ -1474,19 +1488,17 @@ def get_patched_source_with_docker(name, output_dir, system, commit_hash):
         commit_hash, worktree_path, system_config, config_str
     )
 
-    # Safely format the derivation name for Nix.
-    patched_name_literal = json.dumps(f"{name}-patched-src")
-
     # `applyPatches` unpacks `pkg.src`, applies `pkg.patches`, and copies
     # the resulting tree to `$out`.
     nix_expression = f"""
+    {{ name }}:
     let
         pkgs = {nixpkgs_import};
-        pkg = pkgs."{name}";
+        pkg = pkgs.${{name}};
     in
     if !(pkg ? src) then pkg
     else pkgs.applyPatches {{
-        name = {patched_name_literal};
+        name = "${{name}}-patched-src";
         src = pkg.src;
         patches = pkg.patches or [];
         prePatch = pkg.prePatch or "";
@@ -1494,9 +1506,10 @@ def get_patched_source_with_docker(name, output_dir, system, commit_hash):
     }}"""
 
     fallback_expression = f"""
+    {{ name }}:
     let
         pkgs = {nixpkgs_import};
-        pkg = pkgs."{name}";
+        pkg = pkgs.${{name}};
     in
         if pkg ? gemFile then pkg.gemFile
         else if pkg ? src then pkg.src
@@ -1516,7 +1529,8 @@ def get_patched_source_with_docker(name, output_dir, system, commit_hash):
     # build; if that fails (or yields no files), it falls back to fetching
     # the raw source archive. The result is copied to the mounted `from/`
     # directory with correct ownership so the host can extract and process
-    # it.
+    # it. `shlex.quote` keeps the value shell-safe; `--argstr` passes it
+    # as Nix data, never code.
     container_script = f"""
 set -e
 
@@ -1529,7 +1543,8 @@ cat << '{heredoc_delimiter}' > /tmp/fallback.nix
 {heredoc_delimiter}
 
 # Try standard patched build
-OUT_PATH=$(nix-build --no-out-link /tmp/expr.nix || true)
+OUT_PATH=$(nix-build --no-out-link --argstr name {shlex.quote(name)} \
+    /tmp/expr.nix || true)
 
 VALID_FILES=0
 if [ -n "$OUT_PATH" ] && [ -d "$OUT_PATH" ]; then
@@ -1546,7 +1561,8 @@ fi
 
 if [ -n "$FALLBACK_REASON" ]; then
     echo "PATCHED_SOURCE_FALLBACK_REASON=$FALLBACK_REASON" >&2
-    OUT_PATH=$(nix-build --no-out-link /tmp/fallback.nix || true)
+    OUT_PATH=$(nix-build --no-out-link --argstr name {shlex.quote(name)} \
+        /tmp/fallback.nix || true)
 fi
 
 if [ -z "$OUT_PATH" ] || [ ! -e "$OUT_PATH" ]; then
