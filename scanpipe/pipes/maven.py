@@ -22,7 +22,6 @@
 
 import json
 import logging
-from pathlib import PurePosixPath
 from urllib.parse import urlparse
 
 import requests
@@ -30,6 +29,7 @@ from license_expression import Licensing
 from packageurl import PackageURL
 from packageurl.contrib import purl2url
 
+from scanpipe import pipes
 from scanpipe.pipes import fetch
 from scanpipe.pipes import scancode
 
@@ -79,14 +79,11 @@ def fetch_path(purl, package_type):
         return None
 
 
-def fetch_and_scan_remote_pom(input_purl, scan_output_location):
+def fetch_and_scan_remote_pom(project, input_purl):
     """Fetch the .pom file from from maven.org if not present in codebase."""
-    with open(scan_output_location) as file:
-        data = json.load(file)
     # Skip fetching the remote POM if a pom.xml is already present in the codebase.
-    for file_entry in data["files"]:
-        if PurePosixPath(file_entry["path"]).name == "pom.xml":
-            return []
+    if project.codebaseresources.filter(name="pom.xml").exists():
+        return []
 
     pom_url = get_pom_url(input_purl)
     if not pom_url:
@@ -97,20 +94,33 @@ def fetch_and_scan_remote_pom(input_purl, scan_output_location):
     scanning_errors = scan_pom_file(pom_file)
 
     scanned_pom_packages, scanned_dependencies = update_datafile_paths(pom_file)
-    updated_data = update_scan_data(data, scanned_pom_packages, scanned_dependencies)
-
-    with open(scan_output_location, "w") as file:
-        json.dump(updated_data, file, indent=2)
+    create_pom_packages_and_dependencies(
+        project, scanned_pom_packages, scanned_dependencies
+    )
     if not scanning_errors:
         return []
     return [scanning_errors] if isinstance(scanning_errors, dict) else scanning_errors
 
 
-def update_scan_data(data, scanned_packages, scanned_dependencies):
-    """Update packages and dependencies data"""
-    data["packages"] = data.get("packages", []) + scanned_packages
-    data["dependencies"] = data.get("dependencies", []) + scanned_dependencies
-    return data
+def create_pom_packages_and_dependencies(
+    project, scanned_packages, scanned_dependencies
+):
+    """Create DiscoveredPackage and DiscoveredDependency from scanned POM data."""
+    for package_data in scanned_packages:
+        pipes.update_or_create_package(project, package_data)
+        license_detections = package_data.get("license_detections", [])
+        license_detections.extend(package_data.get("other_license_detections", []))
+
+        for license_detection in license_detections:
+            pipes.update_or_create_license_detection(
+                project=project,
+                detection_data=license_detection,
+                from_package=True,
+                count_detection=False,
+            )
+
+    for dependency_data in scanned_dependencies:
+        pipes.update_or_create_dependency(project, dependency_data)
 
 
 def get_pom_url(input_purl):

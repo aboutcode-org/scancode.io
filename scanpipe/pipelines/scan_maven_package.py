@@ -23,6 +23,7 @@
 from scanpipe.pipelines.deploy_to_develop import DeployToDevelop
 from scanpipe.pipelines.scan_single_package import ScanSinglePackage
 from scanpipe.pipes import d2d_config
+from scanpipe.pipes import scancode
 from scanpipe.pipes.maven import check_input_and_return_purl
 from scanpipe.pipes.maven import fetch_and_scan_remote_pom
 from scanpipe.pipes.maven import fetch_inputs
@@ -35,11 +36,9 @@ class ScanMavenPackage(ScanSinglePackage, DeployToDevelop):
 
     This pipeline takes a Maven PURL as input, fetches the binary and
     source archives (if they exist), and then performs scans for package
-    metadata, declared dependencies, licenses, license clarity scores, and
-    copyrights. It also performs a deployment to development relation scan
-    if both the source and binary archives are available.
-
-    The output is a summary of the scan results in JSON format.
+    metadata, declared dependencies, licenses, and copyrights. It also
+    performs a deployment to development relation scan if both the source
+    and binary archives are available.
     """
 
     download_inputs = False
@@ -53,12 +52,16 @@ class ScanMavenPackage(ScanSinglePackage, DeployToDevelop):
             cls.collect_input_info,
             cls.extract_input,
             cls.extract_archives,
+            cls.collect_and_create_codebase_resources,
+            cls.flag_empty_files,
+            cls.flag_whitespace_files,
+            cls.flag_ignored_resources,
             cls.maven_d2d_steps,
-            cls.run_scan,
+            cls.scan_codebase,
             cls.fetch_and_scan_remote_pom,
-            cls.load_inventory_from_toolkit_scan,
             cls.update_package_license_from_resource_if_missing,
-            cls.make_summary_from_scan_results,
+            cls.collect_and_create_license_detections,
+            cls.create_local_files_packages,
         )
 
     def check_input_and_return_purl(self):
@@ -102,11 +105,7 @@ class ScanMavenPackage(ScanSinglePackage, DeployToDevelop):
     def maven_d2d_steps(self):
         """Run deployment to development relation scan steps for Maven projects."""
         if self.d2d_enabled:
-            self.collect_and_create_codebase_resources()
             self.fingerprint_codebase_directories()
-            self.flag_empty_files()
-            self.flag_whitespace_files()
-            self.flag_ignored_resources()
             self.d2d_ecosystem_config()
             self.map_about_files()
             self.map_checksum()
@@ -116,6 +115,14 @@ class ScanMavenPackage(ScanSinglePackage, DeployToDevelop):
             self.d2d_kotlin()
             self.d2d_javascript()
             self.d2d_process()
+
+    def scan_codebase(self):
+        """
+        Scan codebase resources without a status for packages, copyrights,
+        licenses, emails, and urls.
+        """
+        scancode.scan_for_application_packages(self.project, progress_logger=self.log)
+        scancode.scan_for_files(self.project, progress_logger=self.log)
 
     def d2d_ecosystem_config(self):
         options = ["Java", "Kotlin", "Scala", "JavaScript"]
@@ -157,15 +164,11 @@ class ScanMavenPackage(ScanSinglePackage, DeployToDevelop):
         self.scan_ignored_to_files()
         self.scan_unmapped_to_files()
         self.scan_mapped_from_for_files()
-        self.collect_and_create_license_detections()
         self.flag_deployed_from_resources_with_missing_license()
-        self.create_local_files_packages()
 
     def fetch_and_scan_remote_pom(self):
         """Fetch and scan remote POM files."""
-        scanning_errors = fetch_and_scan_remote_pom(
-            self.purl, self.scan_output_location
-        )
+        scanning_errors = fetch_and_scan_remote_pom(self.project, self.purl)
         for scanning_error in scanning_errors:
             for resource_reference, errors in scanning_error.items():
                 self.project.add_error(
