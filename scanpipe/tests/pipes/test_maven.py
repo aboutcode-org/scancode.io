@@ -27,6 +27,7 @@ from django.test import TestCase
 
 from packageurl import PackageURL
 
+from scanpipe.models import CodebaseResource
 from scanpipe.models import Project
 from scanpipe.pipes import maven
 from scanpipe.pipes.input import copy_inputs
@@ -198,68 +199,79 @@ class ScanPipeMavenPipesTest(TestCase):
         result = maven.fetch_path(url, "binary")
         self.assertEqual(result, "/downloaded/package.jar")
 
-    @mock.patch("builtins.open", new_callable=mock.mock_open)
-    @mock.patch("json.load")
+    @mock.patch("scanpipe.pipes.maven.get_pom_url")
     def test_scanpipe_maven_fetch_and_scan_remote_pom_local_pom_exist(
-        self, mock_json_load, mock_open
+        self, mock_get_pom_url
     ):
-        mock_json_load.return_value = {
-            "files": [{"path": "src/main/pom.xml"}, {"path": "src/main/Main.java"}]
-        }
-        result = maven.fetch_and_scan_remote_pom(
-            "pkg:maven/org/test@1.0", "/path/to/output.json"
+        project1 = Project.objects.create(name="Analysis")
+        CodebaseResource.objects.create(
+            project=project1, path="src/main/pom.xml", name="pom.xml"
         )
+
+        input_purl = PackageURL.from_string("pkg:maven/org/test@1.0")
+        result = maven.fetch_and_scan_remote_pom(project1, input_purl)
         self.assertEqual(result, [])
 
-    @mock.patch("builtins.open", new_callable=mock.mock_open)
-    @mock.patch("json.load")
     @mock.patch("scanpipe.pipes.maven.get_pom_url")
     def test_scanpipe_maven_fetch_and_scan_remote_pom_no_pom_url(
-        self, mock_get_pom_url, mock_json_load, mock_open
+        self, mock_get_pom_url
     ):
-        mock_json_load.return_value = {"files": [{"path": "src/main/Main.java"}]}
+        project1 = Project.objects.create(name="Analysis")
         mock_get_pom_url.return_value = None
 
-        result = maven.fetch_and_scan_remote_pom(
-            "pkg:maven/org/test@1.0", "/path/to/output.json"
-        )
+        input_purl = PackageURL.from_string("pkg:maven/org/test@1.0")
+        result = maven.fetch_and_scan_remote_pom(project1, input_purl)
         self.assertEqual(
             result, [{"pkg:maven/org/test@1.0": ["Failed to resolve POM URL."]}]
         )
 
-    @mock.patch("builtins.open", new_callable=mock.mock_open)
-    @mock.patch("json.load")
-    @mock.patch("scanpipe.pipes.maven.get_pom_url")
     @mock.patch("scanpipe.pipes.maven.download_pom_file")
+    @mock.patch("scanpipe.pipes.maven.get_pom_url")
     def test_scanpipe_maven_fetch_and_scan_remote_pom_no_pom_file(
-        self, mock_download_pom_file, mock_get_pom_url, mock_json_load, mock_open
+        self, mock_get_pom_url, mock_download_pom_file
     ):
-        mock_json_load.return_value = {"files": []}
+        project1 = Project.objects.create(name="Analysis")
         mock_get_pom_url.return_value = "https://example.com/test.pom"
         mock_download_pom_file.return_value = {}
 
-        result = maven.fetch_and_scan_remote_pom(
-            "pkg:maven/org/test@1.0", "/path/to/output.json"
-        )
+        input_purl = PackageURL.from_string("pkg:maven/org/test@1.0")
+        result = maven.fetch_and_scan_remote_pom(project1, input_purl)
         self.assertEqual(
             result,
             [{"https://example.com/test.pom": ["Failed to download the POM file."]}],
         )
 
-    def test_update_scan_data(self):
-        original_data = {
-            "packages": [{"name": "package1"}],
-            "dependencies": [{"name": "dep1"}],
-        }
-        new_package = [{"name": "package2"}]
-        new_dependency = [{"name": "dep2"}]
+    def test_scanpipe_maven_create_pom_packages_and_dependencies(self):
+        project1 = Project.objects.create(name="Analysis")
 
-        result = maven.update_scan_data(original_data, new_package, new_dependency)
+        pom_url = "https://repo1.maven.org/maven2/example/example.pom"
+        scanned_packages = [
+            {
+                "type": "maven",
+                "name": "example",
+                "version": "1.0.0",
+                "datafile_paths": [pom_url],
+                "dependencies": [
+                    {"purl": "pkg:maven/example/dep@2.0.0", "name": "dep"}
+                ],
+            }
+        ]
+        scanned_dependencies = [
+            {"purl": "pkg:maven/example/dep@2.0.0", "name": "dep", "datafile_path": ""}
+        ]
 
-        self.assertEqual(
-            result["packages"], [{"name": "package1"}, {"name": "package2"}]
+        maven.create_pom_packages_and_dependencies(
+            project1, scanned_packages, scanned_dependencies
         )
-        self.assertEqual(result["dependencies"], [{"name": "dep1"}, {"name": "dep2"}])
+
+        self.assertEqual(1, project1.discoveredpackages.count())
+        package = project1.discoveredpackages.get()
+        self.assertEqual("pkg:maven/example@1.0.0", package.package_url)
+        self.assertEqual([pom_url], package.datafile_paths)
+
+        self.assertEqual(1, project1.discovereddependencies.count())
+        dependency = project1.discovereddependencies.get()
+        self.assertEqual("pkg:maven/example/dep@2.0.0", dependency.purl)
 
     @mock.patch("scanpipe.pipes.maven.scancode.run_scan")
     def test_scanpipe_maven_scan_pom_file(self, mock_run_scan):

@@ -958,13 +958,13 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual(0, exitcode, msg=out)
 
         self.assertEqual(41, project1.codebaseresources.count())
-        self.assertEqual(1, project1.discoveredpackages.count())
-        self.assertEqual(3, project1.discovereddependencies.count())
-        self.assertEqual(11, project1.codebaserelations.count())
+        self.assertEqual(3, project1.discoveredpackages.count())
+        self.assertEqual(5, project1.discovereddependencies.count())
+        self.assertEqual(12, project1.codebaserelations.count())
 
-        scancode_file = project1.get_latest_output(filename="scancode")
-        expected_file = self.data / "jvm" / "args4j-tools-2.0.16-sctk.json"
-        self.assertPipelineResultEqual(expected_file, scancode_file)
+        result_file = output.to_json(project1)
+        expected_file = self.data / "jvm" / "args4j-tools-2.0.16-smcp.json"
+        self.assertPipelineResultEqual(expected_file, result_file)
 
     def test_scanpipe_scan_codebase_pipeline_integration(self):
         pipeline_name = "scan_codebase"
