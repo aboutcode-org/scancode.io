@@ -2202,6 +2202,40 @@ class ScanPipeD2DPipesTest(TestCase):
         )
         self.assertIn("Created 1 mappings using", buffer.getvalue())
 
+    def test_scanpipe_pipes_d2d_get_paths_with_template_targets(self):
+        test_cases = [
+            (
+                "no template path",
+                [(1, "from/src/foo.c")],
+                [(1, "from/src/foo.c")],
+            ),
+            (
+                "template without collision, yields both paths",
+                [(2, "from/src/config.h.in")],
+                [(2, "from/src/config.h.in"), (2, "from/src/config.h")],
+            ),
+            (
+                "file already exists",
+                [(1, "from/src/config.h"), (2, "from/src/config.h.in")],
+                [(1, "from/src/config.h"), (2, "from/src/config.h.in")],
+            ),
+            (
+                "file already exists, reversed input order",
+                [(2, "from/src/config.h.in"), (1, "from/src/config.h")],
+                [(2, "from/src/config.h.in"), (1, "from/src/config.h")],
+            ),
+            (
+                "empty input",
+                [],
+                [],
+            ),
+        ]
+
+        for description, input_pairs, expected in test_cases:
+            with self.subTest(description=description, input_pairs=input_pairs):
+                result = list(d2d.get_paths_with_template_targets(input_pairs))
+                self.assertEqual(expected, result)
+
     @skipIf(sys.platform == "darwin", "Test is failing on macOS")
     def test_scanpipe_pipes_d2d_map_macho_symbols(self):
         input_dir = self.project1.input_path
