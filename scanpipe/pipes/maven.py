@@ -285,8 +285,8 @@ def get_maven_shade_relocations(project, pom_resource):
 
 def _dedupe_maven_candidates(candidates, main_purl):
     """
-    Return "candidates" deduplicated by "namespace" and "name", excluding the
-    main package.
+    Return "candidates" deduplicated by "namespace", "name" and "version",
+    excluding the main package.
     """
     result = []
     seen = set()
