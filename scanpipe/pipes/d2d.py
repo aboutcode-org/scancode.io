@@ -2073,8 +2073,9 @@ def map_elfs_with_dwarf_paths(project, logger=None):
             f"with {from_resources.count():,d} from/ resources."
         )
 
+    resource_id_and_paths = from_resources.values_list("id", "path")
     from_resources_index = pathmap.build_index(
-        from_resources.values_list("id", "path"), with_subpaths=True
+        get_paths_with_template_targets(resource_id_and_paths), with_subpaths=True
     )
 
     if logger:
@@ -2090,6 +2091,16 @@ def map_elfs_with_dwarf_paths(project, logger=None):
             map_types=["dwarf_compiled_paths", "dwarf_included_paths"],
             logger=logger,
         )
+
+
+def get_paths_with_template_targets(resource_id_and_paths):
+    """Yield ``resource_id_and_paths`` plus the target paths of ``.in`` templates."""
+    existing_paths = {path for _, path in resource_id_and_paths}
+    for resource_id, path in resource_id_and_paths:
+        yield resource_id, path
+        target_path = path.removesuffix(".in")
+        if target_path not in existing_paths:
+            yield resource_id, target_path
 
 
 def get_elf_file_dwarf_paths(location):
