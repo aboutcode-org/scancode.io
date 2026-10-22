@@ -2233,8 +2233,8 @@ class ScanPipeD2DPipesTest(TestCase):
 
         for description, input_pairs, expected in test_cases:
             with self.subTest(description=description, input_pairs=input_pairs):
-                path = list(d2d.get_paths_with_template_targets(input_pairs))
-                self.assertEqual(expected, path)
+                paths = list(d2d.get_paths_with_template_targets(input_pairs))
+                self.assertEqual(expected, paths)
 
     @skipIf(sys.platform == "darwin", "Test is failing on macOS")
     def test_scanpipe_pipes_d2d_map_macho_symbols(self):
