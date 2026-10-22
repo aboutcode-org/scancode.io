@@ -20,285 +20,307 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
+import re
+from collections import defaultdict
+
 from aboutcode.pipeline import LoopProgress
-from scanpipe.pipes.reachability import save_resource_reachability_report, ReachabilityStatus
+from scanpipe.pipes.reachability import ReachabilityStatus
+from scanpipe.pipes.reachability import save_resource_reachability_report
 
+_OPERATOR_PREFIXES = ("<operator>", "<operators>")
+_MARKER_PATTERN = re.compile(r"<[^>]+>")
 
-_NAME_FIELDS = ("name", "fullName", "typeFullName", "resolvedMethod")
-
-
-def classify_reachability(vuln_details, fixed_details):
-    """Classify the reachability of a patch from its matched symbols.
-
-    ``vuln_details`` and ``fixed_details`` are ``{symbol: [occurrence, ...]}``
-    mappings produced by :class:`ResourcePatchMatcher`. Only the vulnerable
-    symbols drive the verdict:
-
-    - REACHABLE: a vulnerable symbol is called, or is flagged as reachable
-      by the analyzer.
-    - UNKNOWN: a vulnerable symbol occurrence is present but no call site
-      was recorded, so the absence of a call proves nothing.
-    - NOT_REACHABLE: no vulnerable symbol occurrence was matched.
-
-    ``fixed_details`` are recorded in the report but do not change the
-    reachability verdict. This function is a pure function of the occurrence
-    data and makes no distinction between production and test code.
-    """
-    vuln_occurrences = [
-        occurrence
-        for occurrences in (vuln_details or {}).values()
-        for occurrence in occurrences
-    ]
-
-    if any(o["is_call"] or o["is_reachable"] for o in vuln_occurrences):
-        return ReachabilityStatus.REACHABLE
-    if vuln_occurrences:
-        return ReachabilityStatus.UNKNOWN
-    return ReachabilityStatus.NOT_REACHABLE
-
-
-class ResourcePatchMatcher:
-    """Match patch symbols against the atom slices of a single resource."""
-
-    def __init__(self, resource_index):
-        self.resource_index = resource_index or {}
-        self.occurrences = self._collect_occurrences()
-
-    def match(self, symbols):
-        """Return ``{symbol: [occurrence, ...]}`` for symbols found in the resource."""
-        if not symbols:
-            return {}
-        names = symbols.keys() if isinstance(symbols, dict) else symbols
-        return {
-            name: occurrences
-            for name, occurrences in (
-                (name, self._find_occurrences(name)) for name in names
-            )
-            if occurrences
-        }
-
-    def _collect_occurrences(self):
-        occurrences = []
-        for slice_obj in self.resource_index.get("objectSlices") or []:
-            occurrences.extend(self._occurrences_from_slice(slice_obj))
-        for user_type in self.resource_index.get("userDefinedTypes") or []:
-            occurrence = _make_occurrence(
-                source=user_type,
-                file_name=user_type.get("fileName") or "",
-                kind="definition",
-                is_call=False,
-                is_reachable=bool(user_type.get("reachable")),
-            )
-            if occurrence:
-                occurrences.append(occurrence)
-        return occurrences
-
-    def _occurrences_from_slice(self, slice_obj):
-        file_name = slice_obj.get("fileName") or ""
-        occurrences = []
-
-        definition = _make_occurrence(
-            source=slice_obj,
-            file_name=file_name,
-            kind="definition",
-            is_call=False,
-            is_reachable=bool(slice_obj.get("reachable")),
-        )
-        if definition:
-            occurrences.append(definition)
-
-        for usage in slice_obj.get("usages") or []:
-            target = usage.get("targetObj") or {}
-            label = (target.get("label") or "").upper()
-            occurrence = _make_occurrence(
-                source=target,
-                file_name=target.get("fileName") or file_name,
-                kind="call" if label == "CALL" else "usage",
-                is_call=label == "CALL",
-                is_reachable=bool(usage.get("reachable") or target.get("reachable")),
-            )
-            if occurrence:
-                occurrences.append(occurrence)
-
-        return occurrences
-
-    def _find_occurrences(self, symbol):
-        return [
-            occurrence
-            for occurrence in self.occurrences
-            if any(_matches_symbol(name, symbol) for name in occurrence["names"])
-        ]
-
-
-def _make_occurrence(source, file_name, kind, is_call, is_reachable=False):
-    names = [source[field] for field in _NAME_FIELDS if source.get(field)]
-    if not names:
-        return None
-    return {
-        "names": names,
-        "kind": kind,
-        "is_call": is_call,
-        "is_reachable": is_reachable,
-        "fileName": file_name,
-        "lineNumber": source.get("lineNumber"),
-        "columnNumber": source.get("columnNumber"),
-    }
-
-
-def _matches_symbol(name, symbol):
-    """Dot-boundary suffix match in either direction.
-
-    ``symbol`` may carry a ``path::QualifiedName`` prefix, as patch-symbol keys
-    do (e.g.
-    ``b2sdk/account_info/sqlite_account_info.py::SqliteAccountInfo._create_database``);
-    the prefix is stripped before comparing. ``name`` is a bare
-    (``_create_database``) or dotted (``SqliteAccountInfo._create_database``)
-    atom name. A match happens when ``name == symbol``, ``name`` ends with
-    ``.symbol``, or ``symbol`` ends with ``.name`` — the reverse direction
-    matters when patch symbols are fully qualified while atom records only the
-    bare name.
-    """
-    if not name or not symbol:
-        return False
-    if "::" in symbol:
-        symbol = symbol.split("::", 1)[1]
-    return (
-        name == symbol
-        or name.endswith("." + symbol)
-        or symbol.endswith("." + name)
-    )
-
-
-def _normalize_path(path):
+def normalize_file_path(path):
+    """Return ``path`` as a normalized forward-slash relative path."""
     path = (path or "").replace("\\", "/")
     while path.startswith("./"):
         path = path[2:]
     return path.lstrip("/")
 
+def normalize_symbol_name(name):
+    """Convert an atom name to a comparable dotted form, or ``""`` if unusable."""
+    if not isinstance(name, str):
+        return ""
+    name = name.strip()
+    if not name or name.startswith(_OPERATOR_PREFIXES):
+        return ""
 
-def _find_resource_index(slices_by_file, resource):
-    """Look up the slices for a resource, tolerating path prefix / basename diffs."""
-    path = _normalize_path(resource.path)
-    if not path:
-        return None
-    if path in slices_by_file:
-        return slices_by_file[path]
-    for file_name, index in slices_by_file.items():
-        if _normalize_path(file_name) == path:
-            return index
-    base_name = path.rsplit("/", 1)[-1]
-    for file_name, index in slices_by_file.items():
-        if _normalize_path(file_name).rsplit("/", 1)[-1] == base_name:
-            return index
-    return None
+    if "::" in name:
+        name = name.partition("::")[2]
 
+    if ":" in name:
+        # Convert ``pkg/mod.py:<module>.Class.method`` to ``pkg.mod.Class.method``.
+        path, _, tail = name.partition(":")
+        path = normalize_file_path(path).removesuffix(".py")
+        name = path.replace("/", ".") + "." + tail
+
+    name = _MARKER_PATTERN.sub("", name)
+
+    while ".." in name:
+        name = name.replace("..", ".")
+
+    return name.strip(".")
+
+class SliceMatcher:
+    """Index the dotted symbol names of an atom slice, grouped by file."""
+
+    def __init__(self, slices):
+        self.by_file = defaultdict(set)
+        self.by_basename = defaultdict(set)
+        if slices:
+            self.parse_slice(slices)
+
+    @property
+    def file_count(self):
+        """Return the number of files indexed in this slice."""
+        return len(self.by_file)
+
+    def parse_slice(self, slices):
+        """Populate the indexes from ``slices``. Subclasses must implement this."""
+        raise NotImplementedError
+
+    def add_symbols(self, file_name, *names):
+        """Index each symbol in ``names`` under ``file_name``, in dotted form."""
+        if not isinstance(file_name, str) or not file_name:
+            return
+
+        path = normalize_file_path(file_name)
+        basename = path.rsplit("/", 1)[-1]
+        for name in names:
+            dotted = normalize_symbol_name(name)
+            if dotted:
+                self.by_file[path].add(dotted)
+                self.by_basename[basename].add(dotted)
+
+    def match_symbols(self, symbols, file_name):
+        """Return the subset of ``symbols`` present in the slice for ``file_name``."""
+        if not symbols:
+            return set()
+
+        path = normalize_file_path(file_name)
+        names = self.by_file.get(path) or self.by_basename.get(path.rsplit("/", 1)[-1])
+        if not names:
+            return set()
+
+        matched = set()
+        for symbol in symbols:
+            dotted = normalize_symbol_name(symbol)
+            if not dotted:
+                continue
+
+            if any(
+                    name == dotted
+                    or name.endswith("." + dotted)
+                    or ("." in name and dotted.endswith("." + name))
+                    for name in names
+            ):
+                matched.add(symbol)
+
+        return matched
+
+class UsagesMatcher(SliceMatcher):
+    """Index the usages slice (objectSlices / userDefinedTypes)."""
+
+    def parse_slice(self, slices):
+        if not isinstance(slices, dict):
+            return
+
+        for obj in slices.get("objectSlices") or []:
+            self.add_object_slice(obj or {})
+
+        for typ in slices.get("userDefinedTypes") or []:
+            self.add_user_defined_type(typ or {})
+
+    def add_object_slice(self, obj):
+        """Index the symbols of one ``objectSlices`` entry."""
+        file_name = obj.get("fileName")
+        self.add_symbols(file_name, obj.get("fullName"))
+        for usage in obj.get("usages") or []:
+            usage = usage or {}
+
+            for part in (usage.get("targetObj"), usage.get("definedBy")):
+                part = part or {}
+                self.add_symbols(
+                    file_name,
+                    part.get("name"),
+                    part.get("typeFullName"),
+                    part.get("resolvedMethod"),
+                )
+
+            for call in (usage.get("argToCalls") or []) + (
+                usage.get("invokedCalls") or []
+            ):
+                call = call or {}
+                self.add_symbols(
+                    file_name, call.get("callName"), call.get("resolvedMethod")
+                )
+
+    def add_user_defined_type(self, typ):
+        """Index the symbols of one ``userDefinedTypes`` entry."""
+        file_name = typ.get("fileName")
+        self.add_symbols(file_name, typ.get("name"))
+
+        for field in typ.get("fields") or []:
+            field = field or {}
+            self.add_symbols(
+                file_name,
+                field.get("name"),
+                field.get("typeFullName"),
+                field.get("resolvedMethod"),
+            )
+
+        for proc in typ.get("procedures") or []:
+            proc = proc or {}
+            self.add_symbols(
+                file_name, proc.get("callName"), proc.get("resolvedMethod")
+            )
+
+class ReachablesMatcher(SliceMatcher):
+    """Index the ``reachables`` slice (``{"reachables": [{flows, purls}]}``)."""
+
+    def parse_slice(self, slices):
+        if isinstance(slices, dict):
+            # atom writes ``{"reachables": [...]}``; tolerate a bare entry too.
+            if "reachables" in slices:
+                slices = slices["reachables"]
+            elif "flows" in slices:
+                slices = [slices]
+            else:
+                slices = []
+
+        if not isinstance(slices, (list, tuple)):
+            return
+
+        for entry in slices:
+            for flow in (entry or {}).get("flows") or []:
+                flow = flow or {}
+                self.add_symbols(
+                    flow.get("parentFileName"),
+                    flow.get("name"),
+                    flow.get("fullName"),
+                    flow.get("typeFullName"),
+                    flow.get("parentMethodName"),
+                    flow.get("parentClassName"),
+                    self.compose_class_method_name(flow),
+                )
+
+    @classmethod
+    def compose_class_method_name(self, flow):
+        """Return ``Class.method`` from a reachables flow, or ``""``."""
+        method = flow.get("parentMethodName") or ""
+        klass = flow.get("parentClassName") or ""
+
+        if not method or not klass:
+            return ""
+
+        if ":" in klass:
+            klass = klass.partition(":")[2]
+
+        return f"{klass}.{method}"
+
+def classify_reachability(in_code, reachable):
+    """
+    Return the reachability verdict for a set of vulnerable symbols.
+
+    reachable is the subset matched against the reachables slice.
+    in_code is the subset matched against the usages slice.
+    """
+    if reachable:
+        return ReachabilityStatus.REACHABLE
+
+    if in_code:
+        return ReachabilityStatus.UNKNOWN
+
+    return ReachabilityStatus.NOT_REACHABLE
 
 def collect_and_match_resources(
-    tool_name, patches, patch_symbols, resource_indexes, candidate_resources, logger=None
+    tool_name,
+    patches,
+    patch_symbols,
+    usages_slices,
+    reachables_slices,
+    candidate_resources,
+    logger=None,
 ):
-    """Match resource symbols against patch symbols and save reachability reports.
-
-    Every candidate resource is analyzed, regardless of whether it lives in a
-    test directory: the matcher and classifier operate purely on atom
-    occurrences (``is_call`` / ``is_reachable``) and make no production-vs-test
-    distinction.
     """
+    Match patch symbols against the atom slices and store a reachability report
+    on each matching candidate resource.
 
-    resource_indexes = resource_indexes or {}
-    slices_by_file = {}
-    for slice_obj in resource_indexes.get("objectSlices") or []:
-        file_name = slice_obj.get("fileName")
-        if file_name:
-            slices_by_file.setdefault(
-                file_name, {"objectSlices": [], "userDefinedTypes": []}
-            )["objectSlices"].append(slice_obj)
-    for user_type in resource_indexes.get("userDefinedTypes") or []:
-        file_name = user_type.get("fileName")
-        if file_name:
-            slices_by_file.setdefault(
-                file_name, {"objectSlices": [], "userDefinedTypes": []}
-            )["userDefinedTypes"].append(user_type)
-
-    candidates = list(candidate_resources)
-    stats = {
-        "no_patch_symbols": 0,
-        "no_index": 0,
-        "no_lang": 0,
-        "no_match": 0,
-        "saved": 0,
-    }
+    - a vulnerable symbol in ``reachables`` → REACHABLE
+    - a vulnerable symbol only in ``usages`` → UNKNOWN
+    - a vulnerable symbol in neither → NOT_REACHABLE
+    """
+    usages = UsagesMatcher(usages_slices)
+    reachables = ReachablesMatcher(reachables_slices)
 
     if logger:
         logger(
-            f"atom match: {len(slices_by_file)} slice files, "
-            f"{len(candidates)} candidate resources, "
-            f"{len(patch_symbols)} commits with symbols"
+            f"atom match: {usages.file_count} files in usages, "
+            f"{reachables.file_count} files in reachables, "
+            f"{len(candidate_resources)} candidates, {len(patches)} patches"
         )
 
-    patch_progress = LoopProgress(len(patches), logger=logger)
-
-    for patch in patch_progress.iter(patches):
+    progress = LoopProgress(len(patches), logger=logger)
+    for patch in progress.iter(patches):
         vcs_url = patch.get("vcs_url")
         commit_hash = patch.get("commit_hash")
-        advisory_uids = patch.get("advisory_uids", [])
+        advisory_uids = patch.get("advisory_uids") or []
 
         patch_symbols_by_language = patch_symbols.get(commit_hash, {})
         if not patch_symbols_by_language:
-            stats["no_patch_symbols"] += 1
             continue
 
-        for resource in candidates:
-            resource_index = _find_resource_index(slices_by_file, resource)
-            if not resource_index:
-                stats["no_index"] += 1
-                continue
-
+        for resource in candidate_resources:
             lang_patch_symbols = patch_symbols_by_language.get(
                 resource.programming_language
             )
             if not lang_patch_symbols:
-                target = (resource.programming_language or "").strip().lower()
-                lang_patch_symbols = next(
-                    (
-                        value
-                        for key, value in patch_symbols_by_language.items()
-                        if target and (key or "").strip().lower() == target
-                    ),
-                    {},
-                )
-            if not lang_patch_symbols:
-                stats["no_lang"] += 1
                 continue
 
-            vulnerable_symbols = lang_patch_symbols.get("vulnerable", {})
-            fixed_symbols = lang_patch_symbols.get("fixed", {})
+            vulnerable = lang_patch_symbols.get("vulnerable") or {}
+            fixed = lang_patch_symbols.get("fixed") or {}
 
-            matcher = ResourcePatchMatcher(resource_index=resource_index)
-            vuln_details = matcher.match(vulnerable_symbols)
-            fixed_details = matcher.match(fixed_symbols)
+            path = resource.path
+            vuln_in_code = usages.match_symbols(vulnerable, path)
+            vuln_reachable = reachables.match_symbols(vulnerable, path)
+            fixed_in_code = usages.match_symbols(fixed, path)
+            fixed_reachable = reachables.match_symbols(fixed, path)
 
-            if not any([vuln_details, fixed_details]):
-                stats["no_match"] += 1
+            if not (
+                vuln_in_code
+                or vuln_reachable
+                or fixed_in_code
+                or fixed_reachable
+            ):
                 continue
 
-            stats["saved"] += 1
-
-            reachability_status = classify_reachability(vuln_details, fixed_details)
+            reachability_status = classify_reachability(
+                vuln_in_code, vuln_reachable
+            )
+            tool_details = [
+                {
+                    "symbol": symbol,
+                    "in_usage": symbol in vuln_in_code,
+                    "in_reachable": symbol in vuln_reachable,
+                }
+                for symbol in sorted(vuln_in_code | vuln_reachable)
+            ]
             report = {
                 "tool_name": tool_name,
-                "patch": {"vcs_url": vcs_url, "commit_hash": commit_hash},
+                "patch": {
+                    "vcs_url": vcs_url,
+                    "commit_hash": commit_hash,
+                },
                 "advisory_uids": advisory_uids,
-                "tool_details": vuln_details,
-                "fixed_symbols": fixed_symbols,
-                "vulnerable_symbols": vulnerable_symbols,
-                "is_reachable": reachability_status,
+                "tool_details": tool_details,
+                "fixed_symbols": sorted(fixed),
+                "vulnerable_symbols": sorted(vulnerable),
+                "is_reachable": reachability_status.value,
             }
+
             save_resource_reachability_report(
                 resource=resource,
                 commit_hash=commit_hash,
                 vcs_url=vcs_url,
                 new_report=report,
             )
-
-    if logger:
-        logger(f"atom match stats: {stats}")

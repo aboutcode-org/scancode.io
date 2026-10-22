@@ -35,13 +35,16 @@ ATOM_EXECUTABLE = environ.get("ATOM_EXECUTABLE")
 class AtomTool(ReachabilityTool):
     tool_name = "atom"
     executable = ATOM_EXECUTABLE
-    supported_languages = ("Python", "Java")
+    supported_languages = ("Python",)
     atom_language = "python"
+    commands = ("usages", "reachables")
 
     @classmethod
     def get_availability(cls):
         if not cls.executable:
-            return "atom is not configured. Set the ATOM_EXECUTABLE environment variable."
+            return (
+                "atom is not configured. Set the ATOM_EXECUTABLE environment variable."
+            )
 
     @classmethod
     def get_target_path(cls, project):
@@ -59,33 +62,64 @@ class AtomTool(ReachabilityTool):
         return resource.location_path
 
     @classmethod
-    def run(cls, project, logger=None):
-        """Run the atom ``usages`` command and return the slices file path."""
-        target_path = cls.get_target_path(project)
+    def get_output_paths(cls, project):
+        """Return the output paths shared by the atom commands."""
         manifest_path = project.get_output_file_path("atom_reachability", "json")
         prefix = f"{manifest_path.stem}.{cls.atom_language}"
-        slice_path = manifest_path.with_name(f"{prefix}.usages.slices.json")
-        atom_path = manifest_path.with_name(f"{prefix}.atom")
+        return {
+            "atom": manifest_path.with_name(f"{prefix}.atom"),
+            "usages": manifest_path.with_name(f"{prefix}.usages.slices.json"),
+            "reachables": manifest_path.with_name(f"{prefix}.reachables.slices.json"),
+        }
 
+    @classmethod
+    def run_command(cls, command, target_path, output_paths, logger=None):
+        """Run a single atom command and return its slices file path or None."""
         command_args = [
-            cls.executable, "usages",
-            "-l", cls.atom_language,
-            "-o", str(atom_path),
-            "-s", str(slice_path),
+            cls.executable,
+            command,
+            "-l",
+            cls.atom_language,
+            "-o",
+            str(output_paths["atom"]),
+            "-s",
+            str(output_paths[command]),
             str(target_path),
         ]
 
-        logger(f"Running atom usages on {target_path} ...")
+        logger(f"Running atom {command} on {target_path} ...")
         try:
             run_command_safely(command_args=command_args)
         except subprocess.SubprocessError as error:
-            logger(f"atom usages failed: {error!r}")
+            if logger:
+                logger(f"atom {command} failed: {error!r}")
             return None
-        return slice_path
+        return output_paths[command]
 
     @classmethod
-    def parsed_output(cls, export_output_path, logger=None):
-        """Load and return the ``usages`` slices file."""
+    def run(cls, project, logger=None):
+        """
+        Run the atom ``usages`` and ``reachables`` commands.
+
+        Return a mapping of command name to its slices file path (or ``None``
+        when that command failed).
+        """
+        target_path = cls.get_target_path(project)
+        output_paths = cls.get_output_paths(project)
+
+        results = {}
+        for command in cls.commands:
+            results[command] = cls.run_command(
+                command=command,
+                target_path=target_path,
+                output_paths=output_paths,
+                logger=logger,
+            )
+        return results
+
+    @classmethod
+    def load_slices(cls, export_output_path, logger=None):
+        """Load and return a single atom slices file."""
         if not export_output_path:
             return {}
         try:
@@ -93,8 +127,18 @@ class AtomTool(ReachabilityTool):
                 return json.load(slice_file)
         except (FileNotFoundError, json.JSONDecodeError) as error:
             if logger:
-                logger(f"Skipping atom usages slices: {error!r}")
+                logger(f"Skipping atom slices {export_output_path}: {error!r}")
             return {}
+
+    @classmethod
+    def parsed_output(cls, export_output_path, logger=None):
+        """Load and return the atom slices keyed by command name."""
+        if not export_output_path:
+            return {}
+        return {
+            command: cls.load_slices(path, logger=logger)
+            for command, path in export_output_path.items()
+        }
 
 
 class AtomReachability(ReachabilityPipeline):
@@ -104,13 +148,18 @@ class AtomReachability(ReachabilityPipeline):
     Note: You must run the ``find_vulnerabilities`` pipeline before running
     this pipeline.
 
-    atom is run once to generate a ``usages`` slice of the project codebase.
-    The vulnerable and fixed symbols of each patch are matched against that
-    slice with dot-boundary suffix matching:
+    atom is run twice against the project codebase:
+
+    - ``usages`` writes the ``.atom`` file and a ``usages`` slice of the code.
+    - ``reachables`` reads that ``.atom`` file and writes a ``reachables``
+      slice of the symbols that can actually be reached.
+
+    The vulnerable and fixed symbols of each patch are matched against those
+    slices:
 
     - REACHABLE: the symbol has a call site in the code
-    - NOT_REACHABLE: the symbol is absent
     - UNKNOWN: the symbol is defined in the code
+    - NOT_REACHABLE: the symbol is absent
 
     Results are stored in the ``extra_data`` of the matching resources under
     the ``symbols_reachability`` key.
@@ -132,21 +181,28 @@ class AtomReachability(ReachabilityPipeline):
         )
 
     def collect_resource_index(self):
-        """Generate the atom usages slice and load it."""
+        """Run the atom usages and reachables commands and load both slices."""
         self.resource_indexes_path = self.reachability_tool.run(
             project=self.project, logger=self.log
         )
-        self.resource_indexes = self.reachability_tool.parsed_output(
+        indexes = self.reachability_tool.parsed_output(
             export_output_path=self.resource_indexes_path, logger=self.log
         )
+        self.resource_indexes_usages = indexes.get("usages") or {}
+        self.resource_indexes_reachability = indexes.get("reachables") or {}
 
     def collect_and_match_resources(self):
-        """Match patch symbols against the atom usages slice."""
+        """Match patch symbols against the atom slices."""
+        if not self.resource_indexes_usages and not self.resource_indexes_reachability:
+            self.log("No atom usages or reachables slices available for matching.")
+            return
+
         atom.collect_and_match_resources(
             tool_name=self.reachability_tool.tool_name,
             patches=self.patches,
             patch_symbols=self.patch_symbols,
-            resource_indexes=self.resource_indexes,
+            usages_slices=self.resource_indexes_usages,
+            reachables_slices=self.resource_indexes_reachability,
             candidate_resources=self.candidate_resources,
             logger=self.log,
         )

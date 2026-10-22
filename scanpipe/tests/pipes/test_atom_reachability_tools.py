@@ -24,147 +24,176 @@ import json
 import shutil
 from pathlib import Path
 
-from django.test import SimpleTestCase
 from django.test import TestCase
 
 from scanpipe.models import Project
 from scanpipe.pipes import collect_and_create_codebase_resources
-from scanpipe.pipes.atom import classify_reachability
-from scanpipe.pipes.atom import collect_and_match_resources
-from scanpipe.pipes.atom import ResourcePatchMatcher
+from scanpipe.pipes.atom import ReachablesMatcher, normalize_symbol_name, normalize_file_path, \
+    collect_and_match_resources
+from scanpipe.pipes.atom import UsagesMatcher
 from scanpipe.pipes.reachability import ReachabilityStatus
 
 TEST_DATA_PYTHON = (
     Path(__file__).parent.parent / "data" / "atom_reachability" / "python"
 )
-SLICES_JSON = "atom_reachability.python.usages.slices.json"
+
+USAGES_JSON = "atom_reachability.python.usages.slices.json"
+REACHABLES_JSON = "atom_reachability.python.reachables.slices.json"
 
 COMMIT_HASH = "07ec0de1964b14bf085a1c9a27ece2b61ab6105c"
 VCS_URL = "https://github.com/aboutcode-org/test"
 
 
-class ClassifyReachabilityTests(SimpleTestCase):
-    """Unit tests for the atom reachability classifier.
+class UsagesMatcherTests(TestCase):
+    """Match patch symbols against the real atom ``usages`` slice for ``app.py``."""
 
-    ``classify_reachability`` is a pure function of occurrence data
-    (``is_call`` / ``is_reachable``); it makes no production-vs-test
-    distinction and occurrences carry no ``is_test`` field.
-    """
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.slices = json.loads((TEST_DATA_PYTHON / USAGES_JSON).read_text())
+        cls.matcher = UsagesMatcher(cls.slices)
+        cls.names = cls.matcher.by_file.get("app.py") or set()
 
-    def test_empty_inputs_are_not_reachable(self):
-        self.assertEqual(
-            ReachabilityStatus.NOT_REACHABLE, classify_reachability({}, {})
+    def test_matches_expected_app_py_symbols(self):
+        self.assertIn("app.py", self.matcher.by_file)
+
+        self.assertIn("app.handle_request.build_file_path", self.names)
+        self.assertIn("app.handle_request", self.names)
+        self.assertIn("app.ReportGenerator", self.names)
+        self.assertIn("app.unrelated_top_level_function", self.names)
+
+        self.assertIn(
+            "build_file_path",
+            self.matcher.match_symbols({"build_file_path"}, "app.py"),
+        )
+        self.assertIn(
+            "handle_request.build_file_path",
+            self.matcher.match_symbols({"handle_request.build_file_path"}, "app.py"),
+        )
+        self.assertIn(
+            "app.py::handle_request.build_file_path",
+            self.matcher.match_symbols({"app.py::handle_request.build_file_path"}, "app.py"),
+        )
+        self.assertIn(
+            "app.py::ReportGenerator",
+            self.matcher.match_symbols({"app.py::ReportGenerator"}, "app.py"),
+        )
+        self.assertIn(
+            "app.py::ReportGenerator.__init__",
+            self.matcher.match_symbols({"app.py::ReportGenerator.__init__"}, "app.py"),
+        )
+        self.assertIn(
+            "build_file_path",
+            self.matcher.match_symbols({"build_file_path"}, "python/app.py"),
+        )
+        self.assertFalse(self.matcher.match_symbols({"symbol_that_does_not_exist"}, "app.py"))
+
+
+class ReachablesMatcherTests(TestCase):
+    """Match patch symbols against the real atom ``reachables`` slice for ``app.py``."""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.slices = json.loads((TEST_DATA_PYTHON / REACHABLES_JSON).read_text())
+        cls.matcher = ReachablesMatcher(cls.slices)
+
+    def test_matches_expected_app_py_symbols(self):
+        self.assertIn("app.py", self.matcher.by_file)
+
+        self.assertIn(
+            "build_file_path",
+            self.matcher.match_symbols({"build_file_path"}, "app.py"),
+        )
+        self.assertIn(
+            "handle_request.build_file_path",
+            self.matcher.match_symbols({"handle_request.build_file_path"}, "app.py"),
+        )
+        self.assertIn(
+            "build_file_path",
+            self.matcher.match_symbols({"build_file_path"}, "python/app.py"),
+        )
+        self.assertFalse(self.matcher.match_symbols({"symbol_that_does_not_exist"}, "app.py"))
+
+        orphan = ReachablesMatcher(
+            [{"flows": [{"parentMethodName": "x"}], "purls": []}]
+        )
+        self.assertEqual(0, orphan.file_count)
+
+
+class NormalizeTests(TestCase):
+    """``normalize_file_path`` and ``normalize_symbol_name``."""
+
+    def test_normalize_file_path(self):
+        self.assertEqual("app.py", normalize_file_path("app.py"))
+        self.assertEqual("python/app.py", normalize_file_path("python/app.py"))
+        self.assertEqual("app.py", normalize_file_path("./app.py"))
+        self.assertEqual("app.py", normalize_file_path("./././app.py"))
+        self.assertEqual("pkg/app.py", normalize_file_path("./pkg/app.py"))
+        self.assertEqual("pkg/app.py", normalize_file_path("/pkg/app.py"))
+        self.assertEqual("pkg/app.py", normalize_file_path("//pkg/app.py"))
+        self.assertEqual("pkg/app.py", normalize_file_path(r"pkg\app.py"))
+        self.assertEqual("pkg/app.py", normalize_file_path(r".\pkg\app.py"))
+        self.assertEqual("", normalize_file_path(""))
+        self.assertEqual("", normalize_file_path(None))
+
+    def test_normalize_symbol_name(self):
+        self.assertEqual("build_file_path", normalize_symbol_name("build_file_path"))
+        self.assertEqual("serve_report.build_file_path",
+                         normalize_symbol_name("serve_report.build_file_path")
+        )
+        self.assertEqual("app.handle_request.build_file_path",
+            normalize_symbol_name("app.py:<module>.handle_request.build_file_path"),
         )
         self.assertEqual(
-            ReachabilityStatus.NOT_REACHABLE, classify_reachability(None, None)
+            "pkg.app.ReportGenerator.__init__",
+            normalize_symbol_name("pkg/app.py:<module>.ReportGenerator.__init__"),
         )
 
-    def test_reachable_when_vulnerable_symbol_is_called(self):
-        vuln = {"sym": [{"is_call": True, "is_reachable": False}]}
         self.assertEqual(
-            ReachabilityStatus.REACHABLE, classify_reachability(vuln, {})
+            "ReportGenerator.__init__",
+            normalize_symbol_name("app.py::ReportGenerator.__init__"),
         )
 
-    def test_reachable_when_vulnerable_symbol_flagged_reachable(self):
-        vuln = {"sym": [{"is_call": False, "is_reachable": True}]}
         self.assertEqual(
-            ReachabilityStatus.REACHABLE, classify_reachability(vuln, {})
+            "app.ReportGenerator.__init__",
+            normalize_symbol_name(
+                "app.py:<module>.ReportGenerator<fakeNew>.__init__"
+            ),
         )
-
-    def test_unknown_when_defined_but_uncalled(self):
-        vuln = {"sym": [{"is_call": False, "is_reachable": False}]}
         self.assertEqual(
-            ReachabilityStatus.UNKNOWN, classify_reachability(vuln, {})
+            "app.ReportGenerator.__init__",
+            normalize_symbol_name(
+                "app.py:<module>.ReportGenerator<metaClassAdapter>.__init__"
+            ),
         )
-
-    def test_not_reachable_when_only_fixed_symbols_match(self):
-        fixed = {"sym": [{"is_call": True, "is_reachable": True}]}
         self.assertEqual(
-            ReachabilityStatus.NOT_REACHABLE, classify_reachability({}, fixed)
+            "app.ReportGenerator.__init__",
+            normalize_symbol_name(
+                "app.py:<module>.ReportGenerator<metaClassCallHandler>.__init__"
+            ),
         )
-
-    def test_fixed_details_do_not_change_verdict(self):
-        vuln = {"sym": [{"is_call": False, "is_reachable": False}]}
-        fixed = {"sym": [{"is_call": True, "is_reachable": True}]}
         self.assertEqual(
-            ReachabilityStatus.UNKNOWN, classify_reachability(vuln, fixed)
+            "app.ReportGenerator",
+            normalize_symbol_name("app.py:<module>.ReportGenerator.<body>"),
         )
+        self.assertEqual("def ", normalize_symbol_name("def <body>"))
 
+        self.assertEqual("", normalize_symbol_name("<module>"))
+        self.assertEqual("", normalize_symbol_name("<body>"))
+        self.assertEqual("", normalize_symbol_name("<fakeNew>"))
+        self.assertEqual("", normalize_symbol_name("<metaClassCallHandler>"))
 
-class ResourcePatchMatcherTests(SimpleTestCase):
-    """Unit tests for atom's patch-symbol matcher.
-
-    Includes regressions for the ``path::QualifiedName`` keys produced by the
-    patch analyzer, e.g.
-    ``b2sdk/account_info/sqlite_account_info.py::SqliteAccountInfo._create_database``.
-    """
-
-    @staticmethod
-    def _make_index(*names, file_name="python/app.py"):
-        return {
-            "objectSlices": [
-                {
-                    "fileName": file_name,
-                    "name": name,
-                    "reachable": False,
-                    "usages": [],
-                }
-                for name in names
-            ],
-            "userDefinedTypes": [],
-        }
-
-    def test_matches_bare_symbol_name(self):
-        matcher = ResourcePatchMatcher(self._make_index("build_file_path"))
-        self.assertIn("build_file_path", matcher.match({"build_file_path": {}}))
-
-    def test_matches_dotted_symbol_name(self):
-        matcher = ResourcePatchMatcher(
-            self._make_index("serve_report.build_file_path")
-        )
-        matched = matcher.match({"serve_report.build_file_path": {}})
-        self.assertIn("serve_report.build_file_path", matched)
-
-    def test_matches_path_prefixed_method_symbol(self):
-        """Regression: ``path::QualifiedName`` method keys must match."""
-        matcher = ResourcePatchMatcher(
-            self._make_index("serve_report.build_file_path")
-        )
-        symbol = "app.py::serve_report.build_file_path"
-        self.assertIn(symbol, matcher.match({symbol: {}}))
-
-    def test_matches_path_prefixed_class_symbol(self):
-        """Regression: ``path::Class`` (no dot) must match a bare class name."""
-        matcher = ResourcePatchMatcher(self._make_index("ReportGenerator"))
-        symbol = "app.py::ReportGenerator"
-        self.assertIn(symbol, matcher.match({symbol: {}}))
-
-    def test_no_match_for_unrelated_symbol(self):
-        matcher = ResourcePatchMatcher(self._make_index("unrelated_top_level_function"))
-        self.assertFalse(matcher.match({"build_file_path": {}}))
-
-    def test_occurrence_has_no_is_test_field(self):
-        """Occurrences produced by the matcher must not carry ``is_test``."""
-        matcher = ResourcePatchMatcher(self._make_index("some_function"))
-        matched = matcher.match({"some_function": {}})
-        occurrence = matched["some_function"][0]
-        self.assertNotIn("is_test", occurrence)
-        self.assertIn("is_call", occurrence)
-        self.assertIn("is_reachable", occurrence)
-        self.assertIn("names", occurrence)
-        self.assertIn("fileName", occurrence)
+        self.assertEqual("", normalize_symbol_name("<operator>.equals"))
+        self.assertEqual("", normalize_symbol_name("<operators>.equals"))
+        self.assertEqual("", normalize_symbol_name("<operator>"))
+        self.assertEqual("", normalize_symbol_name("<operator>.assignment"))
+        self.assertEqual("", normalize_symbol_name("<operator>.alloc"))
 
 
 class CollectAndMatchResourcesTests(TestCase):
-    """End-to-end tests for atom's ``collect_and_match_resources`` entry point.
-
-    Each test builds a real Django project from the ``atom_reachability/python``
-    fixture, feeds the atom matcher the real ``objectSlices``/``userDefinedTypes``
-    captured in ``atom_reachability.python.usages.slices.json``, and asserts on
-    the report persisted by ``save_resource_reachability_report``.
-
-    No candidate is skipped based on its path: files under ``test``/``tests``
-    directories are analyzed exactly like production files.
+    """
+    End-to-end tests for atom's ``collect_and_match_resources`` entry point.
     """
 
     def setUp(self):
@@ -180,20 +209,28 @@ class CollectAndMatchResourcesTests(TestCase):
                 resource.save()
 
     def _load_atom_slices(self):
-        """Load the real atom slices fixture produced for ``app.py``."""
-        return json.loads((TEST_DATA_PYTHON / SLICES_JSON).read_text())
+        """Load both atom slice fixtures: usages and reachables."""
+        usages = json.loads((TEST_DATA_PYTHON / USAGES_JSON).read_text())
+        reachables = json.loads((TEST_DATA_PYTHON / REACHABLES_JSON).read_text())
+        return usages, reachables
 
-    def _run_atom(self, resources, resource_indexes, vulnerable, fixed, advisory_uid):
+    def _run_atom(
+        self,
+        resources,
+        usages_slices,
+        reachables_slices,
+        vulnerable,
+        fixed,
+        advisory_uid,
+    ):
         patch_symbols = {
             COMMIT_HASH: {
                 "Python": {
                     "vulnerable": {
-                        f"app.py::{key}": meta
-                        for key, meta in vulnerable.items()
+                        f"app.py::{key}": meta for key, meta in vulnerable.items()
                     },
                     "fixed": {
-                        f"app.py::{key}": meta
-                        for key, meta in fixed.items()
+                        f"app.py::{key}": meta for key, meta in fixed.items()
                     },
                 }
             }
@@ -210,7 +247,8 @@ class CollectAndMatchResourcesTests(TestCase):
             tool_name="atom",
             patches=patches,
             patch_symbols=patch_symbols,
-            resource_indexes=resource_indexes,
+            usages_slices=usages_slices,
+            reachables_slices=reachables_slices,
             candidate_resources=resources,
         )
 
@@ -222,28 +260,28 @@ class CollectAndMatchResourcesTests(TestCase):
     def _get_reports(resource):
         return (resource.extra_data or {}).get("symbols_reachability") or []
 
-    def test_python_path_traversal_reachable_via_nested_call(self):
-        """``build_file_path`` (path traversal) is reachable through
-        ``handle_request`` -> ``serve_report`` -> ``build_file_path`` using
-        the real atom slices fixture.
+    def test_build_file_path_reachable_through_reachables_slice(self):
+        """
+        ``build_file_path`` is indexed in the real usages slice and marked
+        reachable by the real reachables slice, so the report is REACHABLE.
         """
         self._prepare_resources()
         resource = self.project.codebaseresources.get(path="python/app.py")
         self.assertEqual("Python", resource.programming_language)
 
-        resource_indexes = self._load_atom_slices()
-        self.assertIn("objectSlices", resource_indexes)
-        self.assertTrue(resource_indexes["objectSlices"])
+        usages_slices, reachables_slices = self._load_atom_slices()
+        self.assertTrue(usages_slices.get("objectSlices"))
+        self.assertTrue(reachables_slices)
 
         vulnerable = {
             "build_file_path": {
-                "qualified_name": "serve_report.build_file_path",
+                "qualified_name": "handle_request.build_file_path",
                 "text": "return os.path.join(generator.base_dir, filename)",
             }
         }
         fixed = {
             "build_file_path": {
-                "qualified_name": "serve_report.build_file_path",
+                "qualified_name": "handle_request.build_file_path",
                 "text": (
                     "return os.path.join("
                     "generator.base_dir, os.path.basename(filename))"
@@ -253,7 +291,8 @@ class CollectAndMatchResourcesTests(TestCase):
 
         self._run_atom(
             [resource],
-            resource_indexes,
+            usages_slices,
+            reachables_slices,
             vulnerable,
             fixed,
             advisory_uid="pypi/app/PYSEC-0003",
@@ -262,56 +301,42 @@ class CollectAndMatchResourcesTests(TestCase):
         results = self._get_reports(resource)
         self.assertEqual(1, len(results))
         result = results[0]
-        self.assertEqual(ReachabilityStatus.REACHABLE.value, result["is_reachable"])
+
         self.assertEqual(["pypi/app/PYSEC-0003"], result["advisory_uids"])
         self.assertEqual(COMMIT_HASH, result["patch"]["commit_hash"])
         self.assertEqual(VCS_URL, result["patch"]["vcs_url"])
-        self.assertEqual("atom", result["tool_name"])
 
         symbol_key = "app.py::build_file_path"
-        self.assertIn(symbol_key, result["vulnerable_symbols"])
-        self.assertIn(symbol_key, result["tool_details"])
-
-        occurrences = result["tool_details"][symbol_key]
-        self.assertTrue(occurrences)
-        self.assertTrue(
-            any(o["is_call"] or o["is_reachable"] for o in occurrences),
-            f"expected a live call occurrence, got {occurrences!r}",
+        self.assertEqual([symbol_key], result["vulnerable_symbols"])
+        self.assertEqual([symbol_key], result["fixed_symbols"])
+        self.assertEqual(
+            ReachabilityStatus.REACHABLE.value, result["is_reachable"]
         )
-        for occurrence in occurrences:
-            self.assertNotIn("is_test", occurrence)
-            self.assertEqual("app.py", occurrence["fileName"])
-            self.assertTrue(
-                any("build_file_path" in name for name in occurrence["names"])
-            )
+        self.assertIn(
+            {"symbol": symbol_key, "in_usage": True, "in_reachable": True},
+            result["tool_details"],
+        )
+        # No test-vs-production metadata leaks into the report.
+        self.assertNotIn("is_test", result)
 
-    def test_unrelated_top_level_function_is_not_reported(self):
-        """A symbol that is not in the patch symbols is never matched.
-
-        ``unrelated_top_level_function`` exists in the fixture but is not part
-        of the patch, so it must not appear in ``tool_details``.
-        """
+    def test_report_absent_when_no_symbols_match(self):
+        """A patch whose symbols are not present in any slice yields no report."""
         self._prepare_resources()
         resource = self.project.codebaseresources.get(path="python/app.py")
 
-        resource_indexes = self._load_atom_slices()
+        usages_slices, reachables_slices = self._load_atom_slices()
 
         self._run_atom(
             [resource],
-            resource_indexes,
+            usages_slices,
+            reachables_slices,
             vulnerable={
-                "build_file_path": {
-                    "qualified_name": "serve_report.build_file_path",
-                    "text": "return os.path.join(generator.base_dir, filename)",
+                "symbol_that_does_not_exist_anywhere": {
+                    "qualified_name": "nowhere.symbol_that_does_not_exist_anywhere"
                 }
             },
             fixed={},
             advisory_uid="pypi/app/PYSEC-0004",
         )
 
-        results = self._get_reports(resource)
-        self.assertEqual(1, len(results))
-        details = results[0]["tool_details"]
-        self.assertNotIn(
-            "app.py::unrelated_top_level_function", details
-        )
+        self.assertEqual([], self._get_reports(resource))

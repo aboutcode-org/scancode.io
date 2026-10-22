@@ -1,5 +1,10 @@
 import os
 
+from flask import Flask
+from flask import request
+
+app = Flask(__name__)
+
 debug = False
 
 
@@ -10,15 +15,15 @@ class ReportGenerator:
         self.base_dir = base_dir
 
 
-def serve_report(request_payload):
-    """Top-level function handling a request."""
+@app.route("/report")
+def handle_request():
+    """HTTP entry point so atom tags a framework-route source."""
     generator = ReportGenerator("/var/reports")
-    requested_file = request_payload.get("file")
+    requested_file = request.args.get("file")
 
-    # Helper function nested inside serve_report
+    # Helper function nested inside the route handler
     def build_file_path(filename):
         # VULNERABLE: Direct concatenation allows Path Traversal
-        # An attacker passing "../../etc/passwd" could read system files.
         return os.path.join(generator.base_dir, filename)
 
     if not requested_file:
@@ -26,14 +31,8 @@ def serve_report(request_payload):
 
     target_path = build_file_path(requested_file)
 
-    if os.path.exists(target_path):
-        return f"Serving content of {target_path}"
-
-    return "Error: File not found"
-
-
-def handle_request(req):
-    return serve_report(req)
+    with open(target_path) as f:
+        return f.read()
 
 
 def unrelated_top_level_function():
