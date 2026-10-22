@@ -54,8 +54,8 @@ from scanpipe.pipelines.find_origins import FindOrigins
 from scanpipe.pipelines.find_vulnerabilities import FindVulnerabilities
 from scanpipe.pipes import d2d
 from scanpipe.pipes import flag
-from scanpipe.pipes import maven
 from scanpipe.pipes import matchcode
+from scanpipe.pipes import maven
 from scanpipe.pipes import output
 from scanpipe.pipes import scancode
 from scanpipe.pipes.input import copy_input
