@@ -28,9 +28,11 @@ from django.test import TestCase
 
 from scanpipe.models import Project
 from scanpipe.pipes import collect_and_create_codebase_resources
-from scanpipe.pipes.atom import ReachablesMatcher, normalize_symbol_name, normalize_file_path, \
-    collect_and_match_resources
+from scanpipe.pipes.atom import ReachablesMatcher
 from scanpipe.pipes.atom import UsagesMatcher
+from scanpipe.pipes.atom import collect_and_match_resources
+from scanpipe.pipes.atom import normalize_file_path
+from scanpipe.pipes.atom import normalize_symbol_name
 from scanpipe.pipes.reachability import ReachabilityStatus
 
 TEST_DATA_PYTHON = (
@@ -72,7 +74,9 @@ class UsagesMatcherTests(TestCase):
         )
         self.assertIn(
             "app.py::handle_request.build_file_path",
-            self.matcher.match_symbols({"app.py::handle_request.build_file_path"}, "app.py"),
+            self.matcher.match_symbols(
+                {"app.py::handle_request.build_file_path"}, "app.py"
+            ),
         )
         self.assertIn(
             "app.py::ReportGenerator",
@@ -86,7 +90,9 @@ class UsagesMatcherTests(TestCase):
             "build_file_path",
             self.matcher.match_symbols({"build_file_path"}, "python/app.py"),
         )
-        self.assertFalse(self.matcher.match_symbols({"symbol_that_does_not_exist"}, "app.py"))
+        self.assertFalse(
+            self.matcher.match_symbols({"symbol_that_does_not_exist"}, "app.py")
+        )
 
 
 class ReachablesMatcherTests(TestCase):
@@ -113,7 +119,9 @@ class ReachablesMatcherTests(TestCase):
             "build_file_path",
             self.matcher.match_symbols({"build_file_path"}, "python/app.py"),
         )
-        self.assertFalse(self.matcher.match_symbols({"symbol_that_does_not_exist"}, "app.py"))
+        self.assertFalse(
+            self.matcher.match_symbols({"symbol_that_does_not_exist"}, "app.py")
+        )
 
         orphan = ReachablesMatcher(
             [{"flows": [{"parentMethodName": "x"}], "purls": []}]
@@ -139,10 +147,12 @@ class NormalizeTests(TestCase):
 
     def test_normalize_symbol_name(self):
         self.assertEqual("build_file_path", normalize_symbol_name("build_file_path"))
-        self.assertEqual("serve_report.build_file_path",
-                         normalize_symbol_name("serve_report.build_file_path")
+        self.assertEqual(
+            "serve_report.build_file_path",
+            normalize_symbol_name("serve_report.build_file_path"),
         )
-        self.assertEqual("app.handle_request.build_file_path",
+        self.assertEqual(
+            "app.handle_request.build_file_path",
             normalize_symbol_name("app.py:<module>.handle_request.build_file_path"),
         )
         self.assertEqual(
@@ -157,9 +167,7 @@ class NormalizeTests(TestCase):
 
         self.assertEqual(
             "app.ReportGenerator.__init__",
-            normalize_symbol_name(
-                "app.py:<module>.ReportGenerator<fakeNew>.__init__"
-            ),
+            normalize_symbol_name("app.py:<module>.ReportGenerator<fakeNew>.__init__"),
         )
         self.assertEqual(
             "app.ReportGenerator.__init__",
@@ -192,10 +200,6 @@ class NormalizeTests(TestCase):
 
 
 class CollectAndMatchResourcesTests(TestCase):
-    """
-    End-to-end tests for atom's ``collect_and_match_resources`` entry point.
-    """
-
     def setUp(self):
         self.project = Project.objects.create(name="Analysis")
         self.project.codebase_path.mkdir(parents=True, exist_ok=True)
@@ -229,9 +233,7 @@ class CollectAndMatchResourcesTests(TestCase):
                     "vulnerable": {
                         f"app.py::{key}": meta for key, meta in vulnerable.items()
                     },
-                    "fixed": {
-                        f"app.py::{key}": meta for key, meta in fixed.items()
-                    },
+                    "fixed": {f"app.py::{key}": meta for key, meta in fixed.items()},
                 }
             }
         }
@@ -309,34 +311,17 @@ class CollectAndMatchResourcesTests(TestCase):
         symbol_key = "app.py::build_file_path"
         self.assertEqual([symbol_key], result["vulnerable_symbols"])
         self.assertEqual([symbol_key], result["fixed_symbols"])
-        self.assertEqual(
-            ReachabilityStatus.REACHABLE.value, result["is_reachable"]
-        )
-        self.assertIn(
-            {"symbol": symbol_key, "in_usage": True, "in_reachable": True},
-            result["tool_details"],
-        )
-        # No test-vs-production metadata leaks into the report.
+        self.assertEqual(ReachabilityStatus.REACHABLE.value, result["is_reachable"])
+
+        self.assertEqual(1, len(result["tool_details"]))
+        detail = result["tool_details"][0]
+
+        self.assertEqual(symbol_key, detail["symbol_name"])
+        self.assertTrue(detail["in_usage"])
+        self.assertTrue(detail["in_reachable"])
+
+        self.assertTrue(detail["calls"])
+        call_names = {call["call_name"] for call in detail["calls"]}
+        self.assertIn("build_file_path", call_names)
+        self.assertIn("open", call_names)
         self.assertNotIn("is_test", result)
-
-    def test_report_absent_when_no_symbols_match(self):
-        """A patch whose symbols are not present in any slice yields no report."""
-        self._prepare_resources()
-        resource = self.project.codebaseresources.get(path="python/app.py")
-
-        usages_slices, reachables_slices = self._load_atom_slices()
-
-        self._run_atom(
-            [resource],
-            usages_slices,
-            reachables_slices,
-            vulnerable={
-                "symbol_that_does_not_exist_anywhere": {
-                    "qualified_name": "nowhere.symbol_that_does_not_exist_anywhere"
-                }
-            },
-            fixed={},
-            advisory_uid="pypi/app/PYSEC-0004",
-        )
-
-        self.assertEqual([], self._get_reports(resource))

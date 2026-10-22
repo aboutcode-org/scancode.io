@@ -30,12 +30,14 @@ from scanpipe.pipes.reachability import save_resource_reachability_report
 _OPERATOR_PREFIXES = ("<operator>", "<operators>")
 _MARKER_PATTERN = re.compile(r"<[^>]+>")
 
+
 def normalize_file_path(path):
     """Return ``path`` as a normalized forward-slash relative path."""
     path = (path or "").replace("\\", "/")
     while path.startswith("./"):
         path = path[2:]
     return path.lstrip("/")
+
 
 def normalize_symbol_name(name):
     """Convert an atom name to a comparable dotted form, or ``""`` if unusable."""
@@ -60,6 +62,7 @@ def normalize_symbol_name(name):
         name = name.replace("..", ".")
 
     return name.strip(".")
+
 
 class SliceMatcher:
     """Index the dotted symbol names of an atom slice, grouped by file."""
@@ -109,17 +112,23 @@ class SliceMatcher:
                 continue
 
             if any(
-                    name == dotted
-                    or name.endswith("." + dotted)
-                    or ("." in name and dotted.endswith("." + name))
-                    for name in names
+                name == dotted
+                or name.endswith("." + dotted)
+                or ("." in name and dotted.endswith("." + name))
+                for name in names
             ):
                 matched.add(symbol)
 
         return matched
 
+
 class UsagesMatcher(SliceMatcher):
-    """Index the usages slice (objectSlices / userDefinedTypes)."""
+    """Index the usages slice (objectSlices / userDefinedTypes) and its calls."""
+
+    def __init__(self, slices):
+        self.calls_by_file = defaultdict(dict)
+        self.calls_by_basename = defaultdict(dict)
+        super().__init__(slices)
 
     def parse_slice(self, slices):
         if not isinstance(slices, dict):
@@ -131,29 +140,129 @@ class UsagesMatcher(SliceMatcher):
         for typ in slices.get("userDefinedTypes") or []:
             self.add_user_defined_type(typ or {})
 
+    def add_calls(self, file_name, symbols, calls):
+        """Associate ``calls`` with each symbol in ``symbols`` for ``file_name``."""
+        if not isinstance(file_name, str) or not file_name or not calls:
+            return
+
+        path = normalize_file_path(file_name)
+        basename = path.rsplit("/", 1)[-1]
+        for symbol in symbols:
+            dotted = normalize_symbol_name(symbol)
+            if not dotted:
+                continue
+
+            file_slot = self.calls_by_file[path].setdefault(dotted, [])
+            base_slot = self.calls_by_basename[basename].setdefault(dotted, [])
+
+            for call in calls:
+                if call not in file_slot:
+                    file_slot.append(call)
+                if call not in base_slot:
+                    base_slot.append(call)
+
+    def get_calls(self, symbols, file_name):
+        """
+        Return the calls associated with ``symbols`` in ``file_name``.
+
+        Uses the same fuzzy matching as ``match_symbols`` (exact, suffix, or
+        prefix), deduplicated by ``(call_name, resolved_method, line_number)``.
+        """
+        if not symbols:
+            return []
+
+        path = normalize_file_path(file_name)
+        file_calls = self.calls_by_file.get(path)
+        if not file_calls:
+            file_calls = self.calls_by_basename.get(path.rsplit("/", 1)[-1], {})
+        if not file_calls:
+            return []
+
+        result = []
+        seen = set()
+        for symbol in symbols:
+            dotted = normalize_symbol_name(symbol)
+            if not dotted:
+                continue
+
+            for name, name_calls in file_calls.items():
+                if not (
+                    name == dotted
+                    or name.endswith("." + dotted)
+                    or ("." in name and dotted.endswith("." + name))
+                ):
+                    continue
+
+                for call in name_calls:
+                    key = (
+                        call.get("call_name"),
+                        call.get("resolved_method"),
+                        call.get("line_number"),
+                    )
+                    if key not in seen:
+                        seen.add(key)
+                        result.append(call)
+        return result
+
+    @staticmethod
+    def build_call_record(call):
+        """Return a compact call record from an atom call entry, or ``None``."""
+        call = call or {}
+        call_name = call.get("callName")
+        resolved = call.get("resolvedMethod")
+        if not (call_name or resolved):
+            return None
+
+        record = {}
+        if call_name:
+            record["call_name"] = call_name
+
+        if resolved:
+            record["resolved_method"] = resolved
+
+        if call.get("lineNumber") is not None:
+            record["line_number"] = call.get("lineNumber")
+
+        if call.get("columnNumber") is not None:
+            record["column_number"] = call.get("columnNumber")
+
+        return record
+
     def add_object_slice(self, obj):
-        """Index the symbols of one ``objectSlices`` entry."""
+        """Index the symbols and calls of one ``objectSlices`` entry."""
         file_name = obj.get("fileName")
         self.add_symbols(file_name, obj.get("fullName"))
+
         for usage in obj.get("usages") or []:
             usage = usage or {}
 
-            for part in (usage.get("targetObj"), usage.get("definedBy")):
-                part = part or {}
+            calls = []
+            for raw_call in (usage.get("argToCalls") or []) + (
+                usage.get("invokedCalls") or []
+            ):
+                raw_call = raw_call or {}
                 self.add_symbols(
                     file_name,
+                    raw_call.get("callName"),
+                    raw_call.get("resolvedMethod"),
+                )
+                record = self.build_call_record(raw_call)
+                if record:
+                    calls.append(record)
+
+            usage_symbols = []
+            for part in (usage.get("targetObj"), usage.get("definedBy")):
+                part = part or {}
+                names = (
                     part.get("name"),
                     part.get("typeFullName"),
                     part.get("resolvedMethod"),
                 )
+                self.add_symbols(file_name, *names)
+                usage_symbols.extend(name for name in names if name)
 
-            for call in (usage.get("argToCalls") or []) + (
-                usage.get("invokedCalls") or []
-            ):
-                call = call or {}
-                self.add_symbols(
-                    file_name, call.get("callName"), call.get("resolvedMethod")
-                )
+            if usage_symbols and calls:
+                self.add_calls(file_name, usage_symbols, calls)
 
     def add_user_defined_type(self, typ):
         """Index the symbols of one ``userDefinedTypes`` entry."""
@@ -175,20 +284,12 @@ class UsagesMatcher(SliceMatcher):
                 file_name, proc.get("callName"), proc.get("resolvedMethod")
             )
 
+
 class ReachablesMatcher(SliceMatcher):
     """Index the ``reachables`` slice (``{"reachables": [{flows, purls}]}``)."""
 
     def parse_slice(self, slices):
-        if isinstance(slices, dict):
-            # atom writes ``{"reachables": [...]}``; tolerate a bare entry too.
-            if "reachables" in slices:
-                slices = slices["reachables"]
-            elif "flows" in slices:
-                slices = [slices]
-            else:
-                slices = []
-
-        if not isinstance(slices, (list, tuple)):
+        if not isinstance(slices, list):
             return
 
         for entry in slices:
@@ -205,7 +306,7 @@ class ReachablesMatcher(SliceMatcher):
                 )
 
     @classmethod
-    def compose_class_method_name(self, flow):
+    def compose_class_method_name(cls, flow):
         """Return ``Class.method`` from a reachables flow, or ``""``."""
         method = flow.get("parentMethodName") or ""
         klass = flow.get("parentClassName") or ""
@@ -217,6 +318,7 @@ class ReachablesMatcher(SliceMatcher):
             klass = klass.partition(":")[2]
 
         return f"{klass}.{method}"
+
 
 def classify_reachability(in_code, reachable):
     """
@@ -232,6 +334,7 @@ def classify_reachability(in_code, reachable):
         return ReachabilityStatus.UNKNOWN
 
     return ReachabilityStatus.NOT_REACHABLE
+
 
 def collect_and_match_resources(
     tool_name,
@@ -286,25 +389,21 @@ def collect_and_match_resources(
             fixed_in_code = usages.match_symbols(fixed, path)
             fixed_reachable = reachables.match_symbols(fixed, path)
 
-            if not (
-                vuln_in_code
-                or vuln_reachable
-                or fixed_in_code
-                or fixed_reachable
-            ):
+            if not (vuln_in_code or vuln_reachable or fixed_in_code or fixed_reachable):
                 continue
 
-            reachability_status = classify_reachability(
-                vuln_in_code, vuln_reachable
-            )
-            tool_details = [
-                {
-                    "symbol": symbol,
-                    "in_usage": symbol in vuln_in_code,
-                    "in_reachable": symbol in vuln_reachable,
-                }
-                for symbol in sorted(vuln_in_code | vuln_reachable)
-            ]
+            reachability_status = classify_reachability(vuln_in_code, vuln_reachable)
+            tool_details = []
+            for symbol in sorted(vuln_in_code | vuln_reachable):
+                tool_details.append(
+                    {
+                        "symbol_name": symbol,
+                        "in_usage": symbol in vuln_in_code,
+                        "calls": usages.get_calls([symbol], path),
+                        "in_reachable": symbol in vuln_reachable,
+                    }
+                )
+
             report = {
                 "tool_name": tool_name,
                 "patch": {

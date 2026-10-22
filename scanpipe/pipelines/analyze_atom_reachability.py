@@ -1,25 +1,3 @@
-# SPDX-License-Identifier: Apache-2.0
-#
-# http://nexb.com and https://github.com/aboutcode-org/scancode.io
-# The ScanCode.io software is licensed under the Apache License version 2.0.
-# Data generated with ScanCode.io is provided as-is without warranties.
-# ScanCode is a trademark of nexB Inc.
-#
-# You may not use this software except in compliance with the License.
-# You may obtain a copy of the License at: http://apache.org/licenses/LICENSE-2.0
-# Unless required by applicable law or agreed to in writing, software distributed
-# under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-# CONDITIONS OF ANY KIND, either express or implied. See the License for the
-# specific language governing permissions and limitations under the License.
-#
-# Data Generated with ScanCode.io is provided on an "AS IS" BASIS, WITHOUT WARRANTIES
-# OR CONDITIONS OF ANY KIND, either express or implied. No content created from
-# ScanCode.io should be considered or used as legal advice. Consult an Attorney
-# for any legal advice.
-#
-# ScanCode.io is a free software code scanning tool from nexB Inc. and others.
-# Visit https://github.com/aboutcode-org/scancode.io for support and download.
-
 import json
 import subprocess
 from os import environ
@@ -35,8 +13,11 @@ ATOM_EXECUTABLE = environ.get("ATOM_EXECUTABLE")
 class AtomTool(ReachabilityTool):
     tool_name = "atom"
     executable = ATOM_EXECUTABLE
-    supported_languages = ("Python",)
-    atom_language = "python"
+    supported_languages = {
+        "Java": "java",
+        "Python": "python",
+    }
+
     commands = ("usages", "reachables")
 
     @classmethod
@@ -47,25 +28,37 @@ class AtomTool(ReachabilityTool):
             )
 
     @classmethod
+    def get_atom_language(cls, project):
+        """Return the atom ``-l`` value for ``project``."""
+        package = project.discoveredpackages.first()
+        if package and package.primary_language:
+            language = cls.supported_languages.get(package.primary_language)
+            if language:
+                return language
+        raise ValueError(f"Could not determine an atom language for {project.name!r}.")
+
+    @classmethod
     def get_target_path(cls, project):
         target_path = project.codebase_path
         if target_path:
             return target_path
+
         resource = project.codebaseresources.filter(
             is_binary=False,
             is_archive=False,
             is_media=False,
-            programming_language__in=cls.supported_languages,
+            programming_language__in=list(cls.supported_languages),
         ).first()
+
         if not resource:
             raise ValueError("No codebase resources found for this project.")
         return resource.location_path
 
     @classmethod
-    def get_output_paths(cls, project):
+    def get_output_paths(cls, project, atom_language):
         """Return the output paths shared by the atom commands."""
         manifest_path = project.get_output_file_path("atom_reachability", "json")
-        prefix = f"{manifest_path.stem}.{cls.atom_language}"
+        prefix = f"{manifest_path.stem}.{atom_language}"
         return {
             "atom": manifest_path.with_name(f"{prefix}.atom"),
             "usages": manifest_path.with_name(f"{prefix}.usages.slices.json"),
@@ -73,13 +66,15 @@ class AtomTool(ReachabilityTool):
         }
 
     @classmethod
-    def run_command(cls, command, target_path, output_paths, logger=None):
+    def run_command(
+        cls, command, target_path, atom_language, output_paths, logger=None
+    ):
         """Run a single atom command and return its slices file path or None."""
         command_args = [
             cls.executable,
             command,
             "-l",
-            cls.atom_language,
+            atom_language,
             "-o",
             str(output_paths["atom"]),
             "-s",
@@ -105,13 +100,15 @@ class AtomTool(ReachabilityTool):
         when that command failed).
         """
         target_path = cls.get_target_path(project)
-        output_paths = cls.get_output_paths(project)
+        atom_language = cls.get_atom_language(project)
+        output_paths = cls.get_output_paths(project, atom_language)
 
         results = {}
         for command in cls.commands:
             results[command] = cls.run_command(
                 command=command,
                 target_path=target_path,
+                atom_language=atom_language,
                 output_paths=output_paths,
                 logger=logger,
             )
@@ -150,9 +147,9 @@ class AtomReachability(ReachabilityPipeline):
 
     atom is run twice against the project codebase:
 
-    - ``usages`` writes the ``.atom`` file and a ``usages`` slice of the code.
-    - ``reachables`` reads that ``.atom`` file and writes a ``reachables``
-      slice of the symbols that can actually be reached.
+    - ``usages`` writes a usages slice of the code.
+    - ``reachables`` writes a reachables slice of the symbols
+     that can actually be reached.
 
     The vulnerable and fixed symbols of each patch are matched against those
     slices:
@@ -177,7 +174,7 @@ class AtomReachability(ReachabilityPipeline):
             is_binary=False,
             is_archive=False,
             is_media=False,
-            programming_language__in=self.reachability_tool.supported_languages,
+            programming_language__in=list(self.reachability_tool.supported_languages),
         )
 
     def collect_resource_index(self):
