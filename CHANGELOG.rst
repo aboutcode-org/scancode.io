@@ -5,7 +5,7 @@ Changelog
 
 * Migrate VulnerableCode integration to API v3
 
-v38.2.0 (unreleased)
+v38.2.0 (2026-10-22)
 --------------------
 
 * ``docker-compose.yml`` now runs the published ``ghcr.io/aboutcode-org/scancode.io``
@@ -16,6 +16,13 @@ v38.2.0 (unreleased)
 * Fix the offline installation: ``make offline-package`` now packages the published
   images with the main ``docker-compose.yml``. ``docker-compose-offline.yml`` is
   removed.
+* feat: create basic ScanCode.io pipeline and pipes for other reachability tools by @ziadhany in https://github.com/aboutcode-org/scancode.io/pull/2240
+* feat: [code-genetics] create standardized data models for origins #1925 by @tdruez
+* feat: [code-genetics] create importers for detailed scan results #1926 by @tdruez
+* fix: downgrade pluggy from 1.7.0 to 1.6.0 by @ziadhany in https://github.com/aboutcode-org/scancode.io/pull/2267
+* docs: [code-genetics] document the OriginMatch data model #1925 by @tdruez in https://github.com/aboutcode-org/scancode.io/pull/2270
+* chore: upgrade the Docker images to Python 3.14 and Debian trixie by @tdruez in https://github.com/aboutcode-org/scancode.io/pull/2258
+* chore: upgrade certifi, uv, dependencies and service images by @tdruez in https://github.com/aboutcode-org/scancode.io/pull/2274
 
 v38.1.0 (2026-09-28)
 --------------------
