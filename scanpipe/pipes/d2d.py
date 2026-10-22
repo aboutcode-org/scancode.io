@@ -2077,6 +2077,7 @@ def map_elfs_with_dwarf_paths(project, logger=None):
     from_resources_index = pathmap.build_index(
         get_paths_with_template_targets(resource_id_and_paths), with_subpaths=True
     )
+
     if logger:
         logger("Done building from/ resources index.")
 
