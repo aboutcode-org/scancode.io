@@ -32,7 +32,7 @@ UV_DOCKER=docker run --rm \
 	--env UV_CACHE_DIR=/tmp/uv-cache \
 	--volume "$(CURDIR)":/opt/scancodeio \
 	--workdir /opt/scancodeio \
-	ghcr.io/astral-sh/uv:0.13.0-python3.14-trixie-slim
+	ghcr.io/astral-sh/uv:0.13.4-python3.14-trixie-slim
 # Do not depend on Python to generate the SECRET_KEY
 GET_SECRET_KEY=`head -c50 /dev/urandom | base64 | head -c50`
 # Customize with `$ make envfile ENV_FILE=/etc/scancodeio/.env`
@@ -86,15 +86,15 @@ restart-worker:
 
 build:
 	# Build the dev Docker images (core, hot reload)
-	${COMPOSE} build
+	${COMPOSE} build --pull
 
 build-core:
 	# Build the production core Docker image
-	docker build --target core -t $(IMAGE_NAME) .
+	docker build --pull --target core -t $(IMAGE_NAME) .
 
 build-full:
 	# Build the production full Docker image
-	docker build --target full -t $(IMAGE_NAME):full .
+	docker build --pull --target full -t $(IMAGE_NAME):full .
 
 regen-fixtures:
 	@echo "-> Regenerate test fixtures from the running Docker stack"

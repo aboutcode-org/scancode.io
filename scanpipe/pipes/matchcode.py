@@ -20,21 +20,29 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
+import json
 import logging
 from collections import defaultdict
+from functools import partial
+from pathlib import Path
 
 from django.conf import settings
 
 import requests
+from licensedcode.spans import Span
 from matchcode_toolkit.fingerprinting import compute_codebase_directory_fingerprints
 from matchcode_toolkit.fingerprinting import get_file_fingerprint_hashes
 from matchcode_toolkit.fingerprinting import get_line_by_pos
 from matchcode_toolkit.fingerprinting import get_stemmed_file_fingerprint_hashes
 from matchcode_toolkit.stemming import TS_LANGUAGE_CONF
 from scancode import Scanner
+from summarycode.classify import LEGAL_STARTS_ENDS
 
+from scanpipe.models import OriginMatch
 from scanpipe.pipes import codebase
+from scanpipe.pipes import create_origin_matches
 from scanpipe.pipes import flag
+from scanpipe.pipes import make_origin_match
 from scanpipe.pipes import poll_until_success
 from scanpipe.pipes.output import to_json
 from scanpipe.pipes.scancode import _scan_resource
@@ -68,6 +76,15 @@ if MATCHCODEIO_API_KEY:
     session.headers.update({"Authorization": f"Token {MATCHCODEIO_API_KEY}"})
 
 DEFAULT_TIMEOUT = 60
+
+TOOL_NAME = "matchcode"
+
+MATCH_TYPE_BY_STATUS = {
+    flag.MATCHED_TO_PURLDB_PACKAGE: OriginMatch.MatchType.PACKAGE,
+    flag.MATCHED_TO_PURLDB_RESOURCE: OriginMatch.MatchType.FILE,
+    flag.MATCHED_TO_PURLDB_DIRECTORY: OriginMatch.MatchType.DIRECTORY,
+    flag.APPROXIMATE_MATCHED_TO_PURLDB_RESOURCE: OriginMatch.MatchType.APPROXIMATE,
+}
 
 
 def is_configured():
@@ -422,8 +439,209 @@ def create_packages_from_match_results(project, match_results):
         if match_resource_extra_data:
             resource = project.codebaseresources.get(path=match_resource["path"])
             # compute line_by_pos for displaying matches in CodebaseResource detail view
-            with open(resource.location) as f:
-                content = f.read()
-                line_by_pos = get_line_by_pos(content)
+            line_by_pos = get_resource_line_by_pos(resource)
             match_resource_extra_data["line_by_pos"] = line_by_pos
             resource.update_extra_data(match_resource_extra_data)
+
+
+def match_codebase(project):
+    """
+    Fingerprint the ``project`` codebase, send it to MatchCode.io, wait for the
+    matching run to complete, and return the match results.
+    The file fingerprints of a previous run are kept and not computed again, as
+    computing them is costly and the files do not change within a project.
+    """
+    text_files = project.codebaseresources.filter(is_text=True)
+    fingerprint_codebase_resources(
+        project, resource_qs=text_files.without_file_fingerprints()
+    )
+    fingerprint_codebase_directories(project)
+    match_url, run_url = send_project_json_to_matchcode(project)
+    poll_run_url_status(run_url)
+
+    match_results = get_match_results(match_url)
+    if not match_results:
+        raise MatchCodeIOException("Cannot fetch the match results from MatchCode.io")
+    return match_results
+
+
+def save_match_results(project, match_results):
+    """Write the raw ``match_results`` in the ``project`` output/ directory."""
+    output_location = project.get_output_file_path("matchcode", "json")
+    output_location.write_text(json.dumps(match_results, indent=2))
+
+
+def get_resource_line_by_pos(resource):
+    """Return the mapping of token positions to line numbers of a ``resource``."""
+    return get_line_by_pos(resource.location_path.read_text())
+
+
+def get_snippet_line_ranges(match_detections, line_by_pos):
+    """
+    Return a (start_line, end_line) tuple for each span of the matched token
+    positions ``match_detections``, using the ``line_by_pos`` mapping.
+    """
+    return [
+        (line_by_pos[span.start], line_by_pos[span.end])
+        for span in Span(match_detections).subspans()
+    ]
+
+
+def get_line_coverage(line_ranges, line_by_pos):
+    """
+    Return the percentage of the code lines covered by the (start_line, end_line)
+    ``line_ranges``, the code lines being the lines with tokens in ``line_by_pos``.
+    This matches the SCANOSS similarity: the percentage of the file matched.
+    """
+    code_lines = set(line_by_pos.values())
+    covered_lines = {
+        line
+        for start_line, end_line in line_ranges
+        for line in range(start_line, end_line + 1)
+    }
+    return round(100 * len(covered_lines & code_lines) / len(code_lines))
+
+
+def is_legal_file_path(path):
+    """Return True if ``path`` is a legal file, such as a license or a notice."""
+    file_path = Path(path.lower())
+    return (
+        file_path.name.startswith(LEGAL_STARTS_ENDS)
+        or file_path.name.endswith(LEGAL_STARTS_ENDS)
+        or file_path.stem.endswith(LEGAL_STARTS_ENDS)
+    )
+
+
+def get_origin_match_extra_data(package_data):
+    """Return the MatchCode package data kept as OriginMatch extra data."""
+    return {
+        "package_uid": package_data.get("package_uid", ""),
+        "release_date": package_data.get("release_date") or "",
+        "declared_license_expression": package_data.get(
+            "declared_license_expression", ""
+        ),
+        "download_url": package_data.get("download_url", ""),
+    }
+
+
+def make_snippet_origin_matches(
+    resource, matched_snippets, package_data_by_purl, tool_version
+):
+    """
+    Yield unsaved OriginMatch instances for the ``resource`` snippet matches.
+    Snippets matched in legal files are skipped, as a license text is a
+    license clue, not an origin.
+    The MatchCode snippet similarity is kept as extra data only, as its scale is
+    not comparable with the other tools.
+    """
+    line_by_pos = get_resource_line_by_pos(resource)
+
+    for matched_snippet in matched_snippets:
+        origin_path = matched_snippet["resource"]
+        if is_legal_file_path(origin_path):
+            continue
+
+        snippet_line_ranges = get_snippet_line_ranges(
+            matched_snippet["match_detections"], line_by_pos
+        )
+        line_ranges = [
+            {"lines": [start_line, end_line]}
+            for start_line, end_line in snippet_line_ranges
+        ]
+
+        purl = matched_snippet["package"]
+        extra_data = get_origin_match_extra_data(package_data_by_purl.get(purl, {}))
+        extra_data["snippet_similarity"] = matched_snippet["similarity"]
+
+        yield make_origin_match(
+            resource,
+            TOOL_NAME,
+            tool_version,
+            purl=purl,
+            match_type=OriginMatch.MatchType.SNIPPET,
+            origin_path=origin_path,
+            line_ranges=line_ranges,
+            similarity=get_line_coverage(snippet_line_ranges, line_by_pos),
+            extra_data=extra_data,
+        )
+
+
+def make_package_origin_matches(
+    resource, match_type, package_uids, package_data_by_uid, tool_version
+):
+    """Yield unsaved OriginMatch instances for the ``resource`` matched packages."""
+    similarity = 100 if match_type in OriginMatch.EXACT_MATCH_TYPES else None
+    seen_purls = set()
+
+    for package_uid in package_uids:
+        package_data = package_data_by_uid[package_uid]
+        purl = package_data["purl"]
+        if purl in seen_purls:
+            continue
+        seen_purls.add(purl)
+
+        yield make_origin_match(
+            resource,
+            TOOL_NAME,
+            tool_version,
+            purl=purl,
+            match_type=match_type,
+            similarity=similarity,
+            extra_data=get_origin_match_extra_data(package_data),
+        )
+
+
+def make_origin_matches(
+    resource, resource_results, package_data_by_uid, package_data_by_purl, tool_version
+):
+    """Yield unsaved OriginMatch instances from a ``resource`` match results."""
+    matched_snippets = (resource_results.get("extra_data") or {}).get(
+        "matched_snippets"
+    )
+    if matched_snippets:
+        yield from make_snippet_origin_matches(
+            resource, matched_snippets, package_data_by_purl, tool_version
+        )
+        return
+
+    match_type = MATCH_TYPE_BY_STATUS.get(resource_results.get("status"))
+    if not match_type:
+        return
+
+    yield from make_package_origin_matches(
+        resource,
+        match_type,
+        resource_results["for_packages"],
+        package_data_by_uid,
+        tool_version,
+    )
+
+
+def load_matchcode_results(project, match_results):
+    """
+    Create OriginMatch records for the ``project`` resources from the MatchCode.io
+    ``match_results``. Return the number of processed origin matches.
+    """
+    packages_data = match_results.get("packages", [])
+    package_data_by_uid = {
+        package_data["package_uid"]: package_data for package_data in packages_data
+    }
+    package_data_by_purl = {
+        package_data["purl"]: package_data for package_data in packages_data
+    }
+    results_by_path = {
+        resource_results["path"]: resource_results
+        for resource_results in match_results.get("files", [])
+        if resource_results.get("for_packages")
+    }
+    make_matchcode_origin_matches = partial(
+        make_origin_matches,
+        package_data_by_uid=package_data_by_uid,
+        package_data_by_purl=package_data_by_purl,
+        tool_version=match_results["headers"][0]["tool_version"],
+    )
+
+    origin_match_count, _ = create_origin_matches(
+        project, TOOL_NAME, results_by_path, make_matchcode_origin_matches
+    )
+    return origin_match_count
