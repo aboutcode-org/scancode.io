@@ -1911,6 +1911,40 @@ class ScanPipeD2DPipesTest(TestCase):
             ).count(),
         )
 
+    @mock.patch("scanpipe.pipes.d2d.get_elf_file_dwarf_paths")
+    def test_scanpipe_pipes_d2d_map_elfs_dwarf_paths_to_in_templates(
+        self, mock_get_dwarf_paths
+    ):
+        mock_get_dwarf_paths.return_value = {
+            "dwarf_included_paths": ["include/openssl/asn1.h"]
+        }
+
+        from_resource = make_resource_file(
+            self.project1,
+            path="from/include/openssl/asn1.h.in",
+        )
+
+        to_resource = make_resource_file(
+            self.project1,
+            path="to/some_binary.elf",
+            is_binary=True,
+            file_type="ELF 64-bit LSB executable",
+        )
+
+        buffer = io.StringIO()
+        d2d.map_elfs_with_dwarf_paths(self.project1, logger=buffer.write)
+
+        relation = self.project1.codebaserelations.get(
+            from_resource=from_resource,
+            to_resource=to_resource,
+        )
+        self.assertEqual("dwarf_included_paths", relation.map_type)
+        self.assertEqual(
+            "include/openssl/asn1.h",
+            relation.extra_data["dwarf_included_paths"],
+        )
+        self.assertIn("Created 1 mappings using", buffer.getvalue())
+
     @skipIf(sys.platform == "darwin", "Test is failing on macOS")
     def test_scanpipe_pipes_d2d_map_go_paths(self):
         input_dir = self.project1.input_path
@@ -2167,6 +2201,40 @@ class ScanPipeD2DPipesTest(TestCase):
                 project=self.project1, map_type="elf_symbols"
             ).count(),
         )
+
+    def test_scanpipe_pipes_d2d_get_paths_with_template_targets(self):
+        test_cases = [
+            (
+                "no template path",
+                [(1, "from/src/foo.c")],
+                [(1, "from/src/foo.c")],
+            ),
+            (
+                "template without collision, yields both paths",
+                [(2, "from/src/config.h.in")],
+                [(2, "from/src/config.h.in"), (2, "from/src/config.h")],
+            ),
+            (
+                "file already exists",
+                [(1, "from/src/config.h"), (2, "from/src/config.h.in")],
+                [(1, "from/src/config.h"), (2, "from/src/config.h.in")],
+            ),
+            (
+                "file already exists, reversed input order",
+                [(2, "from/src/config.h.in"), (1, "from/src/config.h")],
+                [(2, "from/src/config.h.in"), (1, "from/src/config.h")],
+            ),
+            (
+                "empty input",
+                [],
+                [],
+            ),
+        ]
+
+        for description, input_pairs, expected in test_cases:
+            with self.subTest(description=description, input_pairs=input_pairs):
+                paths = list(d2d.get_paths_with_template_targets(input_pairs))
+                self.assertEqual(expected, paths)
 
     @skipIf(sys.platform == "darwin", "Test is failing on macOS")
     def test_scanpipe_pipes_d2d_map_macho_symbols(self):
