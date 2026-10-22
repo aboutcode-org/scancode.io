@@ -285,8 +285,8 @@ def get_maven_shade_relocations(project, pom_resource):
 
 def _dedupe_maven_candidates(candidates, main_purl):
     """
-    Return "candidates" deduplicated by "namespace", "name" and "version",
-    excluding the main package.
+    Return "candidates" deduplicated by "namespace" and "name", excluding the
+    main package.
     """
     result = []
     seen = set()
@@ -372,8 +372,6 @@ def apply_shade_relocations(fqn, relocations):
             original_pattern = relocations[shaded_pattern]
             return original_pattern + fqn[len(shaded_pattern) :]
 
-    return None
-
 
 # The 0.8 is chosen as to accept small plural/singular and one-character
 # variations while rejecting semantically related but lexically different
@@ -397,11 +395,15 @@ def _fuzzy_segment_match(
 
 
 # Required signals that must be present for a candidate to be considered.
-# Both the "group" and the "artifact" of the dependency must contribute at
-# least one matching segment for the FQN. This rejects the false matches
-# where only the group (e.g. "com.google" for guava) matches the FQN
-# namespace.
-REQUIRED_MATCH_SIGNALS = {"group", "artifact"}
+# The "group" and the "artifact" of the dependency must contribute at least
+# one matching segment for the FQN, and the "artifact_tail"  (the last
+# segment of the artifact) must match at least one FQN package segment.
+# This rejects the false matches where only the group (e.g. "com.google"
+# for guava) matches the FQN namespace, and where the group plus a shared
+# artifact prefix (e.g. "com.fasterxml.jackson.core" for
+# "jackson-databind") catches classes that belong to another artifact of
+# the same group (e.g. "jackson-core").
+REQUIRED_MATCH_SIGNALS = {"group", "artifact", "artifact_tail"}
 
 # Minimum score for a candidate to be accepted as a match.
 #
@@ -410,16 +412,17 @@ REQUIRED_MATCH_SIGNALS = {"group", "artifact"}
 #   - +2 per matching artifact segment
 #   - +3 for a fuzzy match on the artifact's last segment
 #
-# Both "group" and "artifact" signals are required, so scores start at 3
-# (1 group + 1 artifact) and go up by 1 or 2 per extra matching segment.
-# The threshold of 6 acts as a high-confidence heuristic. It rejects scores
-# of 3, 4, and 5, which cover weak cases where the score relies heavily on
-# a single artifact segment plus several generic group segments (e.g.,
-# org.apache.commons).
+# All three signals ("group", "artifact", "artifact_tail") are required, so
+# scores start at 3 (1 group + 1 artifact) and go up by 1 or 2 per extra
+# matching segment. The threshold of 6 acts as a high-confidence heuristic.
+# It rejects scores of 3, 4, and 5, which cover weak cases where the score
+# relies heavily on a single artifact segment plus several generic group
+# segments (e.g., org.apache.commons).
 #
-# Reaching 6 ensures a highly reliable match by requiring one of:
-#   - multiple matching artifact and group segments (2 group + 2 artifact = 2 + 4 = 6)
-#   - a fuzzy match (1 group + 1 artifact + fuzzy = 1 + 2 + 3 = 6)
+# Compositions reaching 6 include:
+#   - 2 group + 2 artifact         = 2 + 4     = 6
+#   - 1 group + 1 artifact + fuzzy = 1 + 2 + 3 = 6
+#   - 4 group + 1 artifact         = 4 + 2     = 6
 #
 # The value is designed based on a small sample of shaded JARs. It
 # should be revisited with a larger sample if false positives are observed.
@@ -458,13 +461,34 @@ def _score_fuzzy_segment(artifact_id, package_segments):
     return 3 if _fuzzy_segment_match(artifact_last, fqn_last) else 0
 
 
+def _last_artifact_segment_matches(artifact_id, package_segments):
+    """
+    Return True if the last segment of "artifact_id" matches, exactly or
+    fuzzily, any segment of "package_segments".
+
+    The last segment of a Maven artifact is its most discriminating part:
+    "jackson-core", "jackson-databind" and "jackson-annotations" all share a
+    group and a prefix but differ in their last segment. Requiring this
+    match prevents attributing classes of a transitive dependency (e.g.
+    "jackson-core") to a declared one that shares the group and prefix
+    (e.g. "jackson-databind").
+    """
+    last_segment = artifact_id.split("/")[-1]
+    if not last_segment:
+        return False
+    return any(
+        segment == last_segment or _fuzzy_segment_match(last_segment, segment)
+        for segment in package_segments
+    )
+
+
 def score_dependency(java_package, package):
     """
     Return a tuple (score, signals) to conclude the match result.
 
     "score" is computed from the matching segments, as described below.
     "signals" contains the names of the matching rules that matched:
-        "group", "artifact", and optionally "fuzzy".
+        "group", "artifact", "artifact_tail", and optionally "fuzzy".
 
     Scoring:
         - +1 per matching segment of the group ID
@@ -504,6 +528,9 @@ def score_dependency(java_package, package):
         score += fuzzy_score
         signals.add("fuzzy")
 
+    if _last_artifact_segment_matches(artifact_id, package_segments):
+        signals.add("artifact_tail")
+
     return score, signals
 
 
@@ -512,8 +539,8 @@ def match_shaded_class_to_package(java_package, packages, min_score=MIN_MATCH_SC
     Return a tuple (package, score, signals) for the best matching package,
     or None.
 
-    A candidate is considered only when the "group" and "artifact" signals are
-    both present and the score reaches "min_score".
+    A candidate is considered only when the "group", "artifact", and
+    "artifact_tail" signals are all present and the score reaches "min_score".
 
     Returns None when no candidate qualifies, or when several candidates
     tie for the top score, to avoid false positives.
@@ -543,15 +570,6 @@ def match_shaded_class_to_package(java_package, packages, min_score=MIN_MATCH_SC
     return package, score, signals
 
 
-def _get_original_fqn(fqn, relocations):
-    """
-    Return the original fully qualified class name for a shaded class, or
-    None when the class should not be considered for matching.
-    """
-    if relocations:
-        return apply_shade_relocations(fqn, relocations)
-
-
 def _map_shaded_class_resource(resource, relocations, dependency_packages, match_cache):
     """
     Try to map a single ".class" resource to a Maven dependency package.
@@ -560,38 +578,27 @@ def _map_shaded_class_resource(resource, relocations, dependency_packages, match
     otherwise.
     """
     fqn = get_java_fqn_from_class_path(resource.path)
-    java_package = fqn.rsplit(".", 1)[0] if "." in fqn else ""
+    java_package = fqn.rpartition(".")[0]
 
     if java_package not in match_cache:
-        original_pkg = _get_original_fqn(java_package, relocations)
-        if original_pkg is None:
+        original_java_package = apply_shade_relocations(java_package, relocations)
+        if original_java_package is None:
             match_cache[java_package] = None
         else:
             match_cache[java_package] = match_shaded_class_to_package(
-                original_pkg, dependency_packages
+                original_java_package, dependency_packages
             )
 
     match = match_cache[java_package]
     if not match:
         return False
 
-    original_fqn = _get_original_fqn(fqn, relocations)
+    original_fqn = apply_shade_relocations(fqn, relocations)
 
     matched_package, match_score, match_signals = match
 
     if isinstance(matched_package, DiscoveredDependency):
-        package_data = {
-            "type": matched_package.type,
-            "namespace": matched_package.namespace,
-            "name": matched_package.name,
-            "version": matched_package.version,
-        }
-        created_package = DiscoveredPackage.create_from_data(
-            resource.project, package_data
-        )
-        matched_package.resolved_to_package = created_package
-        matched_package.save()
-        matched_package = created_package
+        matched_package = get_or_create_dependency_package(matched_package)
 
     resource.discovered_packages.add(matched_package)
     resource.update(
@@ -607,11 +614,30 @@ def _map_shaded_class_resource(resource, relocations, dependency_packages, match
     return True
 
 
+def get_or_create_dependency_package(dependency):
+    """Return the resolved package of the "dependency", created when missing."""
+    if not dependency.resolved_to_package:
+        package_data = {
+            "type": dependency.type,
+            "namespace": dependency.namespace,
+            "name": dependency.name,
+            "version": dependency.version,
+        }
+        package = DiscoveredPackage.create_from_data(dependency.project, package_data)
+        dependency.update(resolved_to_package=package)
+    return dependency.resolved_to_package
+
+
 def map_shaded_classes_to_maven_packages(project, purl, logger=None):
     """Map shaded ".class" resources to their Maven dependency packages."""
     if logger:
         logger("Mapping shaded .class resources to Maven dependency packages.")
 
+    # scan_maven_package runs ``load_inventory_from_toolkit_scan`` before
+    # this step, which sets every ``.class`` in a JAR that ships its own
+    # pom.xml to ``application-package``; without adding
+    # "flag.APPLICATION_PACKAGE" status in the filter, no shaded class is
+    # ever mapped.
     to_classes = (
         project.codebaseresources.files()
         .to_codebase()
@@ -621,6 +647,7 @@ def map_shaded_classes_to_maven_packages(project, purl, logger=None):
                 flag.NO_STATUS,
                 flag.NO_JAVA_SOURCE,
                 flag.REQUIRES_REVIEW,
+                flag.APPLICATION_PACKAGE,
             ]
         )
         .has_no_relation()

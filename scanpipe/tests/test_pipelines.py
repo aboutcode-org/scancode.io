@@ -951,37 +951,13 @@ class PipelinesIntegrationTest(TestCase):
         self.assertPipelineResultEqual(expected_file, scancode_file)
 
     @skipIf(sys.platform == "darwin", "Not supported on macOS")
-    @mock.patch(
-        "scanpipe.pipelines.scan_maven_package."
-        "ScanMavenPackage.remove_packages_without_resources"
-    )
     @mock.patch("scanpipe.pipelines.scan_maven_package.fetch_inputs")
-    def test_scanpipe_scan_maven_package_d2d_shaded_classes(
-        self, mock_fetch_inputs, mock_remove_packages
-    ):
+    def test_scanpipe_scan_maven_package_d2d_shaded_classes(self, mock_fetch_inputs):
 
         pipeline_name = "scan_maven_package"
         project1 = make_project(name="Analysis")
 
-        # Only run the steps needed to extract resources, run D2D, and map
-        # shaded classes. Skipping run_scan / fetch_and_scan_remote_pom /
-        # load_inventory_from_toolkit_scan / make_summary_from_scan_results
-        # avoids both network calls and the toolkit scan.
         run = project1.add_pipeline(pipeline_name)
-        run.update(
-            selected_steps=[
-                "check_input_and_return_purl",
-                "fetch_inputs",
-                "d2d_check",
-                "collect_input_info",
-                "extract_input",
-                "extract_archives",
-                "maven_d2d_steps",
-                "map_shaded_classes_to_maven_packages",
-                "update_package_license_from_resource_if_missing",
-            ],
-        )
-        run.refresh_from_db()
         pipeline = run.make_pipeline_instance()
 
         download_url = "pkg:maven/org.apache.htrace/htrace-core@4.0.0-incubating"
@@ -990,39 +966,27 @@ class PipelinesIntegrationTest(TestCase):
         tmpdir = tempfile.mkdtemp(prefix="scanpipe-mvn-")
         self.addCleanup(shutil.rmtree, tmpdir, True)
 
-        src_path = os.path.join(tmpdir, "htrace-core-4.0.0-incubating-sources.jar")
-        bin_path = os.path.join(tmpdir, "htrace-core-4.0.0-incubating.jar")
+        src_path = Path(tmpdir) / "htrace-core-4.0.0-incubating-sources.jar"
+        bin_path = Path(tmpdir) / "htrace-core-4.0.0-incubating.jar"
 
-        with zipfile.ZipFile(src_path, "w") as zf:
-            zf.writestr("Dummy.java", b"public class Dummy {}")
+        with zipfile.ZipFile(src_path, "w") as jar_file:
+            jar_file.writestr("Dummy.java", b"public class Dummy {}")
 
-        with zipfile.ZipFile(bin_path, "w") as zf:
-            zf.writestr(
+        with zipfile.ZipFile(bin_path, "w") as jar_file:
+            jar_file.writestr(
                 "org/apache/htrace/commons/logging/impl/AvalonLogger.class",
                 b"aaaaaaa",
             )
-            zf.writestr(
+            jar_file.writestr(
                 "org/apache/htrace/fasterxml/jackson/annotation/JsonTypeId.class",
                 b"bbbbbbb",
             )
-            zf.writestr(
+            jar_file.writestr(
                 "META-INF/maven/org.apache.htrace/htrace-core/pom.xml",
                 (self.data / "maven" / "shaded-pom.xml").read_bytes(),
             )
 
         mock_fetch_inputs.return_value = (src_path, bin_path)
-        mock_remove_packages.return_value = None
-
-        make_package(
-            project1,
-            package_url="pkg:maven/commons-logging/commons-logging@1.1.1",
-        )
-        make_package(
-            project1,
-            package_url=(
-                "pkg:maven/com.fasterxml.jackson.core/jackson-annotations@2.4.0"
-            ),
-        )
 
         exitcode, out = pipeline.execute()
         self.assertEqual(0, exitcode, msg=out)
@@ -1030,6 +994,17 @@ class PipelinesIntegrationTest(TestCase):
             pipeline.d2d_enabled,
             "D2D is enabled for a package with both source and binary",
         )
+
+        for name, version in [
+            ("commons-logging", "1.1.1"),
+            ("jackson-annotations", "2.4.0"),
+        ]:
+            self.assertTrue(
+                project1.discovereddependencies.filter(
+                    type="maven", name=name, version=version
+                ).exists(),
+                f"Expected DiscoveredDependency {name}@{version} from POM scan",
+            )
 
         shaded_classes = project1.codebaseresources.filter(status=flag.SHADED_CLASS)
         self.assertEqual(
@@ -1053,16 +1028,27 @@ class PipelinesIntegrationTest(TestCase):
                 ),
                 "original_fqn": "org.apache.commons.logging.impl.AvalonLogger",
                 "match_score": 6,
-                "match_signals": ["artifact", "group"],
+                "match_signals": ["artifact", "artifact_tail", "group"],
             },
             commons_class.extra_data,
         )
-        self.assertEqual(
-            ["pkg:maven/commons-logging/commons-logging@1.1.1"],
+        self.assertCountEqual(
+            [
+                "pkg:maven/commons-logging/commons-logging@1.1.1",
+                "pkg:maven/org.apache.htrace/htrace-core@4.0.0-incubating",
+            ],
             [
                 package.package_url
                 for package in commons_class.discovered_packages.all()
             ],
+        )
+        commons_dep = project1.discovereddependencies.get(
+            type="maven", name="commons-logging", version="1.1.1"
+        )
+        self.assertIsNotNone(commons_dep.resolved_to_package)
+        self.assertEqual(
+            "pkg:maven/commons-logging/commons-logging@1.1.1",
+            commons_dep.resolved_to_package.package_url,
         )
 
         jackson_class = shaded_classes.get(
@@ -1077,16 +1063,27 @@ class PipelinesIntegrationTest(TestCase):
                 ),
                 "original_fqn": "com.fasterxml.jackson.annotation.JsonTypeId",
                 "match_score": 8,
-                "match_signals": ["artifact", "fuzzy", "group"],
+                "match_signals": ["artifact", "artifact_tail", "fuzzy", "group"],
             },
             jackson_class.extra_data,
         )
-        self.assertEqual(
-            ["pkg:maven/com.fasterxml.jackson.core/jackson-annotations@2.4.0"],
+        self.assertCountEqual(
+            [
+                "pkg:maven/com.fasterxml.jackson.core/jackson-annotations@2.4.0",
+                "pkg:maven/org.apache.htrace/htrace-core@4.0.0-incubating",
+            ],
             [
                 package.package_url
                 for package in jackson_class.discovered_packages.all()
             ],
+        )
+        jackson_dep = project1.discovereddependencies.get(
+            type="maven", name="jackson-annotations", version="2.4.0"
+        )
+        self.assertIsNotNone(jackson_dep.resolved_to_package)
+        self.assertEqual(
+            "pkg:maven/com.fasterxml.jackson.core/jackson-annotations@2.4.0",
+            jackson_dep.resolved_to_package.package_url,
         )
 
         self.assertFalse(
