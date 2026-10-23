@@ -146,10 +146,7 @@ def _flag_datafiles_with_issue(project, package, issue):
 def filter_ignored_licenses(license_expression, licensing):
     """Filter out ignored licenses from a license expression."""
     if isinstance(license_expression, licensing.Symbol):
-        if (
-            hasattr(license_expression, "key")
-            and license_expression.key in IGNORED_LICENSES
-        ):
+        if license_expression.key in IGNORED_LICENSES:
             return None
         return license_expression
 
@@ -204,7 +201,7 @@ def _iter_match_expressions(license_detections, licensing, path):
     ``license_detections`` array.
     """
     for detection in license_detections:
-        for match in detection.get("matches"):
+        for match in detection.get("matches", []):
             expression = match.get("license_expression")
             if not expression:
                 continue
