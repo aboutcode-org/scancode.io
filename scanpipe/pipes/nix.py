@@ -90,20 +90,24 @@ _NIX_ERROR_MARKERS = (
 # The name, commit, system, and output values are used in Nix code, shell
 # scripts, git commands, and file paths. They must be carefully checked
 # before use.
+#
+# The following patterns do not have `^`/`$` anchors as they are used with
+# `.fullmatch()`, which already requires the entire string to match.
+#
 # NIX_NAME_RE keeps the value free of whitespace, "/", and shell
 # metacharacters. It is the primary defense against injection; every Nix
 # expression below also passes user input via `--argstr`, which treats
 # the value as data, never as code.
-NIX_NAME_RE = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9_\-+.]*$")
+NIX_NAME_RE = re.compile(r"[a-zA-Z0-9][a-zA-Z0-9_\-+.]*")
 # A git commit ID under SHA-1 is exactly 40 lowercase hex characters.
-COMMIT_RE = re.compile(r"^[0-9a-f]{40}$")
+COMMIT_RE = re.compile(r"[0-9a-f]{40}")
 # A Nix system name has the form <arch>-<os>, e.g. x86_64-linux or
 # aarch64-darwin.
-SYSTEM_RE = re.compile(r"^[a-z0-9_]+-[a-z0-9_]+$")
+SYSTEM_RE = re.compile(r"[a-z0-9_]+-[a-z0-9_]+")
 # Common Nix output names: "out", "dev", "doc", "bin", "lib", "libexec",
 # "share", "man", plus multi-output variants such as "lib32" and "lib64".
 # The first character must be a letter so that "." and ".." are rejected.
-OUTPUT_RE = re.compile(r"^[a-z][a-z0-9]*$")
+OUTPUT_RE = re.compile(r"[a-z][a-z0-9]*")
 
 # Official repository used to verify that a commit is not from a fork.
 NIXPKGS_OWNER = "NixOS"
@@ -714,7 +718,7 @@ def verify_commit_in_nixpkgs(commit_hash):
 
     Return True if the commit is part of the official repository, False otherwise.
     """
-    if not COMMIT_RE.match(commit_hash):
+    if not COMMIT_RE.fullmatch(commit_hash):
         return False
 
     # Compare the commit against the default branch. If the commit is an
@@ -749,14 +753,14 @@ def _validate_purl_qualifiers(purl):
         raise ValueError(
             "The 'system' qualifier is required to resolve system-specific binaries."
         )
-    if not SYSTEM_RE.match(qualifiers["system"]):
+    if not SYSTEM_RE.fullmatch(qualifiers["system"]):
         raise ValueError(f"Invalid system: {qualifiers['system']!r}")
 
-    if "output" in qualifiers and not OUTPUT_RE.match(qualifiers["output"]):
+    if "output" in qualifiers and not OUTPUT_RE.fullmatch(qualifiers["output"]):
         raise ValueError(f"Invalid output: {qualifiers['output']!r}")
 
     commit_hash = qualifiers.get("commit", "")
-    if commit_hash and not COMMIT_RE.match(commit_hash):
+    if commit_hash and not COMMIT_RE.fullmatch(commit_hash):
         raise ValueError(f"Invalid commit hash: {commit_hash!r}")
 
     return commit_hash
@@ -779,7 +783,7 @@ def check_input_and_return_purl(project):
             "Only official nixpkgs repository is supported (i.e. namespace=nixpkgs)."
         )
 
-    if not NIX_NAME_RE.match(input_purl.name):
+    if not NIX_NAME_RE.fullmatch(input_purl.name):
         raise ValueError(f"Invalid Nix package name: {input_purl.name!r}")
 
     commit_hash = _validate_purl_qualifiers(input_purl)
@@ -1367,7 +1371,7 @@ def _decompress_pipeline_for(archive_name):
 
 def extract_nar_archive(archive_path, output_dir, output):
     """Extract a compressed Nix NAR archive."""
-    if not OUTPUT_RE.match(output):
+    if not OUTPUT_RE.fullmatch(output):
         raise ValueError(f"Invalid output: {output!r}")
 
     archive_path = Path(archive_path).resolve()

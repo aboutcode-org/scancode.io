@@ -92,6 +92,31 @@ class ScanPipeNixPipesTest(TestCase):
                 with self.assertRaisesMessage(ValueError, expected):
                     nix.check_input_and_return_purl(project)
 
+    @mock.patch("scanpipe.pipes.nix.verify_commit_in_nixpkgs", return_value=True)
+    def test_scanpipe_nix_purl_qualifiers_reject_trailing_newline(self, mock_verify):
+        commit = "1234567890abcdef1234567890abcdef12345678"
+        cases = [
+            (
+                f"pkg:nix/nixpkgs/hello@2.12.1?system=x86_64-linux%0A&commit={commit}",
+                "Invalid system",
+            ),
+            (
+                f"pkg:nix/nixpkgs/hello@2.12.1?system=x86_64-linux"
+                f"&output=out%0A&commit={commit}",
+                "Invalid output",
+            ),
+            (
+                f"pkg:nix/nixpkgs/hello@2.12.1?system=x86_64-linux&commit={commit}%0A",
+                "Invalid commit hash",
+            ),
+        ]
+        project = mock.Mock()
+        for purl_str, expected in cases:
+            with self.subTest(expected=expected):
+                project.inputsources.all.return_value = [purl_str]
+                with self.assertRaisesMessage(ValueError, expected):
+                    nix.check_input_and_return_purl(project)
+
     @mock.patch("scanpipe.pipes.nix.requests.get")
     def test_scanpipe_nix_verify_commit_in_nixpkgs(self, mock_get):
         commit = "1234567890abcdef1234567890abcdef12345678"
@@ -117,6 +142,10 @@ class ScanPipeNixPipesTest(TestCase):
         mock_get.side_effect = None
         self.assertFalse(nix.verify_commit_in_nixpkgs("not-a-commit"))
         mock_get.assert_not_called()
+
+    def test_scanpipe_nix_verify_commit_rejects_trailing_newline(self):
+        commit = "1234567890abcdef1234567890abcdef12345678"
+        self.assertFalse(nix.verify_commit_in_nixpkgs(commit + "\n"))
 
     @mock.patch("scanpipe.pipes.nix.fetch_json_response")
     def test_scanpipe_nix_get_package_data(self, mock_fetch):
@@ -519,6 +548,11 @@ class ScanPipeNixPipesTest(TestCase):
         self.assertFalse(success)
         self.assertIn("Failed to extract NAR archive", error)
         self.assertFalse(to_dir.exists())
+
+    def test_scanpipe_nix_extract_nar_archive_rejects_trailing_newline(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            with self.assertRaisesMessage(ValueError, "Invalid output"):
+                nix.extract_nar_archive("x.nar", tmp, "debug\n")
 
     def test_scanpipe_nix_decompress_pipeline_for(self):
         for filename, expected in [
