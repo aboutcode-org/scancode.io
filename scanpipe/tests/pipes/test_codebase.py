@@ -207,3 +207,50 @@ class ScanPipeCodebasePipesTest(TestCase):
         self.assertEqual("c03f67211a311b13d1294ac8af7cb139ee34c4f9", resource.sha1)
         self.assertEqual(19948, resource.size)
         self.assertEqual(True, resource.is_file)
+
+    def test_get_resource_tree_does_not_share_seen_resources_across_calls(self):
+        """
+        Regression test: get_resource_tree must NOT share the seen_resources
+        set across multiple calls.
+
+        Bug: seen_resources=set() as a mutable default argument means Python
+        creates the set ONCE when the function is defined. All subsequent calls
+        share the SAME set object, causing resources from previous calls to be
+        silently skipped in later calls.
+
+        Fix: use seen_resources=None and create a fresh set() inside the
+        function when seen_resources is None.
+        """
+        from scanpipe.pipes.codebase import get_resource_tree
+        from scanpipe.models import CodebaseResource
+
+        project1 = Project.objects.create(name="Project1")
+        project2 = Project.objects.create(name="Project2")
+
+        dir1 = project1.codebaseresources.create(
+            path="dir1", type=CodebaseResource.Type.DIRECTORY
+        )
+        project1.codebaseresources.create(
+            path="dir1/file1.py", type=CodebaseResource.Type.FILE
+        )
+
+        dir2 = project2.codebaseresources.create(
+            path="dir1", type=CodebaseResource.Type.DIRECTORY
+        )
+        project2.codebaseresources.create(
+            path="dir1/file2.py", type=CodebaseResource.Type.FILE
+        )
+
+        fields = ["path"]
+
+        tree1 = get_resource_tree(dir1, fields)
+        self.assertIn("children", tree1)
+        self.assertEqual(len(tree1["children"]), 1)
+
+        tree2 = get_resource_tree(dir2, fields)
+        self.assertIn("children", tree2)
+        self.assertEqual(
+            len(tree2["children"]),
+            1,
+            "Second call returned empty children — mutable default argument bug!",
+        )
