@@ -114,8 +114,6 @@ RUN apt-get update \
        libzstd1 \
        libgpgme11t64 \
        libdevmapper1.02.1 \
-       libmagic1 \
-       ca-certificates \
        libmagic1t64 \
        git \
        wait-for-it \
