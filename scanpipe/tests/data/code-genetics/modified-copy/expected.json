@@ -1,0 +1,35 @@
+{
+  "description": "inih vendored with a local patch: ini.h unchanged, ini.c with larger buffers and an added function.",
+  "resources": [
+    {
+      "path": "src/inih/ini.h",
+      "match_type": "exact",
+      "origin": {
+        "purl": "pkg:github/benhoyt/inih@r62",
+        "download_url": "https://github.com/benhoyt/inih/archive/refs/tags/r62.tar.gz",
+        "path": "inih-r62/ini.h",
+        "sha1": "5e980029734c6fa2f58c8b921111b41f98693aac"
+      }
+    },
+    {
+      "path": "src/inih/ini.c",
+      "match_type": "modified",
+      "origin": {
+        "purl": "pkg:github/benhoyt/inih@r62",
+        "download_url": "https://github.com/benhoyt/inih/archive/refs/tags/r62.tar.gz",
+        "path": "inih-r62/ini.c",
+        "sha1": "9fee9c2a713e37efaa0abfff2d97318c63435751"
+      },
+      "line_ranges": [
+        {
+          "lines": [1, 37],
+          "origin_lines": [1, 37]
+        },
+        {
+          "lines": [40, 326],
+          "origin_lines": [40, 326]
+        }
+      ]
+    }
+  ]
+}
