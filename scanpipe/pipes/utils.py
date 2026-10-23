@@ -28,6 +28,10 @@ from contextlib import contextmanager
 
 logger = logging.getLogger(__name__)
 
+_DOCKER_CHECK_TIMEOUT = 5
+_DOCKER_IMAGE_INSPECT_TIMEOUT = 30
+_DOCKER_RM_TIMEOUT = 60
+
 
 def check_docker_command():
     """Check if the Docker command is available and the daemon is running."""
@@ -40,7 +44,7 @@ def check_docker_command():
             [docker_path, "info"],
             capture_output=True,
             check=True,
-            timeout=5,
+            timeout=_DOCKER_CHECK_TIMEOUT,
         )
         return True
     except (subprocess.SubprocessError, FileNotFoundError):
@@ -68,18 +72,39 @@ def file_lock(lock_path):
 def docker_image_exists(image):
     """Return True if the "image" is present in the local Docker image store."""
     cmd = ["docker", "image", "inspect", image]
-    result = subprocess.run(cmd, capture_output=True, check=False)  # noqa: S603
+    try:
+        result = subprocess.run(  # noqa: S603
+            cmd,
+            capture_output=True,
+            check=False,
+            timeout=_DOCKER_IMAGE_INSPECT_TIMEOUT,
+        )
+    except subprocess.TimeoutExpired:
+        logger.warning(
+            f"docker image inspect {image} timed out after "
+            f"{_DOCKER_IMAGE_INSPECT_TIMEOUT}s; treating as missing."
+        )
+        return False
     return result.returncode == 0
 
 
 def docker_rm_force(container_name):
     """Remove a container left behind after a timeout."""
     cmd = ["docker", "rm", "-f", container_name]
-    subprocess.run(  # noqa: S603
-        cmd,
-        capture_output=True,
-        check=False,
-    )
+    try:
+        subprocess.run(  # noqa: S603
+            cmd,
+            capture_output=True,
+            check=False,
+            timeout=_DOCKER_RM_TIMEOUT,
+        )
+    except subprocess.TimeoutExpired:
+        logger.warning(
+            f"docker rm -f {container_name} timed out after "
+            f"{_DOCKER_RM_TIMEOUT}s; container may linger."
+        )
+    except (OSError, subprocess.SubprocessError):
+        logger.exception(f"Failed to remove container {container_name}")
 
 
 def run_docker_container(cmd, container_name, timeout, task_description):
@@ -90,15 +115,6 @@ def run_docker_container(cmd, container_name, timeout, task_description):
     Return a CompletedProcess on success. Raise CalledProcessError on failure,
     or TimeoutExpired on a genuine timeout.
     """
-
-    def _cleanup():
-        try:
-            docker_rm_force(container_name)
-        except Exception:
-            logger.exception(
-                "Failed to remove container %s during cleanup", container_name
-            )
-
     try:
         result = subprocess.run(  # noqa: S603
             cmd,
@@ -111,17 +127,14 @@ def run_docker_container(cmd, container_name, timeout, task_description):
         logger.error(
             f"{task_description}: timeout after {timeout}s; removing container"
         )
-        _cleanup()
+        docker_rm_force(container_name)
         raise
     except subprocess.CalledProcessError as exception:
         logger.error(
-            "%s: container %s exited with %s; stderr=%s",
-            task_description,
-            container_name,
-            exception.returncode,
-            exception.stderr,
+            f"{task_description}: container {container_name} exited with "
+            f"{exception.returncode}; stderr={exception.stderr}"
         )
-        _cleanup()
+        docker_rm_force(container_name)
         raise
 
     return result

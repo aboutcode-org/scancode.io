@@ -72,6 +72,7 @@ class ScanPipeUtilsTest(TestCase):
             ["docker", "rm", "-f", "test-container"],
             capture_output=True,
             check=False,
+            timeout=60,
         )
 
     @mock.patch("scanpipe.pipes.utils.subprocess.run")
