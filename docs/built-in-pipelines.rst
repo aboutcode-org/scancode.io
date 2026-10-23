@@ -290,8 +290,41 @@ Scan Single Package
 .. _pipeline_scan_maven_package:
 
 Scan Maven Package
--------------------
+------------------
 .. autoclass:: scanpipe.pipelines.scan_maven_package.ScanMavenPackage()
+    :members:
+    :member-order: bysource
+
+.. _pipeline_scan_nix_package:
+
+Scan Nix Package
+----------------
+.. warning::
+
+   This pipeline requires a Docker daemon. For cross-architecture builds it
+   also requires binfmt multi-arch emulation on the host. It is **not**
+   enabled by default.
+
+   To enable it:
+
+   1. Uncomment the ``DOCKER_HOST``, ``DOCKER_TLS_VERIFY`` and
+      ``DOCKER_CERT_PATH`` variables in ``docker.env``.
+   2. Start the Compose stack with the ``dind`` profile::
+
+          docker compose --profile dind up
+
+   The ``dind`` service runs a privileged Docker daemon and shares the
+   ``workspace`` volume with it.
+
+   See the class documentation below for the full list of requirements.
+
+   This pipeline also runs a read-only ``--privileged`` container
+   (``tonistiigi/binfmt``, pinned by digest) to detect whether the
+   handlers are installed. Nothing is installed by the pipeline itself;
+   if the handlers are missing, the pipeline fails at its first step
+   with the command to install them.
+
+.. autoclass:: scanpipe.pipelines.scan_nix_package.ScanNixPackage()
     :members:
     :member-order: bysource
 

@@ -1896,20 +1896,25 @@ def map_paths_resource(
                     relations_to_create[rel_key] = relation
         if paths_not_mapped:
             to_resource.status = flag.REQUIRES_REVIEW
-            logger(
-                f"WARNING: #{len(paths_not_mapped)} {map_type} paths NOT mapped for: "
-                f"{to_resource.path!r}"
-            )
+            if logger:
+                logger(
+                    f"WARNING: #{len(paths_not_mapped)} {map_type} paths NOT "
+                    f"mapped for: {to_resource.path!r}"
+                )
         to_resource.save()
 
     if relations_to_create:
         rels = CodebaseRelation.objects.bulk_create(relations_to_create.values())
-        logger(
-            f"Created {len(rels)} mappings using "
-            f"{', '.join(map_types)} for: {to_resource.path!r}"
-        )
+        if logger:
+            logger(
+                f"Created {len(rels)} mappings using "
+                f"{', '.join(map_types)} for: {to_resource.path!r}"
+            )
     else:
-        logger(f"No mappings using {', '.join(map_types)} for: {to_resource.path!r}")
+        if logger:
+            logger(
+                f"No mappings using {', '.join(map_types)} for: {to_resource.path!r}"
+            )
 
 
 def process_paths_in_binary(
