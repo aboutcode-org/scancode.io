@@ -48,7 +48,6 @@ from scanpipe.pipelines import deploy_to_develop
 from scanpipe.pipelines import is_pipeline
 from scanpipe.pipelines import scan_single_package
 from scanpipe.pipelines.find_vulnerabilities import FindVulnerabilities
-from scanpipe.pipelines.scan_nix_package import ScanNixPackage
 from scanpipe.pipes import d2d
 from scanpipe.pipes import flag
 from scanpipe.pipes import output
@@ -67,8 +66,6 @@ from scanpipe.tests.pipelines.steps_as_attribute import StepsAsAttribute
 from scanpipe.tests.pipelines.with_groups import WithGroups
 
 from_docker_image = os.environ.get("FROM_DOCKER_IMAGE")
-
-nix_pipeline_unavailable_reason = ScanNixPackage.get_availability()
 
 
 class ScanPipePipelinesTest(TestCase):
