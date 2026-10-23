@@ -51,13 +51,24 @@ class AtomTool(ReachabilityTool):
 
     @classmethod
     def get_atom_language(cls, project):
-        """Return the atom ``-l`` value for ``project``."""
-        package = project.discoveredpackages.first()
-        if package and package.primary_language:
-            language = cls.supported_languages.get(package.primary_language)
-            if language:
-                return language
-        raise ValueError(f"Could not determine an atom language for {project.name!r}.")
+        """Return the atom ``-l`` value for ``project`` from the scan summary."""
+        summary_path = project.get_latest_output("summary")
+        with open(summary_path) as f:
+            summary = json.load(f)
+
+        primary_language = summary.get("primary_language")
+        if not primary_language:
+            raise ValueError(
+                f"No primary_language in the scan summary of {project.name!r}."
+            )
+
+        language = cls.supported_languages.get(primary_language)
+        if not language:
+            raise ValueError(
+                f"Unsupported primary_language {primary_language!r} for "
+                f"{project.name!r}. Supported: {', '.join(cls.supported_languages)}."
+            )
+        return language
 
     @classmethod
     def get_target_path(cls, project):
