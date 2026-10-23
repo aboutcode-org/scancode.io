@@ -1965,6 +1965,18 @@ wheels = [
 ]
 
 [[package]]
+name = "neo4j"
+version = "6.4.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pytz" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/d1/d1/bc40a291c60b06738ce92d5f0259d348eee1f07ba10d569a881c848c8afe/neo4j-6.4.1.tar.gz", hash = "sha256:fac99b7cb9679b93ef97dc23f22a3f0e7c3feb2db223eddfd2521f27005cfeaf", size = 287897, upload-time = "2026-10-15T10:47:26.666Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/07/69/3036bdcacfba561c6ef4b00fe72529e0a1b6241a6b2de82572a0940a276b/neo4j-6.4.1-py3-none-any.whl", hash = "sha256:f56a281c74355522fc2642df8919bec450115431531b8f3f6fe1cc17acb57a27", size = 390684, upload-time = "2026-10-15T10:47:25.236Z" },
+]
+
+[[package]]
 name = "normality"
 version = "2.6.1"
 source = { registry = "https://pypi.org/simple" }
@@ -3029,6 +3041,7 @@ dependencies = [
     { name = "lxml" },
     { name = "markdown-it-py" },
     { name = "matchcode-toolkit" },
+    { name = "neo4j" },
     { name = "openpyxl" },
     { name = "packageurl-python" },
     { name = "packaging" },
@@ -3118,6 +3131,7 @@ requires-dist = [
     { name = "markdown-it-py", specifier = "==4.2.0" },
     { name = "matchcode-toolkit", specifier = "==7.2.2" },
     { name = "minecode-pipelines", marker = "extra == 'mining'", specifier = "==1.0.1" },
+    { name = "neo4j", specifier = "==6.4.1" },
     { name = "openpyxl", specifier = "==3.1.5" },
     { name = "packageurl-python", specifier = "==0.17.6" },
     { name = "packaging", specifier = "==26.3" },
