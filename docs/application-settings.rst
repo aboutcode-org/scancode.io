@@ -79,7 +79,7 @@ See :ref:`project_workspace` for more details.
 SCANCODEIO_NIXPKGS_USE_LOCAL_CACHE
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Whether  the ``scan_nix_package`` pipeline maintains a local bare clone of
+Whether the ``scan_nix_package`` pipeline maintains a local bare clone of
 the nixpkgs git repository. When ``True`` (the default), the first scan
 performs a one-time clone under
 :ref:`SCANCODEIO_NIXPKGS_CACHE_DIR <scancodeio_settings_nixpkgs_cache_dir>`
@@ -158,21 +158,6 @@ value the Nix CLI accepts (e.g. ``12h``, ``3d``, ``7d``)::
     SCANCODEIO_NIXPKGS_GC_OLDER_THAN=12h
 
 Default: ``12h``
-
-
-.. note::
-    The ``scan_nix_package`` pipeline runs a ``--privileged`` container
-    (``tonistiigi/binfmt``, pinned by digest) to detect whether multi-arch
-    binfmt handlers are registered on the Docker host. This is a
-    **read-only** check — no handlers are installed by the pipeline, and
-    the result is cached per worker process.
-
-    Installing the handlers is a one-time administrative setup task::
-
-        docker run --privileged --rm --init tonistiigi/binfmt --install all
-
-    If the handlers are not installed, the pipeline will fail immediately.
-    The pipeline does not install them itself.
 
 
 .. _scancodeio_settings_config_dir:
