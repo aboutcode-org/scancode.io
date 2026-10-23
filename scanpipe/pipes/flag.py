@@ -69,6 +69,8 @@ NOT_DEPLOYED = "not-deployed"
 LICENSE_MISMATCH = "license-mismatch-declared-vs-detected"
 GENERATED = "generated-file"
 
+SHADED_CLASS = "shaded-class"
+
 
 # Target files that should be ignored during processing as those are related to the app
 # configuration.

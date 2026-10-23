@@ -23,9 +23,11 @@
 import io
 import json
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
+import zipfile
 from contextlib import redirect_stderr
 from pathlib import Path
 from unittest import mock
@@ -54,6 +56,7 @@ from scanpipe.pipelines.scan_nix_package import ScanNixPackage
 from scanpipe.pipes import d2d
 from scanpipe.pipes import flag
 from scanpipe.pipes import matchcode
+from scanpipe.pipes import maven
 from scanpipe.pipes import output
 from scanpipe.pipes import scancode
 from scanpipe.pipes.input import copy_input
@@ -983,6 +986,145 @@ class PipelinesIntegrationTest(TestCase):
         scancode_file = project1.get_latest_output(filename="scancode")
         expected_file = self.data / "jvm" / "args4j-tools-2.0.16-sctk.json"
         self.assertPipelineResultEqual(expected_file, scancode_file)
+
+    @skipIf(sys.platform == "darwin", "Not supported on macOS")
+    @mock.patch("scanpipe.pipelines.scan_maven_package.fetch_inputs")
+    def test_scanpipe_scan_maven_package_d2d_shaded_classes(self, mock_fetch_inputs):
+
+        pipeline_name = "scan_maven_package"
+        project1 = make_project(name="Analysis")
+
+        run = project1.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+
+        download_url = "pkg:maven/org.apache.htrace/htrace-core@4.0.0-incubating"
+        project1.add_input_source(download_url=download_url)
+
+        tmpdir = tempfile.mkdtemp(prefix="scanpipe-mvn-")
+        self.addCleanup(shutil.rmtree, tmpdir, True)
+
+        src_path = Path(tmpdir) / "htrace-core-4.0.0-incubating-sources.jar"
+        bin_path = Path(tmpdir) / "htrace-core-4.0.0-incubating.jar"
+
+        with zipfile.ZipFile(src_path, "w") as jar_file:
+            jar_file.writestr("Dummy.java", b"public class Dummy {}")
+
+        with zipfile.ZipFile(bin_path, "w") as jar_file:
+            jar_file.writestr(
+                "org/apache/htrace/commons/logging/impl/AvalonLogger.class",
+                b"aaaaaaa",
+            )
+            jar_file.writestr(
+                "org/apache/htrace/fasterxml/jackson/annotation/JsonTypeId.class",
+                b"bbbbbbb",
+            )
+            jar_file.writestr(
+                "META-INF/maven/org.apache.htrace/htrace-core/pom.xml",
+                (self.data / "maven" / "shaded-pom.xml").read_bytes(),
+            )
+
+        mock_fetch_inputs.return_value = (src_path, bin_path)
+
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+        self.assertTrue(
+            pipeline.d2d_enabled,
+            "D2D is enabled for a package with both source and binary",
+        )
+
+        for name, version in [
+            ("commons-logging", "1.1.1"),
+            ("jackson-annotations", "2.4.0"),
+        ]:
+            self.assertTrue(
+                project1.discovereddependencies.filter(
+                    type="maven", name=name, version=version
+                ).exists(),
+                f"Expected DiscoveredDependency {name}@{version} from POM scan",
+            )
+
+        shaded_classes = project1.codebaseresources.filter(status=flag.SHADED_CLASS)
+        self.assertEqual(
+            2,
+            shaded_classes.count(),
+            "Expected exactly 2 .class resources with status shaded-class",
+        )
+
+        for resource in shaded_classes:
+            extra_data = resource.extra_data
+            self.assertIn("shaded_from_package", extra_data)
+            self.assertGreaterEqual(extra_data["match_score"], maven.MIN_MATCH_SCORE)
+
+        commons_class = shaded_classes.get(
+            path__endswith=("org/apache/htrace/commons/logging/impl/AvalonLogger.class")
+        )
+        self.assertEqual(
+            {
+                "shaded_from_package": (
+                    "pkg:maven/commons-logging/commons-logging@1.1.1"
+                ),
+                "original_fqn": "org.apache.commons.logging.impl.AvalonLogger",
+                "match_score": 6,
+                "match_signals": ["artifact", "artifact_tail", "group"],
+            },
+            commons_class.extra_data,
+        )
+        self.assertEqual(
+            ["pkg:maven/commons-logging/commons-logging@1.1.1"],
+            [
+                package.package_url
+                for package in commons_class.discovered_packages.all()
+            ],
+        )
+        commons_dep = project1.discovereddependencies.get(
+            type="maven", name="commons-logging", version="1.1.1"
+        )
+        self.assertIsNotNone(commons_dep.resolved_to_package)
+        self.assertEqual(
+            "pkg:maven/commons-logging/commons-logging@1.1.1",
+            commons_dep.resolved_to_package.package_url,
+        )
+
+        jackson_class = shaded_classes.get(
+            path__endswith=(
+                "org/apache/htrace/fasterxml/jackson/annotation/JsonTypeId.class"
+            )
+        )
+        self.assertEqual(
+            {
+                "shaded_from_package": (
+                    "pkg:maven/com.fasterxml.jackson.core/jackson-annotations@2.4.0"
+                ),
+                "original_fqn": "com.fasterxml.jackson.annotation.JsonTypeId",
+                "match_score": 8,
+                "match_signals": ["artifact", "artifact_tail", "fuzzy", "group"],
+            },
+            jackson_class.extra_data,
+        )
+        self.assertCountEqual(
+            ["pkg:maven/com.fasterxml.jackson.core/jackson-annotations@2.4.0"],
+            [
+                package.package_url
+                for package in jackson_class.discovered_packages.all()
+            ],
+        )
+        jackson_dep = project1.discovereddependencies.get(
+            type="maven", name="jackson-annotations", version="2.4.0"
+        )
+        self.assertIsNotNone(jackson_dep.resolved_to_package)
+        self.assertEqual(
+            "pkg:maven/com.fasterxml.jackson.core/jackson-annotations@2.4.0",
+            jackson_dep.resolved_to_package.package_url,
+        )
+
+        self.assertFalse(
+            shaded_classes.filter(
+                extra_data__shaded_from_package__startswith=(
+                    "pkg:maven/org.apache.htrace/htrace-core@"
+                )
+            ).exists(),
+            "Shaded classes must not be attributed from the main htrace-core package",
+        )
 
     def test_scanpipe_scan_codebase_pipeline_integration(self):
         pipeline_name = "scan_codebase"
