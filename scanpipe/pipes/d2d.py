@@ -2168,6 +2168,7 @@ def map_go_paths(project, logger=None):
             logger=logger,
         )
 
+
 RUST_BINARY_OPTIONS = ["Rust"]
 ELF_BINARY_OPTIONS = ["Python", "Go", "Elf"]
 MACHO_BINARY_OPTIONS = ["Rust", "Go", "MacOS"]
