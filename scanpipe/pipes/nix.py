@@ -168,24 +168,9 @@ def _nixpkgs_bare_repo():
     return _nixpkgs_cache_dir() / "nixpkgs.git"
 
 
-def _nixpkgs_repo_url():
-    """Return the nixpkgs git repository URL from settings."""
-    return scanpipe_settings.NIXPKGS_REPO_URL
-
-
-def _nix_image_lock_path():
-    """Return the lock file path for the custom Nix image build."""
-    return _nixpkgs_cache_dir() / "nix-image.lock"
-
-
 def _nixpkgs_repo_lock_path():
     """Return the lock file path for the nixpkgs bare repository."""
     return _nixpkgs_cache_dir() / "nixpkgs-repo.lock"
-
-
-def _nixpkgs_gc_lock_path():
-    """Return the lock file path for the Nix store garbage collection."""
-    return _nixpkgs_cache_dir() / "nixpkgs-gc.lock"
 
 
 def _nixpkgs_gc_timestamp_path():
@@ -251,7 +236,7 @@ def _ensure_nix_image():
         return _resolved_nix_image
 
     # Lock the file to avoid crashing during concurrent runs.
-    with utils.file_lock(_nix_image_lock_path()):
+    with utils.file_lock(_nixpkgs_cache_dir() / "nix-image.lock"):
         # Another process may have built it while we waited for the lock.
         if utils.docker_image_exists(NIX_IMAGE):
             _resolved_nix_image = NIX_IMAGE
@@ -347,7 +332,7 @@ def _run_nixpkgs_gc_if_due():
 
     nix_image = _ensure_nix_image()
 
-    with utils.file_lock(_nixpkgs_gc_lock_path()):
+    with utils.file_lock(_nixpkgs_cache_dir() / "nixpkgs-gc.lock"):
         if not _gc_due(now):
             return
 
@@ -456,7 +441,7 @@ def _clone_nixpkgs_bare_repo():
         "--bare",
         "--filter=blob:none",
         "--no-tags",
-        _nixpkgs_repo_url(),
+        scanpipe_settings.NIXPKGS_REPO_URL,
         str(bare_repo),
     ]
     try:
