@@ -26,6 +26,11 @@ from scanpipe import views
 
 urlpatterns = [
     path(
+        "project/<slug:slug>/batch/<str:finding_type>/",
+        views.ProjectBatchActionView.as_view(),
+        name="project_batch_action",
+    ),
+    path(
         "project/<slug:slug>/resources/<path:path>/raw/",
         views.CodebaseResourceRawView.as_view(),
         name="resource_raw",

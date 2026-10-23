@@ -8,6 +8,7 @@
       <div class="is-flex is-justify-content-space-between">
         {% include 'scanpipe/includes/breadcrumb.html' with linked_project=True current="License Detections" %}
         {% include 'scanpipe/includes/search_field.html' with extra_class="is-small" %}
+        {% include 'scanpipe/dropdowns/finding_actions_dropdown.html' %}
       </div>
       {% include 'scanpipe/includes/pagination_header.html' %}
       {% include 'scanpipe/includes/filters_breadcrumb.html' with filterset=filter only %}
@@ -16,10 +17,11 @@
 
   <div class="container is-fluid mb-3">
     <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth is-rounded-table">
-      {% include 'scanpipe/includes/list_view_thead.html' %}
+      {% include 'scanpipe/includes/list_view_thead.html' with finding_type=finding_type %}
       <tbody>
         {% for license_detection in object_list %}
           <tr class="break-word">
+            <td class="p-2"><input type="checkbox" class="select-row" value="{{ license_detection.pk }}"></td>
             <td style="min-width: 300px;" title="{{ license_detection.identifier }}">
               {# CAUTION: Avoid relying on get_absolute_url to prevent unnecessary query triggers #}
               <a href="{% url 'license_detail' project.slug license_detection.identifier %}">{{ license_detection.identifier }}</a>
