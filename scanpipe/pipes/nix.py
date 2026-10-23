@@ -322,10 +322,6 @@ def _run_nixpkgs_gc_if_due():
     <SCANCODEIO_NIXPKGS_GC_OLDER_THAN>` on the shared Nix store cache, but
     at most once per `SCANCODEIO_NIXPKGS_GC_INTERVAL_HOURS`.
     """
-    interval = scanpipe_settings.NIXPKGS_GC_INTERVAL_HOURS
-    if interval <= 0:
-        return
-
     now = time.time()
     if not _gc_due(now):
         return
