@@ -158,7 +158,7 @@ class ScanPipeMavenPipesTest(TestCase):
         self.assertEqual(result, expected)
 
     def test_scanpipe_maven_update_package_license_from_resource_if_missing(self):
-        project1 = self.project
+        project1 = make_project()
         input_location = self.data / "maven" / "missing_lic_in_package.json"
         project1.copy_input_from(input_location)
         copy_inputs(project1.inputs(), project1.codebase_path)
@@ -176,7 +176,7 @@ class ScanPipeMavenPipesTest(TestCase):
     def test_scanpipe_maven_update_package_license_from_resource_if_missing_no_change(
         self,
     ):
-        project1 = self.project
+        project1 = make_project()
         input_location = self.data / "maven" / "lic_in_package.json"
         project1.copy_input_from(input_location)
         copy_inputs(project1.inputs(), project1.codebase_path)
@@ -495,7 +495,11 @@ class ScanPipeMavenPipesTest(TestCase):
         make_dependency(
             project=self.project,
             for_package=main_package,
-            dependency_uid="dep",
+            dependency_uid="pkg:maven/com.fasterxml.jackson.core/jackson-databind",
+            type="maven",
+            namespace="com.fasterxml.jackson.core",
+            name="jackson-databind",
+            version="2.4.0",
         )
 
         result = maven.get_maven_dependency_packages(self.project, main_purl)
@@ -1018,3 +1022,29 @@ class ScanPipeMavenPipesTest(TestCase):
         self.assertEqual(
             [resolved_package], list(second_class.discovered_packages.all())
         )
+
+    def test_scanpipe_maven_map_shaded_classes_replaces_container_attribution(self):
+        project, main_purl, commons, _ = self._setup_project_with_shaded_classes()
+        htrace_core = project.discoveredpackages.get(
+            package_url="pkg:maven/org.apache.htrace/htrace-core@4.0.0-incubating"
+        )
+        commons_class = make_resource_file(
+            project,
+            "to/org/apache/htrace/commons/logging/impl/AvalonLogger.class",
+            status=flag.APPLICATION_PACKAGE,
+        )
+        # Simulate load_inventory_from_toolkit_scan's coarse attribution.
+        commons_class.discovered_packages.add(htrace_core)
+
+        maven.map_shaded_classes_to_maven_packages(project, purl=main_purl)
+
+        commons_class.refresh_from_db()
+        self.assertEqual(commons_class.status, flag.SHADED_CLASS)
+        self.assertEqual(
+            [commons.package_url],
+            [
+                package.package_url
+                for package in commons_class.discovered_packages.all()
+            ],
+        )
+        self.assertNotIn(htrace_core, commons_class.discovered_packages.all())

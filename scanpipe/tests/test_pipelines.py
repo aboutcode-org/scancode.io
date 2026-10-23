@@ -1051,11 +1051,8 @@ class PipelinesIntegrationTest(TestCase):
             },
             commons_class.extra_data,
         )
-        self.assertCountEqual(
-            [
-                "pkg:maven/commons-logging/commons-logging@1.1.1",
-                "pkg:maven/org.apache.htrace/htrace-core@4.0.0-incubating",
-            ],
+        self.assertEqual(
+            ["pkg:maven/commons-logging/commons-logging@1.1.1"],
             [
                 package.package_url
                 for package in commons_class.discovered_packages.all()
@@ -1087,10 +1084,7 @@ class PipelinesIntegrationTest(TestCase):
             jackson_class.extra_data,
         )
         self.assertCountEqual(
-            [
-                "pkg:maven/com.fasterxml.jackson.core/jackson-annotations@2.4.0",
-                "pkg:maven/org.apache.htrace/htrace-core@4.0.0-incubating",
-            ],
+            ["pkg:maven/com.fasterxml.jackson.core/jackson-annotations@2.4.0"],
             [
                 package.package_url
                 for package in jackson_class.discovered_packages.all()
@@ -1111,7 +1105,7 @@ class PipelinesIntegrationTest(TestCase):
                     "pkg:maven/org.apache.htrace/htrace-core@"
                 )
             ).exists(),
-            "Shaded classes must not be attributed to the main htrace-core package",
+            "Shaded classes must not be attributed from the main htrace-core package",
         )
 
     def test_scanpipe_scan_codebase_pipeline_integration(self):

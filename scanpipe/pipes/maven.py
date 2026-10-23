@@ -285,8 +285,8 @@ def get_maven_shade_relocations(project, pom_resource):
 
 def _dedupe_maven_candidates(candidates, main_purl):
     """
-    Return "candidates" deduplicated by "namespace" and "name", excluding the
-    main package.
+    Return "candidates" deduplicated by "namespace", "name" and "version",
+    excluding the main package.
     """
     result = []
     seen = set()
@@ -396,7 +396,7 @@ def _fuzzy_segment_match(
 
 # Required signals that must be present for a candidate to be considered.
 # The "group" and the "artifact" of the dependency must contribute at least
-# one matching segment for the FQN, and the "artifact_tail"  (the last
+# one matching segment for the FQN, and the "artifact_tail" (the last
 # segment of the artifact) must match at least one FQN package segment.
 # This rejects the false matches where only the group (e.g. "com.google"
 # for guava) matches the FQN namespace, and where the group plus a shared
@@ -474,8 +474,6 @@ def _last_artifact_segment_matches(artifact_id, package_segments):
     (e.g. "jackson-databind").
     """
     last_segment = artifact_id.split("/")[-1]
-    if not last_segment:
-        return False
     return any(
         segment == last_segment or _fuzzy_segment_match(last_segment, segment)
         for segment in package_segments
@@ -600,6 +598,10 @@ def _map_shaded_class_resource(resource, relocations, dependency_packages, match
     if isinstance(matched_package, DiscoveredDependency):
         matched_package = get_or_create_dependency_package(matched_package)
 
+    # Replace the container attribution with the shaded-from dependency:
+    # the class's code and license belong to the source dependency, not to
+    # the JAR it was bundled into.
+    resource.discovered_packages.clear()
     resource.discovered_packages.add(matched_package)
     resource.update(
         status=flag.SHADED_CLASS,
