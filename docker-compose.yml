@@ -55,7 +55,6 @@ services:
       - dind_data:/var/lib/docker
       - dind_certs:/certs
       - workspace:/var/scancodeio/workspace/
-      - nix_eval_cache:/nix
     restart: always
     healthcheck:
       test: ["CMD-SHELL", "docker info && test -f /certs/client/ca.pem"]
@@ -75,7 +74,7 @@ services:
     command:
       - sh
       - -c
-      - chmod -R a+rX /certs/client /certs/server
+      - chmod -R a+rX /certs/client
     volumes:
       - dind_certs:/certs
     depends_on:
@@ -183,7 +182,3 @@ volumes:
   workspace:
   webroot:
   healthycode_venv:
-  nix_eval_cache:
-    # Keep this name in sync with the volume name used by
-    # scanpipe/pipes/nix.py
-    name: nix-eval-cache
