@@ -2168,16 +2168,6 @@ def map_go_paths(project, logger=None):
             logger=logger,
         )
 
-
-def update_from_to_tag(project):
-    """Update 'from' or 'to' tag to resources based on their path."""
-    for resource in project.codebaseresources.all():
-        if resource.path.startswith("from/"):
-            resource.update(tag="from")
-        elif resource.path.startswith("to/"):
-            resource.update(tag="to")
-
-
 RUST_BINARY_OPTIONS = ["Rust"]
 ELF_BINARY_OPTIONS = ["Python", "Go", "Elf"]
 MACHO_BINARY_OPTIONS = ["Rust", "Go", "MacOS"]
@@ -2365,10 +2355,6 @@ def map_binaries_with_symbols(
     logger=None,
 ):
     """Map Binaries to their source using symbols in ``project``."""
-    if not to_resources:
-        if logger:
-            logger(f"No to/ resources to map using {', '.join(map_types)}.")
-        return
     symbols.collect_and_store_tree_sitter_symbols_and_strings(
         project=project,
         logger=logger,
