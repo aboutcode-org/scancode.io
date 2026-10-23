@@ -97,6 +97,8 @@ class AtomTool(ReachabilityTool):
             command,
             "-l",
             atom_language,
+            "--cache",
+            "none",
             "-o",
             str(output_paths["atom"]),
             "-s",
@@ -104,7 +106,8 @@ class AtomTool(ReachabilityTool):
             str(target_path),
         ]
 
-        logger(f"Running atom {command} on {target_path} ...")
+        if logger:
+            logger(f"Running atom {command} on {target_path} ...")
         try:
             run_command_safely(command_args=command_args)
         except subprocess.SubprocessError as error:
