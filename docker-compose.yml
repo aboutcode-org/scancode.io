@@ -48,6 +48,7 @@ services:
       - workspace:/var/scancodeio/workspace/
       - static:/var/scancodeio/static/
       - healthycode_venv:/opt/healthycode
+      - atom_root:/atom-root
     restart: always
     depends_on:
       db:
@@ -69,6 +70,7 @@ services:
       - /etc/scancodeio/:/etc/scancodeio/
       - workspace:/var/scancodeio/workspace/
       - healthycode_venv:/opt/healthycode
+      - atom_root:/atom-root
     restart: always
     depends_on:
       db:
@@ -107,6 +109,28 @@ services:
       - healthycode_venv:/opt/healthycode
     restart: "no"
 
+  atom:
+    profiles: [atom]
+    image: ghcr.io/appthreat/atom:v3.2.0
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        set -e
+        find /atom-root -mindepth 1 -delete
+        mkdir -p /atom-root/opt /atom-root/bin /atom-root/lib/node_modules
+        cp -a /opt/wrapper /opt/java /opt/maven /opt/sbt /opt/scala /opt/vendor /atom-root/opt/
+        cp /usr/bin/node-22 /atom-root/bin/node
+        for lib in $(ldd /usr/bin/node-22 | awk '/=>/{print $$3}'); do
+          case "$$lib" in */libc.so*|*/libm.so*|*/libpthread*|*/libdl.so*|*/librt*|*/ld-linux*) ;; *) cp -aL "$$lib" /atom-root/lib/ ;; esac
+        done
+        cp -a /usr/local/lib/node_modules/. /atom-root/lib/node_modules/
+        ln -sfn /atom-root/opt/wrapper/nodejs/packages/atom /atom-root/opt/wrapper/nodejs/packages/atom-jar /atom-root/lib/node_modules/@appthreat/
+        printf '#!/bin/sh\nexport LD_LIBRARY_PATH=/atom-root/lib\nexport JAVA_HOME=/atom-root/opt/java/26.0.1-tem\nexport PATH=/atom-root/opt/java/26.0.1-tem/bin:/atom-root/opt/maven/3.9.16/bin:/atom-root/opt/sbt/1.12.12/bin:/atom-root/opt/scala/3.8.4/bin:/atom-root/opt/vendor/bin:$$PATH\nexec /atom-root/bin/node /atom-root/opt/wrapper/nodejs/packages/atom/index.js "$$@"\n' > /atom-root/bin/atom
+        chmod +x /atom-root/bin/atom
+    volumes: [atom_root:/atom-root]
+    restart: "no"
+
 volumes:
   db_data:
   redis_data:
@@ -115,3 +139,4 @@ volumes:
   workspace:
   webroot:
   healthycode_venv:
+  atom_root:
