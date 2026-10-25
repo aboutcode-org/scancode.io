@@ -731,10 +731,15 @@ class ScanPipeAPITest(TransactionTestCase):
             "description",
             "steps",
             "available_groups",
+            "is_addon",
             "is_available",
             "unavailable_reason",
         ]
         self.assertEqual(expected, list(response.data[0].keys()))
+
+        pipelines = {pipeline["name"]: pipeline for pipeline in response.data}
+        self.assertFalse(pipelines["scan_codebase"]["is_addon"])
+        self.assertTrue(pipelines["find_vulnerabilities"]["is_addon"])
 
     def test_scanpipe_api_project_action_report(self):
         url = reverse("project-report")

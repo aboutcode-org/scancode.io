@@ -5,6 +5,11 @@ Changelog
 
 * Migrate VulnerableCode integration to API v3
 
+Unreleased
+----------
+
+* feat: expose the ``is_addon`` attribute in the pipelines REST API
+
 v38.2.0 (2026-10-22)
 --------------------
 

@@ -204,6 +204,7 @@ class ProjectPipeline(CommonStepsMixin, BasePipeline):
     def get_info(cls, as_html=False):
         """Add the option to render the values as HTML."""
         info = super().get_info()
+        info["is_addon"] = cls.is_addon
 
         unavailable_reason = cls.get_availability()
         info["is_available"] = unavailable_reason is None
