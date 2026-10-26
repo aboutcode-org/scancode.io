@@ -858,24 +858,52 @@ def check_input_and_return_purl(project):
     # Verify the commit exists in the official NixOS/nixpkgs history so that
     # a commit pointing to a fork cannot be used to inject arbitrary Nix code.
     if commit_hash:
-        is_official = verify_commit_in_nixpkgs(commit_hash)
-        if is_official is None:
-            raise ValueError(
-                f"Could not verify that commit {commit_hash!r} belongs to "
-                f"the official NixOS/nixpkgs repository: the GitHub API "
-                f"was unreachable or rate limited. Configure "
-                f"SCANCODEIO_GITHUB_TOKEN (or GITHUB_TOKEN / GH_TOKEN) "
-                f"to raise the limit, or retry later."
-            )
-        if not is_official:
-            raise ValueError(
-                f"The commit {commit_hash!r} is not reachable from any "
-                f"official NixOS/nixpkgs branch (master, "
-                f"{NIXPKGS_DEFAULT_BRANCH}, or release-*). Commits from "
-                f"forks or unmerged pull requests are not allowed."
-            )
-
+        _require_official_commit(commit_hash, label="commit")
     return input_purl
+
+
+def _validate_resolved_commit_hash(release_commit_hash, user_commit_hash):
+    """
+    Validate a commit hash resolved from external package metadata.
+
+    Return the hash unchanged when it is empty or when it equals the
+    user-supplied (already-verified) commit. Raise ValueError if it fails
+    any check.
+    """
+    if not release_commit_hash or release_commit_hash == user_commit_hash:
+        return release_commit_hash
+
+    if not COMMIT_RE.fullmatch(release_commit_hash):
+        raise ValueError(
+            f"Invalid resolved commit hash from package metadata: "
+            f"{release_commit_hash!r}"
+        )
+    _require_official_commit(release_commit_hash, label="resolved commit")
+    return release_commit_hash
+
+
+def _require_official_commit(commit_hash, label="commit"):
+    """
+    Raise ValueError unless `commit_hash` is on an official nixpkgs branch.
+
+    `label` distinguishes error messages for the user-supplied commit
+    ("commit") from the metadata-resolved one ("resolved commit").
+    """
+    is_official = verify_commit_in_nixpkgs(commit_hash)
+    if is_official is None:
+        raise ValueError(
+            f"Could not verify that {label} {commit_hash!r} belongs to "
+            f"the official NixOS/nixpkgs repository: the GitHub API "
+            f"was unreachable or rate limited. Configure "
+            f"SCANCODEIO_GITHUB_TOKEN (or GITHUB_TOKEN / GH_TOKEN) "
+            f"to raise the limit, or retry later."
+        )
+    if not is_official:
+        raise ValueError(
+            f"The {label} {commit_hash!r} is not reachable from any "
+            f"official NixOS/nixpkgs branch (master, "
+            f"{NIXPKGS_DEFAULT_BRANCH}, or release-*)."
+        )
 
 
 def fetch_inputs(purl, output_dir):
@@ -904,6 +932,9 @@ def fetch_inputs(purl, output_dir):
         data, name, version, system, commit_hash, user_output
     )
 
+    release_commit_hash = _validate_resolved_commit_hash(
+        release_commit_hash, commit_hash
+    )
     concluded_commit_hash = release_commit_hash or commit_hash
 
     bin_path, bin_warning_msgs, bin_error_msgs = _fetch_or_build_binary(

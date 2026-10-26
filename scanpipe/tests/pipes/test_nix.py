@@ -1012,3 +1012,74 @@ class ScanPipeNixPipesTest(TestCase):
         nix.cleanup_nixpkgs_worktrees()
         self.assertEqual(nix._NIXPKGS_WORKTREE_CACHE, {})
         self.assertEqual(mock_remove.call_count, 2)
+
+    @mock.patch("scanpipe.pipes.nix._fetch_or_build_binary", return_value=("", [], []))
+    @mock.patch("scanpipe.pipes.nix._fetch_patched_source", return_value=("", [], []))
+    @mock.patch("scanpipe.pipes.nix.verify_commit_in_nixpkgs", return_value=True)
+    @mock.patch("scanpipe.pipes.nix.get_package_data")
+    def test_scanpipe_nix_fetch_inputs_validates_resolved_commit(
+        self, mock_pkg, mock_verify, mock_fetch_patched, mock_fetch_bin
+    ):
+        resolved_commit = "1234567890abcdef1234567890abcdef12345678"
+        mock_pkg.return_value = {
+            "releases": [
+                {
+                    "version": "2.12.1",
+                    "platforms": [
+                        {
+                            "system": "x86_64-linux",
+                            "commit_hash": resolved_commit,
+                            "outputs": [{"name": "debug", "path": "/nix/store/abc"}],
+                        }
+                    ],
+                }
+            ]
+        }
+        purl = PackageURL.from_string(
+            "pkg:nix/nixpkgs/hello@2.12.1?system=x86_64-linux"
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            nix.fetch_inputs(purl, tmp)
+
+        mock_verify.assert_called_once_with(resolved_commit)
+
+    @mock.patch("scanpipe.pipes.nix.verify_commit_in_nixpkgs", return_value=True)
+    def test_scanpipe_nix_validate_resolved_commit_hash_official(self, mock_verify):
+        commit = "1234567890abcdef1234567890abcdef12345678"
+        self.assertEqual(nix._validate_resolved_commit_hash(commit, ""), commit)
+        mock_verify.assert_called_once_with(commit)
+
+    @mock.patch("scanpipe.pipes.nix.verify_commit_in_nixpkgs")
+    def test_scanpipe_nix_validate_resolved_commit_hash_skips_user_commit(
+        self, mock_verify
+    ):
+        commit = "1234567890abcdef1234567890abcdef12345678"
+        self.assertEqual(nix._validate_resolved_commit_hash(commit, commit), commit)
+        mock_verify.assert_not_called()
+
+    def test_scanpipe_nix_validate_resolved_commit_hash_empty(self):
+        self.assertEqual(nix._validate_resolved_commit_hash("", "abc"), "")
+
+    def test_scanpipe_nix_validate_resolved_commit_hash_invalid_format(self):
+        cases = [
+            ("not-a-commit", "not a SHA at all"),
+            ("1234567890abcdef", "too short"),
+            ("1234567890abcdef1234567890abcdef1234567\n", "trailing newline"),
+            ("../1234567890abcdef1234567890abcdef1234567", "path traversal"),
+        ]
+        for invalid, reason in cases:
+            with self.subTest(reason=reason):
+                with self.assertRaisesMessage(ValueError, "Invalid resolved commit"):
+                    nix._validate_resolved_commit_hash(invalid, "")
+
+    @mock.patch("scanpipe.pipes.nix.verify_commit_in_nixpkgs", return_value=False)
+    def test_scanpipe_nix_validate_resolved_commit_hash_not_official(self, mock_verify):
+        commit = "1234567890abcdef1234567890abcdef12345678"
+        with self.assertRaisesMessage(ValueError, "not reachable"):
+            nix._validate_resolved_commit_hash(commit, "")
+
+    @mock.patch("scanpipe.pipes.nix.verify_commit_in_nixpkgs", return_value=None)
+    def test_scanpipe_nix_validate_resolved_commit_hash_unavailable(self, mock_verify):
+        commit = "1234567890abcdef1234567890abcdef12345678"
+        with self.assertRaisesMessage(ValueError, "Could not verify"):
+            nix._validate_resolved_commit_hash(commit, "")
