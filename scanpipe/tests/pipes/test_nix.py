@@ -471,6 +471,30 @@ class ScanPipeNixPipesTest(TestCase):
                 {},
             )
 
+    @mock.patch("scanpipe.pipes.nix._ensure_nix_image", return_value="nixos/nix:test")
+    @mock.patch("scanpipe.pipes.nix._get_nixpkgs_worktree", return_value="")
+    @mock.patch("scanpipe.pipes.utils.run_docker_container")
+    def test_scanpipe_nix_get_nix_package_metadata_nested_name(
+        self, mock_run, _mock_wt, _mock_img
+    ):
+        purl = PackageURL.from_string(
+            "pkg:nix/nixpkgs/haskellPackages.aasam@1.0?system=x86_64-linux"
+        )
+        mock_run.return_value = mock.Mock(stdout='{"license": "MIT"}')
+
+        nix.get_nix_package_metadata(
+            purl=purl,
+            commit_hash="1234567890abcdef1234567890abcdef12345678",
+        )
+
+        cmd = mock_run.call_args[0][0]
+        nix_expression = cmd[cmd.index("-E") + 1]
+        self.assertIn(
+            'pkgs.lib.getAttrFromPath (pkgs.lib.splitString "." name) pkgs',
+            nix_expression,
+        )
+        self.assertNotIn("pkgs.${name}", nix_expression)
+
     def test_scanpipe_nix_create_package_from_nix_metadata(self):
         purl = PackageURL.from_string(
             "pkg:nix/nixpkgs/hello@2.12.1?system=x86_64-linux"

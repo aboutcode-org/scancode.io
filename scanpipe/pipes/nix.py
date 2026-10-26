@@ -986,7 +986,7 @@ def get_nix_package_metadata(purl, commit_hash):
     {{ name }}:
     let
         pkgs = {nixpkgs_import};
-        target = pkgs.${{name}};
+        target = pkgs.lib.getAttrFromPath (pkgs.lib.splitString "." name) pkgs;
         meta = target.meta or {{}};
         license = meta.license or {{}};
         licenseId =
@@ -1191,7 +1191,7 @@ def build_binary_with_docker(name, output_dir, system, commit_hash, output_forma
         "{ name, output }: "
         "let "
         f"  pkgs = {nixpkgs_import}; "
-        f"  target = pkgs.${{name}}; "
+        '  target = pkgs.lib.getAttrFromPath (pkgs.lib.splitString "." name) pkgs; '
         "  hasIt = builtins.isAttrs target && builtins.hasAttr output target; "
         f"in if hasIt then target.${{output}} else target"
     )
@@ -1323,7 +1323,7 @@ def get_nix_store_path_with_nix(name, system, output, commit_hash):
         "{ name, output }: "
         "let "
         f"  pkgs = {nixpkgs_import}; "
-        f"  target = pkgs.${{name}}; "
+        '  target = pkgs.lib.getAttrFromPath (pkgs.lib.splitString "." name) pkgs; '
         "  hasIt = builtins.isAttrs target && builtins.hasAttr output target; "
         f'in if hasIt then target.${{output}}.outPath else ""'
     )
@@ -1601,7 +1601,7 @@ def get_patched_source_with_docker(name, output_dir, system, commit_hash):
     {{ name }}:
     let
         pkgs = {nixpkgs_import};
-        pkg = pkgs.${{name}};
+        pkg = pkgs.lib.getAttrFromPath (pkgs.lib.splitString "." name) pkgs;
     in
     if !(pkg ? src) then pkg
     else pkgs.applyPatches {{
@@ -1616,7 +1616,7 @@ def get_patched_source_with_docker(name, output_dir, system, commit_hash):
     {{ name }}:
     let
         pkgs = {nixpkgs_import};
-        pkg = pkgs.${{name}};
+        pkg = pkgs.lib.getAttrFromPath (pkgs.lib.splitString "." name) pkgs;
     in
         if pkg ? gemFile then pkg.gemFile
         else if pkg ? src then pkg.src
