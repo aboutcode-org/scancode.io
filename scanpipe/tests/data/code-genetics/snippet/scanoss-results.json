@@ -1,0 +1,14 @@
+{
+  "src/scheduler.js": [
+    {
+      "id": "none",
+      "server": {
+        "kb_version": {
+          "daily": "26.10.19",
+          "monthly": "26.09"
+        },
+        "version": "5.4.27"
+      }
+    }
+  ]
+}

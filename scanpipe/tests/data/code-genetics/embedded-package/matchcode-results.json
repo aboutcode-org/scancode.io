@@ -1,0 +1,92 @@
+{
+  "headers": [
+    {
+      "tool_name": "scanpipe",
+      "tool_version": "38.1.0"
+    }
+  ],
+  "packages": [
+    {
+      "purl": "pkg:npm/ms@2.1.3",
+      "type": "npm",
+      "namespace": "",
+      "name": "ms",
+      "version": "2.1.3",
+      "package_uid": "pkg:npm/ms@2.1.3?uuid=51fb9cfa-bcfa-4e06-9900-41d3bd69cdbc",
+      "release_date": null,
+      "declared_license_expression": "mit",
+      "download_url": "https://registry.npmjs.org/ms/-/ms-2.1.3.tgz"
+    },
+    {
+      "purl": "pkg:npm/ms@2.1.3",
+      "type": "npm",
+      "namespace": "",
+      "name": "ms",
+      "version": "2.1.3",
+      "package_uid": "pkg:npm/ms@2.1.3?uuid=59bbd3a1-0d87-4783-9bc3-41c2d399c473",
+      "release_date": null,
+      "declared_license_expression": "",
+      "download_url": "https://registry.npmjs.org/ms/-/ms-2.1.3.tgz"
+    }
+  ],
+  "files": [
+    {
+      "path": "vendor",
+      "type": "directory",
+      "status": "matched-to-purldb-directory",
+      "for_packages": [
+        "pkg:npm/ms@2.1.3?uuid=59bbd3a1-0d87-4783-9bc3-41c2d399c473"
+      ],
+      "extra_data": {}
+    },
+    {
+      "path": "vendor/ms",
+      "type": "directory",
+      "status": "matched-to-purldb-directory",
+      "for_packages": [
+        "pkg:npm/ms@2.1.3?uuid=59bbd3a1-0d87-4783-9bc3-41c2d399c473"
+      ],
+      "extra_data": {}
+    },
+    {
+      "path": "vendor/ms/index.js",
+      "type": "file",
+      "status": "matched-to-purldb-directory",
+      "for_packages": [
+        "pkg:npm/ms@2.1.3?uuid=51fb9cfa-bcfa-4e06-9900-41d3bd69cdbc",
+        "pkg:npm/ms@2.1.3?uuid=59bbd3a1-0d87-4783-9bc3-41c2d399c473"
+      ],
+      "extra_data": {}
+    },
+    {
+      "path": "vendor/ms/license.md",
+      "type": "file",
+      "status": "matched-to-purldb-directory",
+      "for_packages": [
+        "pkg:npm/ms@2.1.3?uuid=51fb9cfa-bcfa-4e06-9900-41d3bd69cdbc",
+        "pkg:npm/ms@2.1.3?uuid=59bbd3a1-0d87-4783-9bc3-41c2d399c473"
+      ],
+      "extra_data": {}
+    },
+    {
+      "path": "vendor/ms/package.json",
+      "type": "file",
+      "status": "matched-to-purldb-directory",
+      "for_packages": [
+        "pkg:npm/ms@2.1.3?uuid=51fb9cfa-bcfa-4e06-9900-41d3bd69cdbc",
+        "pkg:npm/ms@2.1.3?uuid=59bbd3a1-0d87-4783-9bc3-41c2d399c473"
+      ],
+      "extra_data": {}
+    },
+    {
+      "path": "vendor/ms/readme.md",
+      "type": "file",
+      "status": "matched-to-purldb-directory",
+      "for_packages": [
+        "pkg:npm/ms@2.1.3?uuid=51fb9cfa-bcfa-4e06-9900-41d3bd69cdbc",
+        "pkg:npm/ms@2.1.3?uuid=59bbd3a1-0d87-4783-9bc3-41c2d399c473"
+      ],
+      "extra_data": {}
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "headers": [
+    {
+      "tool_name": "scanpipe",
+      "tool_version": "38.1.0"
+    }
+  ],
+  "packages": [
+    {
+      "purl": "pkg:pypi/six@1.17.0",
+      "type": "pypi",
+      "namespace": "",
+      "name": "six",
+      "version": "1.17.0",
+      "package_uid": "pkg:pypi/six@1.17.0?uuid=b25b1d26-be0c-49aa-b04d-55f529612878",
+      "release_date": null,
+      "declared_license_expression": "",
+      "download_url": "https://files.pythonhosted.org/packages/source/s/six/six-1.17.0.tar.gz"
+    }
+  ],
+  "files": [
+    {
+      "path": "myapp",
+      "type": "directory",
+      "status": "scanned",
+      "for_packages": [],
+      "extra_data": {}
+    },
+    {
+      "path": "myapp/_vendor",
+      "type": "directory",
+      "status": "scanned",
+      "for_packages": [],
+      "extra_data": {}
+    },
+    {
+      "path": "myapp/_vendor/six.py",
+      "type": "file",
+      "status": "matched-to-purldb-resource",
+      "for_packages": [
+        "pkg:pypi/six@1.17.0?uuid=b25b1d26-be0c-49aa-b04d-55f529612878"
+      ],
+      "extra_data": {}
+    }
+  ]
+}

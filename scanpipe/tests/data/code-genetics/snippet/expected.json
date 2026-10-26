@@ -1,0 +1,21 @@
+{
+  "description": "The lodash debounce function copied verbatim into an application file.",
+  "resources": [
+    {
+      "path": "src/scheduler.js",
+      "match_type": "snippet",
+      "origin": {
+        "purl": "pkg:npm/lodash@4.17.21",
+        "download_url": "https://registry.npmjs.org/lodash/-/lodash-4.17.21.tgz",
+        "path": "package/debounce.js",
+        "sha1": "8c53b1737148a94705d5ff80e476916d2649d9cd"
+      },
+      "line_ranges": [
+        {
+          "lines": [22, 145],
+          "origin_lines": [66, 189]
+        }
+      ]
+    }
+  ]
+}

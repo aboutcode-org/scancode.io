@@ -1,0 +1,95 @@
+{
+  "src/inih/ini.c": [
+    {
+      "component": "inih",
+      "file": "ini.c",
+      "file_hash": "5f403e492ed8b5519bb53d937f772bc4",
+      "file_url": " ",
+      "hits": 120,
+      "id": "snippet",
+      "latest": "498f34b",
+      "licenses": [
+        {
+          "checklist_url": "https://www.osadl.org/fileadmin/checklists/unreflicenses/BSD-3-Clause.txt",
+          "copyleft": "no",
+          "name": "BSD-3-Clause",
+          "osadl_updated": "2026-02-12T16:31:00+0000",
+          "patent_hints": "no",
+          "source": "license_file",
+          "url": "https://spdx.org/licenses/BSD-3-Clause.html"
+        }
+      ],
+      "lines": "7-324",
+      "matched": "94%",
+      "oss_lines": "7-324",
+      "purl": [
+        "pkg:github/benhoyt/inih",
+        "pkg:apk/inih",
+        "pkg:rpm/opensuse/libinih-devel",
+        "pkg:generic/inih",
+        "pkg:golang/github.com/benhoyt/inih",
+        "pkg:conan/inih"
+      ],
+      "release_date": "2025-07-09",
+      "server": {
+        "kb_version": {
+          "daily": "26.10.19",
+          "monthly": "26.09"
+        },
+        "version": "5.4.27"
+      },
+      "source_hash": "6d05d0c61839b890ecb934a76a715fbe",
+      "status": "pending",
+      "url": "https://github.com/benhoyt/inih",
+      "url_hash": "6e29bc43eb4149a76fde63d41a5d26d2",
+      "vendor": "benhoyt",
+      "version": "498f34b"
+    }
+  ],
+  "src/inih/ini.h": [
+    {
+      "component": "inih",
+      "file": "ini.h",
+      "file_hash": "6811e6219d1edcc51b7d0600505c76f9",
+      "file_url": " ",
+      "id": "file",
+      "latest": "577ae2d",
+      "licenses": [
+        {
+          "checklist_url": "https://www.osadl.org/fileadmin/checklists/unreflicenses/BSD-3-Clause.txt",
+          "copyleft": "no",
+          "name": "BSD-3-Clause",
+          "osadl_updated": "2026-02-12T16:31:00+0000",
+          "patent_hints": "no",
+          "source": "license_file",
+          "url": "https://spdx.org/licenses/BSD-3-Clause.html"
+        }
+      ],
+      "lines": "all",
+      "matched": "100%",
+      "oss_lines": "all",
+      "purl": [
+        "pkg:github/benhoyt/inih",
+        "pkg:apk/inih",
+        "pkg:rpm/opensuse/libinih-devel",
+        "pkg:generic/inih",
+        "pkg:golang/github.com/benhoyt/inih",
+        "pkg:conan/inih"
+      ],
+      "release_date": "2025-09-11",
+      "server": {
+        "kb_version": {
+          "daily": "26.10.19",
+          "monthly": "26.09"
+        },
+        "version": "5.4.27"
+      },
+      "source_hash": "6811e6219d1edcc51b7d0600505c76f9",
+      "status": "pending",
+      "url": "https://github.com/benhoyt/inih",
+      "url_hash": "c7265413da7857964a7bae74a7d38c40",
+      "vendor": "benhoyt",
+      "version": "r62"
+    }
+  ]
+}

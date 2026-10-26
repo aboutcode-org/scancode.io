@@ -1,0 +1,21 @@
+{
+  "description": "six.py copied from urllib3, which vendors six 1.16.0 reformatted with black. The origin is six, not urllib3.",
+  "resources": [
+    {
+      "path": "myapp/_vendor/urllib3/packages/six.py",
+      "match_type": "modified",
+      "origin": {
+        "purl": "pkg:pypi/six@1.16.0",
+        "download_url": "https://files.pythonhosted.org/packages/source/s/six/six-1.16.0.tar.gz",
+        "path": "six-1.16.0/six.py",
+        "sha1": "d2b72496fefbd26201ecc94881e42bb0ac6e3374"
+      },
+      "copied_from": {
+        "purl": "pkg:pypi/urllib3@1.26.20",
+        "download_url": "https://files.pythonhosted.org/packages/source/u/urllib3/urllib3-1.26.20.tar.gz",
+        "path": "urllib3-1.26.20/src/urllib3/packages/six.py",
+        "sha1": "cc785b461d93a38116b3357589301ba20e9c8452"
+      }
+    }
+  ]
+}

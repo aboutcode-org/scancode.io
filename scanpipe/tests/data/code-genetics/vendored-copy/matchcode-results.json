@@ -1,0 +1,60 @@
+{
+  "headers": [
+    {
+      "tool_name": "scanpipe",
+      "tool_version": "38.1.0"
+    }
+  ],
+  "packages": [
+    {
+      "purl": "pkg:pypi/urllib3@1.26.20",
+      "type": "pypi",
+      "namespace": "",
+      "name": "urllib3",
+      "version": "1.26.20",
+      "package_uid": "pkg:pypi/urllib3@1.26.20?uuid=26448037-1ab6-4b6d-847e-a7c079e13590",
+      "release_date": null,
+      "declared_license_expression": "",
+      "download_url": "https://files.pythonhosted.org/packages/source/u/urllib3/urllib3-1.26.20.tar.gz"
+    }
+  ],
+  "files": [
+    {
+      "path": "myapp",
+      "type": "directory",
+      "status": "scanned",
+      "for_packages": [],
+      "extra_data": {}
+    },
+    {
+      "path": "myapp/_vendor",
+      "type": "directory",
+      "status": "scanned",
+      "for_packages": [],
+      "extra_data": {}
+    },
+    {
+      "path": "myapp/_vendor/urllib3",
+      "type": "directory",
+      "status": "scanned",
+      "for_packages": [],
+      "extra_data": {}
+    },
+    {
+      "path": "myapp/_vendor/urllib3/packages",
+      "type": "directory",
+      "status": "scanned",
+      "for_packages": [],
+      "extra_data": {}
+    },
+    {
+      "path": "myapp/_vendor/urllib3/packages/six.py",
+      "type": "file",
+      "status": "matched-to-purldb-resource",
+      "for_packages": [
+        "pkg:pypi/urllib3@1.26.20?uuid=26448037-1ab6-4b6d-847e-a7c079e13590"
+      ],
+      "extra_data": {}
+    }
+  ]
+}

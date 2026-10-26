@@ -1,0 +1,15 @@
+{
+  "description": "Unmodified copy of six.py vendored in an application.",
+  "resources": [
+    {
+      "path": "myapp/_vendor/six.py",
+      "match_type": "exact",
+      "origin": {
+        "purl": "pkg:pypi/six@1.17.0",
+        "download_url": "https://files.pythonhosted.org/packages/source/s/six/six-1.17.0.tar.gz",
+        "path": "six-1.17.0/six.py",
+        "sha1": "83a2db066156838283ff8e270fe846975858a2ea"
+      }
+    }
+  ]
+}
