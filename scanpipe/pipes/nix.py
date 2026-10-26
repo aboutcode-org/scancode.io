@@ -988,10 +988,29 @@ def get_nix_package_metadata(purl, commit_hash):
         pkgs = {nixpkgs_import};
         target = pkgs.lib.getAttrFromPath (pkgs.lib.splitString "." name) pkgs;
         meta = target.meta or {{}};
-        license = meta.license or {{}};
+        license = meta.license or [];
+
+        # Helper function to extract a license ID from one license item
+        getLicenseId = licenseItem:
+            if builtins.isAttrs licenseItem && licenseItem ? spdxId
+            then licenseItem.spdxId
+            else if builtins.isString licenseItem
+            then licenseItem
+            else null;
+
+        licenseList = if builtins.isList license then license else [ license ];
+
+        # Map the helper over the list, filter out nulls, and deduplicate
+        validLicenseIds =
+            pkgs.lib.unique (
+                builtins.filter (extractedId: extractedId != null)
+                (map getLicenseId licenseList)
+            );
+
+        # Declared licenses are combined with " AND "
         licenseId =
-            if builtins.isAttrs license && license ? spdxId then license.spdxId
-            else if builtins.isString license then license
+            if validLicenseIds != []
+            then builtins.concatStringsSep " AND " validLicenseIds
             else null;
     in
     {{

@@ -495,6 +495,29 @@ class ScanPipeNixPipesTest(TestCase):
         )
         self.assertNotIn("pkgs.${name}", nix_expression)
 
+    @mock.patch("scanpipe.pipes.nix._ensure_nix_image", return_value="nixos/nix:test")
+    @mock.patch("scanpipe.pipes.nix._get_nixpkgs_worktree", return_value="")
+    @mock.patch("scanpipe.pipes.utils.run_docker_container")
+    def test_scanpipe_nix_get_nix_package_metadata_multiple_licenses(
+        self, mock_run, _mock_wt, _mock_img
+    ):
+        purl = PackageURL.from_string(
+            "pkg:nix/nixpkgs/hello@2.12.1?system=x86_64-linux"
+        )
+        mock_run.return_value = mock.Mock(stdout='{"license": "MIT AND GPL-2.0"}')
+
+        nix.get_nix_package_metadata(purl=purl, commit_hash="1234abcd")
+
+        cmd = mock_run.call_args[0][0]
+        nix_expression = cmd[cmd.index("-E") + 1]
+        self.assertIn("builtins.concatStringsSep", nix_expression)
+        self.assertIn("getLicenseId", nix_expression)
+        # The previous single-attrset-only path should be be gone.
+        self.assertNotIn(
+            "builtins.isAttrs license && license ? spdxId",
+            nix_expression,
+        )
+
     def test_scanpipe_nix_create_package_from_nix_metadata(self):
         purl = PackageURL.from_string(
             "pkg:nix/nixpkgs/hello@2.12.1?system=x86_64-linux"
