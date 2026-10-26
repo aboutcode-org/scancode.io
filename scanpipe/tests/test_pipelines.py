@@ -94,6 +94,7 @@ class ScanPipePipelinesTest(TestCase):
                 {"name": "step2", "doc": "Step2 doc.", "groups": []},
             ],
             "available_groups": [],
+            "is_addon": False,
             "is_available": True,
             "unavailable_reason": "",
         }
@@ -106,6 +107,7 @@ class ScanPipePipelinesTest(TestCase):
                 {"name": "step", "doc": "", "groups": []},
             ],
             "available_groups": [],
+            "is_addon": False,
             "is_available": True,
             "unavailable_reason": "",
         }
