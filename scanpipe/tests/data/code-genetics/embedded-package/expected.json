@@ -1,0 +1,52 @@
+{
+  "description": "The complete ms npm package embedded in a vendor directory.",
+  "packages": [
+    {
+      "path": "vendor/ms",
+      "purl": "pkg:npm/ms@2.1.3",
+      "download_url": "https://registry.npmjs.org/ms/-/ms-2.1.3.tgz"
+    }
+  ],
+  "resources": [
+    {
+      "path": "vendor/ms/index.js",
+      "match_type": "exact",
+      "origin": {
+        "purl": "pkg:npm/ms@2.1.3",
+        "download_url": "https://registry.npmjs.org/ms/-/ms-2.1.3.tgz",
+        "path": "package/index.js",
+        "sha1": "ea869663486f513cc4d1ca8312ed52a165c417fa"
+      }
+    },
+    {
+      "path": "vendor/ms/license.md",
+      "match_type": "exact",
+      "origin": {
+        "purl": "pkg:npm/ms@2.1.3",
+        "download_url": "https://registry.npmjs.org/ms/-/ms-2.1.3.tgz",
+        "path": "package/license.md",
+        "sha1": "ac646ea4ec65cd1feac459a194a15a52d147bdcf"
+      }
+    },
+    {
+      "path": "vendor/ms/package.json",
+      "match_type": "exact",
+      "origin": {
+        "purl": "pkg:npm/ms@2.1.3",
+        "download_url": "https://registry.npmjs.org/ms/-/ms-2.1.3.tgz",
+        "path": "package/package.json",
+        "sha1": "c290eb97736177176d071da4ac855ab995685c97"
+      }
+    },
+    {
+      "path": "vendor/ms/readme.md",
+      "match_type": "exact",
+      "origin": {
+        "purl": "pkg:npm/ms@2.1.3",
+        "download_url": "https://registry.npmjs.org/ms/-/ms-2.1.3.tgz",
+        "path": "package/readme.md",
+        "sha1": "e5af6580facbf96aac53741846d5845ca716ff97"
+      }
+    }
+  ]
+}

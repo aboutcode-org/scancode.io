@@ -193,7 +193,7 @@ exclude-newer-package = { certifi = "2026-10-21T00:00:00Z", uv = "2026-10-21T00:
 
 [tool.ruff]
 line-length = 88
-extend-exclude = ["migrations", "var"]
+extend-exclude = ["migrations", "var", "scanpipe/tests/data/code-genetics"]
 target-version = "py310"
 
 [tool.ruff.lint]

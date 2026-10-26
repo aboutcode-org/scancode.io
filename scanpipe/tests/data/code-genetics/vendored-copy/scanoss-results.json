@@ -1,0 +1,71 @@
+{
+  "myapp/_vendor/urllib3/packages/six.py": [
+    {
+      "component": "Anime365",
+      "file": "six.py",
+      "file_hash": "6a3d2d8f7aa243d3576e2cec5fcf0ae2",
+      "file_url": " ",
+      "id": "file",
+      "latest": "0.1-Ryucon",
+      "licenses": [
+        {
+          "checklist_url": "https://www.osadl.org/fileadmin/checklists/unreflicenses/MIT.txt",
+          "copyleft": "no",
+          "name": "MIT",
+          "osadl_updated": "2026-02-12T16:31:00+0000",
+          "patent_hints": "no",
+          "source": "license_file",
+          "url": "https://spdx.org/licenses/MIT.html"
+        },
+        {
+          "checklist_url": "https://www.osadl.org/fileadmin/checklists/unreflicenses/BSD-2-Clause.txt",
+          "copyleft": "no",
+          "name": "BSD-2-Clause",
+          "osadl_updated": "2026-02-12T16:31:00+0000",
+          "patent_hints": "no",
+          "source": "license_file",
+          "url": "https://spdx.org/licenses/BSD-2-Clause.html"
+        },
+        {
+          "checklist_url": "https://www.osadl.org/fileadmin/checklists/unreflicenses/GPL-2.0-only.txt",
+          "copyleft": "yes",
+          "incompatible_with": "Apache-1.0, Apache-1.1, Apache-2.0, BSD-4-Clause, BSD-4-Clause-UC, BSD-4.3TAHOE, ECL-2.0, FTL, IJG, LicenseRef-scancode-bsla-no-advert, Minpack, OpenSSL, PHP-3.01, PSF-2.0, Python-2.0, zlib-acknowledgement, XFree86-1.1",
+          "name": "GPL-2.0-only",
+          "osadl_updated": "2026-02-12T16:31:00+0000",
+          "patent_hints": "yes",
+          "source": "license_file",
+          "url": "https://spdx.org/licenses/GPL-2.0-only.html"
+        },
+        {
+          "checklist_url": "https://www.osadl.org/fileadmin/checklists/unreflicenses/Python-2.0.txt",
+          "copyleft": "no",
+          "name": "Python-2.0",
+          "osadl_updated": "2026-02-12T16:31:00+0000",
+          "patent_hints": "no",
+          "source": "license_file",
+          "url": "https://spdx.org/licenses/Python-2.0.html"
+        }
+      ],
+      "lines": "all",
+      "matched": "100%",
+      "oss_lines": "all",
+      "purl": [
+        "pkg:github/piotrmasek/anime365"
+      ],
+      "release_date": "2022-07-27",
+      "server": {
+        "kb_version": {
+          "daily": "26.10.19",
+          "monthly": "26.09"
+        },
+        "version": "5.4.27"
+      },
+      "source_hash": "6a3d2d8f7aa243d3576e2cec5fcf0ae2",
+      "status": "pending",
+      "url": "https://github.com/piotrmasek/Anime365",
+      "url_hash": "df55dadc16ad63289bbca3511f59a5d9",
+      "vendor": "piotrmasek",
+      "version": "0.1-Ryucon"
+    }
+  ]
+}

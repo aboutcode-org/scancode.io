@@ -1,0 +1,25 @@
+{
+  "headers": [
+    {
+      "tool_name": "scanpipe",
+      "tool_version": "38.1.0"
+    }
+  ],
+  "packages": [],
+  "files": [
+    {
+      "path": "src",
+      "type": "directory",
+      "status": "scanned",
+      "for_packages": [],
+      "extra_data": {}
+    },
+    {
+      "path": "src/greenhouse_watering.py",
+      "type": "file",
+      "status": "scanned",
+      "for_packages": [],
+      "extra_data": {}
+    }
+  ]
+}

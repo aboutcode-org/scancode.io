@@ -1,0 +1,10 @@
+{
+  "description": "Original application code with no open source origin. Any match is a false positive.",
+  "resources": [
+    {
+      "path": "src/greenhouse_watering.py",
+      "match_type": "none",
+      "origin": null
+    }
+  ]
+}
