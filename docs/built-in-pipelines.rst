@@ -299,16 +299,27 @@ Scan Nix Package
 
           docker compose --profile dind up
 
+   For cross-architecture builds, configure binfmt emulation on the Docker
+   host (one-time, requires host root)::
+
+       docker run --privileged --rm --init tonistiigi/binfmt --install all
+
+   The ``commit`` qualifier in the Nix PURL must reference a commit that is
+   reachable from an official ``NixOS/nixpkgs`` branch (``master``,
+   ``nixos-unstable``, or ``release-*``). Commits that exist only in forks
+   or unmerged pull requests are rejected at the first step.
+
    The ``dind`` service runs a privileged Docker daemon and shares the
    ``workspace`` volume with it.
-
-   See the class documentation below for the full list of requirements.
 
    This pipeline also runs a read-only ``--privileged`` container
    (``tonistiigi/binfmt``, pinned by digest) to detect whether the
    handlers are installed. Nothing is installed by the pipeline itself;
    if the handlers are missing, the pipeline fails at its first step
    with the command to install them.
+
+   See :ref:`scancodeio_settings_nixpkgs_cache_dir` for the cache
+   directory requirement when the pipeline runs under ``dind``.
 
 .. autoclass:: scanpipe.pipelines.scan_nix_package.ScanNixPackage()
     :members:

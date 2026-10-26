@@ -45,32 +45,7 @@ class ScanNixPackage(ScanSinglePackage, DeployToDevelop, ScanCodebase):
 
     The ``commit`` qualifier in the Nix PURL is validated against the
     official NixOS/nixpkgs repository history. Commits that exist only in
-    forks are rejected.
-
-    Requirements:
-
-    - A Docker daemon reachable from the ``web`` and ``worker`` containers.
-      In the default Compose stack this is provided by the ``dind`` service;
-      enable it with the ``dind`` profile (``docker compose --profile dind up``).
-
-    - Multi-architecture emulation (``binfmt``) configured on the Docker host.
-      This is a **one-time administrative setup step**, not a pipeline step::
-
-          docker run --privileged --rm --init tonistiigi/binfmt --install all
-
-      To detect whether handlers are installed, the pipeline runs the same
-      image **read-only** with ``--privileged`` and no arguments. The
-      privilege is required because Docker masks
-      ``/proc/sys/fs/binfmt_misc`` in unprivileged containers, so the host
-      state cannot be read any other way. The container exits immediately
-      after printing the registered handlers; nothing is installed. The
-      image is pinned by digest, and the check result is cached per worker
-      process.
-
-    - The directory referenced by ``SCANCODEIO_NIXPKGS_CACHE_DIR`` must be
-      writable and visible to both the ``worker`` container and the ``dind``
-      daemon. The default Compose stack handles this by placing it under the
-      shared ``workspace`` volume.
+    forks or unmerged pull requests are rejected.
     """
 
     download_inputs = False
