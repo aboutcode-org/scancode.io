@@ -109,6 +109,7 @@ DEFAULTS = {
     # Maximum time allowed for a pipeline to complete.
     "TASK_TIMEOUT": "24h",
     "WORKSPACE_LOCATION": "var",
+    "USE_CACHED_RESULTS": False,
 }
 
 # Explicit types only for settings whose default is None (type cannot be inferred).

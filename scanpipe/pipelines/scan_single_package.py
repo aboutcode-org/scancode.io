@@ -69,7 +69,6 @@ class ScanSinglePackage(Pipeline):
         "classify": True,
         "summary": True,
         "todo": True,
-        "use-cached-results": True,
     }
 
     def get_package_input(self):

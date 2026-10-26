@@ -211,7 +211,7 @@ def _scan_resource(
     scanners,
     with_threading=True,
     timeout=scanpipe_settings.SCAN_FILE_TIMEOUT,
-    use_cached_results=False,
+    use_cached_results=scanpipe_settings.USE_CACHED_RESULTS,
 ):
     """
     Wrap the scancode-toolkit `scan_resource` method to support timeout on direct
@@ -235,7 +235,7 @@ def scan_file(
     location,
     with_threading=True,
     min_license_score=0,
-    use_cached_results=False,
+    use_cached_results=scanpipe_settings.USE_CACHED_RESULTS,
     **kwargs,
 ):
     """
@@ -268,7 +268,7 @@ def scan_for_package_data(
     with_threading=True,
     package_only=False,
     compiled=False,
-    use_cached_results=False,
+    use_cached_results=scanpipe_settings.USE_CACHED_RESULTS,
     **kwargs,
 ):
     """
@@ -329,7 +329,7 @@ def scan_resources(
     scan_func_kwargs=None,
     progress_logger=None,
     file_size_limit=None,
-    use_cached_results=False,
+    use_cached_results=scanpipe_settings.USE_CACHED_RESULTS,
 ):
     """
     Run the `scan_func` on the codebase resources of the provided `resource_qs`.
@@ -415,7 +415,10 @@ def scan_resources(
 
 
 def scan_for_files(
-    project, resource_qs=None, progress_logger=None, use_cached_results=False
+    project,
+    resource_qs=None,
+    progress_logger=None,
+    use_cached_results=scanpipe_settings.USE_CACHED_RESULTS,
 ):
     """
     Run a license, copyright, email, and url scan on files without a status for
@@ -451,7 +454,7 @@ def scan_for_application_packages(
     package_only=False,
     resource_qs=None,
     progress_logger=logger.info,
-    use_cached_results=False,
+    use_cached_results=scanpipe_settings.USE_CACHED_RESULTS,
 ):
     """
     Run a package scan on resources without a status for a `project`,
@@ -905,7 +908,11 @@ def get_pretty_params(args):
 
 
 def run_scan(
-    location, output_file, run_scan_args, processes=None, use_cached_results=False
+    location,
+    output_file,
+    run_scan_args,
+    processes=None,
+    use_cached_results=scanpipe_settings.USE_CACHED_RESULTS,
 ):
     """Scan the `location` content and write the results into an `output_file`."""
     if not processes:
