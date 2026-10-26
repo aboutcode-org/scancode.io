@@ -52,24 +52,8 @@ class ScanNixPackage(ScanSinglePackage, DeployToDevelop, ScanCodebase):
 
     # A Nix derivation can target any language, so we load every ecosystem
     # the D2D mappers support.
-    # Keep this list in sync with the `d2d_*` calls in `d2d_steps`.
     D2D_ECOSYSTEM_OPTIONS = [
-        "Java",
-        "Kotlin",
-        "Scala",
-        "Grammar",
-        "Groovy",
-        "AspectJ",
-        "Clojure",
-        "Xtend",
-        "JavaScript",
-        "Haskell",
-        "Rust",
-        "Go",
-        "Elf",
-        "MacOS",
-        "Windows",
-        "Python",
+        name for name in d2d_config.ECOSYSTEM_CONFIGS if name != "Default"
     ]
 
     @classmethod
