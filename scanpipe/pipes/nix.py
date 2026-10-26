@@ -1069,16 +1069,7 @@ def create_package_from_nix_metadata(project, purl, metadata):
     license found in nixpkgs ``meta.license``.
     """
     spdx_id = (metadata.get("license") or "").strip()
-    declared_expression = ""
-    if spdx_id:
-        try:
-            declared_expression = convert_spdx_expression(spdx_id)
-        except Exception as e:
-            logger.warning(
-                f"Could not convert SPDX id {spdx_id!r} to a ScanCode "
-                f"license expression: {e}"
-            )
-            declared_expression = spdx_id
+    declared_expression = convert_spdx_expression(spdx_id) if spdx_id else ""
 
     homepage = metadata.get("homepage") or ""
     if isinstance(homepage, list):
