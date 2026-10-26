@@ -159,6 +159,17 @@ value the Nix CLI accepts (e.g. ``12h``, ``3d``, ``7d``)::
 
 Default: ``12h``
 
+.. _scancodeio_settings_github_token:
+
+SCANCODEIO_GITHUB_TOKEN
+^^^^^^^^^^^^^^^^^^^^^^^
+
+Optional GitHub token used to authenticate API requests.
+It is used to raise the GitHub API rate limit from 60 to 5,000 requests per hour::
+
+    SCANCODEIO_GITHUB_TOKEN="ghp_insert_your_token_here"
+
+Default: ``""`` (empty)
 
 .. _scancodeio_settings_config_dir:
 

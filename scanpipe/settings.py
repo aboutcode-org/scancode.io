@@ -126,6 +126,10 @@ DEFAULTS = {
     "NIXPKGS_GC_INTERVAL_HOURS": 3,
     # Value passed to nix-collect-garbage --delete-older-than.
     "NIXPKGS_GC_OLDER_THAN": "12h",
+    # Optional: GitHub token for the scan_nix_package pipeline's commit
+    # verification. Raises the API limit from 60 to 5,000 requests/hour.
+    # Syntax in .env: SCANCODEIO_GITHUB_TOKEN="ghp_xxx"
+    "GITHUB_TOKEN": "",
 }
 
 # Explicit types only for settings whose default is None (type cannot be inferred).

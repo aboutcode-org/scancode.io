@@ -20,6 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import os
 import subprocess
 import tempfile
 from pathlib import Path
@@ -117,35 +118,148 @@ class ScanPipeNixPipesTest(TestCase):
                 with self.assertRaisesMessage(ValueError, expected):
                     nix.check_input_and_return_purl(project)
 
+    @mock.patch("scanpipe.pipes.nix.verify_commit_in_nixpkgs", return_value=None)
+    def test_scanpipe_nix_check_input_purl_verify_unavailable(self, mock_verify):
+        project = mock.Mock()
+        project.inputsources.all.return_value = [
+            "pkg:nix/nixpkgs/hello@2.12.1?system=x86_64-linux&commit="
+            "1234567890abcdef1234567890abcdef12345678"
+        ]
+        with self.assertRaisesMessage(ValueError, "Could not verify"):
+            nix.check_input_and_return_purl(project)
+
+    @mock.patch("scanpipe.pipes.nix.verify_commit_in_nixpkgs", return_value=False)
+    def test_scanpipe_nix_check_input_purl_not_official(self, mock_verify):
+        project = mock.Mock()
+        project.inputsources.all.return_value = [
+            "pkg:nix/nixpkgs/hello@2.12.1?system=x86_64-linux&commit="
+            "1234567890abcdef1234567890abcdef12345678"
+        ]
+        with self.assertRaisesMessage(ValueError, "not reachable"):
+            nix.check_input_and_return_purl(project)
+
+    @override_settings(SCANPIPE={"GITHUB_TOKEN": "ghp_test"})
+    def test_scanpipe_nix_github_api_headers_with_token(self):
+        """Test that configured GitHub tokens are added to API headers."""
+        headers = nix._github_api_headers()
+
+        self.assertIn("Authorization", headers)
+        self.assertEqual(headers["Authorization"], "Bearer ghp_test")
+        self.assertEqual(headers["Accept"], "application/vnd.github+json")
+
+    @override_settings(SCANPIPE={"GITHUB_TOKEN": ""})
+    @mock.patch.dict(os.environ, {"GITHUB_TOKEN": "", "GH_TOKEN": ""})
+    def test_scanpipe_nix_github_api_headers_without_token(self):
+        headers = nix._github_api_headers()
+        self.assertNotIn("Authorization", headers)
+        self.assertEqual(headers["Accept"], "application/vnd.github+json")
+
     @mock.patch("scanpipe.pipes.nix.requests.get")
     def test_scanpipe_nix_verify_commit_in_nixpkgs(self, mock_get):
         commit = "1234567890abcdef1234567890abcdef12345678"
 
-        for status_code, json_data, expected in [
-            (200, {"status": "behind"}, True),
-            (200, {"status": "identical"}, True),
-            (404, {}, False),
-            (200, {"status": "diverged"}, False),
-        ]:
-            with self.subTest(status=status_code, json=json_data):
-                mock_resp = mock.Mock(status_code=status_code)
-                mock_resp.json.return_value = json_data
-                mock_get.return_value = mock_resp
+        # Each case: (label, [(status, json_body, links), ...], expected).
+        cases = [
+            (
+                "commit on nixos-unstable",
+                [
+                    (200, {}, {}),
+                    (200, [], {}),
+                    (200, {"status": "behind"}, {}),
+                ],
+                True,
+            ),
+            (
+                "backport on release-23.05",
+                [
+                    (200, {}, {}),
+                    (200, [{"name": "release-23.05"}], {}),
+                    (200, {"status": "diverged"}, {}),
+                    (200, {"status": "diverged"}, {}),
+                    (200, {"status": "behind"}, {}),
+                ],
+                True,
+            ),
+            (
+                "unmerged PR commit (not on any branch)",
+                [
+                    (200, {}, {}),
+                    (200, [], {}),
+                    (200, {"status": "diverged"}, {}),
+                    (200, {"status": "ahead"}, {}),
+                ],
+                False,
+            ),
+            (
+                "unknown SHA (404 on existence check)",
+                [(404, {}, {})],
+                False,
+            ),
+            (
+                "rate-limited (403 on existence check)",
+                [(403, {}, {})],
+                None,
+            ),
+        ]
+
+        for label, responses, expected in cases:
+            with self.subTest(label):
+                mock_get.reset_mock()
+                mocks = []
+                for status_code, json_data, links in responses:
+                    mock_response = mock.Mock(status_code=status_code, links=links)
+                    mock_response.json.return_value = json_data
+                    mocks.append(mock_response)
+                mock_get.side_effect = mocks
                 self.assertEqual(nix.verify_commit_in_nixpkgs(commit), expected)
 
         # Network error
+        mock_get.reset_mock()
         mock_get.side_effect = requests.RequestException("network")
-        self.assertFalse(nix.verify_commit_in_nixpkgs(commit))
+        self.assertIsNone(nix.verify_commit_in_nixpkgs(commit))
 
         # Invalid hash
         mock_get.reset_mock()
         mock_get.side_effect = None
-        self.assertFalse(nix.verify_commit_in_nixpkgs("not-a-commit"))
+        for invalid in ("not-a-commit", commit + "\n"):
+            self.assertFalse(nix.verify_commit_in_nixpkgs(invalid))
         mock_get.assert_not_called()
 
-    def test_scanpipe_nix_verify_commit_rejects_trailing_newline(self):
+    @mock.patch("scanpipe.pipes.nix.requests.get")
+    def test_scanpipe_nix_verify_commit_branches_pagination(self, mock_get):
         commit = "1234567890abcdef1234567890abcdef12345678"
-        self.assertFalse(nix.verify_commit_in_nixpkgs(commit + "\n"))
+
+        mock_get.side_effect = [
+            mock.Mock(status_code=200, links={}, json=lambda: {}),
+            mock.Mock(
+                status_code=200,
+                links={"next": {"url": "https://api.github.com/page=2"}},
+                json=lambda: [{"name": "release-23.05"}],
+            ),
+            mock.Mock(
+                status_code=200,
+                links={},
+                json=lambda: [{"name": "release-22.11"}],
+            ),
+            mock.Mock(status_code=200, links={}, json=lambda: {"status": "diverged"}),
+            mock.Mock(status_code=200, links={}, json=lambda: {"status": "diverged"}),
+            mock.Mock(status_code=200, links={}, json=lambda: {"status": "diverged"}),
+            mock.Mock(status_code=200, links={}, json=lambda: {"status": "behind"}),
+        ]
+
+        self.assertTrue(nix.verify_commit_in_nixpkgs(commit))
+
+        requested_urls = [call.args[0] for call in mock_get.call_args_list]
+
+        # Second /branches request must have used the Link URL from page 1.
+        second_branches_page_url = requested_urls[2]
+        self.assertEqual(second_branches_page_url, "https://api.github.com/page=2")
+
+        # Both release branches must have been checked for ancestry,
+        # even though release-22.11 only appeared on page 2.
+        compare_urls = requested_urls[3:]
+        self.assertTrue(any("...release-23.05" in url for url in compare_urls))
+        self.assertTrue(any("...release-22.11" in url for url in compare_urls))
 
     @mock.patch("scanpipe.pipes.nix.fetch_json_response")
     def test_scanpipe_nix_get_package_data(self, mock_fetch):

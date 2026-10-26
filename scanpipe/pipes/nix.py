@@ -692,35 +692,121 @@ def _system_barrier_message(system):
     )
 
 
+def _github_api_headers():
+    """Return GitHub API request headers, adding a token when configured."""
+    headers = {"Accept": "application/vnd.github+json"}
+    token = (
+        scanpipe_settings.GITHUB_TOKEN
+        or os.environ.get("GITHUB_TOKEN", "")
+        or os.environ.get("GH_TOKEN", "")
+    ).strip()
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    return headers
+
+
+def _github_api_is_unavailable(response):
+    """
+    Return True if the response indicates the GitHub API failed due to
+    temporary unavailability or rate limits, rather than a genuinely
+    missing resource.
+    """
+    return response.status_code in (403, 429) or response.status_code >= 500
+
+
+def _commit_is_on_any_branch(commit_hash, headers, repo_url, branches):
+    """
+    Return True if `commit_hash` is reachable from at least one branch,
+    False if reachable from none, None if the GitHub API failed.
+    """
+    for branch in branches:
+        compare_url = f"{repo_url}/compare/{commit_hash}...{branch}"
+        try:
+            response = requests.get(compare_url, headers=headers, timeout=30)
+        except requests.RequestException as e:
+            logger.warning(f"Could not compare {commit_hash!r} to {branch}: {e}")
+            return None
+
+        if response.status_code == 404:
+            continue
+
+        if _github_api_is_unavailable(response):
+            logger.warning(
+                f"GitHub API unavailable while verifying {commit_hash!r} "
+                f"(HTTP {response.status_code})."
+            )
+            return None
+
+        try:
+            response.raise_for_status()
+            status = response.json().get("status")
+        except (requests.HTTPError, ValueError) as e:
+            logger.warning(f"Invalid response for {branch}: {e}")
+            return None
+
+        # `behind` and `identical` mean the branch is an ancestor of the
+        # commit. `ahead` and `diverged` mean it is not.
+        if status in ("behind", "identical"):
+            return True
+
+    return False
+
+
 def verify_commit_in_nixpkgs(commit_hash):
     """
-    Verify that ``commit_hash`` is an ancestor of the official NixOS/nixpkgs
-    default branch, not a commit that exists only in a fork.
-
-    Return True if the commit is part of the official repository, False otherwise.
+    Return True if ``commit_hash`` is reachable from an official nixpkgs
+    branch (``master``, ``nixos-unstable``, or any ``release-*`` branch),
+    False otherwise, and None if GitHub could not be queried.
     """
     if not COMMIT_RE.fullmatch(commit_hash):
         return False
 
-    # Compare the commit against the default branch. If the commit is an
-    # ancestor, the Compare API returns status "behind" or "identical".
-    # If the commit is not in the official history, GitHub returns 404.
-    compare_url = (
-        f"https://api.github.com/repos/{NIXPKGS_OWNER}/{NIXPKGS_REPO}"
-        f"/compare/{commit_hash}...{NIXPKGS_DEFAULT_BRANCH}"
-    )
+    headers = _github_api_headers()
+    repo_url = f"https://api.github.com/repos/{NIXPKGS_OWNER}/{NIXPKGS_REPO}"
+
     try:
-        response = requests.get(compare_url, timeout=30)
-        if response.status_code == 404:
+        commit_response = requests.get(
+            f"{repo_url}/commits/{commit_hash}", headers=headers, timeout=30
+        )
+        if commit_response.status_code == 404:
             return False
-        response.raise_for_status()
-        data = response.json()
-        # status is "behind" or "identical" when the commit is an ancestor
-        # of the default branch.
-        return data.get("status") in ("behind", "identical")
-    except requests.RequestException:
-        # On network error, we cannot verify; treat as unsafe.
-        return False
+        if _github_api_is_unavailable(commit_response):
+            logger.warning(
+                f"GitHub API unavailable during initial check for "
+                f"{commit_hash!r} (HTTP {commit_response.status_code})."
+            )
+            return None
+        commit_response.raise_for_status()
+    except requests.RequestException as e:
+        logger.warning(f"Could not perform existence check for {commit_hash!r}: {e}")
+        return None
+
+    try:
+        release_branches = []
+        url = f"{repo_url}/branches?per_page=100"
+
+        while url:
+            branches_response = requests.get(url, headers=headers, timeout=30)
+            branches_response.raise_for_status()
+
+            release_branches.extend(
+                [
+                    branch["name"]
+                    for branch in branches_response.json()
+                    if branch["name"].startswith("release-")
+                ]
+            )
+
+            # Follow GitHub's 'Link' header to the next page, if it exists
+            url = branches_response.links.get("next", {}).get("url")
+
+        # Prioritize default/master
+        branches = [NIXPKGS_DEFAULT_BRANCH, "master"] + release_branches
+    except (requests.RequestException, ValueError, TypeError) as e:
+        logger.warning(f"Could not list nixpkgs branches: {e}")
+        return None
+
+    return _commit_is_on_any_branch(commit_hash, headers, repo_url, branches)
 
 
 def _validate_purl_qualifiers(purl):
@@ -771,11 +857,23 @@ def check_input_and_return_purl(project):
 
     # Verify the commit exists in the official NixOS/nixpkgs history so that
     # a commit pointing to a fork cannot be used to inject arbitrary Nix code.
-    if commit_hash and not verify_commit_in_nixpkgs(commit_hash):
-        raise ValueError(
-            f"The commit {commit_hash!r} was not found in the official "
-            f"NixOS/nixpkgs repository history. Commits from forks are not allowed."
-        )
+    if commit_hash:
+        is_official = verify_commit_in_nixpkgs(commit_hash)
+        if is_official is None:
+            raise ValueError(
+                f"Could not verify that commit {commit_hash!r} belongs to "
+                f"the official NixOS/nixpkgs repository: the GitHub API "
+                f"was unreachable or rate limited. Configure "
+                f"SCANCODEIO_GITHUB_TOKEN (or GITHUB_TOKEN / GH_TOKEN) "
+                f"to raise the limit, or retry later."
+            )
+        if not is_official:
+            raise ValueError(
+                f"The commit {commit_hash!r} is not reachable from any "
+                f"official NixOS/nixpkgs branch (master, "
+                f"{NIXPKGS_DEFAULT_BRANCH}, or release-*). Commits from "
+                f"forks or unmerged pull requests are not allowed."
+            )
 
     return input_purl
 
