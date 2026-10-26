@@ -647,22 +647,31 @@ def _nixpkgs_import_expr(commit_hash, worktree_path, system_config, config_str):
     )
 
 
-def _build_nixpkgs_import(commit_hash, system):
-    """Return the Nix expression that imports nixpkgs when running a build."""
-    if _is_non_linux_system(system):
-        system_config = ""
-    else:
-        system_config = (
-            f'localSystem = builtins.currentSystem; crossSystem = "{system}";'
-        )
+def _build_nixpkgs_import(commit_hash, system, for_build=True):
+    """
+    Return the Nix expression that imports nixpkgs at the given commit.
 
-    config_str = (
-        "config = { "
-        "allowBroken = true; "
-        "allowUnfree = true; "
-        "allowUnsupportedSystem = true; "
-        "};"
-    )
+    Use ``for_build=True`` when the expression will compile the package
+    (cross-compilation flags are added), and ``for_build=False`` when it
+    only needs to read metadata or resolve a store path.
+    """
+    if for_build:
+        if _is_non_linux_system(system):
+            system_config = ""
+        else:
+            system_config = (
+                f'localSystem = builtins.currentSystem; crossSystem = "{system}";'
+            )
+        config_str = (
+            "config = { "
+            "allowBroken = true; "
+            "allowUnfree = true; "
+            "allowUnsupportedSystem = true; "
+            "};"
+        )
+    else:
+        system_config = f'system = "{system}";' if system else ""
+        config_str = "config = { allowBroken = true; allowUnfree = true; };"
 
     worktree_path = _get_nixpkgs_worktree(commit_hash)
     return _nixpkgs_import_expr(commit_hash, worktree_path, system_config, config_str)
@@ -962,7 +971,7 @@ def fetch_inputs(purl, output_dir):
 def get_nix_package_metadata(purl, commit_hash):
     """
     Return a dict with ``license``, ``homepage``, and ``description``
-    of nixpkgs metadata for the target package ``name``.
+    of nixpkgs metadata for the target package identified by ``purl``.
     """
     name = purl.name
     system = purl.qualifiers.get("system", "")
@@ -970,13 +979,8 @@ def get_nix_package_metadata(purl, commit_hash):
     if not name or not commit_hash:
         return {}
 
-    system_config = f'system = "{system}";' if system else ""
-    config_str = "config = { allowBroken = true; allowUnfree = true; };"
-
     worktree_path = _get_nixpkgs_worktree(commit_hash)
-    nixpkgs_import = _nixpkgs_import_expr(
-        commit_hash, worktree_path, system_config, config_str
-    )
+    nixpkgs_import = _build_nixpkgs_import(commit_hash, system, for_build=False)
 
     nix_expression = f"""
     {{ name }}:
@@ -1312,13 +1316,8 @@ def get_package_data(purl):
 
 def get_nix_store_path_with_nix(name, system, output, commit_hash):
     """Find and return the store path using `nix`."""
-    system_config = f'system = "{system}";' if system else ""
-    config_str = "config = { allowBroken = true; allowUnfree = true; };"
-
     worktree_path = _get_nixpkgs_worktree(commit_hash)
-    nixpkgs_import = _nixpkgs_import_expr(
-        commit_hash, worktree_path, system_config, config_str
-    )
+    nixpkgs_import = _build_nixpkgs_import(commit_hash, system, for_build=False)
 
     nix_expression = (
         "{ name, output }: "
