@@ -88,6 +88,8 @@ class ScanNixPackage(ScanSinglePackage, DeployToDevelop, ScanCodebase):
             cls.flag_ignored_resources,
             cls.d2d_steps,
             cls.perform_from_codebase_scans,
+            cls.collect_and_create_license_detections,
+            cls.flag_deployed_from_resources_with_missing_license,
             cls.create_package_from_nix_metadata,
             cls.validate_package_license_integrity,
         )
@@ -240,8 +242,6 @@ class ScanNixPackage(ScanSinglePackage, DeployToDevelop, ScanCodebase):
         self.remove_packages_without_resources()
         self.scan_ignored_to_files()
         self.scan_unmapped_to_files()
-        self.collect_and_create_license_detections()
-        self.flag_deployed_from_resources_with_missing_license()
 
     def perform_from_codebase_scans(self):
         """
@@ -250,6 +250,7 @@ class ScanNixPackage(ScanSinglePackage, DeployToDevelop, ScanCodebase):
         """
         from_resource_qs = (
             self.project.codebaseresources.from_codebase()
+            .files()
             .exclude(status=flag.GENERATED)
             .exclude(status__startswith="ignored")
         )
