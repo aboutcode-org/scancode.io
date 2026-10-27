@@ -99,7 +99,12 @@ OUTPUT_RE = re.compile(r"[a-z][a-z0-9]*")
 # Official repository used to verify that a commit is not from a fork.
 NIXPKGS_OWNER = "NixOS"
 NIXPKGS_REPO = "nixpkgs"
-NIXPKGS_DEFAULT_BRANCH = "nixos-unstable"
+NIXPKGS_TRUSTED_BRANCHES = [
+    "master",
+    "nixos-unstable",
+    "nixpkgs-unstable",
+    "nixos-unstable-small",
+]
 
 
 def _summarize_nix_build_error(stderr, max_lines=10):
@@ -703,9 +708,11 @@ def _commit_is_on_any_branch(commit_hash, headers, repo_url, branches):
             logger.warning(f"Invalid response for {branch}: {e}")
             return None
 
-        # `behind` and `identical` mean the branch is an ancestor of the
-        # commit. `ahead` and `diverged` mean it is not.
-        if status in ("behind", "identical"):
+        # In `compare/{commit}...{branch}`, "ahead" means the branch has
+        # commits after the commit, i.e. the commit is reachable from the
+        # branch. "identical" means they are the same commit. "behind" and
+        # "diverged" mean the commit is NOT reachable from the branch.
+        if status in ("ahead", "identical"):
             return True
 
     return False
@@ -714,8 +721,9 @@ def _commit_is_on_any_branch(commit_hash, headers, repo_url, branches):
 def verify_commit_in_nixpkgs(commit_hash):
     """
     Return True if ``commit_hash`` is reachable from an official nixpkgs
-    branch (``master``, ``nixos-unstable``, or any ``release-*`` branch),
-    False otherwise, and None if GitHub could not be queried.
+    branch (``master``, ``nixos-unstable``, ``nixpkgs-unstable``,
+    ``nixos-unstable-small``, or any ``release-*`` branch), False
+    otherwise, and None if GitHub could not be queried.
     """
     if not COMMIT_RE.fullmatch(commit_hash):
         return False
@@ -759,8 +767,9 @@ def verify_commit_in_nixpkgs(commit_hash):
             # Follow GitHub's 'Link' header to the next page, if it exists
             url = branches_response.links.get("next", {}).get("url")
 
-        # Prioritize default/master
-        branches = [NIXPKGS_DEFAULT_BRANCH, "master"] + release_branches
+        # Check the always-present branches first, then any release-* branches
+        # discovered on GitHub.
+        branches = NIXPKGS_TRUSTED_BRANCHES + release_branches
     except (requests.RequestException, ValueError, TypeError) as e:
         logger.warning(f"Could not list nixpkgs branches: {e}")
         return None
@@ -858,10 +867,10 @@ def _require_official_commit(commit_hash, label="commit"):
             f"to raise the limit, or retry later."
         )
     if not is_official:
+        trusted = ", ".join(NIXPKGS_TRUSTED_BRANCHES)
         raise ValueError(
             f"The {label} {commit_hash!r} is not reachable from any "
-            f"official NixOS/nixpkgs branch (master, "
-            f"{NIXPKGS_DEFAULT_BRANCH}, or release-*)."
+            f"official NixOS/nixpkgs branch ({trusted}, or release-*)."
         )
 
 

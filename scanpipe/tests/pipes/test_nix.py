@@ -172,22 +172,34 @@ class ScanPipeNixPipesTest(TestCase):
         # Each case: (label, [(status, json_body, links), ...], expected).
         cases = [
             (
-                "commit on nixos-unstable",
+                "commit on first trusted branch",
                 [
                     (200, {}, {}),
                     (200, [], {}),
-                    (200, {"status": "behind"}, {}),
+                    (200, {"status": "ahead"}, {}),
                 ],
                 True,
             ),
             (
-                "backport on release-23.05",
+                "commit identical to branch tip",
+                [
+                    (200, {}, {}),
+                    (200, [], {}),
+                    (200, {"status": "diverged"}, {}),
+                    (200, {"status": "identical"}, {}),
+                ],
+                True,
+            ),
+            (
+                "backport only on release-23.05",
                 [
                     (200, {}, {}),
                     (200, [{"name": "release-23.05"}], {}),
-                    (200, {"status": "diverged"}, {}),
-                    (200, {"status": "diverged"}, {}),
-                    (200, {"status": "behind"}, {}),
+                    (200, {"status": "diverged"}, {}),  # master
+                    (200, {"status": "diverged"}, {}),  # nixos-unstable
+                    (200, {"status": "diverged"}, {}),  # nixpkgs-unstable
+                    (200, {"status": "diverged"}, {}),  # nixos-unstable-small
+                    (200, {"status": "ahead"}, {}),  # release-23.05
                 ],
                 True,
             ),
@@ -196,8 +208,10 @@ class ScanPipeNixPipesTest(TestCase):
                 [
                     (200, {}, {}),
                     (200, [], {}),
-                    (200, {"status": "diverged"}, {}),
-                    (200, {"status": "ahead"}, {}),
+                    (200, {"status": "diverged"}, {}),  # master
+                    (200, {"status": "behind"}, {}),  # nixos-unstable
+                    (200, {"status": "behind"}, {}),  # nixpkgs-unstable
+                    (200, {"status": "behind"}, {}),  # nixos-unstable-small
                 ],
                 False,
             ),
@@ -252,10 +266,26 @@ class ScanPipeNixPipesTest(TestCase):
                 links={},
                 json=lambda: [{"name": "release-22.11"}],
             ),
-            mock.Mock(status_code=200, links={}, json=lambda: {"status": "diverged"}),
-            mock.Mock(status_code=200, links={}, json=lambda: {"status": "diverged"}),
-            mock.Mock(status_code=200, links={}, json=lambda: {"status": "diverged"}),
-            mock.Mock(status_code=200, links={}, json=lambda: {"status": "behind"}),
+            # Trusted branches: all diverged
+            mock.Mock(
+                status_code=200, links={}, json=lambda: {"status": "diverged"}
+            ),  # master
+            mock.Mock(
+                status_code=200, links={}, json=lambda: {"status": "diverged"}
+            ),  # nixos-unstable
+            mock.Mock(
+                status_code=200, links={}, json=lambda: {"status": "diverged"}
+            ),  # nixpkgs-unstable
+            mock.Mock(
+                status_code=200, links={}, json=lambda: {"status": "diverged"}
+            ),  # nixos-unstable-small
+            # Release branches: ancestor only on the last one, so both are compared
+            mock.Mock(
+                status_code=200, links={}, json=lambda: {"status": "diverged"}
+            ),  # release-23.05
+            mock.Mock(
+                status_code=200, links={}, json=lambda: {"status": "ahead"}
+            ),  # release-22.11
         ]
 
         self.assertTrue(nix.verify_commit_in_nixpkgs(commit))
