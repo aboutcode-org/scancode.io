@@ -326,12 +326,6 @@ Scan Nix Package
    The ``dind`` service runs a privileged Docker daemon and shares the
    ``workspace`` volume with it.
 
-   This pipeline also runs a read-only ``--privileged`` container
-   (``tonistiigi/binfmt``, pinned by digest) to detect whether the
-   handlers are installed. Nothing is installed by the pipeline itself;
-   if the handlers are missing, the pipeline fails at its first step
-   with the command to install them.
-
    See :ref:`scancodeio_settings_nixpkgs_cache_dir` for the cache
    directory requirement when the pipeline runs under ``dind``.
 
