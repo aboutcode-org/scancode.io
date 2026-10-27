@@ -1,0 +1,477 @@
+{
+  "headers": [
+    {
+      "tool_name": "scanpipe",
+      "notice": "Generated with ScanCode.io and provided on an \"AS IS\" BASIS, WITHOUT WARRANTIES\nOR CONDITIONS OF ANY KIND, either express or implied.\nNo content created from ScanCode.io should be considered or used as legal advice.\nConsult an Attorney for any legal advice.\nScanCode.io is a free software code scanning tool from nexB Inc. and others\nlicensed under the Apache License version 2.0.\nScanCode is a trademark of nexB Inc.\nVisit https://github.com/nexB/scancode.io for support and download.\n",
+      "input_sources": [
+        {
+          "filename": "",
+          "download_url": "pkg:nix/nixpkgs/hello@2.12.3?system=x86_64-linux&commit=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "is_uploaded": false,
+          "tag": "",
+          "is_file": true,
+          "exists": false
+        }
+      ],
+      "runs": [
+        {
+          "pipeline_name": "scan_nix_package",
+          "status": "not_started",
+          "selected_groups": null,
+          "selected_steps": null,
+          "scancodeio_version": "",
+          "task_id": null,
+          "task_start_date": null,
+          "task_end_date": null,
+          "task_exitcode": null,
+          "task_output": "",
+          "execution_time": null
+        }
+      ],
+      "messages": [],
+      "extra_data": {
+        "filename": "hello-bin.nar",
+        "md5": "9e7f35003f8bdb044fe98cc6feea8265",
+        "sha1": "d2205ebd97cd1fa3dc2f5cfe423b817e45391533",
+        "sha256": "3152016e2abb0edadec1a63a838d1a17eb450044b731fee5aafe29307f309e26",
+        "sha512": "e51c3f7c74963995f51d4dbf5b4005176ec01bd683f88031ad2608b72e8bf8e97304bad59497d085f42ac005e22109295269359c7125216c58addf59335af813",
+        "sha1_git": "df5d70e4fa59095f5bc14de28113f335984e545f"
+      }
+    }
+  ],
+  "packages": [
+    {
+      "purl": "pkg:nix/nixpkgs/hello@2.12.3",
+      "type": "nix",
+      "namespace": "nixpkgs",
+      "name": "hello",
+      "version": "2.12.3",
+      "qualifiers": "",
+      "subpath": "",
+      "tag": "",
+      "primary_language": "",
+      "release_date": null,
+      "parties": [],
+      "keywords": [],
+      "homepage_url": "https://www.gnu.org/software/hello/",
+      "download_url": "",
+      "bug_tracking_url": "",
+      "code_view_url": "",
+      "vcs_url": "",
+      "repository_homepage_url": "",
+      "repository_download_url": "",
+      "api_data_url": "",
+      "md5": "",
+      "sha1": "",
+      "sha256": "",
+      "sha512": "",
+      "copyright": "",
+      "holder": "",
+      "declared_license_expression": "mit",
+      "declared_license_expression_spdx": "MIT",
+      "license_detections": [],
+      "other_license_expression": "",
+      "other_license_expression_spdx": "",
+      "other_license_detections": [],
+      "extracted_license_statement": "",
+      "notice_text": "",
+      "source_packages": [],
+      "extra_data": {},
+      "package_uid": "pkg:nix/nixpkgs/hello@2.12.3?uuid=fixed-uid-done-for-testing-5642512d1758",
+      "is_private": false,
+      "is_virtual": false,
+      "datasource_ids": [
+        "nixpkgs_meta"
+      ],
+      "datafile_paths": [],
+      "file_references": [],
+      "missing_resources": [],
+      "modified_resources": [],
+      "affected_by_vulnerabilities": []
+    }
+  ],
+  "dependencies": [],
+  "files": [
+    {
+      "path": "from",
+      "type": "directory",
+      "name": "from",
+      "status": "ignored-directory",
+      "for_packages": [
+        "pkg:nix/nixpkgs/hello@2.12.3?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
+      "tag": "from",
+      "extension": "",
+      "programming_language": "",
+      "detected_license_expression": "",
+      "detected_license_expression_spdx": "",
+      "license_detections": [],
+      "license_clues": [],
+      "percentage_of_license_text": null,
+      "copyrights": [],
+      "holders": [],
+      "authors": [],
+      "package_data": [],
+      "emails": [],
+      "urls": [],
+      "md5": "",
+      "sha1": "",
+      "sha256": "",
+      "sha512": "",
+      "sha1_git": "",
+      "is_binary": false,
+      "is_text": false,
+      "is_archive": false,
+      "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
+      "is_key_file": false,
+      "extra_data": {}
+    },
+    {
+      "path": "from/COPYING",
+      "type": "file",
+      "name": "COPYING",
+      "status": "scanned",
+      "for_packages": [
+        "pkg:nix/nixpkgs/hello@2.12.3?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
+      "tag": "from",
+      "extension": "",
+      "programming_language": "",
+      "detected_license_expression": "mit",
+      "detected_license_expression_spdx": "MIT",
+      "license_detections": [
+        {
+          "matches": [
+            {
+              "score": 100.0,
+              "matcher": "2-aho",
+              "end_line": 1,
+              "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/mit_14.RULE",
+              "from_file": null,
+              "start_line": 1,
+              "matched_text": "MIT License",
+              "match_coverage": 100.0,
+              "matched_length": 2,
+              "rule_relevance": 100,
+              "rule_identifier": "mit_14.RULE",
+              "license_expression": "mit",
+              "license_expression_spdx": "MIT"
+            },
+            {
+              "score": 100.0,
+              "matcher": "2-aho",
+              "end_line": 21,
+              "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/licenses/mit.LICENSE",
+              "from_file": null,
+              "start_line": 5,
+              "matched_text": "Permission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+              "match_coverage": 100.0,
+              "matched_length": 161,
+              "rule_relevance": 100,
+              "rule_identifier": "mit.LICENSE",
+              "license_expression": "mit",
+              "license_expression_spdx": "MIT"
+            }
+          ],
+          "identifier": "mit-ac40beba-5702-f54d-755f-333441314bb0",
+          "license_expression": "mit",
+          "license_expression_spdx": "MIT"
+        }
+      ],
+      "license_clues": [],
+      "percentage_of_license_text": 96.45,
+      "copyrights": [
+        {
+          "end_line": 3,
+          "copyright": "Copyright (c) 2024 The Hello Authors",
+          "start_line": 3
+        }
+      ],
+      "holders": [
+        {
+          "holder": "The Hello Authors",
+          "end_line": 3,
+          "start_line": 3
+        }
+      ],
+      "authors": [],
+      "package_data": [],
+      "emails": [],
+      "urls": [],
+      "md5": "3b995df5f90950b1a39639055fe7c201",
+      "sha1": "8e95b40d20d423d5fe6d40213caa55e24a790f41",
+      "sha256": "1101c28e63d043c5208daf08f8e085276cf7e8938a4cf430bde677756da207f5",
+      "sha512": "",
+      "sha1_git": "09a893d3ac64b7ff1a0cf379230478467aea8166",
+      "is_binary": false,
+      "is_text": true,
+      "is_archive": false,
+      "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
+      "is_key_file": false,
+      "extra_data": {}
+    },
+    {
+      "path": "from/hello.c",
+      "type": "file",
+      "name": "hello.c",
+      "status": "scanned",
+      "for_packages": [
+        "pkg:nix/nixpkgs/hello@2.12.3?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
+      "tag": "from",
+      "extension": ".c",
+      "programming_language": "C",
+      "detected_license_expression": "mit",
+      "detected_license_expression_spdx": "MIT",
+      "license_detections": [
+        {
+          "matches": [
+            {
+              "score": 100.0,
+              "matcher": "1-spdx-id",
+              "end_line": 1,
+              "rule_url": null,
+              "from_file": null,
+              "start_line": 1,
+              "matched_text": "// SPDX-License-Identifier: MIT",
+              "match_coverage": 100.0,
+              "matched_length": 4,
+              "rule_relevance": 100,
+              "rule_identifier": "spdx-license-identifier-mit-f5be3fda2f20a26515ed3dabedb3804346819bf7",
+              "license_expression": "mit",
+              "license_expression_spdx": "MIT"
+            }
+          ],
+          "identifier": "mit-70c99094-5482-8374-7f01-91df318346a5",
+          "license_expression": "mit",
+          "license_expression_spdx": "MIT"
+        }
+      ],
+      "license_clues": [],
+      "percentage_of_license_text": 20.0,
+      "copyrights": [
+        {
+          "end_line": 2,
+          "copyright": "Copyright (c) 2024 The Hello Authors",
+          "start_line": 2
+        }
+      ],
+      "holders": [
+        {
+          "holder": "The Hello Authors",
+          "end_line": 2,
+          "start_line": 2
+        }
+      ],
+      "authors": [],
+      "package_data": [],
+      "emails": [],
+      "urls": [],
+      "md5": "52ac72f9043c089284504261dc67f6b9",
+      "sha1": "76a829f3feedb6c6b7b31ac9732b8ca49ce8342d",
+      "sha256": "be5a336a5fce39e5186593b2bf466555f34ccf9f94141071e8374209c166bb8b",
+      "sha512": "",
+      "sha1_git": "40d90e4e93e2fdda08fee9278c3c59b14e83fdb0",
+      "is_binary": false,
+      "is_text": true,
+      "is_archive": false,
+      "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
+      "is_key_file": false,
+      "extra_data": {
+        "source_strings": [
+          "\"Hello, world!\\n\""
+        ],
+        "source_symbols": [
+          "main",
+          "printf"
+        ]
+      }
+    },
+    {
+      "path": "to",
+      "type": "directory",
+      "name": "to",
+      "status": "ignored-directory",
+      "for_packages": [],
+      "tag": "to",
+      "extension": "",
+      "programming_language": "",
+      "detected_license_expression": "",
+      "detected_license_expression_spdx": "",
+      "license_detections": [],
+      "license_clues": [],
+      "percentage_of_license_text": null,
+      "copyrights": [],
+      "holders": [],
+      "authors": [],
+      "package_data": [],
+      "emails": [],
+      "urls": [],
+      "md5": "",
+      "sha1": "",
+      "sha256": "",
+      "sha512": "",
+      "sha1_git": "",
+      "is_binary": false,
+      "is_text": false,
+      "is_archive": false,
+      "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
+      "is_key_file": false,
+      "extra_data": {
+        "directory_content": "00000002434081022540218640e02212d08c4810",
+        "directory_structure": "00000002562a8921212290c000c0001071913008"
+      }
+    },
+    {
+      "path": "to/out",
+      "type": "directory",
+      "name": "out",
+      "status": "ignored-directory",
+      "for_packages": [],
+      "tag": "to",
+      "extension": "",
+      "programming_language": "",
+      "detected_license_expression": "",
+      "detected_license_expression_spdx": "",
+      "license_detections": [],
+      "license_clues": [],
+      "percentage_of_license_text": null,
+      "copyrights": [],
+      "holders": [],
+      "authors": [],
+      "package_data": [],
+      "emails": [],
+      "urls": [],
+      "md5": "",
+      "sha1": "",
+      "sha256": "",
+      "sha512": "",
+      "sha1_git": "",
+      "is_binary": false,
+      "is_text": false,
+      "is_archive": false,
+      "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
+      "is_key_file": false,
+      "extra_data": {
+        "directory_content": "00000002434081022540218640e02212d08c4810",
+        "directory_structure": "00000002804282245d004600402a0004001020be"
+      }
+    },
+    {
+      "path": "to/out/COPYING",
+      "type": "file",
+      "name": "COPYING",
+      "status": "mapped",
+      "for_packages": [],
+      "tag": "to",
+      "extension": "",
+      "programming_language": "",
+      "detected_license_expression": "",
+      "detected_license_expression_spdx": "",
+      "license_detections": [],
+      "license_clues": [],
+      "percentage_of_license_text": null,
+      "copyrights": [],
+      "holders": [],
+      "authors": [],
+      "package_data": [],
+      "emails": [],
+      "urls": [],
+      "md5": "3b995df5f90950b1a39639055fe7c201",
+      "sha1": "8e95b40d20d423d5fe6d40213caa55e24a790f41",
+      "sha256": "1101c28e63d043c5208daf08f8e085276cf7e8938a4cf430bde677756da207f5",
+      "sha512": "",
+      "sha1_git": "09a893d3ac64b7ff1a0cf379230478467aea8166",
+      "is_binary": false,
+      "is_text": true,
+      "is_archive": false,
+      "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
+      "is_key_file": false,
+      "extra_data": {}
+    },
+    {
+      "path": "to/out/hello.c",
+      "type": "file",
+      "name": "hello.c",
+      "status": "mapped",
+      "for_packages": [],
+      "tag": "to",
+      "extension": ".c",
+      "programming_language": "C",
+      "detected_license_expression": "",
+      "detected_license_expression_spdx": "",
+      "license_detections": [],
+      "license_clues": [],
+      "percentage_of_license_text": null,
+      "copyrights": [],
+      "holders": [],
+      "authors": [],
+      "package_data": [],
+      "emails": [],
+      "urls": [],
+      "md5": "52ac72f9043c089284504261dc67f6b9",
+      "sha1": "76a829f3feedb6c6b7b31ac9732b8ca49ce8342d",
+      "sha256": "be5a336a5fce39e5186593b2bf466555f34ccf9f94141071e8374209c166bb8b",
+      "sha512": "",
+      "sha1_git": "40d90e4e93e2fdda08fee9278c3c59b14e83fdb0",
+      "is_binary": false,
+      "is_text": true,
+      "is_archive": false,
+      "is_media": false,
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
+      "is_key_file": false,
+      "extra_data": {
+        "source_strings": [
+          "\"Hello, world!\\n\""
+        ],
+        "source_symbols": [
+          "main",
+          "printf"
+        ]
+      }
+    }
+  ],
+  "relations": [
+    {
+      "to_resource": "to/out/COPYING",
+      "status": "mapped",
+      "map_type": "sha1",
+      "score": "",
+      "from_resource": "from/COPYING"
+    },
+    {
+      "to_resource": "to/out/hello.c",
+      "status": "mapped",
+      "map_type": "sha1",
+      "score": "",
+      "from_resource": "from/hello.c"
+    }
+  ]
+}
