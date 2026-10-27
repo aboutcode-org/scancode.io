@@ -706,6 +706,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
             self.discovereddependencies,
             self.discoveredlicenses,
             self.originmatchs,
+            self.origindeterminations,
             self.codebaseresources,
             self.runs,
         ]
@@ -5155,3 +5156,87 @@ class OriginMatch(UUIDPKModel, ProjectRelatedModel, ExtraDataFieldMixin, AdminUR
 
     def __str__(self):
         return f"{self.purl} ({self.match_type} match by {self.tool})"
+
+
+class OriginDeterminationQuerySet(ProjectRelatedQuerySet):
+    def without_reported_candidate(self):
+        """
+        Return the determinations whose origin is not reported anymore by any
+        origin tool for the resource, for example after a new origin tools run.
+        """
+        reported_candidates = OriginMatch.objects.filter(
+            resource=OuterRef("resource"), purl=OuterRef("purl")
+        )
+        return self.exclude(purl="").filter(~Exists(reported_candidates))
+
+
+class OriginDetermination(UUIDPKModel, ProjectRelatedModel):
+    """
+    The origin determined for a resource, selected among its origin matches by a
+    determination rule or by a user.
+
+    The origin is stored as a PURL, independently of the origin matches, so a
+    user decision is kept when the origin tools are run again.
+    """
+
+    class Status(models.TextChoices):
+        AUTO_CONFIRMED = "auto-confirmed"
+        NEEDS_REVIEW = "needs-review"
+        CONFIRMED = "confirmed"
+        NO_ORIGIN = "no-origin"
+
+    resource = models.OneToOneField(
+        CodebaseResource,
+        related_name="origin_determination",
+        on_delete=models.CASCADE,
+        editable=False,
+        help_text=_("The file or directory whose origin is determined."),
+    )
+    purl = models.CharField(
+        max_length=2048,
+        blank=True,
+        help_text=_(
+            "Package URL (PURL) of the origin package. Empty when no open source "
+            "origin is found, or when the origin needs review and no candidate is "
+            "preferred."
+        ),
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        help_text=_(
+            "Determination status: confirmed automatically by a rule, needs a "
+            "review, confirmed by a user, or no open source origin."
+        ),
+    )
+    rule = models.CharField(
+        max_length=50,
+        blank=True,
+        help_text=_(
+            "Name of the determination rule that set the status. Empty when the "
+            "status is set by a user."
+        ),
+    )
+
+    objects = OriginDeterminationQuerySet.as_manager()
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["purl"]),
+            models.Index(fields=["status"]),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                condition=(
+                    Q(status="no-origin", purl="")
+                    | Q(status="needs-review")
+                    | (Q(status__in=["auto-confirmed", "confirmed"]) & ~Q(purl=""))
+                ),
+                name="%(app_label)s_%(class)s_purl_consistent_with_status",
+            ),
+        ]
+
+    def __str__(self):
+        if self.purl:
+            return f"{self.purl} ({self.status})"
+        return self.status
