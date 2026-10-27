@@ -282,8 +282,7 @@ class ScanNixPackage(ScanSinglePackage, DeployToDevelop, ScanCodebase):
             return
 
         from_resources = self.project.codebaseresources.from_codebase()
-        if from_resources.exists():
-            package.codebase_resources.add(*from_resources)
+        nix.add_codebase_resources_to_package(package, from_resources)
 
     def validate_package_license_integrity(self):
         """

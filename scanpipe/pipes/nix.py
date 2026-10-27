@@ -1718,3 +1718,25 @@ rm -f /tmp/expr.nix /tmp/fallback.nix
         fallback_reason="",
         failure_detail=failure_detail,
     )
+
+
+def add_codebase_resources_to_package(package, resource_qs, batch_size=2000):
+    """
+    Add a QuerySet of CodebaseResources to a DiscoveredPackage.
+    This uses batch inserts to save memory when handling large codebases.
+    """
+    # The auto-generated join table for the ``codebase_resources`` M2M field.
+    through_model = package.codebase_resources.through
+    resource_ids = resource_qs.values_list("id", flat=True).iterator()
+
+    through_model.objects.bulk_create(
+        (
+            through_model(
+                discoveredpackage_id=package.pk,
+                codebaseresource_id=resource_id,
+            )
+            for resource_id in resource_ids
+        ),
+        batch_size=batch_size,
+        ignore_conflicts=True,
+    )

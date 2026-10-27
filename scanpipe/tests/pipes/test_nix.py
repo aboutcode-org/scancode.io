@@ -534,6 +534,38 @@ class ScanPipeNixPipesTest(TestCase):
         self.assertEqual(package.declared_license_expression, "gpl-2.0-plus")
         self.assertEqual(package.declared_license_expression_spdx, "GPL-2.0-or-later")
 
+    def test_scanpipe_nix_add_codebase_resources_to_package(self):
+        purl = PackageURL.from_string(
+            "pkg:nix/nixpkgs/hello@2.12.1?system=x86_64-linux"
+        )
+        package = nix.create_package_from_nix_metadata(
+            self.project, purl, {"license": "MIT"}
+        )
+
+        for path, tag in (
+            ("from/a", "from"),
+            ("from/b", "from"),
+            ("to/c", "to"),
+        ):
+            self.project.codebaseresources.create(path=path, tag=tag)
+
+        qs = self.project.codebaseresources.filter(path__startswith="from/")
+        nix.add_codebase_resources_to_package(package, qs)
+
+        self.assertCountEqual(
+            ["from/a", "from/b"],
+            package.codebase_resources.values_list("path", flat=True),
+        )
+
+        # Second call must not raise nor duplicate rows (ignore_conflicts=True).
+        nix.add_codebase_resources_to_package(package, qs)
+        self.assertEqual(2, package.codebase_resources.count())
+
+        # Empty queryset is a no-op.
+        empty_qs = self.project.codebaseresources.filter(path="does-not-exist")
+        nix.add_codebase_resources_to_package(package, empty_qs)
+        self.assertEqual(2, package.codebase_resources.count())
+
     @mock.patch("scanpipe.pipes.nix.get_package_data", return_value=None)
     @mock.patch(
         "scanpipe.pipes.nix.get_nix_store_path_with_nix",
