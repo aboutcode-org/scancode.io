@@ -188,6 +188,7 @@ class ScanPipePipelinesTest(TestCase):
     @mock.patch("shutil.which", return_value="/usr/bin/docker")
     def test_scanpipe_scan_nix_package_get_availability_available(self, _mock_which):
         self.assertIsNone(ScanNixPackage.get_availability())
+
     @mock.patch("scanpipe.pipes.scanoss.is_configured")
     @mock.patch("scanpipe.pipes.matchcode.is_configured")
     def test_scanpipe_find_origins_get_availability(

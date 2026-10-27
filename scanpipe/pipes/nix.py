@@ -688,7 +688,9 @@ def _commit_is_on_any_branch(commit_hash, headers, repo_url, branches):
         try:
             response = requests.get(compare_url, headers=headers, timeout=30)
         except requests.RequestException as e:
-            logger.warning(f"Could not compare {commit_hash!r} to {branch}: {e}")
+            logger.warning(
+                f"Could not compare {commit_hash!r} to {branch}: {type(e).__name__}"
+            )
             return None
 
         if response.status_code == 404:
@@ -705,7 +707,7 @@ def _commit_is_on_any_branch(commit_hash, headers, repo_url, branches):
             response.raise_for_status()
             status = response.json().get("status")
         except (requests.HTTPError, ValueError) as e:
-            logger.warning(f"Invalid response for {branch}: {e}")
+            logger.warning(f"Invalid response for {branch}: {type(e).__name__}")
             return None
 
         # In `compare/{commit}...{branch}`, "ahead" means the branch has
