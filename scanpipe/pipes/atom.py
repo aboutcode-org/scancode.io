@@ -20,12 +20,19 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
+import json
 import re
 from collections import defaultdict
+from os import environ
+from subprocess import SubprocessError
 
 from aboutcode.pipeline import LoopProgress
+from scanpipe.pipes import run_command_safely
 from scanpipe.pipes.reachability import ReachabilityStatus
 from scanpipe.pipes.reachability import save_resource_reachability_report
+from scanpipe.pipes.reachability_tools import ReachabilityTool
+
+ATOM_EXECUTABLE = environ.get("ATOM_EXECUTABLE")
 
 _OPERATOR_PREFIXES = ("<operator>", "<operators>")
 _MARKER_PATTERN = re.compile(r"<[^>]+>")
@@ -387,9 +394,8 @@ def collect_and_match_resources(
             vuln_in_code = usages.match_symbols(vulnerable, path)
             vuln_reachable = reachables.match_symbols(vulnerable, path)
             fixed_in_code = usages.match_symbols(fixed, path)
-            fixed_reachable = reachables.match_symbols(fixed, path)
 
-            if not (vuln_in_code or vuln_reachable or fixed_in_code or fixed_reachable):
+            if not (vuln_in_code or vuln_reachable or fixed_in_code):
                 continue
 
             reachability_status = classify_reachability(vuln_in_code, vuln_reachable)
@@ -423,3 +429,133 @@ def collect_and_match_resources(
                 vcs_url=vcs_url,
                 new_report=report,
             )
+
+
+class AtomTool(ReachabilityTool):
+    tool_name = "atom"
+    executable = ATOM_EXECUTABLE
+    supported_languages = {
+        "Java": "java",
+        "Python": "python",
+    }
+
+    commands = ("usages", "reachables")
+
+    @classmethod
+    def get_availability(cls):
+        if not cls.executable:
+            return (
+                "atom is not configured. Set the ATOM_EXECUTABLE environment variable."
+            )
+
+    @classmethod
+    def get_atom_language(cls, project):
+        """Return the atom ``-l`` value for ``project`` from the scan summary."""
+        summary_path = project.get_latest_output("summary")
+        with open(summary_path) as f:
+            summary = json.load(f)
+
+        primary_language = summary.get("primary_language")
+        if not primary_language:
+            raise ValueError(
+                f"No primary_language in the scan summary of {project.name!r}."
+            )
+
+        language = cls.supported_languages.get(primary_language)
+        if not language:
+            raise ValueError(
+                f"Unsupported primary_language {primary_language!r} for "
+                f"{project.name!r}. Supported: {', '.join(cls.supported_languages)}."
+            )
+        return language
+
+    @staticmethod
+    def get_output_paths(project, atom_language):
+        """Return the output paths shared by the atom commands."""
+        manifest_path = project.get_output_file_path("atom_reachability", "json")
+        prefix = f"{manifest_path.stem}.{atom_language}"
+        return {
+            "atom": manifest_path.with_name(f"{prefix}.atom"),
+            "usages": manifest_path.with_name(f"{prefix}.usages.slices.json"),
+            "reachables": manifest_path.with_name(f"{prefix}.reachables.slices.json"),
+        }
+
+    @classmethod
+    def run_command(
+        cls, command, target_path, atom_language, output_paths, logger=None
+    ):
+        """Run a single atom command and return its slices file path or None."""
+        command_args = [
+            cls.executable,
+            command,
+            "-l",
+            atom_language,
+            "--cache",
+            "none",
+            "-o",
+            str(output_paths["atom"]),
+            "-s",
+            str(output_paths[command]),
+            str(target_path),
+        ]
+
+        if logger:
+            logger(f"Running atom {command} on {target_path} ...")
+        try:
+            run_command_safely(command_args=command_args)
+        except SubprocessError as error:
+            if logger:
+                logger(f"atom {command} failed: {error!r}")
+            return None
+        return output_paths[command]
+
+    @classmethod
+    def run(cls, project, logger=None):
+        """
+        Run the atom ``usages`` and ``reachables`` commands.
+
+        Return a mapping of command name to its slices file path (or ``None``
+        when that command failed).
+        """
+        target_path = project.codebase_path
+        if not target_path:
+            raise ValueError(
+                f"Cannot run Atom tools against project {project.name!r}:"
+                f" codebase_path is None."
+            )
+        atom_language = cls.get_atom_language(project)
+        output_paths = cls.get_output_paths(project, atom_language)
+
+        results = {}
+        for command in cls.commands:
+            results[command] = cls.run_command(
+                command=command,
+                target_path=target_path,
+                atom_language=atom_language,
+                output_paths=output_paths,
+                logger=logger,
+            )
+        return results
+
+    @staticmethod
+    def load_slices(export_output_path, logger=None):
+        """Load and return a single atom slices file."""
+        if not export_output_path:
+            return {}
+        try:
+            with open(export_output_path) as slice_file:
+                return json.load(slice_file)
+        except (FileNotFoundError, json.JSONDecodeError) as error:
+            if logger:
+                logger(f"Skipping atom slices {export_output_path}: {error!r}")
+            return {}
+
+    @classmethod
+    def parsed_output(cls, export_output_path, logger=None):
+        """Load and return the atom slices keyed by command name."""
+        if not export_output_path:
+            return {}
+        return {
+            command: cls.load_slices(path, logger=logger)
+            for command, path in export_output_path.items()
+        }

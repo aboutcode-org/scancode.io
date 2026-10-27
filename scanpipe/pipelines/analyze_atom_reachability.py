@@ -20,158 +20,8 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
-import json
-import subprocess
-from os import environ
-
 from scanpipe.pipes import atom
-from scanpipe.pipes import run_command_safely
 from scanpipe.pipes.reachability_tools import ReachabilityPipeline
-from scanpipe.pipes.reachability_tools import ReachabilityTool
-
-ATOM_EXECUTABLE = environ.get("ATOM_EXECUTABLE")
-
-
-class AtomTool(ReachabilityTool):
-    tool_name = "atom"
-    executable = ATOM_EXECUTABLE
-    supported_languages = {
-        "Java": "java",
-        "Python": "python",
-    }
-
-    commands = ("usages", "reachables")
-
-    @classmethod
-    def get_availability(cls):
-        if not cls.executable:
-            return (
-                "atom is not configured. Set the ATOM_EXECUTABLE environment variable."
-            )
-
-    @classmethod
-    def get_atom_language(cls, project):
-        """Return the atom ``-l`` value for ``project`` from the scan summary."""
-        summary_path = project.get_latest_output("summary")
-        with open(summary_path) as f:
-            summary = json.load(f)
-
-        primary_language = summary.get("primary_language")
-        if not primary_language:
-            raise ValueError(
-                f"No primary_language in the scan summary of {project.name!r}."
-            )
-
-        language = cls.supported_languages.get(primary_language)
-        if not language:
-            raise ValueError(
-                f"Unsupported primary_language {primary_language!r} for "
-                f"{project.name!r}. Supported: {', '.join(cls.supported_languages)}."
-            )
-        return language
-
-    @classmethod
-    def get_target_path(cls, project):
-        target_path = project.codebase_path
-        if target_path:
-            return target_path
-
-        resource = project.codebaseresources.filter(
-            is_binary=False,
-            is_archive=False,
-            is_media=False,
-            programming_language__in=list(cls.supported_languages),
-        ).first()
-
-        if not resource:
-            raise ValueError("No codebase resources found for this project.")
-        return resource.location_path
-
-    @classmethod
-    def get_output_paths(cls, project, atom_language):
-        """Return the output paths shared by the atom commands."""
-        manifest_path = project.get_output_file_path("atom_reachability", "json")
-        prefix = f"{manifest_path.stem}.{atom_language}"
-        return {
-            "atom": manifest_path.with_name(f"{prefix}.atom"),
-            "usages": manifest_path.with_name(f"{prefix}.usages.slices.json"),
-            "reachables": manifest_path.with_name(f"{prefix}.reachables.slices.json"),
-        }
-
-    @classmethod
-    def run_command(
-        cls, command, target_path, atom_language, output_paths, logger=None
-    ):
-        """Run a single atom command and return its slices file path or None."""
-        command_args = [
-            cls.executable,
-            command,
-            "-l",
-            atom_language,
-            "--cache",
-            "none",
-            "-o",
-            str(output_paths["atom"]),
-            "-s",
-            str(output_paths[command]),
-            str(target_path),
-        ]
-
-        if logger:
-            logger(f"Running atom {command} on {target_path} ...")
-        try:
-            run_command_safely(command_args=command_args)
-        except subprocess.SubprocessError as error:
-            if logger:
-                logger(f"atom {command} failed: {error!r}")
-            return None
-        return output_paths[command]
-
-    @classmethod
-    def run(cls, project, logger=None):
-        """
-        Run the atom ``usages`` and ``reachables`` commands.
-
-        Return a mapping of command name to its slices file path (or ``None``
-        when that command failed).
-        """
-        target_path = cls.get_target_path(project)
-        atom_language = cls.get_atom_language(project)
-        output_paths = cls.get_output_paths(project, atom_language)
-
-        results = {}
-        for command in cls.commands:
-            results[command] = cls.run_command(
-                command=command,
-                target_path=target_path,
-                atom_language=atom_language,
-                output_paths=output_paths,
-                logger=logger,
-            )
-        return results
-
-    @classmethod
-    def load_slices(cls, export_output_path, logger=None):
-        """Load and return a single atom slices file."""
-        if not export_output_path:
-            return {}
-        try:
-            with open(export_output_path) as slice_file:
-                return json.load(slice_file)
-        except (FileNotFoundError, json.JSONDecodeError) as error:
-            if logger:
-                logger(f"Skipping atom slices {export_output_path}: {error!r}")
-            return {}
-
-    @classmethod
-    def parsed_output(cls, export_output_path, logger=None):
-        """Load and return the atom slices keyed by command name."""
-        if not export_output_path:
-            return {}
-        return {
-            command: cls.load_slices(path, logger=logger)
-            for command, path in export_output_path.items()
-        }
 
 
 class AtomReachability(ReachabilityPipeline):
@@ -198,7 +48,7 @@ class AtomReachability(ReachabilityPipeline):
     the ``symbols_reachability`` key.
     """
 
-    reachability_tool = AtomTool
+    reachability_tool = atom.AtomTool
 
     @classmethod
     def get_availability(cls):
@@ -215,11 +65,11 @@ class AtomReachability(ReachabilityPipeline):
 
     def collect_resource_index(self):
         """Run the atom usages and reachables commands and load both slices."""
-        self.resource_indexes_path = self.reachability_tool.run(
+        self.resource_indexe_paths = self.reachability_tool.run(
             project=self.project, logger=self.log
         )
         indexes = self.reachability_tool.parsed_output(
-            export_output_path=self.resource_indexes_path, logger=self.log
+            export_output_path=self.resource_indexe_paths, logger=self.log
         )
         self.resource_indexes_usages = indexes.get("usages") or {}
         self.resource_indexes_reachability = indexes.get("reachables") or {}
