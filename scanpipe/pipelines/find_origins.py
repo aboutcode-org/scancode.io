@@ -24,6 +24,7 @@ import subprocess
 
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import matchcode
+from scanpipe.pipes import origin
 from scanpipe.pipes import scanoss
 
 
@@ -32,8 +33,8 @@ class FindOrigins(Pipeline):
     Find the origin of the codebase files using origin detection tools.
 
     The candidate origin packages reported by each configured tool are stored as
-    origin matches, to be combined and reviewed. A tool that is not configured is
-    skipped.
+    origin matches, then combined to determine the origin of each matched file and
+    directory. A tool that is not configured is skipped.
 
     Supported tools:
     - MatchCode.io: the codebase scan, including file and directory
@@ -51,6 +52,7 @@ class FindOrigins(Pipeline):
         return (
             cls.find_matchcode_origin_matches,
             cls.find_scanoss_origin_matches,
+            cls.determine_origins,
         )
 
     @classmethod
@@ -97,3 +99,13 @@ class FindOrigins(Pipeline):
                 self.project, results_location
             )
             self.log(f"{origin_match_count:,d} SCANOSS origin matches processed.")
+
+    def determine_origins(self):
+        """
+        Determine the origin of each matched file and directory from the origin
+        matches of all the tools. An origin is confirmed automatically when two
+        tools report the same package, with at least one exact match. Otherwise,
+        the origin needs a review. The origins confirmed by a user are kept.
+        """
+        determination_count = origin.determine_origins(self.project)
+        self.log(f"{determination_count:,d} origin determinations created.")

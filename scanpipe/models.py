@@ -5169,6 +5169,9 @@ class OriginDeterminationQuerySet(ProjectRelatedQuerySet):
         )
         return self.exclude(purl="").filter(~Exists(reported_candidates))
 
+    def automatic(self):
+        return self.filter(status__in=self.model.AUTOMATIC_STATUSES)
+
 
 class OriginDetermination(UUIDPKModel, ProjectRelatedModel):
     """
@@ -5184,6 +5187,9 @@ class OriginDetermination(UUIDPKModel, ProjectRelatedModel):
         NEEDS_REVIEW = "needs-review"
         CONFIRMED = "confirmed"
         NO_ORIGIN = "no-origin"
+
+    # Set by the determination rules, and replaced each time the rules run.
+    AUTOMATIC_STATUSES = [Status.AUTO_CONFIRMED, Status.NEEDS_REVIEW]
 
     resource = models.OneToOneField(
         CodebaseResource,

@@ -62,6 +62,7 @@ from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import DiscoveredPackageScore
+from scanpipe.models import OriginDetermination
 from scanpipe.models import OriginMatch
 from scanpipe.models import Project
 from scanpipe.models import ProjectMessage
@@ -184,6 +185,13 @@ class ScanPipeModelsTest(TestCase):
             match_type=OriginMatch.MatchType.FILE,
             tool="matchcode",
         )
+        OriginDetermination.objects.create(
+            project=self.project1,
+            resource=resource,
+            purl="pkg:pypi/six@1.17.0",
+            status=OriginDetermination.Status.NEEDS_REVIEW,
+            rule="single-tool-exact-match",
+        )
 
         delete_log = self.project1.delete_related_objects()
         expected = {
@@ -194,6 +202,7 @@ class ScanPipeModelsTest(TestCase):
             "scanpipe.DiscoveredPackage": 1,
             "scanpipe.DiscoveredPackage_codebase_resources": 1,
             "scanpipe.InputSource": 0,
+            "scanpipe.OriginDetermination": 1,
             "scanpipe.OriginMatch": 1,
             "scanpipe.ProjectMessage": 0,
             "scanpipe.Run": 1,
