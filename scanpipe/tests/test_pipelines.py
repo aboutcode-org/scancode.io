@@ -180,38 +180,6 @@ class ScanPipePipelinesTest(TestCase):
     def test_scanpipe_scan_nix_package_get_availability_available(self, _mock_which):
         self.assertIsNone(ScanNixPackage.get_availability())
 
-    @mock.patch(
-        "scanpipe.pipelines.scan_nix_package.utils.check_docker_command",
-        return_value=False,
-    )
-    def test_scanpipe_scan_nix_package_check_prerequisites_no_daemon(self, _mock):
-        project1 = make_project()
-        run = project1.add_pipeline("scan_nix_package")
-        pipeline = run.make_pipeline_instance()
-
-        with self.assertRaisesMessage(RuntimeError, "Cannot reach the Docker daemon"):
-            pipeline.check_prerequisites()
-
-    @mock.patch(
-        "scanpipe.pipelines.scan_nix_package.nix.binfmt_emulation_is_installed",
-        return_value=False,
-    )
-    @mock.patch(
-        "scanpipe.pipelines.scan_nix_package.utils.check_docker_command",
-        return_value=True,
-    )
-    def test_scanpipe_scan_nix_package_check_prerequisites_no_binfmt(
-        self, _mock_docker, _mock_binfmt
-    ):
-        project1 = make_project()
-        run = project1.add_pipeline("scan_nix_package")
-        pipeline = run.make_pipeline_instance()
-
-        with self.assertRaisesMessage(
-            RuntimeError, "Multi-arch binfmt emulation is not installed"
-        ):
-            pipeline.check_prerequisites()
-
     def test_scanpipe_pipeline_class_get_summary(self):
         expected = "Do nothing, in 2 steps."
         self.assertEqual(expected, DoNothing.get_summary())
@@ -2203,9 +2171,7 @@ class PipelinesIntegrationTest(TestCase):
         expected_file = self.data / "benchmark" / "alpine-3.22.1-expected-benchmark.txt"
         self.assertEqual(expected_file.read_text(), result_file.read_text())
 
-    @mock.patch("scanpipe.pipes.utils.check_docker_command", return_value=True)
     @mock.patch("scanpipe.pipes.nix.check_input_and_return_purl")
-    @mock.patch("scanpipe.pipes.nix.binfmt_emulation_is_installed", return_value=True)
     @mock.patch("scanpipe.pipes.nix.prepare_nix_environment")
     @mock.patch("scanpipe.pipes.nix.fetch_inputs")
     @mock.patch("scanpipe.pipes.nix.get_nix_package_metadata")
@@ -2220,9 +2186,7 @@ class PipelinesIntegrationTest(TestCase):
         mock_metadata,
         mock_fetch,
         mock_prepare,
-        mock_binfmt,
         mock_check_purl,
-        mock_docker_check,
     ):
         pipeline_name = "scan_nix_package"
         project1 = make_project()

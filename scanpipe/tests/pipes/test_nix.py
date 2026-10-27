@@ -38,7 +38,6 @@ from scanpipe.tests import make_project
 
 class ScanPipeNixPipesTest(TestCase):
     def setUp(self):
-        nix._binfmt_emulation_is_installed_cache = None
         nix._resolved_nix_image = None
         nix._NIXPKGS_WORKTREE_CACHE.clear()
         self.project = make_project("nix-pipes-test")
@@ -748,43 +747,6 @@ class ScanPipeNixPipesTest(TestCase):
             _, staged = nix._stage_archive(src, out_dir)
             self.assertFalse(staged)
             mock_copy.assert_not_called()
-
-    @mock.patch("scanpipe.pipes.nix.subprocess.run")
-    def test_scanpipe_nix_binfmt_emulation(self, mock_run):
-        for effect, expected in [
-            (mock.Mock(returncode=0, stdout="qemu"), True),
-            (mock.Mock(returncode=0, stdout=""), False),
-            (
-                subprocess.CalledProcessError(1, ["docker"], stderr=""),
-                False,
-            ),
-            (FileNotFoundError("docker"), False),
-            (subprocess.TimeoutExpired(["docker"], 30), False),
-        ]:
-            with self.subTest(effect=effect):
-                nix._binfmt_emulation_is_installed_cache = None
-                if isinstance(effect, Exception):
-                    mock_run.side_effect = effect
-                else:
-                    mock_run.side_effect = None
-                    mock_run.return_value = effect
-                self.assertEqual(nix.binfmt_emulation_is_installed(), expected)
-
-    @mock.patch("scanpipe.pipes.nix.subprocess.run")
-    def test_scanpipe_nix_binfmt_emulation_is_cached(self, mock_run):
-        mock_run.return_value = mock.Mock(returncode=0, stdout="qemu")
-        self.assertTrue(nix.binfmt_emulation_is_installed())
-        self.assertTrue(nix.binfmt_emulation_is_installed())
-        mock_run.assert_called_once()
-
-        nix._binfmt_emulation_is_installed_cache = None
-        mock_run.reset_mock()
-        mock_run.side_effect = subprocess.CalledProcessError(
-            returncode=1, cmd=["docker"], stderr=""
-        )
-        self.assertFalse(nix.binfmt_emulation_is_installed())
-        self.assertFalse(nix.binfmt_emulation_is_installed())
-        mock_run.assert_called_once()
 
     @mock.patch("scanpipe.pipes.nix.utils.docker_image_exists")
     @mock.patch("scanpipe.pipes.nix.utils.file_lock")

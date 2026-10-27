@@ -32,7 +32,6 @@ from scanpipe.pipes import flag
 from scanpipe.pipes import license_validation
 from scanpipe.pipes import nix
 from scanpipe.pipes import scancode
-from scanpipe.pipes import utils
 
 
 class ScanNixPackage(ScanSinglePackage, DeployToDevelop, ScanCodebase):
@@ -77,7 +76,6 @@ class ScanNixPackage(ScanSinglePackage, DeployToDevelop, ScanCodebase):
     def steps(cls):
         return (
             cls.check_input_and_return_purl,
-            cls.check_prerequisites,
             cls.prepare_nix_environment,
             cls.fetch_inputs,
             cls.collect_input_info,
@@ -97,22 +95,6 @@ class ScanNixPackage(ScanSinglePackage, DeployToDevelop, ScanCodebase):
     def check_input_and_return_purl(self):
         """Validate the input is a Nix PURL string and return the PURL object."""
         self.purl = nix.check_input_and_return_purl(self.project)
-
-    def check_prerequisites(self):
-        """Verify Docker-host prerequisites for cross-architecture builds."""
-        if not utils.check_docker_command():
-            raise RuntimeError(
-                f"Cannot reach the Docker daemon at "
-                f"{os.environ.get('DOCKER_HOST', 'default socket')}. "
-                f"Start the 'dind' service, or verify DOCKER_HOST and the "
-                f"TLS certificates under DOCKER_CERT_PATH."
-            )
-        if not nix.binfmt_emulation_is_installed():
-            raise RuntimeError(
-                "Multi-arch binfmt emulation is not installed on the Docker "
-                "host. Run: docker run --privileged --rm --init "
-                "tonistiigi/binfmt --install all"
-            )
 
     def prepare_nix_environment(self):
         """Ensure the custom Nix image exists and run the periodic store GC."""

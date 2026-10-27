@@ -66,19 +66,6 @@ _DOCKER_BUILD_TIMEOUT = 1800
 _DOCKER_IO_TIMEOUT = 600
 _DOCKER_EVAL_TIMEOUT = 300
 
-_binfmt_emulation_is_installed_cache = None
-
-# `tonistiigi/binfmt` runs a `--privileged` container to read the host
-# kernel's `/proc/sys/fs/binfmt_misc`. Pinned by digest so a tag update
-# on the registry cannot silently swap the privileged container image.
-# Update deliberately; refresh with:
-#   docker inspect --format='{{index .RepoDigests 0}}' tonistiigi/binfmt
-_BINFMT_CHECK_IMAGE = (
-    "tonistiigi/binfmt@"
-    "sha256:400a4873b838d1b89194d982c45e5fb3cda4593fbfd7e08a02e76b03b21166f0"
-)
-
-
 # Markers to identify meaningful failure lines in `nix-build` stderr.
 _NIX_ERROR_MARKERS = (
     "Encountered missing or private dependencies:",
@@ -364,43 +351,6 @@ def _run_nixpkgs_gc_if_due():
             _nixpkgs_gc_timestamp_path().write_text(str(now))
         except OSError as e:
             logger.debug(f"Could not write GC timestamp: {e}")
-
-
-def binfmt_emulation_is_installed():
-    """Return True if multi-arch binfmt handlers are registered on the host."""
-    global _binfmt_emulation_is_installed_cache
-    if _binfmt_emulation_is_installed_cache is not None:
-        return _binfmt_emulation_is_installed_cache
-    cmd = [
-        "docker",
-        "run",
-        "--rm",
-        "--init",
-        "--privileged",
-        _BINFMT_CHECK_IMAGE,
-    ]
-    try:
-        result = subprocess.run(  # noqa: S603
-            cmd,
-            capture_output=True,
-            text=True,
-            timeout=30,
-            check=True,
-        )
-        _binfmt_emulation_is_installed_cache = "qemu" in result.stdout
-        return _binfmt_emulation_is_installed_cache
-    except FileNotFoundError:
-        logger.debug("docker CLI not found; cannot check binfmt emulation.")
-    except subprocess.CalledProcessError as e:
-        logger.debug(
-            f"binfmt check container exited with {e.returncode}: {e.stderr.strip()}"
-        )
-    except subprocess.TimeoutExpired:
-        logger.debug("binfmt check container timed out after 30s.")
-    except subprocess.SubprocessError as e:
-        logger.debug(f"binfmt check failed: {e}")
-    _binfmt_emulation_is_installed_cache = False
-    return _binfmt_emulation_is_installed_cache
 
 
 def prepare_nix_environment():
