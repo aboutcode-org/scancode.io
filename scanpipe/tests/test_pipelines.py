@@ -48,6 +48,7 @@ from scanpipe.pipelines import deploy_to_develop
 from scanpipe.pipelines import is_pipeline
 from scanpipe.pipelines import scan_single_package
 from scanpipe.pipelines.find_vulnerabilities import FindVulnerabilities
+from scanpipe.pipelines.scan_nix_package import ScanNixPackage
 from scanpipe.pipes import d2d
 from scanpipe.pipes import flag
 from scanpipe.pipes import output
@@ -160,6 +161,56 @@ class ScanPipePipelinesTest(TestCase):
 
         self.assertTrue(info["is_available"])
         self.assertEqual("", info["unavailable_reason"])
+
+    @mock.patch("shutil.which", return_value=None)
+    def test_scanpipe_scan_nix_package_get_availability_no_docker(self, _mock_which):
+        reason = ScanNixPackage.get_availability()
+        self.assertIn("Docker CLI is not available", reason)
+
+    @mock.patch.dict(os.environ, {"DOCKER_HOST": ""})
+    @mock.patch("shutil.which", return_value="/usr/bin/docker")
+    def test_scanpipe_scan_nix_package_get_availability_no_docker_host(
+        self, _mock_which
+    ):
+        reason = ScanNixPackage.get_availability()
+        self.assertIn("DOCKER_HOST is not set", reason)
+
+    @mock.patch.dict(os.environ, {"DOCKER_HOST": "tcp://localhost:2375"})
+    @mock.patch("shutil.which", return_value="/usr/bin/docker")
+    def test_scanpipe_scan_nix_package_get_availability_available(self, _mock_which):
+        self.assertIsNone(ScanNixPackage.get_availability())
+
+    @mock.patch(
+        "scanpipe.pipelines.scan_nix_package.utils.check_docker_command",
+        return_value=False,
+    )
+    def test_scanpipe_scan_nix_package_check_prerequisites_no_daemon(self, _mock):
+        project1 = make_project()
+        run = project1.add_pipeline("scan_nix_package")
+        pipeline = run.make_pipeline_instance()
+
+        with self.assertRaisesMessage(RuntimeError, "Cannot reach the Docker daemon"):
+            pipeline.check_prerequisites()
+
+    @mock.patch(
+        "scanpipe.pipelines.scan_nix_package.nix.binfmt_emulation_is_installed",
+        return_value=False,
+    )
+    @mock.patch(
+        "scanpipe.pipelines.scan_nix_package.utils.check_docker_command",
+        return_value=True,
+    )
+    def test_scanpipe_scan_nix_package_check_prerequisites_no_binfmt(
+        self, _mock_docker, _mock_binfmt
+    ):
+        project1 = make_project()
+        run = project1.add_pipeline("scan_nix_package")
+        pipeline = run.make_pipeline_instance()
+
+        with self.assertRaisesMessage(
+            RuntimeError, "Multi-arch binfmt emulation is not installed"
+        ):
+            pipeline.check_prerequisites()
 
     def test_scanpipe_pipeline_class_get_summary(self):
         expected = "Do nothing, in 2 steps."

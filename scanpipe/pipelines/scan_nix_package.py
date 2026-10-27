@@ -20,6 +20,8 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
+import os
+import shutil
 from pathlib import Path
 
 from scanpipe.pipelines.deploy_to_develop import DeployToDevelop
@@ -58,13 +60,18 @@ class ScanNixPackage(ScanSinglePackage, DeployToDevelop, ScanCodebase):
 
     @classmethod
     def get_availability(cls):
-        if not utils.check_docker_command():
+        if not shutil.which("docker"):
             return (
-                "Docker is required and its daemon must be running. "
-                "Start the stack with the 'dind' Compose profile, or install "
-                "and start a Docker daemon reachable through DOCKER_HOST."
+                "Docker CLI is not available. Use the 'dind' Compose profile "
+                "(docker compose --profile dind up), or install the Docker CLI "
+                "in your custom image."
             )
-        return None
+        if not os.environ.get("DOCKER_HOST"):
+            return (
+                "DOCKER_HOST is not set. Uncomment DOCKER_HOST in docker.env for "
+                "the 'dind' profile, or set DOCKER_HOST to a reachable Docker "
+                "daemon."
+            )
 
     @classmethod
     def steps(cls):
@@ -93,6 +100,13 @@ class ScanNixPackage(ScanSinglePackage, DeployToDevelop, ScanCodebase):
 
     def check_prerequisites(self):
         """Verify Docker-host prerequisites for cross-architecture builds."""
+        if not utils.check_docker_command():
+            raise RuntimeError(
+                f"Cannot reach the Docker daemon at "
+                f"{os.environ.get('DOCKER_HOST', 'default socket')}. "
+                f"Start the 'dind' service, or verify DOCKER_HOST and the "
+                f"TLS certificates under DOCKER_CERT_PATH."
+            )
         if not nix.binfmt_emulation_is_installed():
             raise RuntimeError(
                 "Multi-arch binfmt emulation is not installed on the Docker "
