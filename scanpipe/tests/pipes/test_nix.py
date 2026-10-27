@@ -84,6 +84,18 @@ class ScanPipeNixPipesTest(TestCase):
                 ["pkg:nix/nixpkgs/hello@2.12.1?system=x86_64-linux&commit=bad"],
                 "Invalid commit hash",
             ),
+            (
+                ["pkg:nix/nixpkgs/.hidden@2.12.1?system=x86_64-linux"],
+                "Invalid Nix package name",
+            ),
+            (
+                ["pkg:nix/nixpkgs/hello@2.12.1?system=invalid"],
+                "Invalid system",
+            ),
+            (
+                ["pkg:nix/nixpkgs/hello@2.12.1?system=x86_64-linux&output=UPPERCASE"],
+                "Invalid output",
+            ),
         ]
         project = mock.Mock()
         for inputs, expected in cases:
@@ -566,6 +578,44 @@ class ScanPipeNixPipesTest(TestCase):
         nix.add_codebase_resources_to_package(package, empty_qs)
         self.assertEqual(2, package.codebase_resources.count())
 
+    def test_scanpipe_nix_create_package_from_nix_metadata_homepage_list(self):
+        purl = PackageURL.from_string(
+            "pkg:nix/nixpkgs/hello@2.12.1?system=x86_64-linux"
+        )
+        metadata = {
+            "license": "MIT",
+            "homepage": ["https://first.example.com", "https://second.example.com"],
+        }
+        package = nix.create_package_from_nix_metadata(self.project, purl, metadata)
+        self.assertEqual("https://first.example.com", package.homepage_url)
+
+    def test_scanpipe_nix_create_package_from_nix_metadata_homepage_empty_list(self):
+        purl = PackageURL.from_string(
+            "pkg:nix/nixpkgs/hello@2.12.1?system=x86_64-linux"
+        )
+        metadata = {"license": "MIT", "homepage": []}
+        package = nix.create_package_from_nix_metadata(self.project, purl, metadata)
+        self.assertEqual("", package.homepage_url)
+
+    def test_scanpipe_nix_create_package_from_nix_metadata_unconvertible_spdx(self):
+        purl = PackageURL.from_string(
+            "pkg:nix/nixpkgs/hello@2.12.1?system=x86_64-linux"
+        )
+        metadata = {
+            "license": "InvalidSpdxIdentifier",
+            "homepage": "https://example.com",
+        }
+
+        package = nix.create_package_from_nix_metadata(self.project, purl, metadata)
+
+        self.assertEqual(
+            "InvalidSpdxIdentifier",
+            package.declared_license_expression_spdx,
+        )
+        # Falls back to "unknown" when conversion cannot map the SPDX id to
+        # a ScanCode license key.
+        self.assertEqual("unknown", package.declared_license_expression)
+
     @mock.patch("scanpipe.pipes.nix.get_package_data", return_value=None)
     @mock.patch(
         "scanpipe.pipes.nix.get_nix_store_path_with_nix",
@@ -814,6 +864,66 @@ class ScanPipeNixPipesTest(TestCase):
         # Interval disabled (always not due)
         with override_settings(SCANPIPE={"NIXPKGS_GC_INTERVAL_HOURS": 0}):
             self.assertFalse(nix._gc_due(now))
+
+    @mock.patch("scanpipe.pipes.nix._gc_due", return_value=False)
+    @mock.patch("scanpipe.pipes.nix.subprocess.run")
+    def test_scanpipe_nix_run_nixpkgs_gc_if_due_not_due(self, mock_run, _mock_gc_due):
+        nix._run_nixpkgs_gc_if_due()
+        mock_run.assert_not_called()
+
+    @mock.patch("scanpipe.pipes.nix._nixpkgs_gc_timestamp_path")
+    @mock.patch("scanpipe.pipes.nix._ensure_nix_image", return_value="nixos/nix:test")
+    @mock.patch("scanpipe.pipes.nix.utils.file_lock")
+    @mock.patch("scanpipe.pipes.nix._gc_due", return_value=True)
+    @mock.patch("scanpipe.pipes.nix.subprocess.run")
+    @override_settings(
+        SCANPIPE={
+            "NIXPKGS_GC_INTERVAL_HOURS": 1,
+            "NIXPKGS_GC_OLDER_THAN": "12h",
+        }
+    )
+    def test_scanpipe_nix_run_nixpkgs_gc_if_due_success(
+        self, mock_run, _mock_gc_due, _mock_lock, _mock_img, mock_ts
+    ):
+        mock_run.return_value = mock.Mock(returncode=0)
+
+        nix._run_nixpkgs_gc_if_due()
+
+        mock_run.assert_called_once()
+        cmd = mock_run.call_args[0][0]
+        self.assertIn("nix-collect-garbage", cmd)
+        self.assertIn("--delete-older-than", cmd)
+        self.assertIn("12h", cmd)
+        self.assertEqual(cmd[0], "docker")
+
+        mock_ts.return_value.write_text.assert_called_once()
+
+    @mock.patch("scanpipe.pipes.nix._nixpkgs_gc_timestamp_path")
+    @mock.patch("scanpipe.pipes.nix._ensure_nix_image", return_value="nixos/nix:test")
+    @mock.patch("scanpipe.pipes.nix.utils.file_lock")
+    @mock.patch("scanpipe.pipes.nix._gc_due", return_value=True)
+    @mock.patch("scanpipe.pipes.nix.subprocess.run")
+    def test_scanpipe_nix_run_nixpkgs_gc_if_due_timeout(
+        self, mock_run, _mock_gc_due, _mock_lock, _mock_img, mock_ts
+    ):
+        mock_run.side_effect = subprocess.TimeoutExpired("docker", 1)
+
+        nix._run_nixpkgs_gc_if_due()
+        mock_ts.return_value.write_text.assert_not_called()
+
+    @mock.patch("scanpipe.pipes.nix._nixpkgs_gc_timestamp_path")
+    @mock.patch("scanpipe.pipes.nix._ensure_nix_image", return_value="nixos/nix:test")
+    @mock.patch("scanpipe.pipes.nix.utils.file_lock")
+    @mock.patch("scanpipe.pipes.nix._gc_due", return_value=True)
+    @mock.patch("scanpipe.pipes.nix.subprocess.run")
+    def test_scanpipe_nix_run_nixpkgs_gc_if_due_timestamp_write_fails(
+        self, mock_run, _mock_gc_due, _mock_lock, _mock_img, mock_ts
+    ):
+        mock_run.return_value = mock.Mock(returncode=0)
+        mock_ts.return_value.write_text.side_effect = OSError("read-only")
+
+        nix._run_nixpkgs_gc_if_due()
+        mock_run.assert_called_once()
 
     def test_scanpipe_nix_is_non_linux_system(self):
         self.assertFalse(nix._is_non_linux_system("x86_64-linux"))

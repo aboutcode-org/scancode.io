@@ -78,14 +78,18 @@ def validate_package_license_integrity(project):
 
         detected_lic_exp = str(licensing.dedup(detected_expr))
 
-        if licensing.is_equivalent(detected_expr, package_lic):
+        # Compare license symbols rather than expression structure, so AND/OR
+        # differences don't flag when every detected license is declared.
+        uncovered = find_uncovered_licenses(detected_expr, package_lic, licensing)
+        if not uncovered:
             _clear_package_issues(package)
             continue
 
         issue = {
-            "issue_type": "License Mismatch",
+            "issue_type": "Uncovered Detected Licenses",
             "declared_license": package_lic,
             "detected_codebase_license": detected_lic_exp,
+            "uncovered_licenses": uncovered,
         }
         # Replace the previous issues list instead of appending to it so
         # re-runs do not duplicate the same entry.
@@ -268,3 +272,23 @@ def collect_detected_licenses(detections, licensing):
                     other_licenses.append(filtered)
 
     return combine_license_groups(text_licenses, other_licenses, licensing)
+
+
+def find_uncovered_licenses(detected_expr, declared_expr, licensing):
+    """
+    Return the sorted list of detected license keys that do not appear in the
+    declared license expression.
+
+    Return an empty list when either expression is empty or when every
+    detected license is already present in the declared expression.
+    """
+    if detected_expr is None or declared_expr is None:
+        return []
+
+    declared_keys = {
+        symbol.key for symbol in licensing.license_symbols(declared_expr, simple=True)
+    }
+    detected_keys = {
+        symbol.key for symbol in licensing.license_symbols(detected_expr, simple=True)
+    }
+    return sorted(detected_keys - declared_keys)

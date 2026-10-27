@@ -82,14 +82,11 @@ class ScanPipeLicenseValidationTest(TestCase):
         resource.refresh_from_db()
 
         self.assertTrue(package.has_license_issue)
-        self.assertIn("issues", package.extra_data)
         issue = package.extra_data["issues"][0]
-        self.assertEqual(issue["issue_type"], "License Mismatch")
+        self.assertEqual(issue["issue_type"], "Uncovered Detected Licenses")
         self.assertEqual(issue["declared_license"], "mit")
+        self.assertEqual(issue["uncovered_licenses"], ["gpl-3.0"])
         self.assertEqual(issue["detected_codebase_license"], "gpl-3.0")
-
-        self.assertEqual(resource.status, flag.LICENSE_MISMATCH)
-        self.assertIn("issues", resource.extra_data)
 
     @mock.patch(
         "scanpipe.pipes.license_validation.match_is_license_text",
@@ -129,6 +126,146 @@ class ScanPipeLicenseValidationTest(TestCase):
         self.assertFalse(package.has_license_issue)
         self.assertNotIn("issues", package.extra_data)
         self.assertNotEqual(resource.status, flag.LICENSE_MISMATCH)
+
+    @mock.patch(
+        "scanpipe.pipes.license_validation.match_is_license_text",
+        return_value=False,
+    )
+    def test_scanpipe_license_validation_clears_previous_issue_on_re_run(
+        self, mock_match_is_license_text
+    ):
+        package = make_package(
+            self.project,
+            "pkg:pypi/test@1.0",
+            declared_license_expression="mit",
+        )
+        resource = make_resource_file(
+            self.project,
+            path="src/main.py",
+            detected_license_expression="gpl-3.0",
+            license_detections=[
+                {
+                    "license_expression": "gpl-3.0",
+                    "matches": [
+                        {
+                            "license_expression": "gpl-3.0",
+                            "rule_identifier": "gpl-3.0.LICENSE",
+                        }
+                    ],
+                }
+            ],
+        )
+        resource.update(tag="from")
+        package.add_resources([resource])
+
+        license_validation.validate_package_license_integrity(self.project)
+        package.refresh_from_db()
+        self.assertTrue(package.has_license_issue)
+        self.assertIn("issues", package.extra_data)
+
+        resource.update(
+            detected_license_expression="mit",
+            license_detections=[
+                {
+                    "license_expression": "mit",
+                    "matches": [
+                        {"license_expression": "mit", "rule_identifier": "mit.LICENSE"}
+                    ],
+                }
+            ],
+        )
+
+        license_validation.validate_package_license_integrity(self.project)
+        package.refresh_from_db()
+        self.assertFalse(package.has_license_issue)
+        self.assertNotIn("issues", package.extra_data)
+
+    @mock.patch(
+        "scanpipe.pipes.license_validation.match_is_license_text",
+        return_value=True,
+    )
+    def test_scanpipe_license_validation_reports_uncovered_licenses_only(
+        self, mock_match_is_license_text
+    ):
+        package = make_package(
+            self.project,
+            "pkg:nix/nixpkgs/hello@2.12.3?system=x86_64-linux",
+            declared_license_expression="gpl-3.0-plus",
+        )
+
+        for path, license_expression in (
+            ("COPYING", "gpl-3.0-plus"),
+            ("lib/gnulib/lib.c", "lgpl-2.1-plus"),
+            ("build-aux/compile", "fsfullrsd"),
+        ):
+            resource = make_resource_file(
+                self.project,
+                path=path,
+                detected_license_expression=license_expression,
+                license_detections=[
+                    {
+                        "license_expression": license_expression,
+                        "matches": [
+                            {
+                                "license_expression": license_expression,
+                                "rule_identifier": f"{license_expression}.LICENSE",
+                            }
+                        ],
+                    }
+                ],
+            )
+            resource.update(tag="from")
+            package.add_resources([resource])
+
+        license_validation.validate_package_license_integrity(self.project)
+
+        package.refresh_from_db()
+        self.assertTrue(package.has_license_issue)
+        issue = package.extra_data["issues"][0]
+        self.assertEqual(issue["declared_license"], "gpl-3.0-plus")
+        self.assertEqual(issue["uncovered_licenses"], ["fsfullrsd", "lgpl-2.1-plus"])
+
+    @mock.patch(
+        "scanpipe.pipes.license_validation.match_is_license_text",
+        side_effect=lambda match: match["rule_identifier"].endswith(".LICENSE"),
+    )
+    def test_scanpipe_license_validation_shape_difference_is_not_a_mismatch(
+        self, mock_match_is_license_text
+    ):
+        package = make_package(
+            self.project,
+            "pkg:pypi/test@1.0",
+            declared_license_expression="mit OR apache-2.0",
+        )
+
+        for path, license_expression, rule in (
+            ("LICENSE", "mit", "mit.LICENSE"),
+            ("src/header.py", "apache-2.0", "apache-2.0.RULE"),
+        ):
+            resource = make_resource_file(
+                self.project,
+                path=path,
+                detected_license_expression=license_expression,
+                license_detections=[
+                    {
+                        "license_expression": license_expression,
+                        "matches": [
+                            {
+                                "license_expression": license_expression,
+                                "rule_identifier": rule,
+                            }
+                        ],
+                    }
+                ],
+            )
+            resource.update(tag="from")
+            package.add_resources([resource])
+
+        license_validation.validate_package_license_integrity(self.project)
+
+        package.refresh_from_db()
+        self.assertFalse(package.has_license_issue)
+        self.assertNotIn("issues", package.extra_data)
 
     @mock.patch(
         "scanpipe.pipes.license_validation.match_is_license_text",
@@ -562,3 +699,22 @@ class ScanPipeLicenseValidationTest(TestCase):
                     self.assertIsNone(result)
                 else:
                     self.assertTrue(self.licensing.is_equivalent(result, expected))
+
+    def test_scanpipe_license_validation_find_uncovered_licenses(self):
+        cases = [
+            ("mit", "mit", []),
+            ("mit", "apache-2.0", ["mit"]),
+            ("mit AND apache-2.0", "mit", ["apache-2.0"]),
+            ("mit AND apache-2.0", "mit OR apache-2.0", []),
+            ("gpl-3.0-plus AND lgpl-2.1-plus", "gpl-3.0-plus", ["lgpl-2.1-plus"]),
+            ("mit", "", []),
+            ("", "mit", []),
+        ]
+        for detected, declared, expected in cases:
+            with self.subTest(detected=detected, declared=declared):
+                result = license_validation.find_uncovered_licenses(
+                    self.licensing.parse(detected) if detected else None,
+                    self.licensing.parse(declared) if declared else None,
+                    self.licensing,
+                )
+                self.assertEqual(expected, result)
