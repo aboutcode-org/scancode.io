@@ -238,6 +238,8 @@ class ScanNixPackage(ScanSinglePackage, DeployToDevelop, ScanCodebase):
         self.perform_house_keeping_tasks()
         self.match_purldb_resources_post_process()
         self.remove_packages_without_resources()
+        self.scan_ignored_to_files()
+        self.scan_unmapped_to_files()
         self.collect_and_create_license_detections()
         self.flag_deployed_from_resources_with_missing_license()
 
