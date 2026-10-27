@@ -211,8 +211,7 @@ class UsagesMatcher(SliceMatcher):
                         result.append(call)
         return result
 
-    @staticmethod
-    def build_call_record(call):
+    def build_call_record(self, call):
         """Return a compact call record from an atom call entry, or ``None``."""
         call = call or {}
         call_name = call.get("callName")
@@ -312,8 +311,7 @@ class ReachablesMatcher(SliceMatcher):
                     self.compose_class_method_name(flow),
                 )
 
-    @classmethod
-    def compose_class_method_name(cls, flow):
+    def compose_class_method_name(self, flow):
         """Return ``Class.method`` from a reachables flow, or ``""``."""
         method = flow.get("parentMethodName") or ""
         klass = flow.get("parentClassName") or ""
@@ -524,7 +522,9 @@ class AtomTool(ReachabilityTool):
                 f" codebase_path is None."
             )
         atom_language = cls.get_atom_language(project)
-        output_paths = cls.get_output_paths(project, atom_language)
+        output_paths = cls.get_output_paths(
+            project=project, atom_language=atom_language
+        )
 
         results = {}
         for command in cls.commands:
@@ -556,6 +556,6 @@ class AtomTool(ReachabilityTool):
         if not export_output_path:
             return {}
         return {
-            command: cls.load_slices(path, logger=logger)
+            command: cls.load_slices(export_output_path=path, logger=logger)
             for command, path in export_output_path.items()
         }
