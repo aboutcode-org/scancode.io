@@ -279,12 +279,9 @@ def find_uncovered_licenses(detected_expr, declared_expr, licensing):
     Return the sorted list of detected license keys that do not appear in the
     declared license expression.
 
-    Return an empty list when either expression is empty or when every
-    detected license is already present in the declared expression.
+    Return an empty list when every detected license is already present in
+    the declared expression.
     """
-    if detected_expr is None or declared_expr is None:
-        return []
-
     declared_keys = {
         symbol.key for symbol in licensing.license_symbols(declared_expr, simple=True)
     }

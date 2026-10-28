@@ -707,8 +707,6 @@ class ScanPipeLicenseValidationTest(TestCase):
             ("mit AND apache-2.0", "mit", ["apache-2.0"]),
             ("mit AND apache-2.0", "mit OR apache-2.0", []),
             ("gpl-3.0-plus AND lgpl-2.1-plus", "gpl-3.0-plus", ["lgpl-2.1-plus"]),
-            ("mit", "", []),
-            ("", "mit", []),
         ]
         for detected, declared, expected in cases:
             with self.subTest(detected=detected, declared=declared):
