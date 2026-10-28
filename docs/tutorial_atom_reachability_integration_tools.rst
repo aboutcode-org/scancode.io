@@ -46,8 +46,9 @@ Running the pipeline
 Output
 ------
 
-The pipeline writes three timestamped JSON files and embeds the same
-advisory data in each resource's ``extra_data.symbols_reachability``.
+The pipeline writes four timestamped files three JSON documents and one
+binary atom file and embeds the same advisory data in each resource's
+``extra_data.symbols_reachability``.
 
 1. ``reachability-YYYY-MM-DD-HH-MM-SS.json`` is the advisory reachability
    report. It aggregates results per advisory, listing each advisory with
@@ -108,3 +109,7 @@ advisory data in each resource's ``extra_data.symbols_reachability``.
       },
       ...
     ]
+
+4. ``atom_reachability-YYYY-MM-DD-HH-MM-SS.python.atom`` is atom's binary
+   CPG. It can be re-sliced, exported to other tools,
+   and queried with graph algorithms using the atom CLI.
