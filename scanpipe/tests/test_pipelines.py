@@ -176,13 +176,20 @@ class ScanPipePipelinesTest(TestCase):
         reason = ScanNixPackage.get_availability()
         self.assertIn("Docker CLI is not available", reason)
 
-    @mock.patch.dict(os.environ, {"DOCKER_HOST": ""})
+    @mock.patch("scanpipe.pipes.utils.has_docker_endpoint", return_value=False)
     @mock.patch("shutil.which", return_value="/usr/bin/docker")
-    def test_scanpipe_scan_nix_package_get_availability_no_docker_host(
-        self, _mock_which
+    def test_scanpipe_scan_nix_package_get_availability_no_endpoint(
+        self, _mock_which, _mock_endpoint
     ):
         reason = ScanNixPackage.get_availability()
-        self.assertIn("DOCKER_HOST is not set", reason)
+        self.assertIn("No Docker daemon endpoint found", reason)
+
+    @mock.patch("scanpipe.pipes.utils.has_docker_endpoint", return_value=True)
+    @mock.patch("shutil.which", return_value="/usr/bin/docker")
+    def test_scanpipe_scan_nix_package_get_availability_local_socket(
+        self, _mock_which, _mock_endpoint
+    ):
+        self.assertIsNone(ScanNixPackage.get_availability())
 
     @mock.patch.dict(os.environ, {"DOCKER_HOST": "tcp://localhost:2375"})
     @mock.patch("shutil.which", return_value="/usr/bin/docker")

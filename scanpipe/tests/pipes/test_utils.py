@@ -21,6 +21,7 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 import fcntl
+import os
 import subprocess
 import tempfile
 from pathlib import Path
@@ -142,3 +143,19 @@ class ScanPipeUtilsTest(TestCase):
 
             # Verify the lock was released (LOCK_UN) after the 'with' block exits
             mock_flock.assert_called_once_with(mock.ANY, fcntl.LOCK_UN)
+
+    @mock.patch.dict(os.environ, {"DOCKER_HOST": ""})
+    @mock.patch("scanpipe.pipes.utils.Path")
+    def test_scanpipe_utils_has_docker_endpoint_local_socket(self, mock_path):
+        mock_path.return_value.exists.return_value = True
+        self.assertTrue(utils.has_docker_endpoint())
+
+    @mock.patch.dict(os.environ, {"DOCKER_HOST": ""})
+    @mock.patch("scanpipe.pipes.utils.Path")
+    def test_scanpipe_utils_has_docker_endpoint_none(self, mock_path):
+        mock_path.return_value.exists.return_value = False
+        self.assertFalse(utils.has_docker_endpoint())
+
+    @mock.patch.dict(os.environ, {"DOCKER_HOST": "tcp://localhost:2375"})
+    def test_scanpipe_utils_has_docker_endpoint_docker_host(self):
+        self.assertTrue(utils.has_docker_endpoint())

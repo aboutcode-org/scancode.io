@@ -301,9 +301,14 @@ Scan Nix Package
 ----------------
 .. warning::
 
-   This pipeline requires a Docker daemon. For cross-architecture builds it
-   also requires binfmt multi-arch emulation on the host. It is **not**
-   enabled by default.
+   This pipeline requires a Docker daemon. In a Docker Compose deployment the
+   daemon is provided by the ``dind`` profile and addressed through
+   ``DOCKER_HOST``; with a local install (or an image with the host Docker
+   socket mounted) the Docker CLI default socket is used and ``DOCKER_HOST``
+   can be left unset.
+
+   For cross-architecture builds it also requires binfmt multi-arch
+   emulation on the host. It is **not** enabled by default.
 
    To enable it:
 

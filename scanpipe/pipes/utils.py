@@ -22,15 +22,19 @@
 
 import fcntl
 import logging
+import os
 import shutil
 import subprocess
 from contextlib import contextmanager
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
 _DOCKER_CHECK_TIMEOUT = 5
 _DOCKER_IMAGE_INSPECT_TIMEOUT = 30
 _DOCKER_RM_TIMEOUT = 60
+
+DEFAULT_DOCKER_SOCKET = "/var/run/docker.sock"
 
 
 def check_docker_command():
@@ -138,3 +142,10 @@ def run_docker_container(cmd, container_name, timeout, task_description):
         raise
 
     return result
+
+
+def has_docker_endpoint():
+    """Return True when a Docker daemon endpoint is configured or present."""
+    if os.environ.get("DOCKER_HOST"):
+        return True
+    return Path(DEFAULT_DOCKER_SOCKET).exists()

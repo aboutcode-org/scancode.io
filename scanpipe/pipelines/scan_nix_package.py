@@ -20,7 +20,6 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
-import os
 import shutil
 from pathlib import Path
 
@@ -32,6 +31,7 @@ from scanpipe.pipes import flag
 from scanpipe.pipes import license_validation
 from scanpipe.pipes import nix
 from scanpipe.pipes import scancode
+from scanpipe.pipes import utils
 
 
 class ScanNixPackage(ScanSinglePackage, DeployToDevelop, ScanCodebase):
@@ -65,12 +65,16 @@ class ScanNixPackage(ScanSinglePackage, DeployToDevelop, ScanCodebase):
                 "(docker compose --profile dind up), or install the Docker CLI "
                 "in your custom image."
             )
-        if not os.environ.get("DOCKER_HOST"):
-            return (
-                "DOCKER_HOST is not set. Uncomment DOCKER_HOST in docker.env for "
-                "the 'dind' profile, or set DOCKER_HOST to a reachable Docker "
-                "daemon."
-            )
+
+        if utils.has_docker_endpoint():
+            return
+
+        return (
+            "No Docker daemon endpoint found: DOCKER_HOST is not set and "
+            f"{utils.DEFAULT_DOCKER_SOCKET} does not exist. For a Docker Compose "
+            "deployment, use the 'dind' profile and uncomment DOCKER_HOST in "
+            "docker.env; otherwise set DOCKER_HOST to a reachable Docker daemon."
+        )
 
     @classmethod
     def steps(cls):
