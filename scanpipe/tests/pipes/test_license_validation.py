@@ -228,13 +228,15 @@ class ScanPipeLicenseValidationTest(TestCase):
         self.assertEqual(issue["declared_license"], "gpl-3.0-plus")
         self.assertEqual(issue["uncovered_licenses"], ["fsfullrsd", "lgpl-2.1-plus"])
 
-    @mock.patch(
-        "scanpipe.pipes.license_validation.match_is_license_text",
-        side_effect=lambda match: match["rule_identifier"].endswith(".LICENSE"),
-    )
+    @mock.patch("scanpipe.pipes.license_validation.match_is_license_text")
     def test_scanpipe_license_validation_shape_difference_is_not_a_mismatch(
         self, mock_match_is_license_text
     ):
+        def is_license_text(match):
+            return match["rule_identifier"].endswith(".LICENSE")
+
+        mock_match_is_license_text.side_effect = is_license_text
+
         package = make_package(
             self.project,
             "pkg:pypi/test@1.0",
