@@ -269,7 +269,6 @@ class ScanPipeNixPipesTest(TestCase):
             mock.Mock(
                 status_code=200, links={}, json=lambda: {"status": "diverged"}
             ),  # nixos-unstable-small
-
             mock.Mock(
                 status_code=200,
                 links={"next": {"url": "https://api.github.com/page=2"}},
@@ -312,9 +311,7 @@ class ScanPipeNixPipesTest(TestCase):
 
         mock_session.get.side_effect = [
             mock.Mock(status_code=200, links={}, json=lambda: {}),  # existence
-            mock.Mock(
-                status_code=200, links={}, json=lambda: {"status": "ahead"}
-            ),
+            mock.Mock(status_code=200, links={}, json=lambda: {"status": "ahead"}),
         ]
 
         commit = "1234567890abcdef1234567890abcdef12345678"
