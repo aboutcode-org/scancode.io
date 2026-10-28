@@ -75,6 +75,13 @@ LABEL org.opencontainers.image.licenses="Apache-2.0"
 ARG APP_UID=1000
 ARG APP_GID=1000
 
+# Docker CLI version installed client-only
+# When updating DOCKER_CLI_VERSION, recompute both SHA256 values from
+# https://download.docker.com/linux/static/stable/<arch>/docker-<version>.tgz
+ARG DOCKER_CLI_VERSION=29.8.1
+ARG DOCKER_CLI_SHA256_AMD64=d8db66739d2e28d4933786d73e918d9be643a67fbd835db1bf740d650a259e70
+ARG DOCKER_CLI_SHA256_ARM64=667395fbffab52901b80181dfbb39ea76da2fbd7642c4fbddd24e42146b07b48
+
 ENV APP_NAME=scancodeio
 ENV APP_USER=app
 ENV APP_DIR=/opt/$APP_NAME
@@ -93,6 +100,10 @@ ENV TYPECODE_LIBMAGIC_DB_PATH=$APP_DIR/.venv/lib/python3.14/site-packages/typeco
 # OS requirements as per
 # https://scancode-toolkit.readthedocs.io/en/stable/getting-started/installation/index.html#installation-prerequisites
 # Also install universal-ctags and xgettext for symbol and string collection.
+#
+# NOTE: we do NOT install docker.io for Docker-in-Docker. It would pull the full Docker engine
+# (dockerd, containerd, runc) into every ScanCode.io image, while only the
+# CLI is used here.
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
        bzip2 \
@@ -114,6 +125,28 @@ RUN apt-get update \
        gettext \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# Install the Docker CLI (client-only) from the official static binaries.
+# The version and per-architecture checksums are pinned. Update them
+# together to upgrade.
+RUN set -eux; \
+    arch="$(dpkg --print-architecture)"; \
+    case "$arch" in \
+        amd64) docker_arch="x86_64"; expected_sha256="${DOCKER_CLI_SHA256_AMD64}" ;; \
+        arm64) docker_arch="aarch64"; expected_sha256="${DOCKER_CLI_SHA256_ARM64}" ;; \
+        *) echo "Unsupported architecture: $arch" >&2; exit 1 ;; \
+    esac; \
+    python3 -c "import urllib.request; \
+        urllib.request.urlretrieve( \
+            'https://download.docker.com/linux/static/stable/${docker_arch}/docker-${DOCKER_CLI_VERSION}.tgz', \
+            '/tmp/docker.tgz')"; \
+    echo "${expected_sha256}  /tmp/docker.tgz" | sha256sum -c -; \
+    tar -xzf /tmp/docker.tgz \
+        --strip-components=1 \
+        -C /usr/local/bin \
+        docker/docker; \
+    rm /tmp/docker.tgz; \
+    docker --version
 
 # Create the APP_USER group, user, and directory with specific UID and GID
 RUN groupadd --gid $APP_GID --system $APP_USER \

@@ -52,6 +52,7 @@ from scanpipe.pipelines import is_pipeline
 from scanpipe.pipelines import scan_single_package
 from scanpipe.pipelines.find_origins import FindOrigins
 from scanpipe.pipelines.find_vulnerabilities import FindVulnerabilities
+from scanpipe.pipelines.scan_nix_package import ScanNixPackage
 from scanpipe.pipes import d2d
 from scanpipe.pipes import flag
 from scanpipe.pipes import matchcode
@@ -169,6 +170,31 @@ class ScanPipePipelinesTest(TestCase):
 
         self.assertTrue(info["is_available"])
         self.assertEqual("", info["unavailable_reason"])
+
+    @mock.patch("shutil.which", return_value=None)
+    def test_scanpipe_scan_nix_package_get_availability_no_docker(self, _mock_which):
+        reason = ScanNixPackage.get_availability()
+        self.assertIn("Docker CLI is not available", reason)
+
+    @mock.patch("scanpipe.pipes.container.has_docker_endpoint", return_value=False)
+    @mock.patch("shutil.which", return_value="/usr/bin/docker")
+    def test_scanpipe_scan_nix_package_get_availability_no_endpoint(
+        self, _mock_which, _mock_endpoint
+    ):
+        reason = ScanNixPackage.get_availability()
+        self.assertIn("No Docker daemon endpoint found", reason)
+
+    @mock.patch("scanpipe.pipes.container.has_docker_endpoint", return_value=True)
+    @mock.patch("shutil.which", return_value="/usr/bin/docker")
+    def test_scanpipe_scan_nix_package_get_availability_local_socket(
+        self, _mock_which, _mock_endpoint
+    ):
+        self.assertIsNone(ScanNixPackage.get_availability())
+
+    @mock.patch.dict(os.environ, {"DOCKER_HOST": "tcp://localhost:2375"})
+    @mock.patch("shutil.which", return_value="/usr/bin/docker")
+    def test_scanpipe_scan_nix_package_get_availability_available(self, _mock_which):
+        self.assertIsNone(ScanNixPackage.get_availability())
 
     @mock.patch("scanpipe.pipes.scanoss.is_configured")
     @mock.patch("scanpipe.pipes.matchcode.is_configured")
@@ -2467,3 +2493,112 @@ class PipelinesIntegrationTest(TestCase):
         )
         expected_file = self.data / "benchmark" / "alpine-3.22.1-expected-benchmark.txt"
         self.assertEqual(expected_file.read_text(), result_file.read_text())
+
+    @skipIf(sys.platform == "darwin", "Not supported on macOS")
+    @mock.patch("scanpipe.pipes.nix.check_input_and_return_purl")
+    @mock.patch("scanpipe.pipes.nix.prepare_nix_environment")
+    @mock.patch("scanpipe.pipes.nix.fetch_inputs")
+    @mock.patch("scanpipe.pipes.nix.get_nix_package_metadata")
+    @mock.patch(
+        "scanpipe.pipes.nix.extract_nar_archive_to_codebase", return_value=(True, "")
+    )
+    @mock.patch("scanpipe.pipes.purldb.is_available", return_value=False)
+    def test_scanpipe_scan_nix_package_pipeline_integration(
+        self,
+        mock_purldb_available,
+        mock_extract_nar,
+        mock_metadata,
+        mock_fetch,
+        mock_prepare,
+        mock_check_purl,
+    ):
+        pipeline_name = "scan_nix_package"
+        project1 = make_project()
+
+        commit = "a" * 40
+        purl_str = f"pkg:nix/nixpkgs/hello@2.12.3?system=x86_64-linux&commit={commit}"
+        purl = PackageURL.from_string(purl_str)
+        project1.add_input_source(download_url=purl_str)
+        mock_check_purl.return_value = purl
+
+        def mock_fetch_inputs(purl, output_dir):
+            codebase_dir = Path(output_dir)
+
+            from_dir = codebase_dir / "from"
+            from_dir.mkdir(parents=True, exist_ok=True)
+            copy_input(self.data / "nix" / "hello.c", from_dir)
+            copy_input(self.data / "nix" / "COPYING", from_dir)
+
+            # Extracted binary tree.
+            # Files are identical copies of the source so that
+            # map_checksum produces a verifiable CodebaseRelation.
+            to_dir = codebase_dir / "to" / "out"
+            to_dir.mkdir(parents=True, exist_ok=True)
+            copy_input(self.data / "nix" / "hello.c", to_dir)
+            copy_input(self.data / "nix" / "COPYING", to_dir)
+
+            # A dummy .nar is returned as the binary path. It lives outside codebase/
+            # so it is not picked up as a CodebaseResource. Content does not matter
+            # because extract_nar_archive_to_codebase is mocked.
+            nar_path = codebase_dir.parent / "hello-bin.nar"
+            nar_path.write_bytes(b"mock-nar")
+
+            return str(from_dir), str(nar_path), "out", commit, [], []
+
+        mock_fetch.side_effect = mock_fetch_inputs
+
+        mock_metadata.return_value = {
+            "license": "MIT",
+            "homepage": "https://www.gnu.org/software/hello/",
+            "description": "A program that produces a familiar greeting",
+        }
+
+        run = project1.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+
+        from_files = project1.codebaseresources.from_codebase().files()
+        self.assertEqual(2, from_files.count())
+        self.assertTrue(from_files.filter(path="from/hello.c").exists())
+        self.assertTrue(from_files.filter(path="from/COPYING").exists())
+
+        hello_c = from_files.get(path="from/hello.c")
+        self.assertEqual("mit", hello_c.detected_license_expression)
+        self.assertEqual(
+            ["Copyright (c) 2024 The Hello Authors"],
+            [copyright["copyright"] for copyright in hello_c.copyrights],
+        )
+
+        to_files = project1.codebaseresources.to_codebase().files()
+        self.assertEqual(2, to_files.count())
+        self.assertTrue(to_files.filter(path="to/out/hello.c").exists())
+        self.assertTrue(to_files.filter(path="to/out/COPYING").exists())
+
+        # d2d_steps ran and produced sha1 relation per pair.
+        self.assertEqual(2, project1.codebaserelations.count())
+        self.assertEqual(2, project1.codebaserelations.filter(map_type="sha1").count())
+        hello_c_relation = project1.codebaserelations.get(
+            from_resource__path="from/hello.c"
+        )
+        self.assertEqual("to/out/hello.c", hello_c_relation.to_resource.path)
+        self.assertEqual("sha1", hello_c_relation.map_type)
+
+        self.assertEqual(2, to_files.filter(status=flag.MAPPED).count())
+
+        self.assertEqual(1, project1.discoveredpackages.count())
+        package = project1.discoveredpackages.get()
+        self.assertEqual("nix", package.type)
+        self.assertEqual("nixpkgs", package.namespace)
+        self.assertEqual("hello", package.name)
+        self.assertEqual("2.12.3", package.version)
+        self.assertEqual("mit", package.declared_license_expression)
+        self.assertEqual("MIT", package.declared_license_expression_spdx)
+        self.assertEqual("https://www.gnu.org/software/hello/", package.homepage_url)
+        self.assertEqual(["nixpkgs_meta"], package.datasource_ids)
+        self.assertEqual(2, package.codebase_resources.files().count())
+
+        result_file = output.to_json(project1)
+        expected_file = self.data / "nix" / "hello_scan_nix_package.json"
+        self.assertPipelineResultEqual(expected_file, result_file)

@@ -2795,6 +2795,7 @@ class ScanPipeModelsTest(TestCase):
             "filename",
             "affected_by_vulnerabilities",
             "compliance_alert",
+            "has_license_issue",
             "tag",
             "declared_dependencies",
             "resolved_from_dependencies",

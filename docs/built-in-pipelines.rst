@@ -290,8 +290,51 @@ Scan Single Package
 .. _pipeline_scan_maven_package:
 
 Scan Maven Package
--------------------
+------------------
 .. autoclass:: scanpipe.pipelines.scan_maven_package.ScanMavenPackage()
+    :members:
+    :member-order: bysource
+
+.. _pipeline_scan_nix_package:
+
+Scan Nix Package
+----------------
+.. warning::
+
+   This pipeline requires a Docker daemon. In a Docker Compose deployment the
+   daemon is provided by the ``dind`` profile and addressed through
+   ``DOCKER_HOST``; with a local install (or an image with the host Docker
+   socket mounted) the Docker CLI default socket is used and ``DOCKER_HOST``
+   can be left unset.
+
+   For cross-architecture builds it also requires binfmt multi-arch
+   emulation on the host. It is **not** enabled by default.
+
+   To enable it:
+
+   1. Uncomment the ``DOCKER_HOST``, ``DOCKER_TLS_VERIFY`` and
+      ``DOCKER_CERT_PATH`` variables in ``docker.env``.
+   2. Start the Compose stack with the ``dind`` profile::
+
+          docker compose --profile dind up
+
+   For cross-architecture builds, configure binfmt emulation on the Docker
+   host (one-time, requires host root)::
+
+       docker run --privileged --rm --init tonistiigi/binfmt --install all
+
+   The ``commit`` qualifier in the Nix PURL must reference a commit that is
+   reachable from an official ``NixOS/nixpkgs`` branch (``master``,
+   ``nixos-unstable``, or ``release-*``). Commits that exist only in forks
+   or unmerged pull requests are rejected at the first step.
+
+   The ``dind`` service runs a privileged Docker daemon and shares the
+   ``workspace`` volume with it.
+
+   See :ref:`scancodeio_settings_nixpkgs_cache_dir` for the cache
+   directory requirement when the pipeline runs under ``dind``.
+
+.. autoclass:: scanpipe.pipelines.scan_nix_package.ScanNixPackage()
     :members:
     :member-order: bysource
 
