@@ -107,8 +107,6 @@ def docker_rm_force(container_name):
             f"docker rm -f {container_name} timed out after "
             f"{_DOCKER_RM_TIMEOUT}s; container may linger."
         )
-    except (OSError, subprocess.SubprocessError):
-        logger.exception(f"Failed to remove container {container_name}")
 
 
 def run_docker_container(cmd, container_name, timeout, task_description):
