@@ -1897,8 +1897,8 @@ def map_paths_resource(
         if paths_not_mapped:
             to_resource.status = flag.REQUIRES_REVIEW
             logger(
-                f"WARNING: #{len(paths_not_mapped)} {map_type} paths NOT "
-                f"mapped for: {to_resource.path!r}"
+                f"WARNING: #{len(paths_not_mapped)} {map_type} paths NOT mapped for: "
+                f"{to_resource.path!r}"
             )
         to_resource.save()
 
