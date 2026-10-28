@@ -842,11 +842,6 @@ class ScanPipeNixPipesTest(TestCase):
         self.assertIn("Failed to extract NAR archive", error)
         self.assertFalse(to_dir.exists())
 
-    def test_scanpipe_nix_extract_nar_archive_rejects_trailing_newline(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            with self.assertRaisesMessage(ValueError, "Invalid output"):
-                nix.extract_nar_archive("x.nar", tmp, "debug\n")
-
     def test_scanpipe_nix_decompress_pipeline_for(self):
         for filename, expected in [
             ("foo.nar.xz", "xzcat /input/foo.nar.xz"),

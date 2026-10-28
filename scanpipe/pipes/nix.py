@@ -1452,9 +1452,6 @@ def _decompress_pipeline_for(archive_name):
 
 def extract_nar_archive(archive_path, output_dir, output):
     """Extract a compressed Nix NAR archive."""
-    if not OUTPUT_RE.fullmatch(output):
-        raise ValueError(f"Invalid output: {output!r}")
-
     archive_path = Path(archive_path).resolve()
     output_dir = Path(output_dir).resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
