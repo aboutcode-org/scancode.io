@@ -20,7 +20,6 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-import os
 import subprocess
 import tempfile
 from pathlib import Path
@@ -149,25 +148,22 @@ class ScanPipeNixPipesTest(TestCase):
         with self.assertRaisesMessage(ValueError, "not reachable"):
             nix.check_input_and_return_purl(project)
 
-    @override_settings(SCANPIPE={"GITHUB_TOKEN": "ghp_test"})
-    def test_scanpipe_nix_github_api_headers_with_token(self):
-        """Test that configured GitHub tokens are added to API headers."""
-        headers = nix._github_api_headers()
+    @mock.patch("scanpipe.pipes.fetch.get_request_session")
+    def test_scanpipe_nix_github_api_session(self, mock_get_session):
+        mock_session = mock.Mock()
+        mock_session.headers = {}
+        mock_get_session.return_value = mock_session
 
-        self.assertIn("Authorization", headers)
-        self.assertEqual(headers["Authorization"], "Bearer ghp_test")
-        self.assertEqual(headers["Accept"], "application/vnd.github+json")
+        nix._github_api_session()
 
-    @override_settings(SCANPIPE={"GITHUB_TOKEN": ""})
-    @mock.patch.dict(os.environ, {"GITHUB_TOKEN": "", "GH_TOKEN": ""})
-    def test_scanpipe_nix_github_api_headers_without_token(self):
-        headers = nix._github_api_headers()
-        self.assertNotIn("Authorization", headers)
-        self.assertEqual(headers["Accept"], "application/vnd.github+json")
+        mock_get_session.assert_called_once_with("https://api.github.com/")
+        self.assertEqual("application/vnd.github+json", mock_session.headers["Accept"])
 
-    @mock.patch("scanpipe.pipes.nix.requests.get")
-    def test_scanpipe_nix_verify_commit_in_nixpkgs(self, mock_get):
+    @mock.patch("scanpipe.pipes.nix._github_api_session")
+    def test_scanpipe_nix_verify_commit_in_nixpkgs(self, mock_session_helper):
         commit = "1234567890abcdef1234567890abcdef12345678"
+        mock_session = mock.Mock()
+        mock_session_helper.return_value = mock_session
 
         # Each case: (label, [(status, json_body, links), ...], expected).
         cases = [
@@ -229,32 +225,33 @@ class ScanPipeNixPipesTest(TestCase):
 
         for label, responses, expected in cases:
             with self.subTest(label):
-                mock_get.reset_mock()
+                mock_session.reset_mock()
                 mocks = []
                 for status_code, json_data, links in responses:
                     mock_response = mock.Mock(status_code=status_code, links=links)
                     mock_response.json.return_value = json_data
                     mocks.append(mock_response)
-                mock_get.side_effect = mocks
+                mock_session.get.side_effect = mocks
                 self.assertEqual(nix.verify_commit_in_nixpkgs(commit), expected)
 
         # Network error
-        mock_get.reset_mock()
-        mock_get.side_effect = requests.RequestException("network")
+        mock_session.reset_mock()
+        mock_session.get.side_effect = requests.RequestException("network")
         self.assertIsNone(nix.verify_commit_in_nixpkgs(commit))
 
         # Invalid hash
-        mock_get.reset_mock()
-        mock_get.side_effect = None
+        mock_session_helper.reset_mock()
         for invalid in ("not-a-commit", commit + "\n"):
             self.assertFalse(nix.verify_commit_in_nixpkgs(invalid))
-        mock_get.assert_not_called()
+        mock_session_helper.assert_not_called()
 
-    @mock.patch("scanpipe.pipes.nix.requests.get")
-    def test_scanpipe_nix_verify_commit_branches_pagination(self, mock_get):
+    @mock.patch("scanpipe.pipes.nix._github_api_session")
+    def test_scanpipe_nix_verify_commit_branches_pagination(self, mock_session_helper):
         commit = "1234567890abcdef1234567890abcdef12345678"
+        mock_session = mock.Mock()
+        mock_session_helper.return_value = mock_session
 
-        mock_get.side_effect = [
+        mock_session.get.side_effect = [
             mock.Mock(status_code=200, links={}, json=lambda: {}),
             mock.Mock(
                 status_code=200,
@@ -290,7 +287,7 @@ class ScanPipeNixPipesTest(TestCase):
 
         self.assertTrue(nix.verify_commit_in_nixpkgs(commit))
 
-        requested_urls = [call.args[0] for call in mock_get.call_args_list]
+        requested_urls = [call.args[0] for call in mock_session.get.call_args_list]
 
         # Second /branches request must have used the Link URL from page 1.
         second_branches_page_url = requested_urls[2]

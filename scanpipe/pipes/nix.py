@@ -656,17 +656,11 @@ def _system_barrier_message(system):
     )
 
 
-def _github_api_headers():
-    """Return GitHub API request headers, adding a token when configured."""
-    headers = {"Accept": "application/vnd.github+json"}
-    token = (
-        scanpipe_settings.GITHUB_TOKEN
-        or os.environ.get("GITHUB_TOKEN", "")
-        or os.environ.get("GH_TOKEN", "")
-    ).strip()
-    if token:
-        headers["Authorization"] = f"Bearer {token}"
-    return headers
+def _github_api_session():
+    """Return a requests session for the GitHub REST API."""
+    session = fetch.get_request_session("https://api.github.com/")
+    session.headers.update({"Accept": "application/vnd.github+json"})
+    return session
 
 
 def _github_api_is_unavailable(response):
@@ -678,7 +672,7 @@ def _github_api_is_unavailable(response):
     return response.status_code in (403, 429) or response.status_code >= 500
 
 
-def _commit_is_on_any_branch(commit_hash, headers, repo_url, branches):
+def _commit_is_on_any_branch(commit_hash, session, repo_url, branches):
     """
     Return True if `commit_hash` is reachable from at least one branch,
     False if reachable from none, None if the GitHub API failed.
@@ -686,7 +680,7 @@ def _commit_is_on_any_branch(commit_hash, headers, repo_url, branches):
     for branch in branches:
         compare_url = f"{repo_url}/compare/{commit_hash}...{branch}"
         try:
-            response = requests.get(compare_url, headers=headers, timeout=30)
+            response = session.get(compare_url, timeout=30)
         except requests.RequestException as e:
             logger.warning(f"Could not compare {commit_hash!r}: {e}")
             return None
@@ -728,13 +722,11 @@ def verify_commit_in_nixpkgs(commit_hash):
     if not COMMIT_RE.fullmatch(commit_hash):
         return False
 
-    headers = _github_api_headers()
+    session = _github_api_session()
     repo_url = f"https://api.github.com/repos/{NIXPKGS_OWNER}/{NIXPKGS_REPO}"
 
     try:
-        commit_response = requests.get(
-            f"{repo_url}/commits/{commit_hash}", headers=headers, timeout=30
-        )
+        commit_response = session.get(f"{repo_url}/commits/{commit_hash}", timeout=30)
         if commit_response.status_code == 404:
             return False
         if _github_api_is_unavailable(commit_response):
@@ -753,7 +745,7 @@ def verify_commit_in_nixpkgs(commit_hash):
         url = f"{repo_url}/branches?per_page=100"
 
         while url:
-            branches_response = requests.get(url, headers=headers, timeout=30)
+            branches_response = session.get(url, timeout=30)
             branches_response.raise_for_status()
 
             release_branches.extend(
@@ -774,7 +766,7 @@ def verify_commit_in_nixpkgs(commit_hash):
         logger.warning(f"Could not list nixpkgs branches: {e}")
         return None
 
-    return _commit_is_on_any_branch(commit_hash, headers, repo_url, branches)
+    return _commit_is_on_any_branch(commit_hash, session, repo_url, branches)
 
 
 def _validate_purl_qualifiers(purl):
@@ -863,7 +855,8 @@ def _require_official_commit(commit_hash, label="commit"):
             f"Could not verify that {label} {commit_hash!r} belongs to "
             f"the official NixOS/nixpkgs repository: the GitHub API "
             f"was unreachable or rate limited. Configure "
-            f"SCANCODEIO_GITHUB_TOKEN (or GITHUB_TOKEN / GH_TOKEN) "
+            f"SCANCODEIO_FETCH_HEADERS (e.g. "
+            f"api.github.com=Authorization=token <TOKEN>) "
             f"to raise the limit, or retry later."
         )
     if not is_official:
