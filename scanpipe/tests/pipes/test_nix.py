@@ -174,7 +174,6 @@ class ScanPipeNixPipesTest(TestCase):
                 "commit on first trusted branch",
                 [
                     (200, {}, {}),
-                    (200, [], {}),
                     (200, {"status": "ahead"}, {}),
                 ],
                 True,
@@ -183,7 +182,6 @@ class ScanPipeNixPipesTest(TestCase):
                 "commit identical to branch tip",
                 [
                     (200, {}, {}),
-                    (200, [], {}),
                     (200, {"status": "diverged"}, {}),
                     (200, {"status": "identical"}, {}),
                 ],
@@ -193,12 +191,12 @@ class ScanPipeNixPipesTest(TestCase):
                 "backport only on release-23.05",
                 [
                     (200, {}, {}),
-                    (200, [{"name": "release-23.05"}], {}),
                     (200, {"status": "diverged"}, {}),  # master
                     (200, {"status": "diverged"}, {}),  # nixos-unstable
                     (200, {"status": "diverged"}, {}),  # nixpkgs-unstable
                     (200, {"status": "diverged"}, {}),  # nixos-unstable-small
-                    (200, {"status": "ahead"}, {}),  # release-23.05
+                    (200, [{"name": "release-23.05"}], {}),  # branches page 1
+                    (200, {"status": "ahead"}, {}),  # compare release-23.05
                 ],
                 True,
             ),
@@ -206,11 +204,11 @@ class ScanPipeNixPipesTest(TestCase):
                 "unmerged PR commit (not on any branch)",
                 [
                     (200, {}, {}),
-                    (200, [], {}),
                     (200, {"status": "diverged"}, {}),  # master
                     (200, {"status": "behind"}, {}),  # nixos-unstable
                     (200, {"status": "behind"}, {}),  # nixpkgs-unstable
                     (200, {"status": "behind"}, {}),  # nixos-unstable-small
+                    (200, [], {}),  # branches page 1 (empty)
                 ],
                 False,
             ),
@@ -258,16 +256,6 @@ class ScanPipeNixPipesTest(TestCase):
 
         mock_session.get.side_effect = [
             mock.Mock(status_code=200, links={}, json=lambda: {}),
-            mock.Mock(
-                status_code=200,
-                links={"next": {"url": "https://api.github.com/page=2"}},
-                json=lambda: [{"name": "release-23.05"}],
-            ),
-            mock.Mock(
-                status_code=200,
-                links={},
-                json=lambda: [{"name": "release-22.11"}],
-            ),
             # Trusted branches: all diverged
             mock.Mock(
                 status_code=200, links={}, json=lambda: {"status": "diverged"}
@@ -281,7 +269,18 @@ class ScanPipeNixPipesTest(TestCase):
             mock.Mock(
                 status_code=200, links={}, json=lambda: {"status": "diverged"}
             ),  # nixos-unstable-small
-            # Release branches: ancestor only on the last one, so both are compared
+
+            mock.Mock(
+                status_code=200,
+                links={"next": {"url": "https://api.github.com/page=2"}},
+                json=lambda: [{"name": "release-23.05"}],
+            ),
+            mock.Mock(
+                status_code=200,
+                links={},
+                json=lambda: [{"name": "release-22.11"}],
+            ),
+            # Release branches: ancestor only on the last one
             mock.Mock(
                 status_code=200, links={}, json=lambda: {"status": "diverged"}
             ),  # release-23.05
@@ -295,14 +294,37 @@ class ScanPipeNixPipesTest(TestCase):
         requested_urls = [call.args[0] for call in mock_session.get.call_args_list]
 
         # Second /branches request must have used the Link URL from page 1.
-        second_branches_page_url = requested_urls[2]
+        second_branches_page_url = requested_urls[6]
         self.assertEqual(second_branches_page_url, "https://api.github.com/page=2")
 
         # Both release branches must have been checked for ancestry,
         # even though release-22.11 only appeared on page 2.
-        compare_urls = requested_urls[3:]
+        compare_urls = requested_urls[7:]
         self.assertTrue(any("...release-23.05" in url for url in compare_urls))
         self.assertTrue(any("...release-22.11" in url for url in compare_urls))
+
+    @mock.patch("scanpipe.pipes.nix._github_api_session")
+    def test_scanpipe_nix_verify_commit_skips_branches_listing(
+        self, mock_session_helper
+    ):
+        mock_session = mock.Mock()
+        mock_session_helper.return_value = mock_session
+
+        mock_session.get.side_effect = [
+            mock.Mock(status_code=200, links={}, json=lambda: {}),  # existence
+            mock.Mock(
+                status_code=200, links={}, json=lambda: {"status": "ahead"}
+            ),
+        ]
+
+        commit = "1234567890abcdef1234567890abcdef12345678"
+        self.assertTrue(nix.verify_commit_in_nixpkgs(commit))
+
+        requested_urls = [call.args[0] for call in mock_session.get.call_args_list]
+        self.assertFalse(
+            any("/branches" in url for url in requested_urls),
+            f"branches listing must not be requested, got: {requested_urls}",
+        )
 
     @mock.patch("scanpipe.pipes.nix.fetch_json_response")
     def test_scanpipe_nix_get_package_data(self, mock_fetch):

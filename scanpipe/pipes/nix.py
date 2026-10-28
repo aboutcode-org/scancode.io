@@ -720,6 +720,34 @@ def _github_verify_error(commit_hash, detail):
     )
 
 
+def _list_release_branches(commit_hash, session, repo_url):
+    """
+    Return the release-* branch names in the NixOS/nixpkgs repository.
+    Raise `ValueError` if the GitHub API could not be queried.
+    """
+    release_branches = []
+    url = f"{repo_url}/branches?per_page=100"
+
+    while url:
+        try:
+            branches_response = session.get(url, timeout=30)
+            branches_response.raise_for_status()
+            release_branches.extend(
+                branch["name"]
+                for branch in branches_response.json()
+                if branch["name"].startswith("release-")
+            )
+        except (requests.RequestException, ValueError, TypeError) as e:
+            raise _github_verify_error(
+                commit_hash, f"could not list nixpkgs branches: {e}"
+            ) from e
+
+        # Follow GitHub's 'Link' header to the next page, if it exists
+        url = branches_response.links.get("next", {}).get("url")
+
+    return release_branches
+
+
 def verify_commit_in_nixpkgs(commit_hash):
     """
     Return True if ``commit_hash`` is reachable from an official nixpkgs
@@ -748,34 +776,21 @@ def verify_commit_in_nixpkgs(commit_hash):
     except requests.RequestException as e:
         raise _github_verify_error(commit_hash, f"existence check failed: {e}") from e
 
-    try:
-        release_branches = []
-        url = f"{repo_url}/branches?per_page=100"
+    # Check trusted branches first.
+    # This avoids listing every nixpkgs branch on each scan, which would
+    # cost several requests for a common case.
+    if _commit_is_on_any_branch(
+        commit_hash, session, repo_url, NIXPKGS_TRUSTED_BRANCHES
+    ):
+        return True
 
-        while url:
-            branches_response = session.get(url, timeout=30)
-            branches_response.raise_for_status()
+    # Check the release-* branches if no trusted branch
+    # matched.
+    release_branches = _list_release_branches(commit_hash, session, repo_url)
+    if not release_branches:
+        return False
 
-            release_branches.extend(
-                [
-                    branch["name"]
-                    for branch in branches_response.json()
-                    if branch["name"].startswith("release-")
-                ]
-            )
-
-            # Follow GitHub's 'Link' header to the next page, if it exists
-            url = branches_response.links.get("next", {}).get("url")
-
-        # Check the always-present branches first, then any release-* branches
-        # discovered on GitHub.
-        branches = NIXPKGS_TRUSTED_BRANCHES + release_branches
-    except (requests.RequestException, ValueError, TypeError) as e:
-        raise _github_verify_error(
-            commit_hash, f"could not list nixpkgs branches: {e}"
-        ) from e
-
-    return _commit_is_on_any_branch(commit_hash, session, repo_url, branches)
+    return _commit_is_on_any_branch(commit_hash, session, repo_url, release_branches)
 
 
 def _validate_purl_qualifiers(purl):
@@ -844,7 +859,8 @@ def _validate_resolved_commit_hash(release_commit_hash, user_commit_hash):
 
     if not COMMIT_RE.fullmatch(release_commit_hash):
         raise ValueError(
-            f"Invalid resolved commit hash from package metadata: {release_commit_hash!r}"
+            "Invalid resolved commit hash from package metadata: "
+            f"{release_commit_hash!r}"
         )
     _require_official_commit(release_commit_hash)
     return release_commit_hash
