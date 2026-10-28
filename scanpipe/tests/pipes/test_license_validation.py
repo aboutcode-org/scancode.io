@@ -88,6 +88,9 @@ class ScanPipeLicenseValidationTest(TestCase):
         self.assertEqual(issue["uncovered_licenses"], ["gpl-3.0"])
         self.assertEqual(issue["detected_codebase_license"], "gpl-3.0")
 
+        self.assertEqual(resource.status, flag.LICENSE_MISMATCH)
+        self.assertIn("issues", resource.extra_data)
+
     @mock.patch(
         "scanpipe.pipes.license_validation.match_is_license_text",
         return_value=True,
