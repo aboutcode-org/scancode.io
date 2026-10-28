@@ -254,39 +254,29 @@ class ScanPipeNixPipesTest(TestCase):
         mock_session = mock.Mock()
         mock_session_helper.return_value = mock_session
 
-        mock_session.get.side_effect = [
-            mock.Mock(status_code=200, links={}, json=lambda: {}),
-            # Trusted branches: all diverged
-            mock.Mock(
-                status_code=200, links={}, json=lambda: {"status": "diverged"}
-            ),  # master
-            mock.Mock(
-                status_code=200, links={}, json=lambda: {"status": "diverged"}
-            ),  # nixos-unstable
-            mock.Mock(
-                status_code=200, links={}, json=lambda: {"status": "diverged"}
-            ),  # nixpkgs-unstable
-            mock.Mock(
-                status_code=200, links={}, json=lambda: {"status": "diverged"}
-            ),  # nixos-unstable-small
-            mock.Mock(
-                status_code=200,
-                links={"next": {"url": "https://api.github.com/page=2"}},
-                json=lambda: [{"name": "release-23.05"}],
-            ),
-            mock.Mock(
-                status_code=200,
-                links={},
-                json=lambda: [{"name": "release-22.11"}],
-            ),
-            # Release branches: ancestor only on the last one
-            mock.Mock(
-                status_code=200, links={}, json=lambda: {"status": "diverged"}
-            ),  # release-23.05
-            mock.Mock(
-                status_code=200, links={}, json=lambda: {"status": "ahead"}
-            ),  # release-22.11
+        # Each response: (status_code, json_body, links).
+        responses = [
+            (200, {}, {}),  # existence
+            (200, {"status": "diverged"}, {}),  # master
+            (200, {"status": "diverged"}, {}),  # nixos-unstable
+            (200, {"status": "diverged"}, {}),  # nixpkgs-unstable
+            (200, {"status": "diverged"}, {}),  # nixos-unstable-small
+            (
+                200,
+                [{"name": "release-23.05"}],
+                {"next": {"url": "https://api.github.com/page=2"}},
+            ),  # branches page 1
+            (200, [{"name": "release-22.11"}], {}),  # branches page 2
+            (200, {"status": "diverged"}, {}),  # release-23.05
+            (200, {"status": "ahead"}, {}),  # release-22.11
         ]
+
+        mocks = []
+        for status_code, json_data, links in responses:
+            mock_response = mock.Mock(status_code=status_code, links=links)
+            mock_response.json.return_value = json_data
+            mocks.append(mock_response)
+        mock_session.get.side_effect = mocks
 
         self.assertTrue(nix.verify_commit_in_nixpkgs(commit))
 
@@ -574,7 +564,7 @@ class ScanPipeNixPipesTest(TestCase):
         nix_expression = cmd[cmd.index("-E") + 1]
         self.assertIn("builtins.concatStringsSep", nix_expression)
         self.assertIn("getLicenseId", nix_expression)
-        # The previous single-attrset-only path should be be gone.
+        # The previous single-attrset-only path should be gone.
         self.assertNotIn(
             "builtins.isAttrs license && license ? spdxId",
             nix_expression,
