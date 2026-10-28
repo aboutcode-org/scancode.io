@@ -26,12 +26,12 @@ from pathlib import Path
 from scanpipe.pipelines.deploy_to_develop import DeployToDevelop
 from scanpipe.pipelines.scan_codebase import ScanCodebase
 from scanpipe.pipelines.scan_single_package import ScanSinglePackage
+from scanpipe.pipes import container
 from scanpipe.pipes import d2d_config
 from scanpipe.pipes import flag
 from scanpipe.pipes import license_validation
 from scanpipe.pipes import nix
 from scanpipe.pipes import scancode
-from scanpipe.pipes import utils
 
 
 class ScanNixPackage(ScanSinglePackage, DeployToDevelop, ScanCodebase):
@@ -66,12 +66,12 @@ class ScanNixPackage(ScanSinglePackage, DeployToDevelop, ScanCodebase):
                 "in your custom image."
             )
 
-        if utils.has_docker_endpoint():
+        if container.has_docker_endpoint():
             return
 
         return (
             "No Docker daemon endpoint found: DOCKER_HOST is not set and "
-            f"{utils.DEFAULT_DOCKER_SOCKET} does not exist. For a Docker Compose "
+            f"{container.DEFAULT_DOCKER_SOCKET} does not exist. For a Docker Compose "
             "deployment, use the 'dind' profile and uncomment DOCKER_HOST in "
             "docker.env; otherwise set DOCKER_HOST to a reachable Docker daemon."
         )

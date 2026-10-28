@@ -176,7 +176,7 @@ class ScanPipePipelinesTest(TestCase):
         reason = ScanNixPackage.get_availability()
         self.assertIn("Docker CLI is not available", reason)
 
-    @mock.patch("scanpipe.pipes.utils.has_docker_endpoint", return_value=False)
+    @mock.patch("scanpipe.pipes.container.has_docker_endpoint", return_value=False)
     @mock.patch("shutil.which", return_value="/usr/bin/docker")
     def test_scanpipe_scan_nix_package_get_availability_no_endpoint(
         self, _mock_which, _mock_endpoint
@@ -184,7 +184,7 @@ class ScanPipePipelinesTest(TestCase):
         reason = ScanNixPackage.get_availability()
         self.assertIn("No Docker daemon endpoint found", reason)
 
-    @mock.patch("scanpipe.pipes.utils.has_docker_endpoint", return_value=True)
+    @mock.patch("scanpipe.pipes.container.has_docker_endpoint", return_value=True)
     @mock.patch("shutil.which", return_value="/usr/bin/docker")
     def test_scanpipe_scan_nix_package_get_availability_local_socket(
         self, _mock_which, _mock_endpoint
@@ -2565,8 +2565,11 @@ class PipelinesIntegrationTest(TestCase):
         self.assertTrue(from_files.filter(path="from/COPYING").exists())
 
         hello_c = from_files.get(path="from/hello.c")
-        self.assertTrue(hello_c.detected_license_expression)
-        self.assertTrue(hello_c.copyrights)
+        self.assertEqual("mit", hello_c.detected_license_expression)
+        self.assertEqual(
+            ["Copyright (c) 2024 The Hello Authors"],
+            [copyright["copyright"] for copyright in hello_c.copyrights],
+        )
 
         to_files = project1.codebaseresources.to_codebase().files()
         self.assertEqual(2, to_files.count())

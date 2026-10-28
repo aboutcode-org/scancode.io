@@ -41,6 +41,7 @@ from fetchcode import fetch_json_response
 from packageurl import PackageURL
 
 from scanpipe import pipes
+from scanpipe.pipes import container
 from scanpipe.pipes import fetch
 from scanpipe.pipes import utils
 from scanpipe.pipes.resolve import convert_spdx_expression
@@ -224,14 +225,14 @@ def _ensure_nix_image():
     if _resolved_nix_image is not None:
         return _resolved_nix_image
 
-    if utils.docker_image_exists(NIX_IMAGE):
+    if container.docker_image_exists(NIX_IMAGE):
         _resolved_nix_image = NIX_IMAGE
         return _resolved_nix_image
 
     # Lock the file to avoid crashing during concurrent runs.
     with utils.file_lock(_nixpkgs_cache_dir() / "nix-image.lock"):
         # Another process may have built it while we waited for the lock.
-        if utils.docker_image_exists(NIX_IMAGE):
+        if container.docker_image_exists(NIX_IMAGE):
             _resolved_nix_image = NIX_IMAGE
             return _resolved_nix_image
 
@@ -1008,7 +1009,7 @@ def get_nix_package_metadata(purl, commit_hash):
 
     task_description = f"Evaluating metadata for {name}"
     try:
-        result = utils.run_docker_container(
+        result = container.run_docker_container(
             cmd, container_name, _DOCKER_EVAL_TIMEOUT, task_description
         )
     except subprocess.CalledProcessError as e:
@@ -1206,7 +1207,7 @@ def build_binary_with_docker(name, output_dir, system, commit_hash, output_forma
     task_description = f"Building ({name} for {system})"
 
     try:
-        utils.run_docker_container(
+        container.run_docker_container(
             cmd, container_name, _DOCKER_BUILD_TIMEOUT, task_description
         )
         if extracted_path.exists():
@@ -1329,7 +1330,7 @@ def get_nix_store_path_with_nix(name, system, output, commit_hash):
     task_description = f"Evaluating store path for {name} ({output})"
 
     try:
-        result = utils.run_docker_container(
+        result = container.run_docker_container(
             cmd, container_name, _DOCKER_EVAL_TIMEOUT, task_description
         )
         return result.stdout.strip()
@@ -1512,7 +1513,7 @@ def extract_nar_archive(archive_path, output_dir, output):
     task_description = f"Extracting {archive_name}"
 
     try:
-        utils.run_docker_container(
+        container.run_docker_container(
             cmd, container_name, _DOCKER_IO_TIMEOUT, task_description
         )
         return str(extracted_path)
@@ -1687,7 +1688,7 @@ rm -f /tmp/expr.nix /tmp/fallback.nix
 
     failure_detail = ""
     try:
-        result = utils.run_docker_container(
+        result = container.run_docker_container(
             cmd, container_name, _DOCKER_BUILD_TIMEOUT, task_description
         )
         if any(extracted_path.iterdir()):

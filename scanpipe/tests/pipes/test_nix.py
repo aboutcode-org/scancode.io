@@ -373,7 +373,7 @@ class ScanPipeNixPipesTest(TestCase):
 
     @mock.patch("scanpipe.pipes.nix._ensure_nix_image", return_value="nixos/nix:test")
     @mock.patch("scanpipe.pipes.nix._get_nixpkgs_worktree", return_value="")
-    @mock.patch("scanpipe.pipes.utils.run_docker_container")
+    @mock.patch("scanpipe.pipes.container.run_docker_container")
     def test_scanpipe_nix_get_nix_store_path_with_nix(
         self, mock_run, mock_wt, mock_img
     ):
@@ -463,7 +463,7 @@ class ScanPipeNixPipesTest(TestCase):
 
     @mock.patch("scanpipe.pipes.nix._ensure_nix_image", return_value="nixos/nix:test")
     @mock.patch("scanpipe.pipes.nix._get_nixpkgs_worktree", return_value="")
-    @mock.patch("scanpipe.pipes.utils.run_docker_container")
+    @mock.patch("scanpipe.pipes.container.run_docker_container")
     def test_scanpipe_nix_get_nix_package_metadata(self, mock_run, mock_wt, mock_img):
         purl = PackageURL.from_string(
             "pkg:nix/nixpkgs/hello@2.12.1?system=x86_64-linux"
@@ -486,7 +486,7 @@ class ScanPipeNixPipesTest(TestCase):
 
     @mock.patch("scanpipe.pipes.nix._ensure_nix_image", return_value="nixos/nix:test")
     @mock.patch("scanpipe.pipes.nix._get_nixpkgs_worktree", return_value="")
-    @mock.patch("scanpipe.pipes.utils.run_docker_container")
+    @mock.patch("scanpipe.pipes.container.run_docker_container")
     def test_scanpipe_nix_get_nix_package_metadata_no_commit(
         self, mock_run, mock_wt, mock_img
     ):
@@ -498,7 +498,7 @@ class ScanPipeNixPipesTest(TestCase):
 
     @mock.patch("scanpipe.pipes.nix._ensure_nix_image", return_value="nixos/nix:test")
     @mock.patch("scanpipe.pipes.nix._get_nixpkgs_worktree", return_value="")
-    @mock.patch("scanpipe.pipes.utils.run_docker_container")
+    @mock.patch("scanpipe.pipes.container.run_docker_container")
     def test_scanpipe_nix_get_nix_package_metadata_error_paths(
         self, mock_run, mock_wt, mock_img
     ):
@@ -525,7 +525,7 @@ class ScanPipeNixPipesTest(TestCase):
 
     @mock.patch("scanpipe.pipes.nix._ensure_nix_image", return_value="nixos/nix:test")
     @mock.patch("scanpipe.pipes.nix._get_nixpkgs_worktree", return_value="")
-    @mock.patch("scanpipe.pipes.utils.run_docker_container")
+    @mock.patch("scanpipe.pipes.container.run_docker_container")
     def test_scanpipe_nix_get_nix_package_metadata_nested_name(
         self, mock_run, _mock_wt, _mock_img
     ):
@@ -549,7 +549,7 @@ class ScanPipeNixPipesTest(TestCase):
 
     @mock.patch("scanpipe.pipes.nix._ensure_nix_image", return_value="nixos/nix:test")
     @mock.patch("scanpipe.pipes.nix._get_nixpkgs_worktree", return_value="")
-    @mock.patch("scanpipe.pipes.utils.run_docker_container")
+    @mock.patch("scanpipe.pipes.container.run_docker_container")
     def test_scanpipe_nix_get_nix_package_metadata_multiple_licenses(
         self, mock_run, _mock_wt, _mock_img
     ):
@@ -714,7 +714,7 @@ class ScanPipeNixPipesTest(TestCase):
 
     @mock.patch("scanpipe.pipes.nix._ensure_nix_image", return_value="nixos/nix:test")
     @mock.patch("scanpipe.pipes.nix._get_nixpkgs_worktree", return_value="")
-    @mock.patch("scanpipe.pipes.utils.run_docker_container")
+    @mock.patch("scanpipe.pipes.container.run_docker_container")
     def test_scanpipe_nix_get_patched_source_with_docker(
         self, mock_run, mock_wt, mock_img
     ):
@@ -750,7 +750,7 @@ class ScanPipeNixPipesTest(TestCase):
         self.assertIn("error: build failed", res.failure_detail)
 
     @mock.patch("scanpipe.pipes.nix._ensure_nix_image", return_value="nixos/nix:test")
-    @mock.patch("scanpipe.pipes.utils.run_docker_container")
+    @mock.patch("scanpipe.pipes.container.run_docker_container")
     def test_scanpipe_nix_extract_nar_archive(self, mock_run, mock_img):
         mock_run.return_value = mock.Mock(returncode=0)
         with tempfile.TemporaryDirectory() as tmp:
@@ -769,7 +769,7 @@ class ScanPipeNixPipesTest(TestCase):
 
     @mock.patch("scanpipe.pipes.nix._ensure_nix_image")
     @mock.patch("scanpipe.pipes.nix.shutil.copy2")
-    @mock.patch("scanpipe.pipes.utils.run_docker_container")
+    @mock.patch("scanpipe.pipes.container.run_docker_container")
     def test_scanpipe_nix_extract_nar_archive_stages_from_tmp(
         self, mock_run_container, mock_copy2, mock_ensure_image
     ):
@@ -866,7 +866,7 @@ class ScanPipeNixPipesTest(TestCase):
             self.assertFalse(staged)
             mock_copy.assert_not_called()
 
-    @mock.patch("scanpipe.pipes.nix.utils.docker_image_exists")
+    @mock.patch("scanpipe.pipes.nix.container.docker_image_exists")
     @mock.patch("scanpipe.pipes.nix.utils.file_lock")
     @mock.patch("scanpipe.pipes.nix.subprocess.run")
     def test_scanpipe_nix_ensure_nix_image(self, mock_run, mock_lock, mock_exists):
@@ -994,7 +994,7 @@ class ScanPipeNixPipesTest(TestCase):
 
     @mock.patch("scanpipe.pipes.nix._ensure_nix_image", return_value="nixos/nix:test")
     @mock.patch("scanpipe.pipes.nix._get_nixpkgs_worktree", return_value="")
-    @mock.patch("scanpipe.pipes.utils.run_docker_container")
+    @mock.patch("scanpipe.pipes.container.run_docker_container")
     def test_scanpipe_nix_build_binary_with_docker(self, mock_run, mock_wt, mock_img):
         with tempfile.TemporaryDirectory() as out_dir:
             Path(out_dir, "hello-bin.nar").write_bytes(b"nar")
