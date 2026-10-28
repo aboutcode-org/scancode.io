@@ -675,32 +675,29 @@ def _github_api_is_unavailable(response):
 def _commit_is_on_any_branch(commit_hash, session, repo_url, branches):
     """
     Return True if `commit_hash` is reachable from at least one branch,
-    False if reachable from none, None if the GitHub API failed.
+    False otherwise.
+    Raise `ValueError` if the GitHub API could not be queried.
     """
     for branch in branches:
         compare_url = f"{repo_url}/compare/{commit_hash}...{branch}"
         try:
             response = session.get(compare_url, timeout=30)
         except requests.RequestException as e:
-            logger.warning(f"Could not compare {commit_hash!r}: {e}")
-            return None
+            raise _github_verify_error(commit_hash, f"network error: {e}") from e
 
         if response.status_code == 404:
             continue
 
         if _github_api_is_unavailable(response):
-            logger.warning(
-                f"GitHub API unavailable while verifying {commit_hash!r} "
-                f"(HTTP {response.status_code})."
+            raise _github_verify_error(
+                commit_hash, f"GitHub API returned HTTP {response.status_code}"
             )
-            return None
 
         try:
             response.raise_for_status()
             status = response.json().get("status")
         except (requests.HTTPError, ValueError) as e:
-            logger.warning(f"Invalid response: {e}")
-            return None
+            raise _github_verify_error(commit_hash, f"invalid response: {e}") from e
 
         # In `compare/{commit}...{branch}`, "ahead" means the branch has
         # commits after the commit, i.e. the commit is reachable from the
@@ -712,12 +709,24 @@ def _commit_is_on_any_branch(commit_hash, session, repo_url, branches):
     return False
 
 
+def _github_verify_error(commit_hash, detail):
+    """Return the ValueError raised when the GitHub API cannot be queried."""
+    return ValueError(
+        f"Could not verify that commit {commit_hash!r} belongs to "
+        f"the official NixOS/nixpkgs repository: {detail}. Configure "
+        f"SCANCODEIO_FETCH_HEADERS (e.g. "
+        f"api.github.com=Authorization=token <TOKEN>) "
+        f"to raise the limit, or retry later."
+    )
+
+
 def verify_commit_in_nixpkgs(commit_hash):
     """
     Return True if ``commit_hash`` is reachable from an official nixpkgs
     branch (``master``, ``nixos-unstable``, ``nixpkgs-unstable``,
-    ``nixos-unstable-small``, or any ``release-*`` branch), False
-    otherwise, and None if GitHub could not be queried.
+    ``nixos-unstable-small``, or any ``release-*`` branch), False otherwise.
+
+    Raise `ValueError` if the GitHub API could not be queried.
     """
     if not COMMIT_RE.fullmatch(commit_hash):
         return False
@@ -730,15 +739,14 @@ def verify_commit_in_nixpkgs(commit_hash):
         if commit_response.status_code == 404:
             return False
         if _github_api_is_unavailable(commit_response):
-            logger.warning(
-                f"GitHub API unavailable during initial check for "
-                f"{commit_hash!r} (HTTP {commit_response.status_code})."
+            raise _github_verify_error(
+                commit_hash,
+                f"GitHub API unavailable during initial check "
+                f"(HTTP {commit_response.status_code})",
             )
-            return None
         commit_response.raise_for_status()
     except requests.RequestException as e:
-        logger.warning(f"Could not perform existence check for {commit_hash!r}: {e}")
-        return None
+        raise _github_verify_error(commit_hash, f"existence check failed: {e}") from e
 
     try:
         release_branches = []
@@ -763,8 +771,9 @@ def verify_commit_in_nixpkgs(commit_hash):
         # discovered on GitHub.
         branches = NIXPKGS_TRUSTED_BRANCHES + release_branches
     except (requests.RequestException, ValueError, TypeError) as e:
-        logger.warning(f"Could not list nixpkgs branches: {e}")
-        return None
+        raise _github_verify_error(
+            commit_hash, f"could not list nixpkgs branches: {e}"
+        ) from e
 
     return _commit_is_on_any_branch(commit_hash, session, repo_url, branches)
 
@@ -818,7 +827,7 @@ def check_input_and_return_purl(project):
     # Verify the commit exists in the official NixOS/nixpkgs history so that
     # a commit pointing to a fork cannot be used to inject arbitrary Nix code.
     if commit_hash:
-        _require_official_commit(commit_hash, label="commit")
+        _require_official_commit(commit_hash)
     return input_purl
 
 
@@ -835,34 +844,18 @@ def _validate_resolved_commit_hash(release_commit_hash, user_commit_hash):
 
     if not COMMIT_RE.fullmatch(release_commit_hash):
         raise ValueError(
-            f"Invalid resolved commit hash from package metadata: "
-            f"{release_commit_hash!r}"
+            f"Invalid resolved commit hash from package metadata: {release_commit_hash!r}"
         )
-    _require_official_commit(release_commit_hash, label="resolved commit")
+    _require_official_commit(release_commit_hash)
     return release_commit_hash
 
 
-def _require_official_commit(commit_hash, label="commit"):
-    """
-    Raise ValueError unless `commit_hash` is on an official nixpkgs branch.
-
-    `label` distinguishes error messages for the user-supplied commit
-    ("commit") from the metadata-resolved one ("resolved commit").
-    """
-    is_official = verify_commit_in_nixpkgs(commit_hash)
-    if is_official is None:
-        raise ValueError(
-            f"Could not verify that {label} {commit_hash!r} belongs to "
-            f"the official NixOS/nixpkgs repository: the GitHub API "
-            f"was unreachable or rate limited. Configure "
-            f"SCANCODEIO_FETCH_HEADERS (e.g. "
-            f"api.github.com=Authorization=token <TOKEN>) "
-            f"to raise the limit, or retry later."
-        )
-    if not is_official:
+def _require_official_commit(commit_hash):
+    """Raise ValueError unless `commit_hash` is on an official nixpkgs branch."""
+    if not verify_commit_in_nixpkgs(commit_hash):
         trusted = ", ".join(NIXPKGS_TRUSTED_BRANCHES)
         raise ValueError(
-            f"The {label} {commit_hash!r} is not reachable from any "
+            f"The commit {commit_hash!r} is not reachable from any "
             f"official NixOS/nixpkgs branch ({trusted}, or release-*)."
         )
 

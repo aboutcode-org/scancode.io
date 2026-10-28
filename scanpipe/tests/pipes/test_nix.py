@@ -128,7 +128,10 @@ class ScanPipeNixPipesTest(TestCase):
                 with self.assertRaisesMessage(ValueError, expected):
                     nix.check_input_and_return_purl(project)
 
-    @mock.patch("scanpipe.pipes.nix.verify_commit_in_nixpkgs", return_value=None)
+    @mock.patch(
+        "scanpipe.pipes.nix.verify_commit_in_nixpkgs",
+        side_effect=ValueError("Could not verify that commit ..."),
+    )
     def test_scanpipe_nix_check_input_purl_verify_unavailable(self, mock_verify):
         project = mock.Mock()
         project.inputsources.all.return_value = [
@@ -216,11 +219,6 @@ class ScanPipeNixPipesTest(TestCase):
                 [(404, {}, {})],
                 False,
             ),
-            (
-                "rate-limited (403 on existence check)",
-                [(403, {}, {})],
-                None,
-            ),
         ]
 
         for label, responses, expected in cases:
@@ -234,10 +232,17 @@ class ScanPipeNixPipesTest(TestCase):
                 mock_session.get.side_effect = mocks
                 self.assertEqual(nix.verify_commit_in_nixpkgs(commit), expected)
 
+        # Rate-limited on existence check
+        mock_session.reset_mock()
+        mock_session.get.side_effect = [mock.Mock(status_code=403, links={})]
+        with self.assertRaisesMessage(ValueError, "Could not verify"):
+            nix.verify_commit_in_nixpkgs(commit)
+
         # Network error
         mock_session.reset_mock()
         mock_session.get.side_effect = requests.RequestException("network")
-        self.assertIsNone(nix.verify_commit_in_nixpkgs(commit))
+        with self.assertRaisesMessage(ValueError, "Could not verify"):
+            nix.verify_commit_in_nixpkgs(commit)
 
         # Invalid hash
         mock_session_helper.reset_mock()
@@ -1256,7 +1261,10 @@ class ScanPipeNixPipesTest(TestCase):
         with self.assertRaisesMessage(ValueError, "not reachable"):
             nix._validate_resolved_commit_hash(commit, "")
 
-    @mock.patch("scanpipe.pipes.nix.verify_commit_in_nixpkgs", return_value=None)
+    @mock.patch(
+        "scanpipe.pipes.nix.verify_commit_in_nixpkgs",
+        side_effect=ValueError("Could not verify that commit ..."),
+    )
     def test_scanpipe_nix_validate_resolved_commit_hash_unavailable(self, mock_verify):
         commit = "1234567890abcdef1234567890abcdef12345678"
         with self.assertRaisesMessage(ValueError, "Could not verify"):
