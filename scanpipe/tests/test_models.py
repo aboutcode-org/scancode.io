@@ -62,6 +62,7 @@ from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import DiscoveredPackageScore
+from scanpipe.models import OriginDetermination
 from scanpipe.models import OriginMatch
 from scanpipe.models import Project
 from scanpipe.models import ProjectMessage
@@ -184,6 +185,13 @@ class ScanPipeModelsTest(TestCase):
             match_type=OriginMatch.MatchType.FILE,
             tool="matchcode",
         )
+        OriginDetermination.objects.create(
+            project=self.project1,
+            resource=resource,
+            purl="pkg:pypi/six@1.17.0",
+            status=OriginDetermination.Status.NEEDS_REVIEW,
+            rule="single-tool-exact-match",
+        )
 
         delete_log = self.project1.delete_related_objects()
         expected = {
@@ -194,6 +202,7 @@ class ScanPipeModelsTest(TestCase):
             "scanpipe.DiscoveredPackage": 1,
             "scanpipe.DiscoveredPackage_codebase_resources": 1,
             "scanpipe.InputSource": 0,
+            "scanpipe.OriginDetermination": 1,
             "scanpipe.OriginMatch": 1,
             "scanpipe.ProjectMessage": 0,
             "scanpipe.Run": 1,
@@ -3115,6 +3124,52 @@ class ScanPipeModelsTest(TestCase):
             origin_matches.partial_matches(), [directory_match, snippet_match]
         )
 
+    def test_scanpipe_origin_determination_queryset_methods(self):
+        six_resource = make_resource_file(self.project1, path="six.py")
+        ini_resource = make_resource_file(self.project1, path="ini.c")
+        urllib3_resource = make_resource_file(self.project1, path="urllib3.py")
+        six_determination = OriginDetermination.objects.create(
+            project=self.project1,
+            resource=six_resource,
+            purl="pkg:pypi/six@1.17.0",
+            status=OriginDetermination.Status.AUTO_CONFIRMED,
+            rule="confirmed-by-two-tools",
+        )
+        ini_determination = OriginDetermination.objects.create(
+            project=self.project1,
+            resource=ini_resource,
+            purl="pkg:github/benhoyt/inih@r62",
+            status=OriginDetermination.Status.CONFIRMED,
+        )
+        urllib3_determination = OriginDetermination.objects.create(
+            project=self.project1,
+            resource=urllib3_resource,
+            status=OriginDetermination.Status.NEEDS_REVIEW,
+            rule="conflicting-candidates",
+        )
+
+        determinations = self.project1.origindeterminations.order_by("resource__path")
+        self.assertQuerySetEqual(
+            determinations.automatic(), [six_determination, urllib3_determination]
+        )
+        self.assertQuerySetEqual(
+            determinations.confirmed(), [ini_determination, six_determination]
+        )
+
+    def test_scanpipe_origin_determination_model_str(self):
+        resource = make_resource_file(self.project1, path="six.py")
+        determination = OriginDetermination(
+            project=self.project1,
+            resource=resource,
+            purl="pkg:pypi/six@1.17.0",
+            status=OriginDetermination.Status.CONFIRMED,
+        )
+        self.assertEqual("pkg:pypi/six@1.17.0 (confirmed)", str(determination))
+
+        determination.purl = ""
+        determination.status = OriginDetermination.Status.NO_ORIGIN
+        self.assertEqual("no-origin", str(determination))
+
 
 class ScanPipeModelsTransactionTest(TransactionTestCase):
     """
@@ -3497,3 +3552,25 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
                 tool="scanoss",
                 similarity=101,
             )
+
+    def test_scanpipe_origin_determination_model_purl_consistent_with_status(self):
+        project1 = make_project("Analysis")
+        resource = make_resource_file(project1, path="six.py")
+        determination_data = {"project": project1, "resource": resource}
+
+        with self.assertRaises(IntegrityError):
+            OriginDetermination.objects.create(
+                **determination_data, status=OriginDetermination.Status.CONFIRMED
+            )
+
+        with self.assertRaises(IntegrityError):
+            OriginDetermination.objects.create(
+                **determination_data,
+                purl="pkg:pypi/six@1.17.0",
+                status=OriginDetermination.Status.NO_ORIGIN,
+            )
+
+        OriginDetermination.objects.create(
+            **determination_data, status=OriginDetermination.Status.NEEDS_REVIEW
+        )
+        self.assertEqual("needs-review", resource.origin_determination.status)

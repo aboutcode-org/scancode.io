@@ -59,6 +59,15 @@ OriginMatch
     :undoc-members:
     :member-order: groupwise
 
+.. _data_models_origin_determination:
+
+OriginDetermination
+-------------------
+.. autoclass:: scanpipe.models.OriginDetermination()
+    :members:
+    :undoc-members:
+    :member-order: groupwise
+
 .. _data_models_project_message:
 
 ProjectMessage
