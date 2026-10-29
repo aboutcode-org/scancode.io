@@ -37,6 +37,7 @@ class FindOrigins(Pipeline):
     directory. A tool that is not configured is skipped.
 
     Supported tools:
+
     - MatchCode.io: the codebase scan, including file and directory
       fingerprints, is sent to the configured MatchCode.io server.
     - SCANOSS: the codebase files are fingerprinted locally, then their paths,
