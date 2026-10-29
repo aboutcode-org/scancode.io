@@ -9,6 +9,7 @@
       <div class="is-flex is-justify-content-space-between">
         {% include 'scanpipe/includes/breadcrumb.html' with linked_project=True current="Resources" %}
         {% include 'scanpipe/includes/search_field.html' with extra_class="is-small" %}
+        {% include 'scanpipe/dropdowns/finding_actions_dropdown.html' %}
       </div>
       {% include 'scanpipe/includes/pagination_header.html' %}
       {% include 'scanpipe/includes/filters_breadcrumb.html' with filterset=filter only %}
@@ -23,10 +24,11 @@
       <span>View the resource tree</span>
     </a>
     <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth is-rounded-table">
-      {% include 'scanpipe/includes/list_view_thead.html' %}
+      {% include 'scanpipe/includes/list_view_thead.html' with finding_type=finding_type %}
       <tbody>
         {% for resource in object_list %}
           <tr>
+            <td class="p-2"><input type="checkbox" class="select-row" value="{{ resource.pk }}"></td>
             <td class="break-all" style="min-width: 200px;">
               {% if resource.is_dir %}
                 {{ resource.path }}
