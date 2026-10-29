@@ -5172,6 +5172,9 @@ class OriginDeterminationQuerySet(ProjectRelatedQuerySet):
     def automatic(self):
         return self.filter(status__in=self.model.AUTOMATIC_STATUSES)
 
+    def confirmed(self):
+        return self.filter(status__in=self.model.CONFIRMED_STATUSES)
+
 
 class OriginDetermination(UUIDPKModel, ProjectRelatedModel):
     """
@@ -5190,6 +5193,7 @@ class OriginDetermination(UUIDPKModel, ProjectRelatedModel):
 
     # Set by the determination rules, and replaced each time the rules run.
     AUTOMATIC_STATUSES = [Status.AUTO_CONFIRMED, Status.NEEDS_REVIEW]
+    CONFIRMED_STATUSES = [Status.AUTO_CONFIRMED, Status.CONFIRMED]
 
     resource = models.OneToOneField(
         CodebaseResource,

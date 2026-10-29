@@ -106,6 +106,10 @@ class FindOrigins(Pipeline):
         matches of all the tools. An origin is confirmed automatically when two
         tools report the same package, with at least one exact match. Otherwise,
         the origin needs a review. The origins confirmed by a user are kept.
+        The files and directories of a confirmed origin are assigned to the origin
+        package, created from the tools data when the codebase scan did not
+        detect it.
         """
-        determination_count = origin.determine_origins(self.project)
+        determination_count, package_count = origin.determine_origins(self.project)
         self.log(f"{determination_count:,d} origin determinations created.")
+        self.log(f"{package_count:,d} origin packages assigned.")

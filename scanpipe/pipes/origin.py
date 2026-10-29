@@ -28,17 +28,24 @@ from operator import attrgetter
 from pathlib import PurePosixPath
 
 from django.db import transaction
+from django.db.models import Q
 
 from packageurl import PackageURL
 
 from scanpipe.models import CodebaseResource
+from scanpipe.models import DiscoveredPackage
 from scanpipe.models import OriginDetermination
 from scanpipe.models import OriginMatch
+from scanpipe.pipes.resolve import convert_spdx_expression
 
 CONFLICTING_CANDIDATES_RULE = "conflicting-candidates"
 NO_EXACT_MATCH_RULE = "no-exact-match"
 SINGLE_TOOL_RULE = "single-tool"
 CONFIRMED_BY_TWO_TOOLS_RULE = "confirmed-by-two-tools"
+
+# Identifies the packages created from an origin determination, as opposed to
+# the packages detected by the codebase scan.
+ORIGIN_DATASOURCE_ID = "origin_determination"
 
 
 def get_package_purl(purl, version):
@@ -71,6 +78,7 @@ class Origin:
     identify the same package, possibly with different but equivalent PURLs.
     """
 
+    origin_matches: list
     reported_purls: list
     equivalent_purls: set
     common_purls: set
@@ -84,6 +92,7 @@ class Origin:
         tool_purls = origin_match.extra_data.get("purls", [])
         equivalent_purls = {reported_purl, *get_versioned_purls(tool_purls, version)}
         return cls(
+            origin_matches=[origin_match],
             reported_purls=[reported_purl],
             equivalent_purls=equivalent_purls,
             common_purls=set(equivalent_purls),
@@ -108,6 +117,7 @@ class Origin:
         return bool(self.equivalent_purls & other_origin.equivalent_purls)
 
     def merge(self, other_origin):
+        self.origin_matches.extend(other_origin.origin_matches)
         self.reported_purls.extend(other_origin.reported_purls)
         self.equivalent_purls |= other_origin.equivalent_purls
         self.common_purls &= other_origin.common_purls
@@ -218,7 +228,8 @@ def make_origin_determination(project, resource, origins):
 
 def iter_origin_determinations(project, origin_matches):
     """
-    Yield unsaved OriginDetermination instances from the ``origin_matches``.
+    Yield (determination, origins) for the unsaved OriginDetermination instances
+    determined from the ``origin_matches``.
     The files of a matched directory are determined with the directory, unless
     they are matched to another package.
     """
@@ -241,7 +252,8 @@ def iter_origin_determinations(project, origin_matches):
             resource.path, origins_by_directory_path
         )
         if not is_directory_origin(file_origins, directory_origins):
-            yield make_origin_determination(project, resource, file_origins)
+            determination = make_origin_determination(project, resource, file_origins)
+            yield determination, file_origins
             continue
 
         for file_origin in file_origins:
@@ -250,20 +262,174 @@ def iter_origin_determinations(project, origin_matches):
             )
 
     for path, origins in origins_by_directory_path.items():
-        if origins:
-            yield make_origin_determination(project, directories_by_path[path], origins)
+        if not origins:
+            continue
+
+        directory = directories_by_path[path]
+        yield make_origin_determination(project, directory, origins), origins
+
+
+def get_first_extra_data_value(origin_matches, key):
+    """Return the first non-empty ``key`` value of the ``origin_matches`` extra data."""
+    for origin_match in origin_matches:
+        if value := origin_match.extra_data.get(key):
+            return value
+    return ""
+
+
+def get_license_names(origin_matches):
+    """Return the distinct license names of the ``origin_matches`` extra data."""
+    license_names = [
+        license_data["name"]
+        for origin_match in origin_matches
+        for license_data in origin_match.extra_data.get("licenses", [])
+    ]
+    return list(dict.fromkeys(license_names))
+
+
+def get_origin_license_data(origin_matches):
+    """
+    Return the declared license fields of the ``origin_matches`` package: the
+    MatchCode.io license expression, or else the SPDX license names reported by
+    SCANOSS, all required.
+    """
+    license_expression = get_first_extra_data_value(
+        origin_matches, "declared_license_expression"
+    )
+    if license_expression:
+        return {"declared_license_expression": license_expression}
+
+    license_names = get_license_names(origin_matches)
+    if not license_names:
+        return {}
+
+    license_expression_spdx = " AND ".join(license_names)
+    return {
+        "declared_license_expression": convert_spdx_expression(license_expression_spdx),
+        "declared_license_expression_spdx": license_expression_spdx,
+    }
+
+
+def get_origin_package_data(origin):
+    """Return the package data of an ``origin`` reported by the origin tools."""
+    origin_matches = origin.origin_matches
+    return {
+        "download_url": get_first_extra_data_value(origin_matches, "download_url"),
+        "homepage_url": get_first_extra_data_value(origin_matches, "url"),
+        "release_date": get_first_extra_data_value(origin_matches, "release_date"),
+        **get_origin_license_data(origin_matches),
+    }
+
+
+def add_auto_confirmed_package_data(package_data_by_purl, determination_batch):
+    """
+    Add to ``package_data_by_purl`` the package data of the auto-confirmed
+    origins of the ``determination_batch``.
+    """
+    for determination, origins in determination_batch:
+        is_new_auto_confirmed_purl = (
+            determination.status == OriginDetermination.Status.AUTO_CONFIRMED
+            and determination.purl not in package_data_by_purl
+        )
+        if is_new_auto_confirmed_purl:
+            package_data_by_purl[determination.purl] = get_origin_package_data(
+                origins[0]
+            )
+
+
+def get_origin_packages(project):
+    """Return the ``project`` packages created from an origin determination."""
+    return project.discoveredpackages.filter(datasource_ids=[ORIGIN_DATASOURCE_ID])
+
+
+def unassign_origin_packages(project):
+    """Remove the resources assigned to the packages of origin determinations."""
+    package_resources = DiscoveredPackage.codebase_resources.through.objects
+    package_resources.filter(
+        discoveredpackage__in=get_origin_packages(project)
+    ).delete()
+
+
+def get_or_create_origin_package(project, purl, package_data):
+    """
+    Return the ``project`` package of ``purl``, such as a package detected by the
+    codebase scan, or else create it from the ``package_data``.
+    """
+    purl_data = PackageURL.from_string(purl).to_dict()
+    lookup_purl_data = DiscoveredPackage.extract_purl_data(purl_data)
+    if package := project.discoveredpackages.filter(**lookup_purl_data).first():
+        return package
+
+    package_data = {
+        **purl_data,
+        **package_data,
+        "datasource_ids": [ORIGIN_DATASOURCE_ID],
+    }
+    return DiscoveredPackage.create_from_data(project, package_data)
+
+
+def get_determined_resources(project, determinations):
+    """
+    Return the resources of the ``determinations``, including the resources of
+    the determined directories that have no determination of their own.
+    """
+    resource_ids = [determination.resource_id for determination in determinations]
+    resources_filter = Q(pk__in=resource_ids)
+
+    for determination in determinations:
+        if determination.resource.is_dir:
+            resources_filter |= Q(
+                path__startswith=f"{determination.resource.path}/",
+                origin_determination__isnull=True,
+            )
+
+    return project.codebaseresources.filter(resources_filter)
+
+
+def assign_origin_packages(project, package_data_by_purl):
+    """
+    Assign the resources of the confirmed ``project`` determinations to their
+    origin package, created from ``package_data_by_purl`` when missing.
+    Return the number of origin packages.
+    """
+    confirmed_determinations = (
+        project.origindeterminations.confirmed()
+        .select_related("resource")
+        .only("purl", "resource__path", "resource__type")
+        .order_by("purl")
+    )
+    get_purl = attrgetter("purl")
+    package_count = 0
+
+    for purl, purl_determinations in groupby(confirmed_determinations, key=get_purl):
+        package_data = package_data_by_purl.get(purl, {})
+        package = get_or_create_origin_package(project, purl, package_data)
+        package.add_resources(
+            get_determined_resources(project, list(purl_determinations))
+        )
+        package_count += 1
+
+    return package_count
+
+
+def delete_unassigned_origin_packages(project):
+    """Delete the packages of origin determinations that have no resources left."""
+    get_origin_packages(project).filter(codebase_resources__isnull=True).delete()
 
 
 def determine_origins(project, batch_size=2000):
     """
-    Determine the origin of the ``project`` resources from their origin matches.
+    Determine the origin of the ``project`` resources from their origin matches,
+    and assign the resources of a confirmed origin to the origin package.
     The previous automatic determinations are replaced, while the determinations
     made by a user are kept unchanged.
-    Return the number of created determinations.
+    Return the number of created determinations and the number of origin packages.
     """
     determination_count = 0
+    package_data_by_purl = {}
 
     with transaction.atomic():
+        unassign_origin_packages(project)
         project.origindeterminations.automatic().delete()
 
         origin_matches = (
@@ -281,7 +447,13 @@ def determine_origins(project, batch_size=2000):
         )
         determinations = iter_origin_determinations(project, origin_matches)
         for determination_batch in batched(determinations, batch_size):
-            OriginDetermination.objects.bulk_create(determination_batch)
+            OriginDetermination.objects.bulk_create(
+                [determination for determination, origins in determination_batch]
+            )
             determination_count += len(determination_batch)
+            add_auto_confirmed_package_data(package_data_by_purl, determination_batch)
 
-    return determination_count
+        package_count = assign_origin_packages(project, package_data_by_purl)
+        delete_unassigned_origin_packages(project)
+
+    return determination_count, package_count
