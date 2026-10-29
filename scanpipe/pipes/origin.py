@@ -39,6 +39,7 @@ from scanpipe.models import OriginMatch
 from scanpipe.pipes.resolve import convert_spdx_expression
 
 CONFLICTING_CANDIDATES_RULE = "conflicting-candidates"
+CONFLICTING_VERSIONS_RULE = "conflicting-versions"
 NO_EXACT_MATCH_RULE = "no-exact-match"
 SINGLE_TOOL_RULE = "single-tool"
 CONFIRMED_BY_TWO_TOOLS_RULE = "confirmed-by-two-tools"
@@ -79,10 +80,19 @@ def get_equivalent_purls(origin_match):
     Return the PURLs identifying the ``origin_match`` package: its own PURL and
     the equivalent PURLs reported by the tool, such as the SCANOSS ``purls``.
     """
-    reported_purl = get_package_purl(origin_match.purl)
-    version = PackageURL.from_string(reported_purl).version
+    version = PackageURL.from_string(origin_match.purl).version
     tool_purls = origin_match.extra_data.get("purls", [])
-    return {reported_purl, *get_versioned_purls(tool_purls, version)}
+    return get_versioned_purls([origin_match.purl, *tool_purls], version)
+
+
+def get_versionless_purl(purl):
+    """Return the ``purl`` without version, qualifiers and subpath."""
+    package_url = PackageURL.from_string(purl)
+    return PackageURL(
+        type=package_url.type,
+        namespace=package_url.namespace,
+        name=package_url.name,
+    ).to_string()
 
 
 @dataclass
@@ -128,6 +138,10 @@ class Origin:
             if reported_purl in common_purls
         ]
         return (common_reported_purls or reported_purls)[0]
+
+    @property
+    def versionless_purls(self):
+        return {get_versionless_purl(purl) for purl in self.equivalent_purls}
 
     def is_same_package(self, other_origin):
         return bool(self.equivalent_purls & other_origin.equivalent_purls)
@@ -204,35 +218,42 @@ def is_directory_origin(file_origins, directory_origins):
     )
 
 
-def get_status_and_rule(origin):
-    """Return the determination status and rule of a single candidate ``origin``."""
+def is_same_package_versions(origins):
+    """Return True when the ``origins`` are versions of the same package."""
+    return bool(set.intersection(*(origin.versionless_purls for origin in origins)))
+
+
+def get_rule(origins):
+    """Return the determination rule of the candidate ``origins`` of a resource."""
+    if len(origins) > 1:
+        if is_same_package_versions(origins):
+            return CONFLICTING_VERSIONS_RULE
+        return CONFLICTING_CANDIDATES_RULE
+
+    origin = origins[0]
     if not origin.has_exact_match:
-        return OriginDetermination.Status.NEEDS_REVIEW, NO_EXACT_MATCH_RULE
+        return NO_EXACT_MATCH_RULE
 
     # A single tool can miss the other candidates: MatchCode.io stops at the
     # first package matched, and SCANOSS reports one component per file.
     if len(origin.tools) < 2:
-        return OriginDetermination.Status.NEEDS_REVIEW, SINGLE_TOOL_RULE
+        return SINGLE_TOOL_RULE
 
-    return OriginDetermination.Status.AUTO_CONFIRMED, CONFIRMED_BY_TWO_TOOLS_RULE
+    return CONFIRMED_BY_TWO_TOOLS_RULE
 
 
 def make_origin_determination(project, resource, origins):
     """Return an unsaved OriginDetermination for the ``resource`` ``origins``."""
-    if len(origins) > 1:
-        return OriginDetermination(
-            project=project,
-            resource=resource,
-            status=OriginDetermination.Status.NEEDS_REVIEW,
-            rule=CONFLICTING_CANDIDATES_RULE,
-        )
+    rule = get_rule(origins)
+    status = OriginDetermination.Status.NEEDS_REVIEW
+    if rule == CONFIRMED_BY_TWO_TOOLS_RULE:
+        status = OriginDetermination.Status.AUTO_CONFIRMED
 
-    origin = origins[0]
-    status, rule = get_status_and_rule(origin)
+    has_single_candidate = len(origins) == 1
     return OriginDetermination(
         project=project,
         resource=resource,
-        purl=origin.purl,
+        purl=origins[0].purl if has_single_candidate else "",
         status=status,
         rule=rule,
     )
@@ -266,6 +287,8 @@ def iter_origin_determinations(project, origin_matches):
             yield make_origin_determination(project, resource, file_origins)
             continue
 
+        # The file matches count for the directory: an exact file match by one tool
+        # confirms the directory match by another tool.
         for file_origin in file_origins:
             get_same_package_origins(file_origin, directory_origins)[0].merge(
                 file_origin

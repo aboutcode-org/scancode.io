@@ -5181,9 +5181,9 @@ class OriginDetermination(UUIDPKModel, ProjectRelatedModel):
         CONFIRMED = "confirmed"
         NO_ORIGIN = "no-origin"
 
+    CONFIRMED_STATUSES = [Status.AUTO_CONFIRMED, Status.CONFIRMED]
     # Set by the determination rules, and replaced each time the rules run.
     AUTOMATIC_STATUSES = [Status.AUTO_CONFIRMED, Status.NEEDS_REVIEW]
-    CONFIRMED_STATUSES = [Status.AUTO_CONFIRMED, Status.CONFIRMED]
 
     resource = models.OneToOneField(
         CodebaseResource,

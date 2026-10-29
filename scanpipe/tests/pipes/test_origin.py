@@ -132,6 +132,10 @@ class ScanPipeOriginPipesTest(TestCase):
         expected = {"pkg:pypi/six@1.17.0"}
         self.assertEqual(expected, origin.get_equivalent_purls(origin_match))
 
+    def test_scanpipe_pipes_origin_get_versionless_purl(self):
+        purl = "pkg:pypi/six@1.17.0?file_name=six-1.17.0.tar.gz#six.py"
+        self.assertEqual("pkg:pypi/six", origin.get_versionless_purl(purl))
+
     def test_scanpipe_pipes_origin_origin_from_origin_match(self):
         origin_match = make_unsaved_origin_match(
             "pkg:github/benjaminp/six@1.17.0", tool="scanoss", purls=SCANOSS_SIX_PURLS
@@ -157,6 +161,10 @@ class ScanPipeOriginPipesTest(TestCase):
 
         scanoss_origin.merge(make_origin("pkg:pypi/six@1.17.0"))
         self.assertEqual("pkg:pypi/six@1.17.0", scanoss_origin.purl)
+
+    def test_scanpipe_pipes_origin_origin_versionless_purls(self):
+        expected = {"pkg:github/benjaminp/six", "pkg:pypi/six", "pkg:conda/six"}
+        self.assertEqual(expected, make_scanoss_six_origin().versionless_purls)
 
     def test_scanpipe_pipes_origin_origin_is_same_package(self):
         scanoss_origin = make_scanoss_six_origin()
@@ -270,23 +278,33 @@ class ScanPipeOriginPipesTest(TestCase):
         )
         self.assertFalse(origin.is_directory_origin([ms_origin], []))
 
-    def test_scanpipe_pipes_origin_get_status_and_rule(self):
-        needs_review = OriginDetermination.Status.NEEDS_REVIEW
+    def test_scanpipe_pipes_origin_is_same_package_versions(self):
+        six_17_origin = make_scanoss_six_origin()
+        six_16_origin = make_origin("pkg:pypi/six@1.16.0")
+        urllib3_origin = make_origin("pkg:pypi/urllib3@1.26.20")
 
-        snippet_origin = make_origin("pkg:npm/lodash@4.17.21", match_type="snippet")
-        expected = (needs_review, origin.NO_EXACT_MATCH_RULE)
-        self.assertEqual(expected, origin.get_status_and_rule(snippet_origin))
+        self.assertTrue(origin.is_same_package_versions([six_17_origin, six_16_origin]))
+        self.assertFalse(
+            origin.is_same_package_versions([six_16_origin, urllib3_origin])
+        )
 
+    def test_scanpipe_pipes_origin_get_rule(self):
         six_origin = make_origin("pkg:pypi/six@1.17.0")
-        expected = (needs_review, origin.SINGLE_TOOL_RULE)
-        self.assertEqual(expected, origin.get_status_and_rule(six_origin))
+        six_16_origin = make_origin("pkg:pypi/six@1.16.0")
+        urllib3_origin = make_origin("pkg:pypi/urllib3@1.26.20")
+        snippet_origin = make_origin("pkg:npm/lodash@4.17.21", match_type="snippet")
+
+        rule = origin.get_rule([six_origin, urllib3_origin])
+        self.assertEqual(origin.CONFLICTING_CANDIDATES_RULE, rule)
+        rule = origin.get_rule([six_origin, six_16_origin])
+        self.assertEqual(origin.CONFLICTING_VERSIONS_RULE, rule)
+        rule = origin.get_rule([snippet_origin])
+        self.assertEqual(origin.NO_EXACT_MATCH_RULE, rule)
+        self.assertEqual(origin.SINGLE_TOOL_RULE, origin.get_rule([six_origin]))
 
         six_origin.merge(make_scanoss_six_origin())
-        expected = (
-            OriginDetermination.Status.AUTO_CONFIRMED,
-            origin.CONFIRMED_BY_TWO_TOOLS_RULE,
-        )
-        self.assertEqual(expected, origin.get_status_and_rule(six_origin))
+        rule = origin.get_rule([six_origin])
+        self.assertEqual(origin.CONFIRMED_BY_TWO_TOOLS_RULE, rule)
 
     def test_scanpipe_pipes_origin_make_origin_determination(self):
         resource = make_resource_file(self.project1, path="six.py")
@@ -307,6 +325,13 @@ class ScanPipeOriginPipesTest(TestCase):
         self.assertEqual("", determination.purl)
         self.assertEqual("needs-review", determination.status)
         self.assertEqual(origin.CONFLICTING_CANDIDATES_RULE, determination.rule)
+
+        six_origin.merge(make_scanoss_six_origin())
+        determination = origin.make_origin_determination(
+            self.project1, resource, [six_origin]
+        )
+        self.assertEqual("pkg:pypi/six@1.17.0", determination.purl)
+        self.assertEqual("auto-confirmed", determination.status)
 
     def test_scanpipe_pipes_origin_iter_origin_determinations(self):
         vendor = make_resource_directory(self.project1, path="vendor")
@@ -555,7 +580,7 @@ class ScanPipeOriginPipesTest(TestCase):
                     "src/inih/ini.c",
                     "",
                     "needs-review",
-                    origin.CONFLICTING_CANDIDATES_RULE,
+                    origin.CONFLICTING_VERSIONS_RULE,
                 ),
                 (
                     "src/inih/ini.h",
