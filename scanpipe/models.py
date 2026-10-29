@@ -5159,16 +5159,6 @@ class OriginMatch(UUIDPKModel, ProjectRelatedModel, ExtraDataFieldMixin, AdminUR
 
 
 class OriginDeterminationQuerySet(ProjectRelatedQuerySet):
-    def without_reported_candidate(self):
-        """
-        Return the determinations whose origin is not reported anymore by any
-        origin tool for the resource, for example after a new origin tools run.
-        """
-        reported_candidates = OriginMatch.objects.filter(
-            resource=OuterRef("resource"), purl=OuterRef("purl")
-        )
-        return self.exclude(purl="").filter(~Exists(reported_candidates))
-
     def automatic(self):
         return self.filter(status__in=self.model.AUTOMATIC_STATUSES)
 

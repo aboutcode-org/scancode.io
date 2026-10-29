@@ -3128,13 +3128,6 @@ class ScanPipeModelsTest(TestCase):
         six_resource = make_resource_file(self.project1, path="six.py")
         ini_resource = make_resource_file(self.project1, path="ini.c")
         urllib3_resource = make_resource_file(self.project1, path="urllib3.py")
-        OriginMatch.objects.create(
-            project=self.project1,
-            resource=six_resource,
-            purl="pkg:pypi/six@1.17.0",
-            match_type=OriginMatch.MatchType.FILE,
-            tool="matchcode",
-        )
         six_determination = OriginDetermination.objects.create(
             project=self.project1,
             resource=six_resource,
@@ -3157,10 +3150,10 @@ class ScanPipeModelsTest(TestCase):
 
         determinations = self.project1.origindeterminations.order_by("resource__path")
         self.assertQuerySetEqual(
-            determinations.without_reported_candidate(), [ini_determination]
+            determinations.automatic(), [six_determination, urllib3_determination]
         )
         self.assertQuerySetEqual(
-            determinations.automatic(), [six_determination, urllib3_determination]
+            determinations.confirmed(), [ini_determination, six_determination]
         )
 
     def test_scanpipe_origin_determination_model_str(self):

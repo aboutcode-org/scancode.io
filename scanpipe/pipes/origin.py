@@ -48,14 +48,17 @@ CONFIRMED_BY_TWO_TOOLS_RULE = "confirmed-by-two-tools"
 ORIGIN_DATASOURCE_ID = "origin_determination"
 
 
-def get_package_purl(purl, version):
-    """Return the ``purl`` with the ``version``, without qualifiers and subpath."""
+def get_package_purl(purl, version=None):
+    """
+    Return the ``purl`` without qualifiers and subpath, with the ``version`` when
+    provided.
+    """
     package_url = PackageURL.from_string(purl)
     return PackageURL(
         type=package_url.type,
         namespace=package_url.namespace,
         name=package_url.name,
-        version=version,
+        version=version or package_url.version,
     ).to_string()
 
 
@@ -71,6 +74,17 @@ def get_versioned_purls(purls, version):
     return versioned_purls
 
 
+def get_equivalent_purls(origin_match):
+    """
+    Return the PURLs identifying the ``origin_match`` package: its own PURL and
+    the equivalent PURLs reported by the tool, such as the SCANOSS ``purls``.
+    """
+    reported_purl = get_package_purl(origin_match.purl)
+    version = PackageURL.from_string(reported_purl).version
+    tool_purls = origin_match.extra_data.get("purls", [])
+    return {reported_purl, *get_versioned_purls(tool_purls, version)}
+
+
 @dataclass
 class Origin:
     """
@@ -79,50 +93,48 @@ class Origin:
     """
 
     origin_matches: list
-    reported_purls: list
+    # Kept up to date on merge, as it is compared for each resource.
     equivalent_purls: set
-    common_purls: set
-    tools: set
-    has_exact_match: bool
 
     @classmethod
     def from_origin_match(cls, origin_match):
-        version = PackageURL.from_string(origin_match.purl).version
-        reported_purl = get_package_purl(origin_match.purl, version)
-        tool_purls = origin_match.extra_data.get("purls", [])
-        equivalent_purls = {reported_purl, *get_versioned_purls(tool_purls, version)}
-        return cls(
-            origin_matches=[origin_match],
-            reported_purls=[reported_purl],
-            equivalent_purls=equivalent_purls,
-            common_purls=set(equivalent_purls),
-            tools={origin_match.tool},
-            has_exact_match=origin_match.match_type in OriginMatch.EXACT_MATCH_TYPES,
+        return cls([origin_match], get_equivalent_purls(origin_match))
+
+    @property
+    def tools(self):
+        return {origin_match.tool for origin_match in self.origin_matches}
+
+    @property
+    def has_exact_match(self):
+        return any(
+            origin_match.match_type in OriginMatch.EXACT_MATCH_TYPES
+            for origin_match in self.origin_matches
         )
 
     @property
     def purl(self):
         """
-        Return the reported PURL shared by all the origin matches, such as the
-        "pypi" PURL when a tool reports the "github" one with "pypi" as equivalent.
+        Return the first reported PURL that is equivalent for all the origin
+        matches, such as the "pypi" PURL when a tool reports the "github" one with
+        "pypi" as equivalent.
         """
+        reported_purls = [
+            get_package_purl(origin_match.purl) for origin_match in self.origin_matches
+        ]
+        common_purls = set.intersection(*map(get_equivalent_purls, self.origin_matches))
         common_reported_purls = [
             reported_purl
-            for reported_purl in self.reported_purls
-            if reported_purl in self.common_purls
+            for reported_purl in reported_purls
+            if reported_purl in common_purls
         ]
-        return (common_reported_purls or self.reported_purls)[0]
+        return (common_reported_purls or reported_purls)[0]
 
     def is_same_package(self, other_origin):
         return bool(self.equivalent_purls & other_origin.equivalent_purls)
 
     def merge(self, other_origin):
         self.origin_matches.extend(other_origin.origin_matches)
-        self.reported_purls.extend(other_origin.reported_purls)
         self.equivalent_purls |= other_origin.equivalent_purls
-        self.common_purls &= other_origin.common_purls
-        self.tools |= other_origin.tools
-        self.has_exact_match = self.has_exact_match or other_origin.has_exact_match
 
 
 def get_same_package_origins(origin, origins):
@@ -228,8 +240,7 @@ def make_origin_determination(project, resource, origins):
 
 def iter_origin_determinations(project, origin_matches):
     """
-    Yield (determination, origins) for the unsaved OriginDetermination instances
-    determined from the ``origin_matches``.
+    Yield unsaved OriginDetermination instances from the ``origin_matches``.
     The files of a matched directory are determined with the directory, unless
     they are matched to another package.
     """
@@ -252,8 +263,7 @@ def iter_origin_determinations(project, origin_matches):
             resource.path, origins_by_directory_path
         )
         if not is_directory_origin(file_origins, directory_origins):
-            determination = make_origin_determination(project, resource, file_origins)
-            yield determination, file_origins
+            yield make_origin_determination(project, resource, file_origins)
             continue
 
         for file_origin in file_origins:
@@ -262,11 +272,8 @@ def iter_origin_determinations(project, origin_matches):
             )
 
     for path, origins in origins_by_directory_path.items():
-        if not origins:
-            continue
-
-        directory = directories_by_path[path]
-        yield make_origin_determination(project, directory, origins), origins
+        if origins:
+            yield make_origin_determination(project, directories_by_path[path], origins)
 
 
 def get_first_extra_data_value(origin_matches, key):
@@ -310,9 +317,8 @@ def get_origin_license_data(origin_matches):
     }
 
 
-def get_origin_package_data(origin):
-    """Return the package data of an ``origin`` reported by the origin tools."""
-    origin_matches = origin.origin_matches
+def get_origin_package_data(origin_matches):
+    """Return the package data reported by the origin tools ``origin_matches``."""
     return {
         "download_url": get_first_extra_data_value(origin_matches, "download_url"),
         "homepage_url": get_first_extra_data_value(origin_matches, "url"),
@@ -321,20 +327,16 @@ def get_origin_package_data(origin):
     }
 
 
-def add_auto_confirmed_package_data(package_data_by_purl, determination_batch):
-    """
-    Add to ``package_data_by_purl`` the package data of the auto-confirmed
-    origins of the ``determination_batch``.
-    """
-    for determination, origins in determination_batch:
-        is_new_auto_confirmed_purl = (
-            determination.status == OriginDetermination.Status.AUTO_CONFIRMED
-            and determination.purl not in package_data_by_purl
-        )
-        if is_new_auto_confirmed_purl:
-            package_data_by_purl[determination.purl] = get_origin_package_data(
-                origins[0]
-            )
+def get_purl_origin_matches(project, purl, resources):
+    """Return the ``resources`` origin matches equivalent to the ``purl``."""
+    origin_matches = project.originmatchs.filter(resource__in=resources).only(
+        "purl", "extra_data"
+    )
+    return [
+        origin_match
+        for origin_match in origin_matches
+        if purl in get_equivalent_purls(origin_match)
+    ]
 
 
 def get_origin_packages(project):
@@ -342,27 +344,20 @@ def get_origin_packages(project):
     return project.discoveredpackages.filter(datasource_ids=[ORIGIN_DATASOURCE_ID])
 
 
-def unassign_origin_packages(project):
-    """Remove the resources assigned to the packages of origin determinations."""
-    package_resources = DiscoveredPackage.codebase_resources.through.objects
-    package_resources.filter(
-        discoveredpackage__in=get_origin_packages(project)
-    ).delete()
-
-
-def get_or_create_origin_package(project, purl, package_data):
+def get_or_create_origin_package(project, purl, resources):
     """
     Return the ``project`` package of ``purl``, such as a package detected by the
-    codebase scan, or else create it from the ``package_data``.
+    codebase scan, or else create it from the ``resources`` origin matches.
     """
     purl_data = PackageURL.from_string(purl).to_dict()
     lookup_purl_data = DiscoveredPackage.extract_purl_data(purl_data)
     if package := project.discoveredpackages.filter(**lookup_purl_data).first():
         return package
 
+    origin_matches = get_purl_origin_matches(project, purl, resources)
     package_data = {
         **purl_data,
-        **package_data,
+        **get_origin_package_data(origin_matches),
         "datasource_ids": [ORIGIN_DATASOURCE_ID],
     }
     return DiscoveredPackage.create_from_data(project, package_data)
@@ -386,10 +381,10 @@ def get_determined_resources(project, determinations):
     return project.codebaseresources.filter(resources_filter)
 
 
-def assign_origin_packages(project, package_data_by_purl):
+def assign_origin_packages(project):
     """
     Assign the resources of the confirmed ``project`` determinations to their
-    origin package, created from ``package_data_by_purl`` when missing.
+    origin package, created from the origin matches data when missing.
     Return the number of origin packages.
     """
     confirmed_determinations = (
@@ -402,34 +397,26 @@ def assign_origin_packages(project, package_data_by_purl):
     package_count = 0
 
     for purl, purl_determinations in groupby(confirmed_determinations, key=get_purl):
-        package_data = package_data_by_purl.get(purl, {})
-        package = get_or_create_origin_package(project, purl, package_data)
-        package.add_resources(
-            get_determined_resources(project, list(purl_determinations))
-        )
+        resources = get_determined_resources(project, list(purl_determinations))
+        package = get_or_create_origin_package(project, purl, resources)
+        package.add_resources(resources)
         package_count += 1
 
     return package_count
-
-
-def delete_unassigned_origin_packages(project):
-    """Delete the packages of origin determinations that have no resources left."""
-    get_origin_packages(project).filter(codebase_resources__isnull=True).delete()
 
 
 def determine_origins(project, batch_size=2000):
     """
     Determine the origin of the ``project`` resources from their origin matches,
     and assign the resources of a confirmed origin to the origin package.
-    The previous automatic determinations are replaced, while the determinations
-    made by a user are kept unchanged.
+    The previous automatic determinations and origin packages are replaced, while
+    the determinations made by a user are kept unchanged.
     Return the number of created determinations and the number of origin packages.
     """
     determination_count = 0
-    package_data_by_purl = {}
 
     with transaction.atomic():
-        unassign_origin_packages(project)
+        get_origin_packages(project).delete()
         project.origindeterminations.automatic().delete()
 
         origin_matches = (
@@ -443,17 +430,13 @@ def determine_origins(project, batch_size=2000):
                 "resource__path",
                 "resource__type",
             )
-            .order_by("resource__path")
+            .order_by("resource__path", "tool")
         )
         determinations = iter_origin_determinations(project, origin_matches)
         for determination_batch in batched(determinations, batch_size):
-            OriginDetermination.objects.bulk_create(
-                [determination for determination, origins in determination_batch]
-            )
+            OriginDetermination.objects.bulk_create(determination_batch)
             determination_count += len(determination_batch)
-            add_auto_confirmed_package_data(package_data_by_purl, determination_batch)
 
-        package_count = assign_origin_packages(project, package_data_by_purl)
-        delete_unassigned_origin_packages(project)
+        package_count = assign_origin_packages(project)
 
     return determination_count, package_count

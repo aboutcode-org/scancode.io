@@ -1745,6 +1745,10 @@ class PipelinesIntegrationTest(TestCase):
         values = determinations.values_list("resource__path", "purl", "status")
         self.assertEqual(expected_determinations, list(values))
 
+        package = project1.discoveredpackages.get()
+        self.assertEqual("pkg:pypi/six@1.17.0", package.purl)
+        self.assertEqual(six_path, package.codebase_resources.get().path)
+
     @mock.patch("scanpipe.pipes.scanoss.scan_codebase")
     @mock.patch("scanpipe.pipes.scanoss.get_uvx_location")
     @mock.patch("scanpipe.pipes.scanoss.is_configured")
