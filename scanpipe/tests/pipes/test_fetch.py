@@ -20,7 +20,9 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import os
 import socket
+import tempfile
 from pathlib import Path
 from unittest import mock
 
@@ -93,6 +95,172 @@ class ScanPipeFetchPipesTest(TestCase):
         mock_get.return_value = make_mock_response(url=url, headers=headers)
         downloaded_file = fetch.fetch_http(url)
         self.assertTrue(Path(downloaded_file.directory, "another_name.zip").exists())
+
+    @mock.patch("scanpipe.pipes.fetch.is_safe_url", return_value=True)
+    @mock.patch("requests.sessions.Session.get")
+    def test_scanpipe_pipes_fetch_http_content_disposition_traversal_attempts(
+        self, mock_get, mock_is_safe_url
+    ):
+        url = "https://example.com/filename.zip"
+        invalid_filenames = [
+            "../../evil.zip",
+            "../evil.zip",
+            "sub/dir/evil.zip",
+            "..",
+            ".",
+        ]
+        for invalid_name in invalid_filenames:
+            headers = {"content-disposition": f'attachment; filename="{invalid_name}"'}
+            mock_get.return_value = make_mock_response(url=url, headers=headers)
+            with self.assertRaises(ValueError) as cm:
+                fetch.fetch_http(url)
+            self.assertIn("Invalid or unsafe filename", str(cm.exception))
+
+    @mock.patch("scanpipe.pipes.fetch.is_safe_url", return_value=True)
+    @mock.patch("requests.sessions.Session.get")
+    def test_scanpipe_pipes_fetch_http_content_disposition_absolute_paths(
+        self, mock_get, mock_is_safe_url
+    ):
+        url = "https://example.com/filename.zip"
+        invalid_filenames = [
+            "/etc/passwd",
+            "/evil.zip",
+            "/var/test.zip",
+        ]
+        for invalid_name in invalid_filenames:
+            headers = {"content-disposition": f'attachment; filename="{invalid_name}"'}
+            mock_get.return_value = make_mock_response(url=url, headers=headers)
+            with self.assertRaises(ValueError) as cm:
+                fetch.fetch_http(url)
+            self.assertIn("Invalid or unsafe filename", str(cm.exception))
+
+    @mock.patch("scanpipe.pipes.fetch.is_safe_url", return_value=True)
+    @mock.patch("requests.sessions.Session.get")
+    def test_scanpipe_pipes_fetch_http_content_disposition_windows_syntax(
+        self, mock_get, mock_is_safe_url
+    ):
+        url = "https://example.com/filename.zip"
+        invalid_filenames = [
+            r"..\..\evil.zip",
+            r"C:\evil.zip",
+            r"C:evil.zip",
+            r"D:/evil.zip",
+            r"\\server\share\evil.zip",
+        ]
+        for invalid_name in invalid_filenames:
+            headers = {"content-disposition": f'attachment; filename="{invalid_name}"'}
+            mock_get.return_value = make_mock_response(url=url, headers=headers)
+            with self.assertRaises(ValueError) as cm:
+                fetch.fetch_http(url)
+            self.assertIn("Invalid or unsafe filename", str(cm.exception))
+
+    @mock.patch("scanpipe.pipes.fetch.is_safe_url", return_value=True)
+    @mock.patch("requests.sessions.Session.get")
+    def test_scanpipe_pipes_fetch_http_content_disposition_control_chars(
+        self, mock_get, mock_is_safe_url
+    ):
+        url = "https://example.com/filename.zip"
+        invalid_filenames = [
+            "evil\x00.zip",
+            "evil\n.zip",
+            "evil\r\ntest.zip",
+            "evil\x1f.zip",
+            "evil\x7f.zip",
+        ]
+        for invalid_name in invalid_filenames:
+            headers = {"content-disposition": f'attachment; filename="{invalid_name}"'}
+            mock_get.return_value = make_mock_response(url=url, headers=headers)
+            with self.assertRaises(ValueError) as cm:
+                fetch.fetch_http(url)
+            self.assertIn("Invalid or unsafe filename", str(cm.exception))
+
+    @mock.patch("scanpipe.pipes.fetch.is_safe_url", return_value=True)
+    @mock.patch("requests.sessions.Session.get")
+    def test_scanpipe_pipes_fetch_http_content_disposition_empty_and_fallback(
+        self, mock_get, mock_is_safe_url
+    ):
+        url = "https://example.com/safe_fallback.zip"
+
+        # Empty filename parameter falls back to URL filename
+        headers = {"content-disposition": 'attachment; filename=""'}
+        mock_get.return_value = make_mock_response(url=url, headers=headers)
+        downloaded = fetch.fetch_http(url)
+        self.assertEqual("safe_fallback.zip", downloaded.filename)
+        self.assertTrue(Path(downloaded.directory, "safe_fallback.zip").exists())
+
+        # Whitespace-only filename parameter falls back to URL filename
+        headers = {"content-disposition": 'attachment; filename="   "'}
+        mock_get.return_value = make_mock_response(url=url, headers=headers)
+        downloaded = fetch.fetch_http(url)
+        self.assertEqual("safe_fallback.zip", downloaded.filename)
+        self.assertTrue(Path(downloaded.directory, "safe_fallback.zip").exists())
+
+        # Empty header filename and empty URL filename raises ValueError
+        empty_path_url = "https://example.com/"
+        headers = {"content-disposition": 'attachment; filename=""'}
+        mock_get.return_value = make_mock_response(url=empty_path_url, headers=headers)
+        with self.assertRaises(ValueError) as cm:
+            fetch.fetch_http(empty_path_url)
+        self.assertIn("Invalid or unsafe filename", str(cm.exception))
+
+    @mock.patch("scanpipe.pipes.fetch.is_safe_url", return_value=True)
+    @mock.patch("requests.sessions.Session.get")
+    def test_scanpipe_pipes_fetch_http_content_disposition_safe_names(
+        self, mock_get, mock_is_safe_url
+    ):
+        url = "https://example.com/default.zip"
+        safe_names = [
+            "safe-release_v1.0.tar.gz",
+            "report (final).pdf",
+            "archive.bundle.zip",
+        ]
+        for safe_name in safe_names:
+            headers = {"content-disposition": f'attachment; filename="{safe_name}"'}
+            mock_get.return_value = make_mock_response(url=url, headers=headers)
+            downloaded = fetch.fetch_http(url)
+            self.assertEqual(safe_name, downloaded.filename)
+            self.assertEqual(downloaded.path, Path(downloaded.directory) / safe_name)
+            self.assertTrue(downloaded.path.exists())
+            self.assertGreater(downloaded.size, 0)
+            self.assertTrue(downloaded.sha1)
+            self.assertTrue(downloaded.md5)
+
+    @mock.patch("scanpipe.pipes.fetch.is_safe_url", return_value=True)
+    @mock.patch("requests.sessions.Session.get")
+    def test_scanpipe_pipes_fetch_http_content_disposition_symlink(
+        self, mock_get, mock_is_safe_url
+    ):
+        url = "https://example.com/file.zip"
+        headers = {"content-disposition": 'attachment; filename="link.zip"'}
+        mock_get.return_value = make_mock_response(url=url, headers=headers)
+
+        with (
+            tempfile.TemporaryDirectory() as temp_dir,
+            tempfile.TemporaryDirectory() as outside_dir,
+        ):
+            download_dir = Path(temp_dir)
+            outside_target = Path(outside_dir) / "target.txt"
+            symlink_path = download_dir / "link.zip"
+
+            can_symlink = True
+            try:
+                os.symlink(outside_target, symlink_path)
+            except (OSError, NotImplementedError):
+                can_symlink = False
+
+            if can_symlink:
+                with self.assertRaises(ValueError) as cm:
+                    fetch.fetch_http(url, to=str(download_dir))
+                self.assertIn("Invalid or unsafe filename", str(cm.exception))
+                self.assertFalse(outside_target.exists())
+            else:
+                with mock.patch.object(Path, "is_symlink", return_value=True):
+                    with mock.patch.object(
+                        Path, "resolve", return_value=outside_target.resolve()
+                    ):
+                        with self.assertRaises(ValueError) as cm:
+                            fetch.fetch_http(url, to=str(download_dir))
+                        self.assertIn("Invalid or unsafe filename", str(cm.exception))
 
     @mock.patch("scanpipe.pipes.fetch.is_safe_url", return_value=True)
     @mock.patch("requests.sessions.Session.get")
