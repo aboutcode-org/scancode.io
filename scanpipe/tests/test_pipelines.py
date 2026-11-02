@@ -1733,6 +1733,22 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual(expected, list(values))
         self.assertEqual(1, len(list(project1.output_path.glob("matchcode-*.json"))))
 
+        determinations = project1.origindeterminations.order_by("resource__path")
+        expected_determinations = [
+            (six_path, "pkg:pypi/six@1.17.0", "auto-confirmed"),
+            (
+                "modified-copy/src/inih/ini.c",
+                "pkg:github/benhoyt/inih@498f34b",
+                "needs-review",
+            ),
+        ]
+        values = determinations.values_list("resource__path", "purl", "status")
+        self.assertEqual(expected_determinations, list(values))
+
+        package = project1.discoveredpackages.get()
+        self.assertEqual("pkg:pypi/six@1.17.0", package.purl)
+        self.assertEqual(six_path, package.codebase_resources.get().path)
+
     @mock.patch("scanpipe.pipes.scanoss.scan_codebase")
     @mock.patch("scanpipe.pipes.scanoss.get_uvx_location")
     @mock.patch("scanpipe.pipes.scanoss.is_configured")

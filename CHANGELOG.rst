@@ -9,6 +9,7 @@ Unreleased
 ----------
 
 * feat: expose the ``is_addon`` attribute in the pipelines REST API
+* feat: [code-genetics] determine the origin of files from combined origin matches #1929 by @tdruez
 
 v38.2.0 (2026-10-22)
 --------------------
