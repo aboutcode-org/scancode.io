@@ -335,8 +335,8 @@ def get_license_names(origin_matches):
 def get_origin_license_data(origin_matches):
     """
     Return the declared license fields of the ``origin_matches`` package: the
-    MatchCode.io license expression, or else the SPDX license names reported by
-    SCANOSS, all required.
+    MatchCode.io license expression, or else the component license names reported
+    by SCANOSS, joined with AND.
     """
     license_expression = get_first_extra_data_value(
         origin_matches, "declared_license_expression"
