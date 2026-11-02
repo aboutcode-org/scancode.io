@@ -109,6 +109,23 @@ DEFAULTS = {
     # Maximum time allowed for a pipeline to complete.
     "TASK_TIMEOUT": "24h",
     "WORKSPACE_LOCATION": "var",
+    # Nix pipeline settings, only used by the scan_nix_package pipeline.
+    # The cache dir holds the nixpkgs clone and per-commit worktrees. The
+    # default below is for local installs; the Docker stack overrides it
+    # in docker.env to a path on the shared workspace volume so both the
+    # worker and the dind daemon can access it.
+    "NIXPKGS_CACHE_DIR": os.path.expanduser("~/.cache/scancode-nix"),
+    # URL of the nixpkgs git repository to clone.
+    "NIXPKGS_REPO_URL": "https://github.com/NixOS/nixpkgs.git",
+    # When True, the pipeline maintains a local bare clone of nixpkgs and
+    # reuses it across scans. When False, it fetches a tarball from GitHub
+    # on every scan.
+    "NIXPKGS_USE_LOCAL_CACHE": True,
+    # How often, in hours, the pipeline runs nix-collect-garbage on the
+    # shared Nix store. Set to 0 to disable.
+    "NIXPKGS_GC_INTERVAL_HOURS": 3,
+    # Value passed to nix-collect-garbage --delete-older-than.
+    "NIXPKGS_GC_OLDER_THAN": "12h",
 }
 
 # Explicit types only for settings whose default is None (type cannot be inferred).
@@ -134,6 +151,7 @@ def _parse_fetch_headers(env_value):
 # Custom parsers for settings whose env var format cannot be inferred from the type.
 _CUSTOM_PARSERS = {
     "FETCH_HEADERS": _parse_fetch_headers,
+    "NIXPKGS_CACHE_DIR": os.path.expanduser,
 }
 
 

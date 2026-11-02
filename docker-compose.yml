@@ -31,6 +31,57 @@ services:
       timeout: 5s
       retries: 5
 
+  # Opt-in Docker-in-Docker daemon.
+  # It is not started by default. Enable it with:
+  #     docker compose --profile dind up
+  #
+  # The privileged mode is required by the DinD daemon. The image is
+  # pinned to a specific version to avoid silent upgrades.
+  #
+  # TLS is enabled (DOCKER_TLS_CERTDIR=/certs) so the daemon listens on
+  # port 2376 with mutual TLS instead of port 2375 without encryption.
+  # Client certificates are generated on first start under /certs/client
+  # and shared with the web/worker services through the `dind_certs`
+  # volume. See `dind-certs-perms` below for the non-root readability fix.
+  dind:
+    profiles:
+      - dind
+    image: docker.io/library/docker:29.8.1-dind
+    hostname: dind
+    privileged: true
+    environment:
+      - DOCKER_TLS_CERTDIR=/certs
+    volumes:
+      - dind_data:/var/lib/docker
+      - dind_certs:/certs
+      - workspace:/var/scancodeio/workspace/
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "docker info && test -f /certs/client/ca.pem"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # One-shot helper: the dind daemon writes the client certificates with
+  # mode 0600 owned by root. The ScanCode.io containers run as a non-root
+  # user and cannot read them. This service runs once after
+  # dind is healthy and makes the certs readable.
+  dind-certs-perms:
+    profiles:
+      - dind
+    image: docker.io/library/alpine:3.24.2
+    command:
+      - sh
+      - -c
+      - chmod -R a+rX /certs/client
+    volumes:
+      - dind_certs:/certs
+    depends_on:
+      dind:
+        condition: service_healthy
+    restart: "no"
+
   web:
     image: ghcr.io/aboutcode-org/scancode.io:v38.2.0-full
     command: sh -c "
@@ -48,12 +99,19 @@ services:
       - workspace:/var/scancodeio/workspace/
       - static:/var/scancodeio/static/
       - healthycode_venv:/opt/healthycode
+      - dind_certs:/certs:ro
     restart: always
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_healthy
+      dind:
+        condition: service_healthy
+        required: false
+      dind-certs-perms:
+        condition: service_completed_successfully
+        required: false
 
   worker:
     image: ghcr.io/aboutcode-org/scancode.io:v38.2.0-full
@@ -69,6 +127,7 @@ services:
       - /etc/scancodeio/:/etc/scancodeio/
       - workspace:/var/scancodeio/workspace/
       - healthycode_venv:/opt/healthycode
+      - dind_certs:/certs:ro
     restart: always
     depends_on:
       db:
@@ -77,6 +136,12 @@ services:
         condition: service_healthy
       web:
         condition: service_started
+      dind:
+        condition: service_healthy
+        required: false
+      dind-certs-perms:
+        condition: service_completed_successfully
+        required: false
 
   nginx:
     image: docker.io/library/nginx:1.31.7-alpine
@@ -109,6 +174,8 @@ services:
 
 volumes:
   db_data:
+  dind_data:
+  dind_certs:
   redis_data:
   clamav_data:
   static:
