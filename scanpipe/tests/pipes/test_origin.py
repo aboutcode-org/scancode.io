@@ -84,18 +84,28 @@ class ScanPipeOriginPipesTest(TestCase):
             extra_data=extra_data or {},
         )
 
-    def load_data_set_case(self, case_name):
-        """Return a project with the codebase and tool results of a data set case."""
+    def load_data_set_case(self, case_name, tools=None):
+        """
+        Return a project with the codebase and the results of the ``tools`` of a
+        data set case, all the tools by default.
+        """
+        tools = tools or [matchcode.TOOL_NAME, scanoss.TOOL_NAME]
         case_path = self.data / case_name
-        project = make_project(case_name)
+        project = make_project()
         shutil.copytree(
             case_path / "codebase", project.codebase_path, dirs_exist_ok=True
         )
         collect_and_create_codebase_resources(project)
 
-        match_results = json.loads((case_path / "matchcode-results.json").read_text())
-        matchcode.load_matchcode_results(project, match_results)
-        scanoss.load_scanoss_results(project, case_path / "scanoss-results.json")
+        if matchcode.TOOL_NAME in tools:
+            results_location = case_path / "matchcode-results.json"
+            match_results = json.loads(results_location.read_text())
+            matchcode.load_matchcode_results(project, match_results)
+
+        if scanoss.TOOL_NAME in tools:
+            results_location = case_path / "scanoss-results.json"
+            scanoss.load_scanoss_results(project, results_location)
+
         return project
 
     def get_expected_purls_by_path(self, case_name):
@@ -797,3 +807,78 @@ class ScanPipeOriginPipesTest(TestCase):
                 auto_confirmed = determinations.filter(status="auto-confirmed")
                 for path, purl in auto_confirmed.values_list("resource__path", "purl"):
                     self.assertEqual(expected_purls_by_path[path], purl)
+
+    def test_scanpipe_pipes_origin_determine_origins_data_set_single_tool(self):
+        expected_by_tool = {
+            matchcode.TOOL_NAME: {
+                "exact-copy": [
+                    ("myapp/_vendor/six.py", "pkg:pypi/six@1.17.0", "single-tool"),
+                ],
+                # The vendoring package is reported instead of the six origin.
+                "vendored-copy": [
+                    (
+                        "myapp/_vendor/urllib3/packages/six.py",
+                        "pkg:pypi/urllib3@1.26.20",
+                        "single-tool",
+                    ),
+                ],
+                "modified-copy": [
+                    ("src/inih/ini.c", "pkg:github/benhoyt/inih@r62", "no-exact-match"),
+                    ("src/inih/ini.h", "pkg:github/benhoyt/inih@r62", "single-tool"),
+                ],
+                "snippet": [
+                    ("src/scheduler.js", "pkg:npm/lodash@4.17.21", "no-exact-match"),
+                ],
+                "embedded-package": [
+                    ("vendor/ms", "pkg:npm/ms@2.1.3", "no-exact-match"),
+                ],
+                "no-origin": [],
+            },
+            scanoss.TOOL_NAME: {
+                "exact-copy": [
+                    (
+                        "myapp/_vendor/six.py",
+                        "pkg:github/benjaminp/six@1.17.0",
+                        "single-tool",
+                    ),
+                ],
+                "vendored-copy": [
+                    (
+                        "myapp/_vendor/urllib3/packages/six.py",
+                        "pkg:github/piotrmasek/anime365@0.1-Ryucon",
+                        "single-tool",
+                    ),
+                ],
+                "modified-copy": [
+                    (
+                        "src/inih/ini.c",
+                        "pkg:github/benhoyt/inih@498f34b",
+                        "no-exact-match",
+                    ),
+                    ("src/inih/ini.h", "pkg:github/benhoyt/inih@r62", "single-tool"),
+                ],
+                "snippet": [],
+                "embedded-package": [
+                    ("vendor/ms/index.js", "pkg:github/vercel/ms@2.1.3", "single-tool"),
+                ],
+                "no-origin": [],
+            },
+        }
+
+        for tool, expected_by_case in expected_by_tool.items():
+            for case_name, expected in expected_by_case.items():
+                with self.subTest(tool=tool, case_name=case_name):
+                    project = self.load_data_set_case(case_name, tools=[tool])
+                    origin.determine_origins(project)
+
+                    determinations = project.origindeterminations.order_by(
+                        "resource__path"
+                    )
+                    values = determinations.values_list(
+                        "resource__path", "purl", "rule"
+                    )
+                    self.assertEqual(expected, list(values))
+                    # A single tool can miss a conflicting candidate.
+                    statuses = set(determinations.values_list("status", flat=True))
+                    self.assertNotIn("auto-confirmed", statuses)
+                    self.assertFalse(project.discoveredpackages.exists())
