@@ -418,6 +418,8 @@ class ScanPipeOriginPipesTest(TestCase):
 
     def test_scanpipe_pipes_origin_determine_origins_scan_package(self):
         scan_package = make_package(self.project1, "pkg:pypi/six@1.17.0")
+        setup_py = make_resource_file(self.project1, path="setup.py")
+        scan_package.add_resources([setup_py])
         six_resource = make_resource_file(self.project1, path="six.py")
         self.make_origin_match(six_resource, "pkg:pypi/six@1.17.0")
         self.make_origin_match(six_resource, "pkg:pypi/six@1.17.0", tool="scanoss")
@@ -425,13 +427,51 @@ class ScanPipeOriginPipesTest(TestCase):
         self.assertEqual((1, 1), origin.determine_origins(self.project1))
         self.assertEqual((1, 1), origin.determine_origins(self.project1))
         self.assertQuerySetEqual(self.project1.discoveredpackages.all(), [scan_package])
-        self.assertQuerySetEqual(scan_package.codebase_resources.all(), [six_resource])
+        package_resources = scan_package.codebase_resources.order_by("path")
+        self.assertQuerySetEqual(package_resources, [setup_py, six_resource])
 
-        # Known limitation: the scan package keeps the resource once the origin
-        # matches are gone.
         self.project1.originmatchs.all().delete()
         self.assertEqual((0, 0), origin.determine_origins(self.project1))
-        self.assertQuerySetEqual(scan_package.codebase_resources.all(), [six_resource])
+        self.assertQuerySetEqual(scan_package.codebase_resources.all(), [setup_py])
+        scan_package.refresh_from_db()
+        self.assertEqual({}, scan_package.extra_data)
+
+    def test_scanpipe_pipes_origin_assign_origin_package_resources(self):
+        setup_py = make_resource_file(self.project1, path="setup.py")
+        six_resource = make_resource_file(self.project1, path="six.py")
+        resources = self.project1.codebaseresources.all()
+        scan_package = make_package(self.project1, "pkg:pypi/six@1.17.0")
+        scan_package.add_resources([setup_py])
+
+        origin.assign_origin_package_resources(scan_package, resources)
+        package_resources = scan_package.codebase_resources.order_by("path")
+        self.assertQuerySetEqual(package_resources, [setup_py, six_resource])
+        expected = {origin.ORIGIN_RESOURCE_PATHS_KEY: ["six.py"]}
+        self.assertEqual(expected, scan_package.extra_data)
+
+        origin_package = make_package(
+            self.project1,
+            "pkg:npm/ms@2.1.3",
+            datasource_ids=[origin.ORIGIN_DATASOURCE_ID],
+        )
+        origin.assign_origin_package_resources(origin_package, resources)
+        self.assertEqual(2, origin_package.codebase_resources.count())
+        self.assertEqual({}, origin_package.extra_data)
+
+    def test_scanpipe_pipes_origin_unassign_scan_package_resources(self):
+        setup_py = make_resource_file(self.project1, path="setup.py")
+        six_resource = make_resource_file(self.project1, path="six.py")
+        scan_package = make_package(
+            self.project1,
+            "pkg:pypi/six@1.17.0",
+            extra_data={origin.ORIGIN_RESOURCE_PATHS_KEY: ["six.py"]},
+        )
+        scan_package.add_resources([setup_py, six_resource])
+
+        origin.unassign_scan_package_resources(self.project1)
+        self.assertQuerySetEqual(scan_package.codebase_resources.all(), [setup_py])
+        scan_package.refresh_from_db()
+        self.assertEqual({}, scan_package.extra_data)
 
     def test_scanpipe_pipes_origin_get_first_extra_data_value(self):
         origin_matches = [

@@ -48,6 +48,11 @@ CONFIRMED_BY_TWO_TOOLS_RULE = "confirmed-by-two-tools"
 # the packages detected by the codebase scan.
 ORIGIN_DATASOURCE_ID = "origin_determination"
 
+# The paths of the resources assigned to a package detected by the codebase scan,
+# kept in its extra data to unassign them on a re-run without touching the
+# resources assigned by the scan.
+ORIGIN_RESOURCE_PATHS_KEY = "origin_resource_paths"
+
 # The SCANOSS license sources of the whole component. The other sources, such as
 # "file_header", are the licenses of the matched file, already detected by the
 # codebase scan.
@@ -396,6 +401,43 @@ def get_or_create_origin_package(project, purl, resources):
     return DiscoveredPackage.create_from_data(project, package_data)
 
 
+def assign_origin_package_resources(package, resources):
+    """
+    Assign the ``resources`` to the origin ``package``. On a package detected by
+    the codebase scan, the paths of the newly assigned resources are kept in its
+    extra data.
+    """
+    is_scan_package = ORIGIN_DATASOURCE_ID not in package.datasource_ids
+    if not is_scan_package:
+        package.add_resources(resources)
+        return
+
+    new_resources = list(resources.exclude(discovered_packages=package))
+    if not new_resources:
+        return
+
+    package.add_resources(new_resources)
+    new_resource_paths = [resource.path for resource in new_resources]
+    package.update_extra_data({ORIGIN_RESOURCE_PATHS_KEY: new_resource_paths})
+
+
+def unassign_scan_package_resources(project):
+    """
+    Remove the resources assigned by a previous run to the ``project`` packages
+    detected by the codebase scan.
+    """
+    scan_packages = project.discoveredpackages.filter(
+        extra_data__has_key=ORIGIN_RESOURCE_PATHS_KEY
+    )
+    for package in scan_packages:
+        origin_resource_paths = package.extra_data.pop(ORIGIN_RESOURCE_PATHS_KEY)
+        package.codebase_resources.through.objects.filter(
+            discoveredpackage=package,
+            codebaseresource__path__in=origin_resource_paths,
+        ).delete()
+        package.update(extra_data=package.extra_data)
+
+
 def get_descendants_filter(directory_paths):
     """Return a filter of the resources under any of the ``directory_paths``."""
     # Matches no resource when there is no directory.
@@ -463,7 +505,7 @@ def assign_origin_packages(project):
             project, list(purl_determinations), determined_directory_paths
         )
         package = get_or_create_origin_package(project, purl, resources)
-        package.add_resources(resources)
+        assign_origin_package_resources(package, resources)
         package_count += 1
 
     return package_count
@@ -473,22 +515,17 @@ def determine_origins(project, batch_size=2000):
     """
     Determine the origin of the ``project`` resources from their origin matches,
     and assign the resources of a confirmed origin to the origin package.
-    The previous automatic determinations and origin packages are replaced, while
-    the determinations made by a user are kept unchanged. A directory determined
+    The previous automatic determinations, origin packages and resources assigned
+    to packages detected by the codebase scan are replaced, while the
+    determinations made by a user are kept unchanged. A directory determined
     by a user covers its content: the origin matches under it are not used.
     Return the number of created determinations and the number of origin packages.
-
-    Not handled:
-    - Conflicting candidates are not resolved: they need a review.
-    - Every origin match is a candidate, whatever its similarity: there is no
-      noise threshold.
-    - A resource assigned to a package detected by the codebase scan stays
-      assigned on a re-run, even when its determination is no longer confirmed.
     """
     determination_count = 0
 
     with transaction.atomic():
         get_origin_packages(project).delete()
+        unassign_scan_package_resources(project)
         project.origindeterminations.automatic().delete()
 
         # Only the user determinations are left.
