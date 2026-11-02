@@ -77,6 +77,45 @@ REDIRECT_STATUS_CODES = frozenset({301, 302, 303, 307, 308})
 # urllib3-based HTTP client disagree on the host part of a URL, defeating the
 # ``is_safe_url`` check below.
 UNSAFE_URL_CHARS_RE = re.compile(r"[\x00-\x20\x7f\\]")
+UNSAFE_FILENAME_CHARS_RE = re.compile(r"[\x00-\x1f\x7f/\\]")
+
+
+def is_safe_filename(filename, download_directory):
+    """
+    Return True if `filename` is a safe single file name that resolves
+    strictly inside `download_directory` without traversing or escaping.
+    """
+    if not filename or not isinstance(filename, str):
+        return False
+
+    filename = filename.strip()
+    if not filename or filename in (".", ".."):
+        return False
+
+    # Reject null bytes, control characters, and POSIX / Windows path separators
+    if UNSAFE_FILENAME_CHARS_RE.search(filename):
+        return False
+
+    # Reject Windows drive prefixes or stream/colon syntax (e.g. C:, file:stream)
+    if ":" in filename:
+        return False
+
+    download_dir = Path(download_directory).resolve()
+    candidate_path = (download_dir / filename).resolve()
+
+    # Must resolve strictly inside download_dir and not be download_dir itself
+    if (
+        not candidate_path.is_relative_to(download_dir)
+        or candidate_path == download_dir
+    ):
+        return False
+
+    # Account for existing symlinks pointing outside download_dir
+    target = download_dir / filename
+    if target.is_symlink() and not target.resolve().is_relative_to(download_dir):
+        return False
+
+    return True
 
 
 def get_request_session(uri):
@@ -106,16 +145,27 @@ def fetch_http(uri, to=None):
     if response.status_code != 200:
         raise requests.RequestException
 
+    download_directory = to or tempfile.mkdtemp()
+    download_directory_path = Path(download_directory).resolve()
+    download_directory_path.mkdir(parents=True, exist_ok=True)
+
     content_disposition = response.headers.get("content-disposition", "")
     _, params = parse_header_parameters(content_disposition)
-    filename = params.get("filename")
-    if not filename:
+    raw_filename = params.get("filename")
+
+    if raw_filename is not None and raw_filename.strip():
+        filename = raw_filename.strip()
+        if not is_safe_filename(filename, download_directory_path):
+            raise ValueError(f"Invalid or unsafe filename: {raw_filename!r}")
+    else:
         # Using `response.url` in place of provided `Scan.uri` since the former
         # will be more accurate in case of HTTP redirect.
-        filename = unquote(Path(urlparse(response.url).path).name)
+        raw_url_filename = unquote(Path(urlparse(response.url).path).name)
+        filename = raw_url_filename.strip() if raw_url_filename else ""
+        if not is_safe_filename(filename, download_directory_path):
+            raise ValueError(f"Invalid or unsafe filename: {raw_url_filename!r}")
 
-    download_directory = to or tempfile.mkdtemp()
-    output_file = Path(download_directory, filename)
+    output_file = download_directory_path / filename
 
     file_content = response.content
     with open(output_file, "wb") as f:
