@@ -190,7 +190,7 @@ class ScanPipeModelsTest(TestCase):
             resource=resource,
             purl="pkg:pypi/six@1.17.0",
             status=OriginDetermination.Status.NEEDS_REVIEW,
-            rule="single-tool-exact-match",
+            rule="single-tool",
         )
 
         delete_log = self.project1.delete_related_objects()

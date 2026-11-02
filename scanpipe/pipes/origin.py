@@ -48,6 +48,11 @@ CONFIRMED_BY_TWO_TOOLS_RULE = "confirmed-by-two-tools"
 # the packages detected by the codebase scan.
 ORIGIN_DATASOURCE_ID = "origin_determination"
 
+# The SCANOSS license sources of the whole component. The other sources, such as
+# "file_header", are the licenses of the matched file, already detected by the
+# codebase scan.
+SCANOSS_COMPONENT_LICENSE_SOURCES = ["component_declared", "license_file"]
+
 
 def get_package_purl(purl, version=None):
     """
@@ -279,6 +284,7 @@ def iter_origin_determinations(project, origin_matches):
     file_origin_matches = origin_matches.exclude(
         resource__type=CodebaseResource.Type.DIRECTORY
     )
+    file_origin_matches = file_origin_matches.iterator(chunk_size=2000)
     for resource, file_origins in iter_resource_origins(file_origin_matches):
         directory_origins = get_closest_directory_origins(
             resource.path, origins_by_directory_path
@@ -308,11 +314,15 @@ def get_first_extra_data_value(origin_matches, key):
 
 
 def get_license_names(origin_matches):
-    """Return the distinct license names of the ``origin_matches`` extra data."""
+    """
+    Return the distinct component license names of the ``origin_matches`` extra
+    data.
+    """
     license_names = [
         license_data["name"]
         for origin_match in origin_matches
         for license_data in origin_match.extra_data.get("licenses", [])
+        if license_data.get("source") in SCANOSS_COMPONENT_LICENSE_SOURCES
     ]
     return list(dict.fromkeys(license_names))
 
@@ -386,20 +396,47 @@ def get_or_create_origin_package(project, purl, resources):
     return DiscoveredPackage.create_from_data(project, package_data)
 
 
-def get_determined_resources(project, determinations):
+def get_descendants_filter(directory_paths):
+    """Return a filter of the resources under any of the ``directory_paths``."""
+    # Matches no resource when there is no directory.
+    descendants_filter = Q(pk__in=[])
+    for directory_path in directory_paths:
+        descendants_filter |= Q(path__startswith=f"{directory_path}/")
+    return descendants_filter
+
+
+def get_determined_directory_paths(project):
+    """Return the paths of the ``project`` directories that have a determination."""
+    directory_determinations = project.origindeterminations.filter(
+        resource__type=CodebaseResource.Type.DIRECTORY
+    )
+    return list(directory_determinations.values_list("resource__path", flat=True))
+
+
+def get_determined_resources(project, determinations, determined_directory_paths):
     """
     Return the resources of the ``determinations``, including the resources of
-    the determined directories that have no determination of their own.
+    the determined directories that have no determination of their own and are
+    not under a determined subdirectory of ``determined_directory_paths``.
     """
     resource_ids = [determination.resource_id for determination in determinations]
     resources_filter = Q(pk__in=resource_ids)
 
     for determination in determinations:
-        if determination.resource.is_dir:
-            resources_filter |= Q(
-                path__startswith=f"{determination.resource.path}/",
-                origin_determination__isnull=True,
-            )
+        if not determination.resource.is_dir:
+            continue
+
+        directory_path = determination.resource.path
+        subdirectory_paths = [
+            path
+            for path in determined_directory_paths
+            if path.startswith(f"{directory_path}/")
+        ]
+        resources_filter |= (
+            get_descendants_filter([directory_path])
+            & ~get_descendants_filter(subdirectory_paths)
+            & Q(origin_determination__isnull=True)
+        )
 
     return project.codebaseresources.filter(resources_filter)
 
@@ -415,12 +452,16 @@ def assign_origin_packages(project):
         .select_related("resource")
         .only("purl", "resource__path", "resource__type")
         .order_by("purl")
+        .iterator(chunk_size=2000)
     )
+    determined_directory_paths = get_determined_directory_paths(project)
     get_purl = attrgetter("purl")
     package_count = 0
 
     for purl, purl_determinations in groupby(confirmed_determinations, key=get_purl):
-        resources = get_determined_resources(project, list(purl_determinations))
+        resources = get_determined_resources(
+            project, list(purl_determinations), determined_directory_paths
+        )
         package = get_or_create_origin_package(project, purl, resources)
         package.add_resources(resources)
         package_count += 1
@@ -433,8 +474,16 @@ def determine_origins(project, batch_size=2000):
     Determine the origin of the ``project`` resources from their origin matches,
     and assign the resources of a confirmed origin to the origin package.
     The previous automatic determinations and origin packages are replaced, while
-    the determinations made by a user are kept unchanged.
+    the determinations made by a user are kept unchanged. A directory determined
+    by a user covers its content: the origin matches under it are not used.
     Return the number of created determinations and the number of origin packages.
+
+    Not handled:
+    - Conflicting candidates are not resolved: they need a review.
+    - Every origin match is a candidate, whatever its similarity: there is no
+      noise threshold.
+    - A resource assigned to a package detected by the codebase scan stays
+      assigned on a re-run, even when its determination is no longer confirmed.
     """
     determination_count = 0
 
@@ -442,8 +491,14 @@ def determine_origins(project, batch_size=2000):
         get_origin_packages(project).delete()
         project.origindeterminations.automatic().delete()
 
+        # Only the user determinations are left.
+        user_directory_paths = get_determined_directory_paths(project)
+        user_covered_resources = project.codebaseresources.filter(
+            get_descendants_filter(user_directory_paths)
+        )
         origin_matches = (
             project.originmatchs.filter(resource__origin_determination__isnull=True)
+            .exclude(resource__in=user_covered_resources)
             .select_related("resource")
             .only(
                 "purl",

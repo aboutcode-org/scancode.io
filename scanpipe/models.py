@@ -5069,8 +5069,8 @@ class OriginMatch(UUIDPKModel, ProjectRelatedModel, ExtraDataFieldMixin, AdminUR
 
     An origin tool can report several candidates for the same resource, and
     several tools can report candidates for the same resource. A candidate is not
-    a conclusion: only the origin selected after review becomes a discovered
-    package. Origin matches are not included in the output files yet.
+    a conclusion: only the confirmed origin, automatically or after review, becomes
+    a discovered package. Origin matches are not included in the output files yet.
     """
 
     class MatchType(models.TextChoices):

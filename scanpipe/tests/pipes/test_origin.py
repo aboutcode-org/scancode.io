@@ -52,6 +52,14 @@ def make_origin(purl, tool="matchcode", match_type="file", purls=None):
     return origin.Origin.from_origin_match(origin_match)
 
 
+def make_scanoss_license_match(*license_names_and_sources):
+    licenses = [
+        {"name": license_name, "source": source}
+        for license_name, source in license_names_and_sources
+    ]
+    return OriginMatch(tool="scanoss", extra_data={"licenses": licenses})
+
+
 def make_scanoss_six_origin():
     return make_origin(
         "pkg:github/benjaminp/six@1.17.0", tool="scanoss", purls=SCANOSS_SIX_PURLS
@@ -389,6 +397,42 @@ class ScanPipeOriginPipesTest(TestCase):
         self.assertEqual("pkg:github/benhoyt/inih@r62", package.purl)
         self.assertQuerySetEqual(package.codebase_resources.all(), [ini_resource])
 
+    def test_scanpipe_pipes_origin_determine_origins_user_directory(self):
+        vendor_ms = make_resource_directory(self.project1, path="vendor/ms")
+        index_js = make_resource_file(self.project1, path="vendor/ms/index.js")
+        self.make_origin_match(index_js, "pkg:npm/lodash@4.17.21")
+        OriginDetermination.objects.create(
+            project=self.project1,
+            resource=vendor_ms,
+            purl="pkg:npm/ms@2.1.3",
+            status=OriginDetermination.Status.CONFIRMED,
+        )
+
+        self.assertEqual((0, 1), origin.determine_origins(self.project1))
+        self.assertEqual(1, self.project1.origindeterminations.count())
+        package = self.project1.discoveredpackages.get()
+        self.assertEqual("pkg:npm/ms@2.1.3", package.purl)
+        self.assertQuerySetEqual(
+            package.codebase_resources.order_by("path"), [vendor_ms, index_js]
+        )
+
+    def test_scanpipe_pipes_origin_determine_origins_scan_package(self):
+        scan_package = make_package(self.project1, "pkg:pypi/six@1.17.0")
+        six_resource = make_resource_file(self.project1, path="six.py")
+        self.make_origin_match(six_resource, "pkg:pypi/six@1.17.0")
+        self.make_origin_match(six_resource, "pkg:pypi/six@1.17.0", tool="scanoss")
+
+        self.assertEqual((1, 1), origin.determine_origins(self.project1))
+        self.assertEqual((1, 1), origin.determine_origins(self.project1))
+        self.assertQuerySetEqual(self.project1.discoveredpackages.all(), [scan_package])
+        self.assertQuerySetEqual(scan_package.codebase_resources.all(), [six_resource])
+
+        # Known limitation: the scan package keeps the resource once the origin
+        # matches are gone.
+        self.project1.originmatchs.all().delete()
+        self.assertEqual((0, 0), origin.determine_origins(self.project1))
+        self.assertQuerySetEqual(scan_package.codebase_resources.all(), [six_resource])
+
     def test_scanpipe_pipes_origin_get_first_extra_data_value(self):
         origin_matches = [
             make_unsaved_origin_match("pkg:npm/ms@2.1.3"),
@@ -401,15 +445,19 @@ class ScanPipeOriginPipesTest(TestCase):
 
     def test_scanpipe_pipes_origin_get_license_names(self):
         origin_matches = [
-            OriginMatch(extra_data={"licenses": [{"name": "MIT"}]}),
-            OriginMatch(extra_data={"licenses": [{"name": "MIT"}, {"name": "ISC"}]}),
+            make_scanoss_license_match(("MIT", "component_declared")),
+            make_scanoss_license_match(
+                ("MIT", "license_file"),
+                ("ISC", "license_file"),
+                ("GPL-2.0-only", "file_header"),
+            ),
             OriginMatch(extra_data={}),
         ]
         self.assertEqual(["MIT", "ISC"], origin.get_license_names(origin_matches))
 
     def test_scanpipe_pipes_origin_get_origin_license_data(self):
-        scanoss_match = OriginMatch(
-            extra_data={"licenses": [{"name": "MIT"}, {"name": "BSD-2-Clause"}]}
+        scanoss_match = make_scanoss_license_match(
+            ("MIT", "license_file"), ("BSD-2-Clause", "license_file")
         )
         expected = {
             "declared_license_expression": "mit AND bsd-simplified",
@@ -514,9 +562,62 @@ class ScanPipeOriginPipesTest(TestCase):
         )
 
         resources = origin.get_determined_resources(
-            self.project1, [directory_determination]
+            self.project1, [directory_determination], ["vendor/ms"]
         )
         self.assertQuerySetEqual(resources.order_by("path"), [vendor_ms, index_js])
+
+    def test_scanpipe_pipes_origin_get_determined_resources_nested_directories(self):
+        vendor = make_resource_directory(self.project1, path="vendor")
+        foo_js = make_resource_file(self.project1, path="vendor/foo.js")
+        vendor_ms = make_resource_directory(self.project1, path="vendor/ms")
+        make_resource_file(self.project1, path="vendor/ms/index.js")
+        vendor_determination = OriginDetermination.objects.create(
+            project=self.project1,
+            resource=vendor,
+            purl="pkg:npm/foo@1.0.0",
+            status=OriginDetermination.Status.AUTO_CONFIRMED,
+        )
+        OriginDetermination.objects.create(
+            project=self.project1,
+            resource=vendor_ms,
+            status=OriginDetermination.Status.NEEDS_REVIEW,
+        )
+
+        resources = origin.get_determined_resources(
+            self.project1, [vendor_determination], ["vendor", "vendor/ms"]
+        )
+        self.assertQuerySetEqual(resources.order_by("path"), [vendor, foo_js])
+
+    def test_scanpipe_pipes_origin_get_descendants_filter(self):
+        make_resource_directory(self.project1, path="vendor")
+        foo_js = make_resource_file(self.project1, path="vendor/foo.js")
+        index_js = make_resource_file(self.project1, path="src/index.js")
+        resources = self.project1.codebaseresources.order_by("path")
+
+        descendants_filter = origin.get_descendants_filter(["vendor", "src"])
+        self.assertQuerySetEqual(
+            resources.filter(descendants_filter), [index_js, foo_js]
+        )
+        self.assertQuerySetEqual(
+            resources.filter(origin.get_descendants_filter([])), []
+        )
+        self.assertEqual(
+            3, resources.exclude(origin.get_descendants_filter([])).count()
+        )
+
+    def test_scanpipe_pipes_origin_get_determined_directory_paths(self):
+        vendor = make_resource_directory(self.project1, path="vendor")
+        make_resource_directory(self.project1, path="src")
+        six_resource = make_resource_file(self.project1, path="six.py")
+        for resource in [vendor, six_resource]:
+            OriginDetermination.objects.create(
+                project=self.project1,
+                resource=resource,
+                status=OriginDetermination.Status.NEEDS_REVIEW,
+            )
+
+        paths = origin.get_determined_directory_paths(self.project1)
+        self.assertEqual(["vendor"], paths)
 
     def test_scanpipe_pipes_origin_assign_origin_packages(self):
         vendor_ms = make_resource_directory(self.project1, path="vendor/ms")
