@@ -620,6 +620,12 @@ class ScanPipeMavenPipesTest(TestCase):
             maven._score_fuzzy_segment("commons/logging", ["commons", "impl"]),
             0,
         )
+        # "json" is the effective tail of an artifact ending in "-api".
+        self.assertEqual(
+            maven._score_fuzzy_segment("jakarta/json/api", ["jakarta", "json"]),
+            3,
+        )
+        self.assertEqual(maven._score_fuzzy_segment("commons/logging", []), 0)
 
     def test_scanpipe_maven_last_artifact_segment_matches(self):
         # Exact match.
@@ -643,6 +649,15 @@ class ScanPipeMavenPipesTest(TestCase):
         # Empty artifact id and empty package segments.
         self.assertFalse(maven._last_artifact_segment_matches("", ["com"]))
         self.assertFalse(maven._last_artifact_segment_matches("jackson/databind", []))
+        # Generic suffixes allow matching the preceding artifact token.
+        self.assertTrue(
+            maven._last_artifact_segment_matches(
+                "jakarta/json/api", ["jakarta", "json"]
+            )
+        )
+        self.assertTrue(
+            maven._last_artifact_segment_matches("johnzon/core", ["org", "johnzon"])
+        )
 
     def test_scanpipe_maven_score_dependency_commons_logging(self):
         package = make_package(
@@ -1048,3 +1063,66 @@ class ScanPipeMavenPipesTest(TestCase):
             ],
         )
         self.assertNotIn(htrace_core, commons_class.discovered_packages.all())
+
+    def test_scanpipe_maven_get_maven_shade_artifact_includes(self):
+        pom_resource = self._add_pom_resource(
+            self.project, "to/pom.xml", "shaded-artifact-set-pom.xml"
+        )
+        result = maven.get_maven_shade_artifact_includes(self.project, pom_resource)
+        self.assertEqual(
+            result,
+            [
+                ("org.apache.johnzon", "johnzon-core"),
+                ("jakarta.json", "jakarta.json-api"),
+            ],
+        )
+
+    def test_scanpipe_maven_map_shaded_classes_with_artifact_set_only(self):
+        project = self.project
+        main_purl = PackageURL.from_string(
+            "pkg:maven/org.apache.activemq/artemis-commons@2.31.1"
+        )
+        make_package(
+            project,
+            package_url="pkg:maven/org.apache.activemq/artemis-commons@2.31.1",
+        )
+        self._add_pom_resource(
+            project,
+            "to/META-INF/maven/org.apache.activemq/artemis-commons/pom.xml",
+            "shaded-artifact-set-pom.xml",
+        )
+
+        json_class = make_resource_file(
+            project,
+            "to/org/apache/activemq/artemis/commons/shaded/json/stream/JsonParser.class",
+            status=flag.REQUIRES_REVIEW,
+        )
+        johnzon_class = make_resource_file(
+            project,
+            "to/org/apache/activemq/artemis/commons/shaded/johnzon/core/JsonLongImpl.class",
+            status=flag.REQUIRES_REVIEW,
+        )
+
+        maven.map_shaded_classes_to_maven_packages(project, purl=main_purl)
+
+        json_class.refresh_from_db()
+        self.assertEqual(json_class.status, flag.SHADED_CLASS)
+        self.assertEqual(
+            "pkg:maven/jakarta.json/jakarta.json-api",
+            json_class.extra_data["shaded_from_package"],
+        )
+        self.assertEqual(
+            "javax.json.stream.JsonParser",
+            json_class.extra_data["original_fqn"],
+        )
+
+        johnzon_class.refresh_from_db()
+        self.assertEqual(johnzon_class.status, flag.SHADED_CLASS)
+        self.assertEqual(
+            "pkg:maven/org.apache.johnzon/johnzon-core",
+            johnzon_class.extra_data["shaded_from_package"],
+        )
+        self.assertEqual(
+            "org.apache.johnzon.core.JsonLongImpl",
+            johnzon_class.extra_data["original_fqn"],
+        )

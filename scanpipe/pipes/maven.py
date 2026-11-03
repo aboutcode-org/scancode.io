@@ -24,6 +24,7 @@ import difflib
 import itertools
 import json
 import logging
+from collections import defaultdict
 from pathlib import PurePosixPath
 from urllib.parse import urlparse
 
@@ -283,6 +284,94 @@ def get_maven_shade_relocations(project, pom_resource):
     return relocations
 
 
+def get_maven_shade_artifact_includes(project, pom_resource):
+    """
+    Parse the POM and return a list of (namespace, name) tuples for every
+    <include> entry under <artifactSet><includes> in maven-shade-plugin.
+
+    Sample:
+        <configuration>
+            <artifactSet>
+                <includes>
+                    <include>org.apache.johnzon:johnzon-core</include>
+                    <include>jakarta.json:jakarta.json-api</include>
+                </includes>
+            </artifactSet>
+        </configuration>
+
+    Return an empty list when no include is found or when parsing fails.
+    """
+    includes = []
+    if not pom_resource:
+        return includes
+
+    try:
+        tree = SafeElementTree.parse(pom_resource.location)
+    except (SafeElementTree.ParseError, OSError, ValueError) as exception:
+        project.add_error(
+            description=f"Cannot parse POM at {pom_resource.path}: {exception}",
+            model="map_shaded_classes_to_maven_packages",
+            details={"resource_path": pom_resource.path},
+        )
+        return includes
+
+    root = tree.getroot()
+    seen = set()
+
+    for plugin in root.iterfind(".//{*}plugin"):
+        if plugin.findtext("{*}artifactId", "").strip() != "maven-shade-plugin":
+            continue
+        for include in plugin.iterfind(".//{*}artifactSet/{*}includes/{*}include"):
+            coord = (include.text or "").strip()
+            if ":" not in coord:
+                continue
+            parts = coord.split(":")
+            namespace = parts[0].strip()
+            name = parts[1].strip()
+            if not namespace or not name or "*" in namespace:
+                continue
+            key = (namespace, name)
+            if key not in seen:
+                seen.add(key)
+                includes.append(key)
+
+    return includes
+
+
+def get_artifact_set_packages(project, dependency_packages, artifact_includes):
+    """
+    Return candidate packages matching ``artifact_includes`` from
+    ``dependency_packages``, or create unsaved ``DiscoveredDependency``
+    candidates for entries declared only in ``<artifactSet><includes>``.
+    """
+    if not artifact_includes:
+        return []
+
+    by_coord = defaultdict(list)
+    by_namespace = defaultdict(list)
+    for pkg in dependency_packages:
+        by_coord[(pkg.namespace, pkg.name)].append(pkg)
+        by_namespace[pkg.namespace].append(pkg)
+
+    result = []
+    for namespace, name in artifact_includes:
+        if name == "*":
+            result.extend(by_namespace.get(namespace, []))
+        elif (namespace, name) in by_coord:
+            result.extend(by_coord[(namespace, name)])
+        else:
+            result.append(
+                DiscoveredDependency(
+                    project=project,
+                    type="maven",
+                    namespace=namespace,
+                    name=name,
+                    version="",
+                )
+            )
+    return result
+
+
 def _dedupe_maven_candidates(candidates, main_purl):
     """
     Return "candidates" deduplicated by "namespace", "name" and "version",
@@ -428,6 +517,15 @@ REQUIRED_MATCH_SIGNALS = {"group", "artifact", "artifact_tail"}
 # should be revisited with a larger sample if false positives are observed.
 MIN_MATCH_SCORE = 6
 
+# Lower score threshold used when matching against explicit <artifactSet>
+# includes, where all three required signals ("group", "artifact",
+# "artifact_tail") are still required (minimum score 3 = 1 group + 2 artifact).
+MIN_ARTIFACT_SET_MATCH_SCORE = 3
+
+# Generic trailing segments on Maven artifact IDs (e.g. "jakarta.json-api",
+# "johnzon-core") that often do not appear in the Java package name.
+GENERIC_ARTIFACT_SUFFIXES = {"api", "core", "impl"}
+
 
 def _score_group_segments(group_id, package_segments):
     """
@@ -451,20 +549,44 @@ def _score_artifact_segments(artifact_id, package_segments):
     )
 
 
+def _get_candidate_tail_segments(artifact_id):
+    """
+    Return the candidate tail segment(s) of ``artifact_id``.
+
+    When an artifact ID has multiple segments and ends with a generic suffix
+    such as "-api" or "-core" (e.g. "jakarta/json/api" or "johnzon/core"),
+    both the literal last segment and the preceding segment are considered.
+    """
+    segments = [segment for segment in artifact_id.split("/") if segment]
+    if not segments:
+        return []
+
+    tails = [segments[-1]]
+    if len(segments) > 1 and segments[-1] in GENERIC_ARTIFACT_SUFFIXES:
+        tails.append(segments[-2])
+    return tails
+
+
 def _score_fuzzy_segment(artifact_id, package_segments):
     """
-    Return 3 if the last segment of "artifact_id" is a fuzzy match for the
-    immediate parent package of the FQN, 0 otherwise.
+    Return 3 if the last segment (or effective tail segment) of "artifact_id"
+    is a fuzzy match for the immediate parent package of the FQN, 0 otherwise.
     """
-    artifact_last = artifact_id.split("/")[-1]
+    if not package_segments:
+        return 0
+
     fqn_last = package_segments[-1]
-    return 3 if _fuzzy_segment_match(artifact_last, fqn_last) else 0
+    for artifact_last in _get_candidate_tail_segments(artifact_id):
+        if _fuzzy_segment_match(artifact_last, fqn_last):
+            return 3
+    return 0
 
 
 def _last_artifact_segment_matches(artifact_id, package_segments):
     """
-    Return True if the last segment of "artifact_id" matches, exactly or
-    fuzzily, any segment of "package_segments".
+    Return True if the last segment (or effective tail segment) of
+    "artifact_id" matches, exactly or fuzzily, any segment of
+    "package_segments".
 
     The last segment of a Maven artifact is its most discriminating part:
     "jackson-core", "jackson-databind" and "jackson-annotations" all share a
@@ -473,11 +595,13 @@ def _last_artifact_segment_matches(artifact_id, package_segments):
     "jackson-core") to a declared one that shares the group and prefix
     (e.g. "jackson-databind").
     """
-    last_segment = artifact_id.split("/")[-1]
-    return any(
-        segment == last_segment or _fuzzy_segment_match(last_segment, segment)
-        for segment in package_segments
-    )
+    for last_segment in _get_candidate_tail_segments(artifact_id):
+        if any(
+            segment == last_segment or _fuzzy_segment_match(last_segment, segment)
+            for segment in package_segments
+        ):
+            return True
+    return False
 
 
 def score_dependency(java_package, package):
@@ -568,7 +692,13 @@ def match_shaded_class_to_package(java_package, packages, min_score=MIN_MATCH_SC
     return package, score, signals
 
 
-def _map_shaded_class_resource(resource, relocations, dependency_packages, match_cache):
+def _map_shaded_class_resource(
+    resource,
+    relocations,
+    dependency_packages,
+    match_cache,
+    artifact_set_packages=None,
+):
     """
     Try to map a single ".class" resource to a Maven dependency package.
 
@@ -583,9 +713,20 @@ def _map_shaded_class_resource(resource, relocations, dependency_packages, match
         if original_java_package is None:
             match_cache[java_package] = None
         else:
-            match_cache[java_package] = match_shaded_class_to_package(
-                original_java_package, dependency_packages
-            )
+            match = None
+            if artifact_set_packages:
+                match = match_shaded_class_to_package(
+                    original_java_package,
+                    artifact_set_packages,
+                    min_score=MIN_ARTIFACT_SET_MATCH_SCORE,
+                )
+            if match is None and dependency_packages:
+                match = match_shaded_class_to_package(
+                    original_java_package,
+                    dependency_packages,
+                    min_score=MIN_MATCH_SCORE,
+                )
+            match_cache[java_package] = match
 
     match = match_cache[java_package]
     if not match:
@@ -619,14 +760,26 @@ def _map_shaded_class_resource(resource, relocations, dependency_packages, match
 def get_or_create_dependency_package(dependency):
     """Return the resolved package of the "dependency", created when missing."""
     if not dependency.resolved_to_package:
-        package_data = {
-            "type": dependency.type,
-            "namespace": dependency.namespace,
-            "name": dependency.name,
-            "version": dependency.version,
-        }
-        package = DiscoveredPackage.create_from_data(dependency.project, package_data)
-        dependency.update(resolved_to_package=package)
+        package = dependency.project.discoveredpackages.filter(
+            type=dependency.type,
+            namespace=dependency.namespace,
+            name=dependency.name,
+            version=dependency.version or "",
+        ).first()
+        if not package:
+            package_data = {
+                "type": dependency.type,
+                "namespace": dependency.namespace,
+                "name": dependency.name,
+                "version": dependency.version or "",
+            }
+            package = DiscoveredPackage.create_from_data(
+                dependency.project, package_data
+            )
+        if dependency.pk:
+            dependency.update(resolved_to_package=package)
+        else:
+            dependency.resolved_to_package = package
     return dependency.resolved_to_package
 
 
@@ -635,11 +788,6 @@ def map_shaded_classes_to_maven_packages(project, purl, logger=None):
     if logger:
         logger("Mapping shaded .class resources to Maven dependency packages.")
 
-    # scan_maven_package runs ``load_inventory_from_toolkit_scan`` before
-    # this step, which sets every ``.class`` in a JAR that ships its own
-    # pom.xml to ``application-package``; without adding
-    # "flag.APPLICATION_PACKAGE" status in the filter, no shaded class is
-    # ever mapped.
     to_classes = (
         project.codebaseresources.files()
         .to_codebase()
@@ -661,9 +809,16 @@ def map_shaded_classes_to_maven_packages(project, purl, logger=None):
             logger("No unmapped .class resources to process.")
         return
 
-    dependency_packages = get_maven_dependency_packages(project, main_purl=purl)
+    main_pom = get_main_maven_pom(project, purl)
+    relocations = get_maven_shade_relocations(project, main_pom)
+    artifact_includes = get_maven_shade_artifact_includes(project, main_pom)
 
-    if not dependency_packages:
+    dependency_packages = get_maven_dependency_packages(project, main_purl=purl)
+    artifact_set_packages = get_artifact_set_packages(
+        project, dependency_packages, artifact_includes
+    )
+
+    if not dependency_packages and not artifact_set_packages:
         if logger:
             logger(
                 f"No Maven dependency packages found for "
@@ -671,16 +826,17 @@ def map_shaded_classes_to_maven_packages(project, purl, logger=None):
             )
         return
 
-    main_pom = get_main_maven_pom(project, purl)
-    relocations = get_maven_shade_relocations(project, main_pom)
-
     mapped_count = 0
     unmatched_count = 0
     match_cache = {}
 
     for resource in to_classes.iterator(chunk_size=2000):
         if _map_shaded_class_resource(
-            resource, relocations, dependency_packages, match_cache
+            resource,
+            relocations,
+            dependency_packages,
+            match_cache,
+            artifact_set_packages=artifact_set_packages,
         ):
             mapped_count += 1
         else:
