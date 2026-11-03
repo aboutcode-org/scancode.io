@@ -524,6 +524,33 @@ def get_origin_match_extra_data(package_data):
     }
 
 
+def merge_matched_snippets(matched_snippets):
+    """
+    Return the ``matched_snippets`` merged by package and origin file, as
+    MatchCode.io can report several snippets of the same origin file.
+    The merged snippet has all the matched token positions and the highest
+    similarity.
+    """
+    merged_snippets = {}
+    for matched_snippet in matched_snippets:
+        origin_key = (matched_snippet["package"], matched_snippet["resource"])
+        merged_snippet = merged_snippets.get(origin_key)
+        if not merged_snippet:
+            merged_snippets[origin_key] = dict(matched_snippet)
+            continue
+
+        match_detections = {
+            *merged_snippet["match_detections"],
+            *matched_snippet["match_detections"],
+        }
+        merged_snippet["match_detections"] = sorted(match_detections)
+        merged_snippet["similarity"] = max(
+            merged_snippet["similarity"], matched_snippet["similarity"]
+        )
+
+    return list(merged_snippets.values())
+
+
 def make_snippet_origin_matches(
     resource, matched_snippets, package_data_by_purl, tool_version
 ):
@@ -536,7 +563,7 @@ def make_snippet_origin_matches(
     """
     line_by_pos = get_resource_line_by_pos(resource)
 
-    for matched_snippet in matched_snippets:
+    for matched_snippet in merge_matched_snippets(matched_snippets):
         origin_path = matched_snippet["resource"]
         if is_legal_file_path(origin_path):
             continue

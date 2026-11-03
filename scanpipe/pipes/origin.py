@@ -58,6 +58,11 @@ ORIGIN_RESOURCE_PATHS_KEY = "origin_resource_paths"
 # codebase scan.
 SCANOSS_COMPONENT_LICENSE_SOURCES = ["component_declared", "license_file"]
 
+# The shorter snippet matches are noise, such as a common license header matching
+# unrelated packages: the MIT license header is 19 lines long. Counted in lines,
+# not in percentage, to keep a copy of a few dozen lines in a large file.
+MIN_SNIPPET_LINE_COUNT = 20
+
 
 def get_package_purl(purl, version=None):
     """
@@ -182,11 +187,41 @@ def group_origin_matches(origin_matches):
     return origins
 
 
+def get_matched_line_count(origin_match):
+    """Return the number of resource lines covered by the ``origin_match``."""
+    matched_lines = {
+        line
+        for line_range in origin_match.line_ranges
+        for line in range(line_range["lines"][0], line_range["lines"][1] + 1)
+    }
+    return len(matched_lines)
+
+
+def is_short_snippet_match(origin_match):
+    """Return True when ``origin_match`` is a snippet match too short to count."""
+    is_snippet_match = origin_match.match_type == OriginMatch.MatchType.SNIPPET
+    return (
+        is_snippet_match
+        and get_matched_line_count(origin_match) < MIN_SNIPPET_LINE_COUNT
+    )
+
+
 def iter_resource_origins(origin_matches):
-    """Yield (resource, origins) for the ``origin_matches`` ordered by resource."""
+    """
+    Yield (resource, origins) for the ``origin_matches`` ordered by resource.
+    The short snippet matches are ignored.
+    """
     get_resource = attrgetter("resource")
     for resource, resource_origin_matches in groupby(origin_matches, key=get_resource):
-        yield resource, group_origin_matches(resource_origin_matches)
+        counted_origin_matches = [
+            origin_match
+            for origin_match in resource_origin_matches
+            if not is_short_snippet_match(origin_match)
+        ]
+        if not counted_origin_matches:
+            continue
+
+        yield resource, group_origin_matches(counted_origin_matches)
 
 
 def get_ancestor_paths(path):
@@ -541,6 +576,7 @@ def determine_origins(project, batch_size=2000):
                 "purl",
                 "match_type",
                 "tool",
+                "line_ranges",
                 "extra_data",
                 "resource__path",
                 "resource__type",

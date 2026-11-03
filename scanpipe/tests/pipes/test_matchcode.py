@@ -532,6 +532,46 @@ class MatchCodePipesTest(TestCase):
         }
         self.assertEqual(expected, matchcode.get_origin_match_extra_data(package_data))
 
+    def test_scanpipe_pipes_matchcode_merge_matched_snippets(self):
+        matched_snippets = [
+            {
+                "package": "pkg:pypi/six@1.16.0",
+                "resource": "six-1.16.0/six.py",
+                "similarity": 0.36,
+                "match_detections": [9, 10, 11],
+            },
+            {
+                "package": "pkg:pypi/pip@24.0",
+                "resource": "pip-24.0/src/pip/_vendor/six.py",
+                "similarity": 0.36,
+                "match_detections": [9, 10, 11],
+            },
+            {
+                "package": "pkg:pypi/six@1.16.0",
+                "resource": "six-1.16.0/six.py",
+                "similarity": 0.38,
+                "match_detections": [11, 12, 13],
+            },
+        ]
+
+        expected = [
+            {
+                "package": "pkg:pypi/six@1.16.0",
+                "resource": "six-1.16.0/six.py",
+                "similarity": 0.38,
+                "match_detections": [9, 10, 11, 12, 13],
+            },
+            {
+                "package": "pkg:pypi/pip@24.0",
+                "resource": "pip-24.0/src/pip/_vendor/six.py",
+                "similarity": 0.36,
+                "match_detections": [9, 10, 11],
+            },
+        ]
+        self.assertEqual(expected, matchcode.merge_matched_snippets(matched_snippets))
+        # The input snippets are not modified.
+        self.assertEqual([9, 10, 11], matched_snippets[0]["match_detections"])
+
     def test_scanpipe_pipes_matchcode_make_snippet_origin_matches(self):
         resource = self.make_scheduler_resource("scheduler.js")
         matched_snippets = [
@@ -560,6 +600,38 @@ class MatchCodePipesTest(TestCase):
         self.assertEqual("package/debounce.js", origin_match.origin_path)
         self.assertEqual(0.005, origin_match.extra_data["snippet_similarity"])
         self.assertEqual("38.1.0", origin_match.tool_version)
+
+    def test_scanpipe_pipes_matchcode_make_snippet_origin_matches_same_origin_file(
+        self,
+    ):
+        # Several snippets of the same origin file make a single origin match, as
+        # the origin matches are unique by origin file.
+        resource = self.make_scheduler_resource("scheduler.js")
+        matched_snippets = [
+            {
+                "package": "pkg:npm/lodash@4.17.21",
+                "resource": "package/debounce.js",
+                "similarity": 0.005,
+                "match_detections": [59, 60, 61],
+            },
+            {
+                "package": "pkg:npm/lodash@4.17.21",
+                "resource": "package/debounce.js",
+                "similarity": 0.006,
+                "match_detections": [300, 301, 302],
+            },
+        ]
+
+        origin_matches = list(
+            matchcode.make_snippet_origin_matches(
+                resource, matched_snippets, {}, "38.1.0"
+            )
+        )
+        self.assertEqual(1, len(origin_matches))
+        origin_match = origin_matches[0]
+        expected = [{"lines": [26, 28]}, {"lines": [111, 114]}]
+        self.assertEqual(expected, origin_match.line_ranges)
+        self.assertEqual(0.006, origin_match.extra_data["snippet_similarity"])
 
     def test_scanpipe_pipes_matchcode_make_package_origin_matches(self):
         resource = make_resource_file(self.project1, "index.js")
