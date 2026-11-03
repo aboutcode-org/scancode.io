@@ -24,7 +24,9 @@ import difflib
 import itertools
 import json
 import logging
+import re
 from pathlib import PurePosixPath
+from urllib.parse import quote
 from urllib.parse import urlparse
 
 import requests
@@ -39,8 +41,16 @@ from scanpipe.pipes import fetch
 from scanpipe.pipes import flag
 from scanpipe.pipes import jvm
 from scanpipe.pipes import scancode
+from scanpipe.pipes import update_or_create_dependency
 
 logger = logging.getLogger(__name__)
+
+# Matches Maven property placeholders ${name}.
+# e.g. ${shading.prefix}, ${rename.offset}
+MAVEN_PROPERTY_PLACEHOLDER_RE = re.compile(r"\$\{([^}]+)\}")
+
+# Number of parent POMs to walk before giving up.
+MAX_PARENT_CHAIN_DEPTH = 10
 
 
 def check_input_and_return_purl(project):
@@ -221,17 +231,18 @@ def get_main_maven_pom(project, purl):
 
     The main POM is typically located at:
         .../META-INF/maven/<groupId>/<artifactId>/pom.xml
+
+    Search the deployment (``to/``) codebase first, then the development
+    (``from/``) codebase: the binary archive may exclude
+    ``META-INF/maven/**`` (a common shade-plugin setting), in which case
+    the POM is only available on the source side.
     """
     namespace = purl.namespace
     name = purl.name
 
     expected_suffix = f"{namespace}/{name}/pom.xml"
-    return (
-        project.codebaseresources.files()
-        .to_codebase()
-        .filter(path__endswith=expected_suffix)
-        .first()
-    )
+    base = project.codebaseresources.files().filter(path__endswith=expected_suffix)
+    return base.to_codebase().first() or base.from_codebase().first()
 
 
 def get_maven_shade_relocations(project, pom_resource):
@@ -281,6 +292,305 @@ def get_maven_shade_relocations(project, pom_resource):
                 relocations[shaded_pattern] = pattern
 
     return relocations
+
+
+def get_pom_url_from_manifest(group, artifact, version):
+    """Construct a Maven POM URL from the "group", "artifact", and "version"."""
+    MAVEN_CENTRAL_BASE = "https://repo1.maven.org/maven2"
+    if not group or not artifact or not version:
+        return ""
+    group_path = group.replace(".", "/")
+    return (
+        f"{MAVEN_CENTRAL_BASE}/{group_path}/{artifact}/{version}/"
+        f"{artifact}-{version}.pom"
+    )
+
+
+def _extract_parent_keys(root):
+    """Return ``(groupId, artifactId, version)`` from ``<parent>``, or None."""
+    parent = root.find(".//{*}parent")
+    if parent is None:
+        return None
+    keys = tuple(
+        parent.findtext(f"{{*}}{key}", "").strip()
+        for key in ("groupId", "artifactId", "version")
+    )
+    return keys if all(keys) else None
+
+
+def _extract_properties(root):
+    """Return the ``{name: value}`` map from the ``<properties>`` block."""
+    properties = {}
+    element = root.find(".//{*}properties")
+    if element is not None:
+        for prop in element:
+            if not isinstance(prop.tag, str):
+                continue
+            name = prop.tag.rpartition("}")[2]
+            properties[name] = (prop.text or "").strip()
+    return properties
+
+
+def _walk_parent_poms(main_pom, max_depth=MAX_PARENT_CHAIN_DEPTH):
+    """
+    Yield ``(path, root)`` for ``main_pom`` and each ancestor POM
+    reachable through the ``<parent>`` chain, up to ``max_depth`` levels.
+
+    Stops at the first parse error, missing parent coordinates, cycle,
+    or download failure.
+    """
+    if not main_pom:
+        return
+
+    visited = set()
+    current_path = main_pom.location
+    depth = 0
+
+    while current_path and depth < max_depth:
+        try:
+            root = SafeElementTree.parse(current_path).getroot()
+        except (SafeElementTree.ParseError, OSError, ValueError):
+            return
+        yield current_path, root
+
+        parent_keys = _extract_parent_keys(root)
+        if not parent_keys or parent_keys in visited:
+            return
+        visited.add(parent_keys)
+
+        pom_url = get_pom_url_from_manifest(*parent_keys)
+        if not pom_url:
+            return
+        pom_file = download_pom_file(pom_url)
+        if not pom_file:
+            return
+        current_path = pom_file["pom_file_path"]
+        depth += 1
+
+
+def resolve_shading_properties(
+    main_pom, required_properties, max_depth=MAX_PARENT_CHAIN_DEPTH
+):
+    """
+    Walk the parent chain of ``main_pom`` and return the
+    ``{property_name: value}`` map.
+    """
+    properties = {}
+    for _, root in _walk_parent_poms(main_pom, max_depth):
+        for key, value in _extract_properties(root).items():
+            properties.setdefault(key, value)
+        if required_properties and required_properties.issubset(properties):
+            break
+    return properties
+
+
+def resolve_relocation_placeholders(relocations, properties):
+    """Replace ``${...}`` placeholders in relocation keys with their values."""
+    resolved = {}
+    for shaded_pattern, original_pattern in relocations.items():
+        new_shaded = _resolve_maven_properties(shaded_pattern, properties)
+        resolved[new_shaded] = original_pattern
+    return resolved
+
+
+def _resolve_maven_properties(text, properties, max_iterations=10):
+    """
+    Replace ``${name}`` placeholders in ``text`` with values from
+    ``properties``, resolving chains such as ``{"a": "${b}", "b": "2"}``.
+    Unknown placeholders are left untouched.
+    """
+    for _ in range(max_iterations):
+        previous = text
+        for name, value in properties.items():
+            text = text.replace(f"${{{name}}}", value)
+        if text == previous:
+            break
+    return text
+
+
+def _get_source_repo_slug(main_pom):
+    """
+    Return the GitHub ``<owner>/<repo>`` slug derived from the
+    ``<scm><url>`` of the POM in the parent chain that declares one.
+    Return ``""`` when no GitHub scm URL is found.
+    """
+    for _, root in _walk_parent_poms(main_pom):
+        scm = root.find(".//{*}scm")
+        if scm is None:
+            continue
+        scm_url = scm.findtext("{*}url", "").strip()
+        slug = _github_slug_from_scm_url(scm_url)
+        if slug:
+            return slug
+    return ""
+
+
+def _github_slug_from_scm_url(scm_url):
+    """Return the ``<owner>/<repo>`` slug from a GitHub SCM URL, or ``""``."""
+    if not scm_url:
+        return ""
+
+    if scm_url.startswith(("https://", "http://")):
+        parsed = urlparse(scm_url)
+        if parsed.hostname not in ("github.com", "www.github.com"):
+            return ""
+        path = parsed.path.strip("/")
+    else:
+        prefix, host, remainder = scm_url.partition("github.com")
+        if not host or (prefix and prefix[-1] not in ("@", "/")):
+            # Reject hosts that merely contain "github.com" as a substring,
+            # e.g. "evil-github.com" or "notgithub.com", and reject inputs
+            # where "github.com" does not appear at all.
+            return ""
+        if not remainder or remainder[0] not in (":", "/"):
+            return ""
+        path = remainder.lstrip(":/").rstrip("/")
+
+    parts = [part for part in path.split("/") if part]
+    if len(parts) != 2:
+        return ""
+    owner, repo = parts
+    repo = repo.removesuffix(".git")
+    if not owner or not repo or owner in (".", "..") or repo in (".", ".."):
+        return ""
+    return f"{owner}/{repo}"
+
+
+def _raw_pom_candidate_urls(repo_slug, name, version):
+    """
+    Return the raw.githubusercontent.com URLs to try.
+
+    Two paths are tried for each tag:
+        <repo>/<tag>/<name>/pom.xml   (multi-module layout)
+        <repo>/<tag>/pom.xml          (single-module layout)
+    """
+    encoded_name = quote(name, safe="")
+    encoded_version = quote(version, safe="")
+    candidates = []
+    for tag in (
+        f"v{encoded_version}",
+        encoded_version,
+        f"release-{encoded_version}",
+        f"release-v{encoded_version}",
+    ):
+        for subpath in (f"{encoded_name}/pom.xml", "pom.xml"):
+            candidates.append(
+                f"https://raw.githubusercontent.com/{repo_slug}/{tag}/{subpath}"
+            )
+    return candidates
+
+
+def _fetch_source_repo_pom(repo_slug, name, version):
+    """Return the POM text from the repo_slug."""
+    for candidate in _raw_pom_candidate_urls(repo_slug, name, version):
+        try:
+            downloaded = fetch.fetch_http(candidate)
+            return downloaded.path.read_text(encoding="utf-8")
+        except (OSError, requests.RequestException):
+            continue
+    return ""
+
+
+def _get_or_create_dependencies_from_deps(
+    project, dependencies, properties, for_package
+):
+    """
+    Return a list of ``DiscoveredDependency`` for the given Maven
+    ``(group, artifact, version)`` tuples, creating missing ones.
+
+    Versions may contain ``${...}`` placeholders resolved from
+    ``properties``. If a version cannot be fully resolved, a project
+    warning is added and the dependency is created with an empty version.
+    """
+    resolved_dependencies = []
+    for group, artifact, version in dependencies:
+        if not group or not artifact:
+            continue
+
+        raw_version = version
+        version = _resolve_maven_properties(version, properties)
+
+        if not version or MAVEN_PROPERTY_PLACEHOLDER_RE.search(version):
+            project.add_warning(
+                description=(
+                    f"Could not resolve version for dependency "
+                    f"{group}:{artifact} (raw version: {raw_version!r}). "
+                    f"Dependency created with empty version."
+                ),
+                model="map_shaded_classes_to_maven_packages",
+                details={
+                    "group": group,
+                    "artifact": artifact,
+                    "raw_version": raw_version,
+                    "resolved_version": version,
+                },
+            )
+            version = ""
+
+        purl = f"pkg:maven/{group}/{artifact}"
+        if version:
+            purl = f"{purl}@{version}"
+
+        dependency = update_or_create_dependency(
+            project,
+            {
+                "purl": purl,
+                "package_type": "maven",
+            },
+            for_package=for_package,
+        )
+        resolved_dependencies.append(dependency)
+
+    return resolved_dependencies
+
+
+def load_dependencies_from_source_repo(project, purl, main_pom, logger=None):
+    """
+    Fetch the original POM from the project's source repository (GitHub)
+    and create ``DiscoveredDependency`` entries for its ``<dependencies>``.
+    """
+    repo_slug = _get_source_repo_slug(main_pom)
+    if not repo_slug:
+        if logger:
+            logger(f"No GitHub <scm> URL found for {purl}.")
+        return []
+
+    pom_text = _fetch_source_repo_pom(repo_slug, purl.name, purl.version)
+    if not pom_text:
+        if logger:
+            logger(
+                f"No POM found in github.com/{repo_slug} "
+                f"for {purl.name}@{purl.version}."
+            )
+        return []
+
+    try:
+        root = SafeElementTree.fromstring(pom_text)
+    except SafeElementTree.ParseError as exception:
+        if logger:
+            logger(f"Cannot parse POM from github.com/{repo_slug}: {exception}")
+        return []
+
+    properties = _extract_properties(root)
+
+    dependencies = []
+    for dependency in root.iterfind(".//{*}dependencies/{*}dependency"):
+        group = dependency.findtext("{*}groupId", "").strip()
+        artifact = dependency.findtext("{*}artifactId", "").strip()
+        version = dependency.findtext("{*}version", "").strip()
+        if group and artifact and version:
+            dependencies.append((group, artifact, version))
+
+    main_package = project.discoveredpackages.filter(
+        type="maven",
+        namespace=purl.namespace,
+        name=purl.name,
+        version=purl.version or "",
+    ).first()
+
+    return _get_or_create_dependencies_from_deps(
+        project, dependencies, properties, for_package=main_package
+    )
 
 
 def _dedupe_maven_candidates(candidates, main_purl):
@@ -572,8 +882,8 @@ def _map_shaded_class_resource(resource, relocations, dependency_packages, match
     """
     Try to map a single ".class" resource to a Maven dependency package.
 
-    Return True when the resource was mapped and flagged as shaded, False
-    otherwise.
+    Return True when a relocation applies (whether or not a package was
+    matched), False when no relocation applies.
     """
     fqn = get_java_fqn_from_class_path(resource.path)
     java_package = fqn.rpartition(".")[0]
@@ -583,15 +893,36 @@ def _map_shaded_class_resource(resource, relocations, dependency_packages, match
         if original_java_package is None:
             match_cache[java_package] = None
         else:
-            match_cache[java_package] = match_shaded_class_to_package(
-                original_java_package, dependency_packages
+            match_cache[java_package] = (
+                original_java_package,
+                match_shaded_class_to_package(
+                    original_java_package, dependency_packages
+                ),
             )
 
-    match = match_cache[java_package]
-    if not match:
+    cached = match_cache[java_package]
+    if cached is None:
         return False
 
+    original_java_package, match = cached
     original_fqn = apply_shade_relocations(fqn, relocations)
+
+    if match is None:
+        # Relocation applies but no package could be attributed.
+        # The container attribution is known to be wrong (the class
+        # comes from a relocated dependency), so remove it and flag
+        # the class for review.
+        resource.discovered_packages.clear()
+        resource.update(
+            status=flag.REQUIRES_REVIEW,
+            extra_data={
+                **resource.extra_data,
+                "shaded_from_namespace": original_java_package,
+                "original_fqn": original_fqn,
+                "review_reason": "no_package_match",
+            },
+        )
+        return True
 
     matched_package, match_score, match_signals = match
 
@@ -630,7 +961,7 @@ def get_or_create_dependency_package(dependency):
     return dependency.resolved_to_package
 
 
-def map_shaded_classes_to_maven_packages(project, purl, logger=None):
+def map_shaded_classes_to_maven_packages(project, purl, logger=None):  # noqa: C901
     """Map shaded ".class" resources to their Maven dependency packages."""
     if logger:
         logger("Mapping shaded .class resources to Maven dependency packages.")
@@ -661,33 +992,66 @@ def map_shaded_classes_to_maven_packages(project, purl, logger=None):
             logger("No unmapped .class resources to process.")
         return
 
+    main_pom = get_main_maven_pom(project, purl)
+    if not main_pom:
+        if logger:
+            logger("No main POM found; nothing to map.")
+        return
+    relocations = get_maven_shade_relocations(project, main_pom)
+    if not relocations:
+        if logger:
+            logger("No Maven relocations found in the main POM.")
+        return
+
     dependency_packages = get_maven_dependency_packages(project, main_purl=purl)
 
     if not dependency_packages:
-        if logger:
-            logger(
-                f"No Maven dependency packages found for "
-                f"{to_classes_count:,d} unmapped .class resources."
-            )
-        return
+        # Published POMs are often dependency-reduced
+        # (createDependencyReducedPom=true), which strips every <dependency>
+        # before publication. Recover the original coordinates from the
+        # source repository.
+        dependency_packages = load_dependencies_from_source_repo(
+            project, purl, main_pom, logger=logger
+        )
 
-    main_pom = get_main_maven_pom(project, purl)
-    relocations = get_maven_shade_relocations(project, main_pom)
+        if not dependency_packages:
+            if logger:
+                logger(
+                    f"No Maven dependency packages found for "
+                    f"{to_classes_count:,d} unmapped .class resources."
+                )
+            return
+
+    # Resolve any ${...} placeholders in shadedPattern values so they
+    # can be matched against the relocated FQNs.
+    if any(MAVEN_PROPERTY_PLACEHOLDER_RE.search(pattern) for pattern in relocations):
+        required_properties = set()
+        for shaded_pattern in relocations:
+            required_properties.update(
+                MAVEN_PROPERTY_PLACEHOLDER_RE.findall(shaded_pattern)
+            )
+        properties = resolve_shading_properties(main_pom, required_properties)
+        relocations = resolve_relocation_placeholders(relocations, properties)
 
     mapped_count = 0
-    unmatched_count = 0
+    review_count = 0
+    not_shaded_count = 0
     match_cache = {}
 
     for resource in to_classes.iterator(chunk_size=2000):
-        if _map_shaded_class_resource(
+        if not _map_shaded_class_resource(
             resource, relocations, dependency_packages, match_cache
         ):
+            not_shaded_count += 1
+        elif resource.status == flag.SHADED_CLASS:
             mapped_count += 1
         else:
-            unmatched_count += 1
+            review_count += 1
 
     if logger:
         logger(
-            f"Mapped {mapped_count:,d} shaded .class resources to Maven "
-            f"dependency packages. {unmatched_count:,d} left for review."
+            f"Attributed {mapped_count:,d} shaded .class resources to Maven "
+            f"packages. {review_count:,d} shaded resources could not be "
+            f"attributed and are flagged for review. {not_shaded_count:,d} "
+            f".class resources are not under any relocation."
         )

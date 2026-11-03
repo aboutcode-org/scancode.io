@@ -56,6 +56,16 @@ class ScanPipeMavenPipesTest(TestCase):
         target_path.write_text(data_path.read_text())
         return make_resource_file(project, codebase_path)
 
+    def _add_pom_from_content(self, project, codebase_path, pom_content):
+        """
+        Write ``pom_content`` at ``codebase_path`` in the project codebase
+        and return its CodebaseResource.
+        """
+        target_path = project.codebase_path / codebase_path
+        target_path.parent.mkdir(parents=True, exist_ok=True)
+        target_path.write_text(pom_content)
+        return make_resource_file(project, codebase_path)
+
     def _setup_project_with_shaded_classes(self):
         """
         Return a project with htrace-core as the main package and
@@ -349,6 +359,34 @@ class ScanPipeMavenPipesTest(TestCase):
         result = maven.get_main_maven_pom(self.project, purl)
         self.assertIsNone(result)
 
+    def test_scanpipe_maven_get_main_maven_pom_found_in_from_codebase(self):
+        # The binary may have excluded META-INF/maven/**; the POM then
+        # only lives on the source side.
+        expected = make_resource_file(
+            self.project,
+            "from/META-INF/maven/org.apache.htrace/htrace-core/pom.xml",
+        )
+        purl = PackageURL.from_string(
+            "pkg:maven/org.apache.htrace/htrace-core@4.0.0-incubating"
+        )
+        result = maven.get_main_maven_pom(self.project, purl)
+        self.assertEqual(result, expected)
+
+    def test_scanpipe_maven_get_main_maven_pom_prefers_to_codebase(self):
+        to_resource = make_resource_file(
+            self.project,
+            "to/META-INF/maven/org.apache.htrace/htrace-core/pom.xml",
+        )
+        make_resource_file(
+            self.project,
+            "from/META-INF/maven/org.apache.htrace/htrace-core/pom.xml",
+        )
+        purl = PackageURL.from_string(
+            "pkg:maven/org.apache.htrace/htrace-core@4.0.0-incubating"
+        )
+        result = maven.get_main_maven_pom(self.project, purl)
+        self.assertEqual(result, to_resource)
+
     def test_scanpipe_maven_get_maven_shade_relocations(self):
         pom_resource = self._add_pom_resource(
             self.project, "to/pom.xml", "shaded-pom.xml"
@@ -391,6 +429,109 @@ class ScanPipeMavenPipesTest(TestCase):
         error = self.project.projectmessages.get(severity="error")
         self.assertIn("Cannot parse POM", error.description)
         self.assertEqual(error.details.get("resource_path"), "to/pom.xml")
+
+    def test_scanpipe_maven_get_pom_url_from_manifest(self):
+        result = maven.get_pom_url_from_manifest(
+            "org.apache.commons", "commons-lang3", "3.12.0"
+        )
+        self.assertEqual(
+            result,
+            "https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/"
+            "3.12.0/commons-lang3-3.12.0.pom",
+        )
+
+    def test_scanpipe_maven_get_pom_url_from_manifest_missing_parts(self):
+        self.assertEqual(
+            maven.get_pom_url_from_manifest("", "commons-lang3", "3.12.0"), ""
+        )
+        self.assertEqual(
+            maven.get_pom_url_from_manifest("org.apache.commons", "", "3.12.0"), ""
+        )
+        self.assertEqual(
+            maven.get_pom_url_from_manifest("org.apache.commons", "commons-lang3", ""),
+            "",
+        )
+
+    def test_scanpipe_maven_resolve_maven_properties(self):
+        properties = {"rename.offset": "0.1", "shading.prefix": "org.shaded"}
+        self.assertEqual(
+            maven._resolve_maven_properties("${shading.prefix}.foo", properties),
+            "org.shaded.foo",
+        )
+
+    def test_scanpipe_maven_resolve_maven_properties_unknown_placeholder(self):
+        self.assertEqual(
+            maven._resolve_maven_properties("${unknown}.foo", {}),
+            "${unknown}.foo",
+        )
+
+    @mock.patch("scanpipe.pipes.maven.download_pom_file")
+    def test_scanpipe_maven_resolve_shading_properties_same_pom(
+        self, mock_download_pom_file
+    ):
+        # The required property is declared in the main POM.
+        # No need to walk the parent chain.
+        pom_content = """<?xml version="1.0" encoding="UTF-8"?>
+<project>
+  <parent>
+    <groupId>org.parent</groupId>
+    <artifactId>parent</artifactId>
+    <version>1.0</version>
+  </parent>
+  <properties>
+    <shading.prefix>org.shaded</shading.prefix>
+  </properties>
+</project>
+"""
+        main_pom = self._add_pom_from_content(
+            self.project, "to/main/pom.xml", pom_content
+        )
+
+        result = maven.resolve_shading_properties(main_pom, {"shading.prefix"})
+
+        self.assertEqual(result, {"shading.prefix": "org.shaded"})
+        mock_download_pom_file.assert_not_called()
+
+    @mock.patch("scanpipe.pipes.maven.download_pom_file")
+    def test_scanpipe_maven_resolve_shading_properties_walks_parent_chain(
+        self, mock_download_pom_file
+    ):
+        main_pom_content = """<?xml version="1.0" encoding="UTF-8"?>
+<project>
+  <parent>
+    <groupId>org.parent</groupId>
+    <artifactId>parent</artifactId>
+    <version>1.0</version>
+  </parent>
+  <properties>
+    <property1>1</property1>
+  </properties>
+</project>
+"""
+        parent_pom_content = """<?xml version="1.0" encoding="UTF-8"?>
+<project>
+  <properties>
+    <property2>2</property2>
+    <shading.prefix>org.shaded</shading.prefix>
+  </properties>
+</project>
+"""
+        main_pom = self._add_pom_from_content(
+            self.project, "to/main/pom.xml", main_pom_content
+        )
+        parent_pom = self._add_pom_from_content(
+            self.project, "to/parent/pom.xml", parent_pom_content
+        )
+        mock_download_pom_file.return_value = {
+            "pom_file_path": str(parent_pom.location),
+        }
+
+        result = maven.resolve_shading_properties(main_pom, {"shading.prefix"})
+
+        self.assertEqual(
+            result,
+            {"property1": "1", "property2": "2", "shading.prefix": "org.shaded"},
+        )
 
     def test_scanpipe_maven_get_maven_dependency_packages(self):
         main_purl = PackageURL.from_string(
@@ -758,6 +899,195 @@ class ScanPipeMavenPipesTest(TestCase):
         )
         self.assertIsNone(result)
 
+    @mock.patch("scanpipe.pipes.maven._fetch_source_repo_pom")
+    def test_scanpipe_maven_load_dependencies_from_source_repo(self, mock_fetch):
+        main_purl = PackageURL.from_string(
+            "pkg:maven/org.apache.htrace/htrace-core@4.0.0-incubating"
+        )
+        main_package = make_package(
+            self.project,
+            package_url="pkg:maven/org.apache.htrace/htrace-core@4.0.0-incubating",
+        )
+        main_pom = self._add_pom_from_content(
+            self.project,
+            "to/META-INF/maven/org.apache.htrace/htrace-core/pom.xml",
+            """<?xml version="1.0" encoding="UTF-8"?>
+<project>
+  <scm>
+    <url>https://github.com/apache/htrace</url>
+  </scm>
+</project>
+""",
+        )
+        mock_fetch.return_value = """<?xml version="1.0" encoding="UTF-8"?>
+<project>
+  <properties>
+    <jackson.version>2.4.0</jackson.version>
+  </properties>
+  <dependencies>
+    <dependency>
+      <groupId>commons-logging</groupId>
+      <artifactId>commons-logging</artifactId>
+      <version>1.1.1</version>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-annotations</artifactId>
+      <version>${jackson.version}</version>
+    </dependency>
+  </dependencies>
+</project>
+"""
+
+        result = maven.load_dependencies_from_source_repo(
+            self.project, main_purl, main_pom
+        )
+
+        self.assertEqual(len(result), 2)
+        self.assertTrue(all(dep.for_package == main_package for dep in result))
+        self.assertTrue(
+            self.project.discovereddependencies.filter(
+                type="maven", name="commons-logging", version="1.1.1"
+            ).exists()
+        )
+        self.assertTrue(
+            self.project.discovereddependencies.filter(
+                type="maven", name="jackson-annotations", version="2.4.0"
+            ).exists()
+        )
+        self.assertFalse(
+            self.project.discoveredpackages.filter(
+                type="maven", name="commons-logging", version="1.1.1"
+            ).exists()
+        )
+
+    @mock.patch("scanpipe.pipes.maven._fetch_source_repo_pom")
+    def test_scanpipe_maven_load_dependencies_from_source_repo_reuses_dependencies(
+        self, mock_fetch
+    ):
+        main_purl = PackageURL.from_string(
+            "pkg:maven/org.apache.htrace/htrace-core@4.0.0-incubating"
+        )
+        make_package(
+            self.project,
+            package_url="pkg:maven/org.apache.htrace/htrace-core@4.0.0-incubating",
+        )
+        existing = make_dependency(
+            project=self.project,
+            type="maven",
+            namespace="commons-logging",
+            name="commons-logging",
+            version="1.1.1",
+        )
+        main_pom = self._add_pom_from_content(
+            self.project,
+            "to/META-INF/maven/org.apache.htrace/htrace-core/pom.xml",
+            """<?xml version="1.0" encoding="UTF-8"?>
+<project>
+  <scm>
+    <url>https://github.com/apache/htrace</url>
+  </scm>
+</project>
+""",
+        )
+        mock_fetch.return_value = """<?xml version="1.0" encoding="UTF-8"?>
+<project>
+  <dependencies>
+    <dependency>
+      <groupId>commons-logging</groupId>
+      <artifactId>commons-logging</artifactId>
+      <version>1.1.1</version>
+    </dependency>
+  </dependencies>
+</project>
+"""
+
+        result = maven.load_dependencies_from_source_repo(
+            self.project, main_purl, main_pom
+        )
+
+        self.assertEqual(result, [existing])
+        self.assertEqual(
+            self.project.discovereddependencies.filter(
+                type="maven", name="commons-logging", version="1.1.1"
+            ).count(),
+            1,
+        )
+
+    def test_scanpipe_maven_load_dependencies_from_source_repo_no_github_url(self):
+        main_purl = PackageURL.from_string(
+            "pkg:maven/org.apache.htrace/htrace-core@4.0.0-incubating"
+        )
+        main_pom = self._add_pom_from_content(
+            self.project,
+            "to/META-INF/maven/org.apache.htrace/htrace-core/pom.xml",
+            """<?xml version="1.0" encoding="UTF-8"?>
+<project>
+  <scm>
+    <url>https://gitbox.apache.org/repos/asf/htrace.git</url>
+  </scm>
+</project>
+""",
+        )
+
+        result = maven.load_dependencies_from_source_repo(
+            self.project, main_purl, main_pom
+        )
+
+        self.assertEqual(result, [])
+
+    @mock.patch("scanpipe.pipes.maven._fetch_source_repo_pom")
+    def test_scanpipe_maven_load_dependencies_from_source_repo_pom_not_found(
+        self, mock_fetch
+    ):
+        main_purl = PackageURL.from_string(
+            "pkg:maven/org.apache.htrace/htrace-core@4.0.0-incubating"
+        )
+        main_pom = self._add_pom_from_content(
+            self.project,
+            "to/META-INF/maven/org.apache.htrace/htrace-core/pom.xml",
+            """<?xml version="1.0" encoding="UTF-8"?>
+<project>
+  <scm>
+    <url>https://github.com/apache/htrace</url>
+  </scm>
+</project>
+""",
+        )
+        mock_fetch.return_value = ""
+
+        result = maven.load_dependencies_from_source_repo(
+            self.project, main_purl, main_pom
+        )
+
+        self.assertEqual(result, [])
+
+    @mock.patch("scanpipe.pipes.maven._fetch_source_repo_pom")
+    def test_scanpipe_maven_load_dependencies_from_source_repo_invalid_pom(
+        self, mock_fetch
+    ):
+        main_purl = PackageURL.from_string(
+            "pkg:maven/org.apache.htrace/htrace-core@4.0.0-incubating"
+        )
+        main_pom = self._add_pom_from_content(
+            self.project,
+            "to/META-INF/maven/org.apache.htrace/htrace-core/pom.xml",
+            """<?xml version="1.0" encoding="UTF-8"?>
+<project>
+  <scm>
+    <url>https://github.com/apache/htrace</url>
+  </scm>
+</project>
+""",
+        )
+        mock_fetch.return_value = "this is not a POM"
+
+        result = maven.load_dependencies_from_source_repo(
+            self.project, main_purl, main_pom
+        )
+
+        self.assertEqual(result, [])
+
     def test_scanpipe_maven_map_shaded_classes_attributions(self):
         project, main_purl, commons, jackson = self._setup_project_with_shaded_classes()
 
@@ -813,6 +1143,131 @@ class ScanPipeMavenPipesTest(TestCase):
         unrelated_class.refresh_from_db()
         self.assertEqual(unrelated_class.status, flag.REQUIRES_REVIEW)
         self.assertEqual(unrelated_class.discovered_packages.count(), 0)
+
+    def test_scanpipe_maven_map_shaded_classes_shaded_but_no_package_match(self):
+        project = self.project
+        main_purl = PackageURL.from_string(
+            "pkg:maven/org.apache.htrace/htrace-core@4.0.0-incubating"
+        )
+        main_package = make_package(
+            project,
+            package_url="pkg:maven/org.apache.htrace/htrace-core@4.0.0-incubating",
+        )
+        make_package(
+            project,
+            package_url="pkg:maven/commons-logging/commons-logging@1.1.1",
+        )
+        pom_content = """<?xml version="1.0" encoding="UTF-8"?>
+<project>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>org.apache.htrace</groupId>
+  <artifactId>htrace-core</artifactId>
+  <version>4.0.0-incubating</version>
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-shade-plugin</artifactId>
+        <configuration>
+          <relocations>
+            <relocation>
+              <pattern>org.apache.unknown</pattern>
+              <shadedPattern>org.apache.htrace.unknown</shadedPattern>
+            </relocation>
+          </relocations>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>
+"""
+        self._add_pom_from_content(
+            project,
+            "to/META-INF/maven/org.apache.htrace/htrace-core/pom.xml",
+            pom_content,
+        )
+        shaded_class = make_resource_file(
+            project,
+            "to/org/apache/htrace/unknown/Foo.class",
+            status=flag.APPLICATION_PACKAGE,
+        )
+
+        shaded_class.discovered_packages.add(main_package)
+
+        maven.map_shaded_classes_to_maven_packages(project, purl=main_purl)
+
+        shaded_class.refresh_from_db()
+        self.assertEqual(shaded_class.status, flag.REQUIRES_REVIEW)
+        self.assertEqual(
+            shaded_class.extra_data.get("review_reason"), "no_package_match"
+        )
+        self.assertEqual(
+            shaded_class.extra_data.get("shaded_from_namespace"),
+            "org.apache.unknown",
+        )
+        self.assertEqual(
+            shaded_class.extra_data.get("original_fqn"),
+            "org.apache.unknown.Foo",
+        )
+        # The container attribution is known to be wrong for a shaded
+        # class, so it must be cleared even when no replacement package
+        # could be identified.
+        self.assertEqual(shaded_class.discovered_packages.count(), 0)
+
+    def test_scanpipe_maven_map_shaded_classes_with_property_placeholder(self):
+        project = self.project
+        main_purl = PackageURL.from_string(
+            "pkg:maven/org.apache.htrace/htrace-core@4.0.0-incubating"
+        )
+        make_package(
+            project,
+            package_url="pkg:maven/org.apache.htrace/htrace-core@4.0.0-incubating",
+        )
+        commons = make_package(
+            project,
+            package_url="pkg:maven/commons-logging/commons-logging@1.1.1",
+        )
+        pom_content = """<?xml version="1.0" encoding="UTF-8"?>
+<project>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>org.apache.htrace</groupId>
+  <artifactId>htrace-core</artifactId>
+  <version>4.0.0-incubating</version>
+  <properties>
+    <shading.prefix>org.apache.htrace</shading.prefix>
+  </properties>
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-shade-plugin</artifactId>
+        <configuration>
+          <relocations>
+            <relocation>
+              <pattern>org.apache.commons.logging</pattern>
+              <shadedPattern>${shading.prefix}.commons.logging</shadedPattern>
+            </relocation>
+          </relocations>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>
+"""
+        self._add_pom_from_content(
+            project,
+            "to/META-INF/maven/org.apache.htrace/htrace-core/pom.xml",
+            pom_content,
+        )
+        commons_class = make_resource_file(
+            project,
+            "to/org/apache/htrace/commons/logging/impl/AvalonLogger.class",
+            status=flag.REQUIRES_REVIEW,
+        )
+
+        maven.map_shaded_classes_to_maven_packages(project, purl=main_purl)
+
+        commons_class.refresh_from_db()
+        self.assertEqual(commons_class.status, flag.SHADED_CLASS)
+        self.assertIn(commons, commons_class.discovered_packages.all())
 
     def test_scanpipe_maven_map_shaded_classes_with_unresolved_dependency(self):
         project = self.project
@@ -936,18 +1391,44 @@ class ScanPipeMavenPipesTest(TestCase):
         main_purl = PackageURL.from_string(
             "pkg:maven/org.apache.htrace/htrace-core@4.0.0-incubating"
         )
-        make_resource_file(
+        pom_content = """<?xml version="1.0" encoding="UTF-8"?>
+<project>
+  <groupId>org.apache.htrace</groupId>
+  <artifactId>htrace-core</artifactId>
+  <version>4.0.0-incubating</version>
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-shade-plugin</artifactId>
+        <configuration>
+          <relocations>
+            <relocation>
+              <pattern>org.apache.commons.logging</pattern>
+              <shadedPattern>org.apache.htrace.commons.logging</shadedPattern>
+            </relocation>
+          </relocations>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>
+"""
+        self._add_pom_from_content(
             project,
-            "to/com/example/Foo.class",
-            status=flag.REQUIRES_REVIEW,
+            "to/META-INF/maven/org.apache.htrace/htrace-core/pom.xml",
+            pom_content,
+        )
+        shaded_class = make_resource_file(
+            project,
+            "to/org/apache/htrace/commons/logging/impl/AvalonLogger.class",
+            status=flag.APPLICATION_PACKAGE,
         )
 
         maven.map_shaded_classes_to_maven_packages(project, purl=main_purl)
 
-        self.assertEqual(
-            project.codebaseresources.filter(status=flag.SHADED_CLASS).count(),
-            0,
-        )
+        shaded_class.refresh_from_db()
+        self.assertEqual(shaded_class.status, flag.APPLICATION_PACKAGE)
+        self.assertEqual(shaded_class.discovered_packages.count(), 0)
 
     def test_scanpipe_maven_map_shaded_classes_reuses_dependency_package(self):
         project = self.project
