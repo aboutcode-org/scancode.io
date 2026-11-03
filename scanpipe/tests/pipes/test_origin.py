@@ -757,6 +757,40 @@ class ScanPipeOriginPipesTest(TestCase):
                 ),
             ],
             "no-origin": [],
+            # The origin six and pip, which vendors six, are both reported.
+            "shared-copy": [
+                (
+                    "third_party/six.py",
+                    "",
+                    "needs-review",
+                    origin.CONFLICTING_CANDIDATES_RULE,
+                ),
+            ],
+            "embedded-archive": [
+                (
+                    "jars/slf4j-nop-2.0.16.jar",
+                    "pkg:maven/org.slf4j/slf4j-nop@2.0.16",
+                    "auto-confirmed",
+                    origin.CONFIRMED_BY_TWO_TOOLS_RULE,
+                ),
+            ],
+            "single-tool-copy": [
+                (
+                    "static/js/escape-html.js",
+                    "pkg:github/component/escape-html@v1.0.3",
+                    "needs-review",
+                    origin.SINGLE_TOOL_RULE,
+                ),
+            ],
+            # The license header matches unrelated packages.
+            "license-header": [
+                (
+                    "src/sensor_calibration.py",
+                    "",
+                    "needs-review",
+                    origin.CONFLICTING_CANDIDATES_RULE,
+                ),
+            ],
         }
 
         expected_packages_by_case = {
@@ -775,6 +809,13 @@ class ScanPipeOriginPipesTest(TestCase):
                         "vendor/ms/package.json",
                         "vendor/ms/readme.md",
                     ],
+                )
+            ],
+            "embedded-archive": [
+                (
+                    "pkg:maven/org.slf4j/slf4j-nop@2.0.16",
+                    "mit",
+                    ["jars/slf4j-nop-2.0.16.jar"],
                 )
             ],
         }
@@ -833,6 +874,21 @@ class ScanPipeOriginPipesTest(TestCase):
                     ("vendor/ms", "pkg:npm/ms@2.1.3", "no-exact-match"),
                 ],
                 "no-origin": [],
+                "shared-copy": [
+                    ("third_party/six.py", "", "conflicting-candidates"),
+                ],
+                "embedded-archive": [
+                    (
+                        "jars/slf4j-nop-2.0.16.jar",
+                        "pkg:maven/org.slf4j/slf4j-nop@2.0.16",
+                        "single-tool",
+                    ),
+                ],
+                # Not in the MatchCode.io index.
+                "single-tool-copy": [],
+                "license-header": [
+                    ("src/sensor_calibration.py", "", "conflicting-candidates"),
+                ],
             },
             scanoss.TOOL_NAME: {
                 "exact-copy": [
@@ -862,6 +918,28 @@ class ScanPipeOriginPipesTest(TestCase):
                     ("vendor/ms/index.js", "pkg:github/vercel/ms@2.1.3", "single-tool"),
                 ],
                 "no-origin": [],
+                "shared-copy": [
+                    (
+                        "third_party/six.py",
+                        "pkg:github/benjaminp/six@1.16.0",
+                        "single-tool",
+                    ),
+                ],
+                "embedded-archive": [
+                    (
+                        "jars/slf4j-nop-2.0.16.jar",
+                        "pkg:maven/org.slf4j/slf4j-nop@2.0.16",
+                        "single-tool",
+                    ),
+                ],
+                "single-tool-copy": [
+                    (
+                        "static/js/escape-html.js",
+                        "pkg:github/component/escape-html@v1.0.3",
+                        "single-tool",
+                    ),
+                ],
+                "license-header": [],
             },
         }
 

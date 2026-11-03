@@ -1,0 +1,15 @@
+{
+  "description": "Unmodified escape-html index.js copied in an application. Its package is not indexed in the local MatchCode.io: only SCANOSS can report it.",
+  "resources": [
+    {
+      "path": "static/js/escape-html.js",
+      "match_type": "exact",
+      "origin": {
+        "purl": "pkg:npm/escape-html@1.0.3",
+        "download_url": "https://registry.npmjs.org/escape-html/-/escape-html-1.0.3.tgz",
+        "path": "package/index.js",
+        "sha1": "dfbb19c79eb0ca7ff2625fb1975a35cf47be378a"
+      }
+    }
+  ]
+}

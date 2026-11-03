@@ -1,0 +1,14 @@
+{
+  "src/sensor_calibration.py": [
+    {
+      "id": "none",
+      "server": {
+        "kb_version": {
+          "daily": "26.11.03",
+          "monthly": "26.10"
+        },
+        "version": "5.4.28"
+      }
+    }
+  ]
+}

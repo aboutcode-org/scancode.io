@@ -1,0 +1,43 @@
+{
+  "jars/slf4j-nop-2.0.16.jar": [
+    {
+      "component": "slf4j-nop",
+      "file": "slf4j-nop-2.0.16.jar",
+      "file_hash": "619ab5f8e4a331b90530238faed7737f",
+      "file_url": " ",
+      "id": "file",
+      "latest": "2.0.16",
+      "licenses": [
+        {
+          "checklist_url": "https://www.osadl.org/fileadmin/checklists/unreflicenses/MIT.txt",
+          "copyleft": "no",
+          "name": "MIT",
+          "osadl_updated": "2026-10-22T15:26:00+0000",
+          "patent_hints": "no",
+          "source": "component_declared",
+          "url": "https://spdx.org/licenses/MIT.html"
+        }
+      ],
+      "lines": "all",
+      "matched": "100%",
+      "oss_lines": "all",
+      "purl": [
+        "pkg:maven/org.slf4j/slf4j-nop"
+      ],
+      "release_date": "2024-08-10",
+      "server": {
+        "kb_version": {
+          "daily": "26.11.03",
+          "monthly": "26.10"
+        },
+        "version": "5.4.28"
+      },
+      "source_hash": "619ab5f8e4a331b90530238faed7737f",
+      "status": "pending",
+      "url": "https://mvnrepository.com/artifact/org.slf4j/slf4j-nop",
+      "url_hash": "619ab5f8e4a331b90530238faed7737f",
+      "vendor": "org.slf4j",
+      "version": "2.0.16"
+    }
+  ]
+}
