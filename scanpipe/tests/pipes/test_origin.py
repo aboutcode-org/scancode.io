@@ -40,15 +40,21 @@ from scanpipe.tests import make_resource_file
 SCANOSS_SIX_PURLS = ["pkg:github/benjaminp/six", "pkg:pypi/six", "pkg:conda/six"]
 
 
-def make_unsaved_origin_match(purl, tool="matchcode", match_type="file", purls=None):
+def make_unsaved_origin_match(
+    purl, tool="matchcode", match_type="file", purls=None, similarity=None
+):
     extra_data = {"purls": purls} if purls else {}
     return OriginMatch(
-        purl=purl, tool=tool, match_type=match_type, extra_data=extra_data
+        purl=purl,
+        tool=tool,
+        match_type=match_type,
+        similarity=similarity,
+        extra_data=extra_data,
     )
 
 
-def make_origin(purl, tool="matchcode", match_type="file", purls=None):
-    origin_match = make_unsaved_origin_match(purl, tool, match_type, purls)
+def make_origin(purl, tool="matchcode", match_type="file", purls=None, similarity=None):
+    origin_match = make_unsaved_origin_match(purl, tool, match_type, purls, similarity)
     return origin.Origin.from_origin_match(origin_match)
 
 
@@ -157,6 +163,17 @@ class ScanPipeOriginPipesTest(TestCase):
         expected = {"pkg:pypi/six@1.17.0"}
         self.assertEqual(expected, origin.get_equivalent_purls(origin_match))
 
+    def test_scanpipe_pipes_origin_is_commit_version(self):
+        self.assertTrue(origin.is_commit_version("498f34b"))
+        self.assertTrue(
+            origin.is_commit_version("498f34b4c6b5d8a0e3f1a2b7c9d0e1f2a3b4c5d6")
+        )
+        self.assertFalse(origin.is_commit_version("r62"))
+        self.assertFalse(origin.is_commit_version("1.17.0"))
+        self.assertFalse(origin.is_commit_version("v1.0.3"))
+        self.assertFalse(origin.is_commit_version("20240101"))
+        self.assertFalse(origin.is_commit_version("abc12"))
+
     def test_scanpipe_pipes_origin_get_versionless_purl(self):
         purl = "pkg:pypi/six@1.17.0?file_name=six-1.17.0.tar.gz#six.py"
         self.assertEqual("pkg:pypi/six", origin.get_versionless_purl(purl))
@@ -190,6 +207,19 @@ class ScanPipeOriginPipesTest(TestCase):
     def test_scanpipe_pipes_origin_origin_versionless_purls(self):
         expected = {"pkg:github/benjaminp/six", "pkg:pypi/six", "pkg:conda/six"}
         self.assertEqual(expected, make_scanoss_six_origin().versionless_purls)
+
+    def test_scanpipe_pipes_origin_origin_is_commit_version(self):
+        commit_origin = make_origin("pkg:github/benhoyt/inih@498f34b", tool="scanoss")
+        self.assertTrue(commit_origin.is_commit_version)
+        self.assertFalse(make_origin("pkg:github/benhoyt/inih@r62").is_commit_version)
+
+    def test_scanpipe_pipes_origin_origin_similarity(self):
+        six_origin = make_origin("pkg:pypi/six@1.17.0")
+        self.assertEqual(0, six_origin.similarity)
+
+        six_origin.merge(make_origin("pkg:pypi/six@1.17.0", similarity=94))
+        six_origin.merge(make_origin("pkg:pypi/six@1.17.0", similarity=95))
+        self.assertEqual(95, six_origin.similarity)
 
     def test_scanpipe_pipes_origin_origin_is_same_package(self):
         scanoss_origin = make_scanoss_six_origin()
@@ -372,23 +402,92 @@ class ScanPipeOriginPipesTest(TestCase):
             origin.is_same_package_versions([six_16_origin, urllib3_origin])
         )
 
-    def test_scanpipe_pipes_origin_get_rule(self):
-        six_origin = make_origin("pkg:pypi/six@1.17.0")
+    def test_scanpipe_pipes_origin_get_preferred_version_origin(self):
+        r62_origin = make_origin("pkg:github/benhoyt/inih@r62", similarity=90)
+        commit_origin = make_origin(
+            "pkg:github/benhoyt/inih@498f34b", tool="scanoss", similarity=94
+        )
+        r61_origin = make_origin("pkg:github/benhoyt/inih@r61", similarity=80)
+        other_commit_origin = make_origin(
+            "pkg:github/benhoyt/inih@577ae2d", tool="scanoss", similarity=60
+        )
+
+        # The release is preferred over a commit with a higher similarity.
+        preferred_origin = origin.get_preferred_version_origin(
+            [r62_origin, commit_origin]
+        )
+        self.assertEqual(r62_origin, preferred_origin)
+
+        # Between releases, the most similar.
+        preferred_origin = origin.get_preferred_version_origin(
+            [r61_origin, r62_origin, commit_origin]
+        )
+        self.assertEqual(r62_origin, preferred_origin)
+
+        # Between commits only, the most similar.
+        preferred_origin = origin.get_preferred_version_origin(
+            [other_commit_origin, commit_origin]
+        )
+        self.assertEqual(commit_origin, preferred_origin)
+
+        # No preference on equal or unknown similarities.
+        r60_origin = make_origin("pkg:github/benhoyt/inih@r60", similarity=90)
+        self.assertIsNone(origin.get_preferred_version_origin([r60_origin, r62_origin]))
+        six_17_origin = make_origin("pkg:pypi/six@1.17.0")
+        six_16_origin = make_origin("pkg:pypi/six@1.16.0")
+        self.assertIsNone(
+            origin.get_preferred_version_origin([six_17_origin, six_16_origin])
+        )
+
+    def test_scanpipe_pipes_origin_get_conflict_rule_and_candidate(self):
+        r62_origin = make_origin("pkg:github/benhoyt/inih@r62", similarity=95)
+        commit_origin = make_origin(
+            "pkg:github/benhoyt/inih@498f34b", tool="scanoss", similarity=94
+        )
+        six_17_origin = make_origin("pkg:pypi/six@1.17.0")
         six_16_origin = make_origin("pkg:pypi/six@1.16.0")
         urllib3_origin = make_origin("pkg:pypi/urllib3@1.26.20")
+
+        rule_and_candidate = origin.get_conflict_rule_and_candidate(
+            [six_16_origin, urllib3_origin]
+        )
+        self.assertEqual((origin.CONFLICTING_CANDIDATES_RULE, None), rule_and_candidate)
+
+        rule_and_candidate = origin.get_conflict_rule_and_candidate(
+            [r62_origin, commit_origin]
+        )
+        self.assertEqual(
+            (origin.PREFERRED_VERSION_RULE, r62_origin), rule_and_candidate
+        )
+
+        rule_and_candidate = origin.get_conflict_rule_and_candidate(
+            [six_17_origin, six_16_origin]
+        )
+        self.assertEqual((origin.CONFLICTING_VERSIONS_RULE, None), rule_and_candidate)
+
+    def test_scanpipe_pipes_origin_get_single_origin_rule(self):
+        six_origin = make_origin("pkg:pypi/six@1.17.0")
         snippet_origin = make_origin("pkg:npm/lodash@4.17.21", match_type="snippet")
 
-        rule = origin.get_rule([six_origin, urllib3_origin])
-        self.assertEqual(origin.CONFLICTING_CANDIDATES_RULE, rule)
-        rule = origin.get_rule([six_origin, six_16_origin])
-        self.assertEqual(origin.CONFLICTING_VERSIONS_RULE, rule)
-        rule = origin.get_rule([snippet_origin])
+        rule = origin.get_single_origin_rule(snippet_origin)
         self.assertEqual(origin.NO_EXACT_MATCH_RULE, rule)
-        self.assertEqual(origin.SINGLE_TOOL_RULE, origin.get_rule([six_origin]))
+        self.assertEqual(
+            origin.SINGLE_TOOL_RULE, origin.get_single_origin_rule(six_origin)
+        )
 
         six_origin.merge(make_scanoss_six_origin())
-        rule = origin.get_rule([six_origin])
+        rule = origin.get_single_origin_rule(six_origin)
         self.assertEqual(origin.CONFIRMED_BY_TWO_TOOLS_RULE, rule)
+
+    def test_scanpipe_pipes_origin_get_rule_and_candidate(self):
+        six_origin = make_origin("pkg:pypi/six@1.17.0")
+        urllib3_origin = make_origin("pkg:pypi/urllib3@1.26.20")
+
+        rule_and_candidate = origin.get_rule_and_candidate([six_origin])
+        self.assertEqual((origin.SINGLE_TOOL_RULE, six_origin), rule_and_candidate)
+
+        rule_and_candidate = origin.get_rule_and_candidate([six_origin, urllib3_origin])
+        self.assertEqual((origin.CONFLICTING_CANDIDATES_RULE, None), rule_and_candidate)
 
     def test_scanpipe_pipes_origin_make_origin_determination(self):
         resource = make_resource_file(self.project1, path="six.py")
@@ -409,6 +508,18 @@ class ScanPipeOriginPipesTest(TestCase):
         self.assertEqual("", determination.purl)
         self.assertEqual("needs-review", determination.status)
         self.assertEqual(origin.CONFLICTING_CANDIDATES_RULE, determination.rule)
+
+        # The preferred version is proposed for review.
+        r62_origin = make_origin("pkg:github/benhoyt/inih@r62", similarity=95)
+        commit_origin = make_origin(
+            "pkg:github/benhoyt/inih@498f34b", tool="scanoss", similarity=94
+        )
+        determination = origin.make_origin_determination(
+            self.project1, resource, [r62_origin, commit_origin]
+        )
+        self.assertEqual("pkg:github/benhoyt/inih@r62", determination.purl)
+        self.assertEqual("needs-review", determination.status)
+        self.assertEqual(origin.PREFERRED_VERSION_RULE, determination.rule)
 
         six_origin.merge(make_scanoss_six_origin())
         determination = origin.make_origin_determination(
@@ -792,12 +903,13 @@ class ScanPipeOriginPipesTest(TestCase):
                     origin.CONFLICTING_CANDIDATES_RULE,
                 ),
             ],
+            # The r62 release is preferred over the 498f34b commit.
             "modified-copy": [
                 (
                     "src/inih/ini.c",
-                    "",
+                    "pkg:github/benhoyt/inih@r62",
                     "needs-review",
-                    origin.CONFLICTING_VERSIONS_RULE,
+                    origin.PREFERRED_VERSION_RULE,
                 ),
                 (
                     "src/inih/ini.h",

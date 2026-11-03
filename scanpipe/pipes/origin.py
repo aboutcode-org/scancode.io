@@ -20,6 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
+import re
 from contextlib import suppress
 from dataclasses import dataclass
 from itertools import batched
@@ -40,6 +41,7 @@ from scanpipe.pipes.resolve import convert_spdx_expression
 
 CONFLICTING_CANDIDATES_RULE = "conflicting-candidates"
 CONFLICTING_VERSIONS_RULE = "conflicting-versions"
+PREFERRED_VERSION_RULE = "preferred-version"
 NO_EXACT_MATCH_RULE = "no-exact-match"
 SINGLE_TOOL_RULE = "single-tool"
 CONFIRMED_BY_TWO_TOOLS_RULE = "confirmed-by-two-tools"
@@ -62,6 +64,10 @@ SCANOSS_COMPONENT_LICENSE_SOURCES = ["component_declared", "license_file"]
 # unrelated packages: the MIT license header is 19 lines long. Counted in lines,
 # not in percentage, to keep a copy of a few dozen lines in a large file.
 MIN_SNIPPET_LINE_COUNT = 20
+
+# A Git commit hash, full or abbreviated, such as the "498f34b" version reported by
+# SCANOSS for a modified copy of inih.
+COMMIT_HASH_PATTERN = re.compile(r"[0-9a-f]{7,40}")
 
 
 def get_package_purl(purl, version=None):
@@ -98,6 +104,12 @@ def get_equivalent_purls(origin_match):
     version = PackageURL.from_string(origin_match.purl).version
     tool_purls = origin_match.extra_data.get("purls", [])
     return get_versioned_purls([origin_match.purl, *tool_purls], version)
+
+
+def is_commit_version(version):
+    """Return True when the ``version`` is a commit hash instead of a release."""
+    # A date version, such as "20240101", is not a commit hash.
+    return bool(COMMIT_HASH_PATTERN.fullmatch(version)) and not version.isdigit()
 
 
 def get_versionless_purl(purl):
@@ -157,6 +169,20 @@ class Origin:
     @property
     def versionless_purls(self):
         return {get_versionless_purl(purl) for purl in self.equivalent_purls}
+
+    @property
+    def is_commit_version(self):
+        return is_commit_version(PackageURL.from_string(self.purl).version)
+
+    @property
+    def similarity(self):
+        """Return the highest similarity of the origin matches, 0 when unknown."""
+        similarities = [
+            origin_match.similarity
+            for origin_match in self.origin_matches
+            if origin_match.similarity is not None
+        ]
+        return max(similarities, default=0)
 
     def is_same_package(self, other_origin):
         return bool(self.equivalent_purls & other_origin.equivalent_purls)
@@ -268,14 +294,45 @@ def is_same_package_versions(origins):
     return bool(set.intersection(*(origin.versionless_purls for origin in origins)))
 
 
-def get_rule(origins):
-    """Return the determination rule of the candidate ``origins`` of a resource."""
-    if len(origins) > 1:
-        if is_same_package_versions(origins):
-            return CONFLICTING_VERSIONS_RULE
-        return CONFLICTING_CANDIDATES_RULE
+def get_preferred_version_origin(origins):
+    """
+    Return the origin of the preferred version among the ``origins`` versions of
+    the same package: the only release version, as opposed to a commit, or else
+    the version with the highest similarity. Return None when no version is
+    preferred.
+    """
+    release_origins = [origin for origin in origins if not origin.is_commit_version]
+    if len(release_origins) == 1:
+        return release_origins[0]
 
-    origin = origins[0]
+    candidate_origins = release_origins or origins
+    highest_similarity = max(origin.similarity for origin in candidate_origins)
+    most_similar_origins = [
+        origin
+        for origin in candidate_origins
+        if origin.similarity == highest_similarity
+    ]
+    has_single_most_similar = len(most_similar_origins) == 1
+    if highest_similarity and has_single_most_similar:
+        return most_similar_origins[0]
+
+
+def get_conflict_rule_and_candidate(origins):
+    """
+    Return the determination rule of the conflicting candidate ``origins`` of a
+    resource, and the proposed candidate origin, None when there is no proposal.
+    """
+    if not is_same_package_versions(origins):
+        return CONFLICTING_CANDIDATES_RULE, None
+
+    if preferred_origin := get_preferred_version_origin(origins):
+        return PREFERRED_VERSION_RULE, preferred_origin
+
+    return CONFLICTING_VERSIONS_RULE, None
+
+
+def get_single_origin_rule(origin):
+    """Return the determination rule of the only candidate ``origin`` of a resource."""
     if not origin.has_exact_match:
         return NO_EXACT_MATCH_RULE
 
@@ -287,18 +344,29 @@ def get_rule(origins):
     return CONFIRMED_BY_TWO_TOOLS_RULE
 
 
+def get_rule_and_candidate(origins):
+    """
+    Return the determination rule of the candidate ``origins`` of a resource, and
+    the proposed candidate origin, None when there is no proposal.
+    """
+    if len(origins) > 1:
+        return get_conflict_rule_and_candidate(origins)
+
+    origin = origins[0]
+    return get_single_origin_rule(origin), origin
+
+
 def make_origin_determination(project, resource, origins):
     """Return an unsaved OriginDetermination for the ``resource`` ``origins``."""
-    rule = get_rule(origins)
+    rule, candidate_origin = get_rule_and_candidate(origins)
     status = OriginDetermination.Status.NEEDS_REVIEW
     if rule == CONFIRMED_BY_TWO_TOOLS_RULE:
         status = OriginDetermination.Status.AUTO_CONFIRMED
 
-    has_single_candidate = len(origins) == 1
     return OriginDetermination(
         project=project,
         resource=resource,
-        purl=origins[0].purl if has_single_candidate else "",
+        purl=candidate_origin.purl if candidate_origin else "",
         status=status,
         rule=rule,
     )
@@ -577,6 +645,7 @@ def determine_origins(project, batch_size=2000):
                 "match_type",
                 "tool",
                 "line_ranges",
+                "similarity",
                 "extra_data",
                 "resource__path",
                 "resource__type",

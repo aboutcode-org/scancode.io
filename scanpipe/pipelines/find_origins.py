@@ -106,9 +106,11 @@ class FindOrigins(Pipeline):
         Determine the origin of each matched file and directory from the origin
         matches of all the tools. An origin is confirmed automatically when two
         tools report the same package, with at least one exact match. Otherwise,
-        the origin needs a review. The snippet matches shorter than 20 lines, such
-        as a common license header, are ignored. The origins confirmed by a user
-        are kept.
+        the origin needs a review. When the tools report different versions of the
+        same package, the release version is proposed over a commit, or else the
+        version with the highest similarity. The snippet matches shorter than 20
+        lines, such as a common license header, are ignored. The origins confirmed
+        by a user are kept.
         The files and directories of a confirmed origin are assigned to the origin
         package, created from the tools data when the codebase scan did not
         detect it.
