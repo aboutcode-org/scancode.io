@@ -44,6 +44,7 @@ from scanpipe.pipes import create_origin_matches
 from scanpipe.pipes import flag
 from scanpipe.pipes import make_origin_match
 from scanpipe.pipes import poll_until_success
+from scanpipe.pipes import purldb
 from scanpipe.pipes.output import to_json
 from scanpipe.pipes.scancode import _scan_resource
 from scanpipe.pipes.scancode import scan_resources
@@ -593,11 +594,46 @@ def make_snippet_origin_matches(
         )
 
 
+def get_path_depth_and_path(purldb_resource):
+    path = purldb_resource["path"]
+    return path.count("/"), path
+
+
+def get_origin_paths(sha1_list):
+    """
+    Return the paths of the ``sha1_list`` files in the PurlDB packages, as a
+    mapping of (package PURL, sha1) to path, as MatchCode.io does not report the
+    path of a matched file. When a package has several copies of a file, the
+    shallowest path is kept. Empty when PurlDB is not configured.
+    """
+    if not sha1_list or not purldb.is_configured():
+        return {}
+
+    purldb_resources = sorted(
+        purldb.match_resources(sha1_list), key=get_path_depth_and_path
+    )
+    origin_paths = {}
+    for purldb_resource in purldb_resources:
+        origin_key = (purldb_resource["purl"], purldb_resource["sha1"])
+        origin_paths.setdefault(origin_key, purldb_resource["path"])
+    return origin_paths
+
+
 def make_package_origin_matches(
-    resource, match_type, package_uids, package_data_by_uid, tool_version
+    resource,
+    match_type,
+    package_uids,
+    package_data_by_uid,
+    tool_version,
+    origin_paths=None,
 ):
-    """Yield unsaved OriginMatch instances for the ``resource`` matched packages."""
+    """
+    Yield unsaved OriginMatch instances for the ``resource`` matched packages.
+    The ``origin_paths`` mapping of (package PURL, sha1) to path provides the path
+    of a matched file in its package.
+    """
     similarity = 100 if match_type in OriginMatch.EXACT_MATCH_TYPES else None
+    origin_paths = origin_paths or {}
     seen_purls = set()
 
     for package_uid in package_uids:
@@ -613,13 +649,19 @@ def make_package_origin_matches(
             tool_version,
             purl=purl,
             match_type=match_type,
+            origin_path=origin_paths.get((purl, resource.sha1), ""),
             similarity=similarity,
             extra_data=get_origin_match_extra_data(package_data),
         )
 
 
 def make_origin_matches(
-    resource, resource_results, package_data_by_uid, package_data_by_purl, tool_version
+    resource,
+    resource_results,
+    package_data_by_uid,
+    package_data_by_purl,
+    tool_version,
+    origin_paths=None,
 ):
     """Yield unsaved OriginMatch instances from a ``resource`` match results."""
     matched_snippets = (resource_results.get("extra_data") or {}).get(
@@ -641,13 +683,28 @@ def make_origin_matches(
         resource_results["for_packages"],
         package_data_by_uid,
         tool_version,
+        origin_paths,
     )
+
+
+def get_matched_file_sha1s(project, results_by_path):
+    """Return the sha1 of the ``project`` files matched to a PurlDB file."""
+    matched_file_paths = [
+        path
+        for path, resource_results in results_by_path.items()
+        if resource_results.get("status") == flag.MATCHED_TO_PURLDB_RESOURCE
+    ]
+    matched_files = project.codebaseresources.filter(
+        path__in=matched_file_paths
+    ).exclude(sha1="")
+    return list(matched_files.values_list("sha1", flat=True))
 
 
 def load_matchcode_results(project, match_results):
     """
     Create OriginMatch records for the ``project`` resources from the MatchCode.io
-    ``match_results``. Return the number of processed origin matches.
+    ``match_results``. The path of the matched files in their package is fetched
+    from PurlDB when configured. Return the number of processed origin matches.
     """
     packages_data = match_results.get("packages", [])
     package_data_by_uid = {
@@ -661,11 +718,13 @@ def load_matchcode_results(project, match_results):
         for resource_results in match_results.get("files", [])
         if resource_results.get("for_packages")
     }
+    matched_file_sha1s = get_matched_file_sha1s(project, results_by_path)
     make_matchcode_origin_matches = partial(
         make_origin_matches,
         package_data_by_uid=package_data_by_uid,
         package_data_by_purl=package_data_by_purl,
         tool_version=match_results["headers"][0]["tool_version"],
+        origin_paths=get_origin_paths(matched_file_sha1s),
     )
 
     origin_match_count, _ = create_origin_matches(

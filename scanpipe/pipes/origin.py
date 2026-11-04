@@ -40,6 +40,7 @@ from scanpipe.models import OriginMatch
 from scanpipe.pipes.resolve import convert_spdx_expression
 
 CONFLICTING_CANDIDATES_RULE = "conflicting-candidates"
+CONTAINMENT_RULE = "containment"
 CONFLICTING_VERSIONS_RULE = "conflicting-versions"
 PREFERRED_VERSION_RULE = "preferred-version"
 NO_EXACT_MATCH_RULE = "no-exact-match"
@@ -112,6 +113,21 @@ def is_commit_version(version):
     return bool(COMMIT_HASH_PATTERN.fullmatch(version)) and not version.isdigit()
 
 
+def normalize_name(name):
+    """Return the ``name`` of a package or path segment in a comparable form."""
+    return name.lower().replace("-", "_")
+
+
+def get_path_names(path):
+    """
+    Return the normalized names of the directories of ``path`` and of its file
+    name without extension.
+    """
+    file_path = PurePosixPath(path)
+    names = [*file_path.parent.parts, file_path.stem]
+    return {normalize_name(name) for name in names}
+
+
 def get_versionless_purl(purl):
     """Return the ``purl`` without version, qualifiers and subpath."""
     package_url = PackageURL.from_string(purl)
@@ -169,6 +185,23 @@ class Origin:
     @property
     def versionless_purls(self):
         return {get_versionless_purl(purl) for purl in self.equivalent_purls}
+
+    @property
+    def package_names(self):
+        return {
+            normalize_name(PackageURL.from_string(purl).name)
+            for purl in self.equivalent_purls
+        }
+
+    @property
+    def origin_path_names(self):
+        """Return the names in the paths of the copies in the origin package."""
+        return {
+            name
+            for origin_match in self.origin_matches
+            if origin_match.origin_path
+            for name in get_path_names(origin_match.origin_path)
+        }
 
     @property
     def is_commit_version(self):
@@ -317,12 +350,45 @@ def get_preferred_version_origin(origins):
         return most_similar_origins[0]
 
 
+def is_carrier_origin(origin, other_origins):
+    """
+    Return True when the copy in the ``origin`` package is in a directory or file
+    named after one of the ``other_origins`` packages, such as six.py vendored by
+    pip in "pip/_vendor/six.py": the ``origin`` carries the copy of another
+    package.
+    """
+    return any(
+        origin.origin_path_names & other_origin.package_names
+        for other_origin in other_origins
+    )
+
+
+def get_contained_origin(origins):
+    """
+    Return the only origin among the ``origins`` of different packages that does
+    not carry the copy of another, when the others do. Return None otherwise.
+    """
+    non_carrier_origins = []
+    for origin in origins:
+        other_origins = [
+            other_origin for other_origin in origins if other_origin is not origin
+        ]
+        if not is_carrier_origin(origin, other_origins):
+            non_carrier_origins.append(origin)
+
+    has_carrier_origin = len(non_carrier_origins) < len(origins)
+    if has_carrier_origin and len(non_carrier_origins) == 1:
+        return non_carrier_origins[0]
+
+
 def get_conflict_rule_and_candidate(origins):
     """
     Return the determination rule of the conflicting candidate ``origins`` of a
     resource, and the proposed candidate origin, None when there is no proposal.
     """
     if not is_same_package_versions(origins):
+        if contained_origin := get_contained_origin(origins):
+            return CONTAINMENT_RULE, contained_origin
         return CONFLICTING_CANDIDATES_RULE, None
 
     if preferred_origin := get_preferred_version_origin(origins):
@@ -644,6 +710,7 @@ def determine_origins(project, batch_size=2000):
                 "purl",
                 "match_type",
                 "tool",
+                "origin_path",
                 "line_ranges",
                 "similarity",
                 "extra_data",

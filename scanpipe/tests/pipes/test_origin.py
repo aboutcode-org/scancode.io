@@ -23,6 +23,7 @@
 import json
 import shutil
 from pathlib import Path
+from unittest import mock
 
 from django.test import TestCase
 
@@ -31,6 +32,7 @@ from scanpipe.models import OriginMatch
 from scanpipe.pipes import collect_and_create_codebase_resources
 from scanpipe.pipes import matchcode
 from scanpipe.pipes import origin
+from scanpipe.pipes import purldb
 from scanpipe.pipes import scanoss
 from scanpipe.tests import make_package
 from scanpipe.tests import make_project
@@ -41,20 +43,35 @@ SCANOSS_SIX_PURLS = ["pkg:github/benjaminp/six", "pkg:pypi/six", "pkg:conda/six"
 
 
 def make_unsaved_origin_match(
-    purl, tool="matchcode", match_type="file", purls=None, similarity=None
+    purl,
+    tool="matchcode",
+    match_type="file",
+    purls=None,
+    similarity=None,
+    origin_path="",
 ):
     extra_data = {"purls": purls} if purls else {}
     return OriginMatch(
         purl=purl,
         tool=tool,
         match_type=match_type,
+        origin_path=origin_path,
         similarity=similarity,
         extra_data=extra_data,
     )
 
 
-def make_origin(purl, tool="matchcode", match_type="file", purls=None, similarity=None):
-    origin_match = make_unsaved_origin_match(purl, tool, match_type, purls, similarity)
+def make_origin(
+    purl,
+    tool="matchcode",
+    match_type="file",
+    purls=None,
+    similarity=None,
+    origin_path="",
+):
+    origin_match = make_unsaved_origin_match(
+        purl, tool, match_type, purls, similarity, origin_path
+    )
     return origin.Origin.from_origin_match(origin_match)
 
 
@@ -97,6 +114,14 @@ class ScanPipeOriginPipesTest(TestCase):
             line_ranges=line_ranges or [],
         )
 
+    @staticmethod
+    def get_purldb_resources(case_path):
+        """Return the PurlDB resources of the files matched by MatchCode.io."""
+        resources_location = case_path / "purldb-resources.json"
+        if not resources_location.exists():
+            return []
+        return json.loads(resources_location.read_text())
+
     def load_data_set_case(self, case_name, tools=None):
         """
         Return a project with the codebase and the results of the ``tools`` of a
@@ -113,7 +138,14 @@ class ScanPipeOriginPipesTest(TestCase):
         if matchcode.TOOL_NAME in tools:
             results_location = case_path / "matchcode-results.json"
             match_results = json.loads(results_location.read_text())
-            matchcode.load_matchcode_results(project, match_results)
+            purldb_resources = self.get_purldb_resources(case_path)
+            with (
+                mock.patch.object(purldb, "is_configured", return_value=True),
+                mock.patch.object(
+                    purldb, "match_resources", return_value=purldb_resources
+                ),
+            ):
+                matchcode.load_matchcode_results(project, match_results)
 
         if scanoss.TOOL_NAME in tools:
             results_location = case_path / "scanoss-results.json"
@@ -174,6 +206,24 @@ class ScanPipeOriginPipesTest(TestCase):
         self.assertFalse(origin.is_commit_version("20240101"))
         self.assertFalse(origin.is_commit_version("abc12"))
 
+    def test_scanpipe_pipes_origin_normalize_name(self):
+        self.assertEqual(
+            "typing_extensions", origin.normalize_name("Typing-Extensions")
+        )
+
+    def test_scanpipe_pipes_origin_get_path_names(self):
+        path = "pip-24.0.tar.gz-extract/pip-24.0/src/pip/_vendor/six.py"
+        expected = {
+            "pip_24.0.tar.gz_extract",
+            "pip_24.0",
+            "src",
+            "pip",
+            "_vendor",
+            "six",
+        }
+        self.assertEqual(expected, origin.get_path_names(path))
+        self.assertEqual({"six"}, origin.get_path_names("six.py"))
+
     def test_scanpipe_pipes_origin_get_versionless_purl(self):
         purl = "pkg:pypi/six@1.17.0?file_name=six-1.17.0.tar.gz#six.py"
         self.assertEqual("pkg:pypi/six", origin.get_versionless_purl(purl))
@@ -207,6 +257,21 @@ class ScanPipeOriginPipesTest(TestCase):
     def test_scanpipe_pipes_origin_origin_versionless_purls(self):
         expected = {"pkg:github/benjaminp/six", "pkg:pypi/six", "pkg:conda/six"}
         self.assertEqual(expected, make_scanoss_six_origin().versionless_purls)
+
+    def test_scanpipe_pipes_origin_origin_package_names(self):
+        self.assertEqual({"six"}, make_scanoss_six_origin().package_names)
+        typing_origin = make_origin("pkg:pypi/Typing-Extensions@4.9.0")
+        self.assertEqual({"typing_extensions"}, typing_origin.package_names)
+
+    def test_scanpipe_pipes_origin_origin_origin_path_names(self):
+        pip_origin = make_origin("pkg:pypi/pip@24.0")
+        self.assertEqual(set(), pip_origin.origin_path_names)
+
+        pip_origin.merge(
+            make_origin("pkg:pypi/pip@24.0", origin_path="pip-24.0/_vendor/six.py")
+        )
+        expected = {"pip_24.0", "_vendor", "six"}
+        self.assertEqual(expected, pip_origin.origin_path_names)
 
     def test_scanpipe_pipes_origin_origin_is_commit_version(self):
         commit_origin = make_origin("pkg:github/benhoyt/inih@498f34b", tool="scanoss")
@@ -402,6 +467,60 @@ class ScanPipeOriginPipesTest(TestCase):
             origin.is_same_package_versions([six_16_origin, urllib3_origin])
         )
 
+    def test_scanpipe_pipes_origin_is_carrier_origin(self):
+        six_origin = make_origin("pkg:pypi/six@1.16.0", origin_path="six-1.16.0/six.py")
+        pip_origin = make_origin(
+            "pkg:pypi/pip@24.0", origin_path="pip-24.0/src/pip/_vendor/six.py"
+        )
+        urllib3_origin = make_origin(
+            "pkg:pypi/urllib3@1.26.20",
+            origin_path="urllib3-1.26.20/src/urllib3/packages/six.py",
+        )
+
+        self.assertTrue(origin.is_carrier_origin(pip_origin, [six_origin]))
+        self.assertFalse(origin.is_carrier_origin(six_origin, [pip_origin]))
+        self.assertFalse(origin.is_carrier_origin(urllib3_origin, [pip_origin]))
+        # Without origin path, the content of a package is unknown.
+        self.assertFalse(
+            origin.is_carrier_origin(make_origin("pkg:pypi/pip@24.0"), [six_origin])
+        )
+
+    def test_scanpipe_pipes_origin_get_contained_origin(self):
+        six_origin = make_origin("pkg:pypi/six@1.16.0", origin_path="six-1.16.0/six.py")
+        pip_origin = make_origin(
+            "pkg:pypi/pip@24.0", origin_path="pip-24.0/src/pip/_vendor/six.py"
+        )
+        virtualenv_origin = make_origin(
+            "pkg:pypi/virtualenv@20.0.0",
+            origin_path="virtualenv-20.0.0/src/virtualenv/six.py",
+        )
+        # SCANOSS reports the file name only.
+        anime365_origin = make_origin(
+            "pkg:github/piotrmasek/anime365@0.1-Ryucon",
+            tool="scanoss",
+            origin_path="six.py",
+        )
+        lodash_origin = make_origin(
+            "pkg:npm/lodash@4.17.21", origin_path="package/debounce.js"
+        )
+
+        self.assertEqual(
+            six_origin, origin.get_contained_origin([pip_origin, six_origin])
+        )
+        contained_origin = origin.get_contained_origin(
+            [pip_origin, virtualenv_origin, six_origin]
+        )
+        self.assertEqual(six_origin, contained_origin)
+        contained_origin = origin.get_contained_origin([anime365_origin, six_origin])
+        self.assertEqual(six_origin, contained_origin)
+
+        # No carrier.
+        self.assertIsNone(origin.get_contained_origin([lodash_origin, six_origin]))
+        # Several origins that do not carry another.
+        self.assertIsNone(
+            origin.get_contained_origin([pip_origin, six_origin, lodash_origin])
+        )
+
     def test_scanpipe_pipes_origin_get_preferred_version_origin(self):
         r62_origin = make_origin("pkg:github/benhoyt/inih@r62", similarity=90)
         commit_origin = make_origin(
@@ -452,6 +571,14 @@ class ScanPipeOriginPipesTest(TestCase):
             [six_16_origin, urllib3_origin]
         )
         self.assertEqual((origin.CONFLICTING_CANDIDATES_RULE, None), rule_and_candidate)
+
+        pip_origin = make_origin(
+            "pkg:pypi/pip@24.0", origin_path="pip-24.0/src/pip/_vendor/six.py"
+        )
+        rule_and_candidate = origin.get_conflict_rule_and_candidate(
+            [pip_origin, six_16_origin]
+        )
+        self.assertEqual((origin.CONTAINMENT_RULE, six_16_origin), rule_and_candidate)
 
         rule_and_candidate = origin.get_conflict_rule_and_candidate(
             [r62_origin, commit_origin]
@@ -939,9 +1066,9 @@ class ScanPipeOriginPipesTest(TestCase):
             "shared-copy": [
                 (
                     "third_party/six.py",
-                    "",
+                    "pkg:pypi/six@1.16.0",
                     "needs-review",
-                    origin.CONFLICTING_CANDIDATES_RULE,
+                    origin.CONTAINMENT_RULE,
                 ),
             ],
             "embedded-archive": [
@@ -1046,7 +1173,7 @@ class ScanPipeOriginPipesTest(TestCase):
                 ],
                 "no-origin": [],
                 "shared-copy": [
-                    ("third_party/six.py", "", "conflicting-candidates"),
+                    ("third_party/six.py", "pkg:pypi/six@1.16.0", "containment"),
                 ],
                 "embedded-archive": [
                     (
