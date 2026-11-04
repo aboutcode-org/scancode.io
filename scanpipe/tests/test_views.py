@@ -72,6 +72,46 @@ class ScanPipeViewsTest(TestCase):
     def setUp(self):
         self.project1 = Project.objects.create(name="Analysis")
 
+    def test_project_batch_action_updates_only_selected_project_resources(self):
+        resource = make_resource_file(self.project1, path="one.txt")
+        other_project = make_project(name="Other")
+        other_resource = make_resource_file(other_project, path="two.txt")
+        url = reverse(
+            "project_batch_action",
+            kwargs={"slug": self.project1.slug, "finding_type": "resource"},
+        )
+
+        response = self.client.post(
+            url,
+            {
+                "action": "reviewed",
+                "selected_ids": f"{resource.pk},{other_resource.pk}",
+            },
+        )
+
+        self.assertEqual(response.status_code, 204)
+        resource.refresh_from_db()
+        other_resource.refresh_from_db()
+        self.assertEqual(resource.status, "reviewed")
+        self.assertNotEqual(other_resource.status, "reviewed")
+
+    def test_finding_lists_render_selection_controls(self):
+        make_resource_file(self.project1, path="one.txt")
+        make_package(self.project1, package_url="pkg:generic/one@1.0")
+
+        for view_name, marker in (
+            ("project_resources", "resource"),
+            ("project_packages", "package"),
+            ("project_licenses", "license"),
+        ):
+            response = self.client.get(
+                reverse(view_name, kwargs={"slug": self.project1.slug})
+            )
+            self.assertEqual(response.status_code, 200)
+            self.assertContains(response, 'id="select-all"')
+            self.assertContains(response, 'class="select-row"')
+            self.assertContains(response, f'finding_type={marker}')
+
     def test_scanpipe_views_project_list_is_archived(self):
         project2 = Project.objects.create(name="project2", is_archived=True)
         url = reverse("project_list")

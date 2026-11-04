@@ -478,7 +478,11 @@ class ExportXLSXMixin:
     export_xlsx_query_param = "export_xlsx"
 
     def get_export_xlsx_queryset(self):
-        return self.filterset.qs
+        queryset = self.filterset.qs
+        selected_ids = self.request.GET.get("selected_ids")
+        if selected_ids:
+            queryset = queryset.filter(pk__in=selected_ids.split(","))
+        return queryset
 
     def get_export_xlsx_filename(self):
         return f"{self.project.name}_{self.model._meta.model_name}.xlsx"
@@ -527,7 +531,11 @@ class ExportJSONMixin:
     export_json_query_param = "export_json"
 
     def get_export_json_queryset(self):
-        return self.filterset.qs
+        queryset = self.filterset.qs
+        selected_ids = self.request.GET.get("selected_ids")
+        if selected_ids:
+            queryset = queryset.filter(pk__in=selected_ids.split(","))
+        return queryset
 
     def get_export_json_filename(self):
         return f"{self.project.name}_{self.model._meta.model_name}.json"
@@ -1649,6 +1657,47 @@ class ProjectRelatedViewMixin:
         return context
 
 
+@method_decorator(require_POST, name="dispatch")
+class ProjectBatchActionView(ConditionalLoginRequired, generic.View):
+    """Apply a supported triage action to selected findings in one project."""
+
+    models = {
+        "resource": CodebaseResource,
+        "package": DiscoveredPackage,
+        "license": DiscoveredLicense,
+    }
+
+    def post(self, request, slug, finding_type):
+        model = self.models.get(finding_type)
+        if not model:
+            raise Http404
+
+        project = get_object_or_404(Project, slug=slug)
+        selected_ids = [
+            value for value in request.POST.get("selected_ids", "").split(",") if value
+        ]
+        queryset = model.objects.filter(project=project, pk__in=selected_ids)
+        action = request.POST.get("action")
+        value = request.POST.get("value", "").strip()
+
+        if finding_type == "resource" and action in {
+            "reviewed",
+            "ignored-not-in-package",
+        }:
+            updated = queryset.update(status=action)
+        elif finding_type == "package" and action == "tag" and value:
+            updated = queryset.update(tag=value)
+        elif finding_type == "license" and action == "reviewed":
+            updated = queryset.update(needs_review=False)
+        else:
+            return HttpResponse(status=400)
+
+        messages.success(request, f"Updated {updated} {finding_type} record(s).")
+        response = HttpResponse(status=204)
+        response["HX-Trigger"] = "batch-action-complete"
+        return response
+
+
 class CodebaseResourceListView(
     ConditionalLoginRequired,
     PrefetchRelatedViewMixin,
@@ -1723,6 +1772,11 @@ class CodebaseResourceListView(
             .order_by("path")
         )
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["finding_type"] = "resource"
+        return context
+
 
 class DiscoveredPackageListView(
     ConditionalLoginRequired,
@@ -1778,6 +1832,11 @@ class DiscoveredPackageListView(
             .with_resources_count()
             .order_by_package_url()
         )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["finding_type"] = "package"
+        return context
 
 
 class DiscoveredDependencyListView(
@@ -1899,6 +1958,7 @@ class DiscoveredLicenseListView(
         context["display_compliance_alert"] = (
             self.get_project().license_policies_enabled
         )
+        context["finding_type"] = "license"
         return context
 
 
