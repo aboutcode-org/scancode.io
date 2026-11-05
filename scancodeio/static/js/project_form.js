@@ -124,6 +124,7 @@
     if (value.startsWith("docker:")) return "analyze_docker_image";
 
     // Handle Package URL
+    if (value.startsWith("pkg:nix/")) return "scan_nix_package";
     if (value.startsWith("pkg:")) return "scan_single_package";
 
     // Handle SBOM file formats
