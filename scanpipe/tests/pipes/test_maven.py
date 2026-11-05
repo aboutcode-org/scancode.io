@@ -519,7 +519,7 @@ class ScanPipeMavenPipesTest(TestCase):
             self.project, "to/main/pom.xml", "main-pom-shading.xml"
         )
         parent_pom = self._add_pom_resource(
-            self.project, "to/parent/pom.xml", "parent-pom-shading.xml"
+            self.project, "to/parent/pom.xml", "pom-shading-no-parent.xml"
         )
         parent_pom_url = (
             "https://repo1.maven.org/maven2/org/parent/parent/1.0/parent-1.0.pom"
