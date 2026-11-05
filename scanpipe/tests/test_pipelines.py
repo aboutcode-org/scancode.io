@@ -2624,9 +2624,9 @@ class PipelinesIntegrationTest(TestCase):
         relation = project1.codebaserelations.get()
         self.assertEqual("sha1", relation.map_type)
         self.assertEqual("from/src/hello.c", relation.from_resource.path)
-        self.assertEqual("to/out/share/doc/hello/hello.c", relation.to_resource.path)
+        self.assertEqual("to/out/doc/hello.c", relation.to_resource.path)
 
-        helper = project1.codebaseresources.get(path="from/lib/helper.c")
+        helper = project1.codebaseresources.get(path="from/src/helper.c")
         self.assertEqual(flag.NOT_DEPLOYED, helper.status)
         self.assertEqual("mit", helper.detected_license_expression)
 
