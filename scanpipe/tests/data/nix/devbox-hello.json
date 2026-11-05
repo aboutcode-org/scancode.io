@@ -1,0 +1,46 @@
+{
+  "name": "hello",
+  "summary": "Program that produces a familiar, friendly greeting",
+  "homepage_url": "https://www.gnu.org/software/hello/manual/",
+  "license": "GPL-3.0-or-later",
+  "releases": [
+    {
+      "version": "2.12.3",
+      "last_updated": "2026-10-02T22:55:44Z",
+      "platforms": [
+        {
+          "arch": "x86-64",
+          "os": "Linux",
+          "system": "x86_64-linux",
+          "attribute_path": "hello",
+          "commit_hash": "55ba7f49ef2962b42cbd126522b7df5f95037679",
+          "date": "2026-10-02T22:55:44Z",
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/5z2yp3ysx8476c8g5w25b0smlgkjvaq3-hello-2.12.3",
+              "default": true
+            }
+          ]
+        },
+        {
+          "arch": "arm64",
+          "os": "Linux",
+          "system": "aarch64-linux",
+          "attribute_path": "hello",
+          "commit_hash": "55ba7f49ef2962b42cbd126522b7df5f95037679",
+          "date": "2026-10-02T22:55:44Z",
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/0xy6jlccm8kfpwmhkxabz3638lchyi74-hello-2.12.3",
+              "default": true
+            }
+          ]
+        }
+      ],
+      "platforms_summary": "Linux and macOS",
+      "outputs_summary": ""
+    }
+  ]
+}
