@@ -45,23 +45,15 @@ class ScanPipeMavenPipesTest(TestCase):
     def setUp(self):
         self.project = make_project()
 
-    def _add_pom_resource(
-        self, project, codebase_path, data_filename=None, pom_content=None
-    ):
+    def _add_pom_resource(self, project, codebase_path, data_filename):
         """
-        Write a POM at ``codebase_path`` in the project codebase and return
+        Copy the POM test data file into the project's codebase and return
         its CodebaseResource.
-
-        The content is read from the ``pom_content`` string when provided,
-        otherwise from the ``data_filename`` file under ``data/maven/``.
         """
-        if pom_content is None:
-            data_path = self.data / "maven" / data_filename
-            pom_content = data_path.read_text()
-
+        data_path = self.data / "maven" / data_filename
         target_path = project.codebase_path / codebase_path
         target_path.parent.mkdir(parents=True, exist_ok=True)
-        target_path.write_text(pom_content)
+        target_path.write_text(data_path.read_text())
         return make_resource_file(project, codebase_path)
 
     def _setup_project_with_shaded_classes(self):
@@ -441,26 +433,47 @@ class ScanPipeMavenPipesTest(TestCase):
             "${unknown}.foo",
         )
 
+    def test_scanpipe_maven_walk_parent_poms_download_failure(self):
+        main_pom = self._add_pom_resource(self.project, "to/pom.xml", "parent-pom.xml")
+        with mock.patch("scanpipe.pipes.maven.download_pom_file", return_value={}):
+            roots = list(maven._walk_parent_poms(main_pom))
+        # Only the main POM is yielded: the parent could not be downloaded.
+        self.assertEqual(len(roots), 1)
+
+    def test_scanpipe_maven_walk_parent_poms_unparsable_parent(self):
+        main_pom = self._add_pom_resource(self.project, "to/pom.xml", "parent-pom.xml")
+        bad_parent = self._add_pom_resource(
+            self.project, "tmp/bad-parent.xml", "invalid-pom.xml"
+        )
+        with mock.patch(
+            "scanpipe.pipes.maven.download_pom_file",
+            return_value={
+                "pom_file_path": str(bad_parent.location),
+                "output_path": f"{bad_parent.location}-output.json",
+                "pom_url": "https://example.com/bad-parent-1.0.pom",
+            },
+        ):
+            roots = list(maven._walk_parent_poms(main_pom))
+        self.assertEqual(len(roots), 1)
+
+    def test_scanpipe_maven_walk_parent_poms_missing_coordinates(self):
+        main_pom = self._add_pom_resource(
+            self.project, "to/main/pom.xml", "parent-pom-incomplete.xml"
+        )
+        with mock.patch("scanpipe.pipes.maven.download_pom_file") as mock_dl:
+            roots = list(maven._walk_parent_poms(main_pom))
+
+        # Incomplete <parent> (no version) stops the walk after the main
+        # POM, so no download is attempted.
+        self.assertEqual(len(roots), 1)
+        mock_dl.assert_not_called()
+
     @mock.patch("scanpipe.pipes.maven.download_pom_file")
     def test_scanpipe_maven_resolve_shading_properties_same_pom(
         self, mock_download_pom_file
     ):
-        # The required property is declared in the main POM.
-        # No need to walk the parent chain.
-        pom_content = """<?xml version="1.0" encoding="UTF-8"?>
-<project>
-  <parent>
-    <groupId>org.parent</groupId>
-    <artifactId>parent</artifactId>
-    <version>1.0</version>
-  </parent>
-  <properties>
-    <shading.prefix>org.shaded</shading.prefix>
-  </properties>
-</project>
-"""
         main_pom = self._add_pom_resource(
-            self.project, "to/main/pom.xml", pom_content=pom_content
+            self.project, "to/main/pom.xml", "parent-pom-shading.xml"
         )
 
         result = maven.resolve_shading_properties(main_pom, {"shading.prefix"})
@@ -472,34 +485,16 @@ class ScanPipeMavenPipesTest(TestCase):
     def test_scanpipe_maven_resolve_shading_properties_walks_parent_chain(
         self, mock_download_pom_file
     ):
-        main_pom_content = """<?xml version="1.0" encoding="UTF-8"?>
-<project>
-  <parent>
-    <groupId>org.parent</groupId>
-    <artifactId>parent</artifactId>
-    <version>1.0</version>
-  </parent>
-  <properties>
-    <property1>1</property1>
-  </properties>
-</project>
-"""
-        parent_pom_content = """<?xml version="1.0" encoding="UTF-8"?>
-<project>
-  <properties>
-    <property2>2</property2>
-    <shading.prefix>org.shaded</shading.prefix>
-  </properties>
-</project>
-"""
         main_pom = self._add_pom_resource(
-            self.project, "to/main/pom.xml", pom_content=main_pom_content
+            self.project, "to/main/pom.xml", "main-pom-properties.xml"
         )
         parent_pom = self._add_pom_resource(
-            self.project, "to/parent/pom.xml", pom_content=parent_pom_content
+            self.project, "to/parent/pom.xml", "parent-pom-properties.xml"
         )
         mock_download_pom_file.return_value = {
             "pom_file_path": str(parent_pom.location),
+            "output_path": f"{parent_pom.location}-output.json",
+            "pom_url": "https://repo1.maven.org/maven2/org/parent/parent/1.0/parent-1.0.pom",
         }
 
         result = maven.resolve_shading_properties(main_pom, {"shading.prefix"})
@@ -508,6 +503,72 @@ class ScanPipeMavenPipesTest(TestCase):
             result,
             {"property1": "1", "property2": "2", "shading.prefix": "org.shaded"},
         )
+        mock_download_pom_file.assert_called_once_with(
+            "https://repo1.maven.org/maven2/org/parent/parent/1.0/parent-1.0.pom"
+        )
+
+    @mock.patch("scanpipe.pipes.maven.download_pom_file")
+    def test_scanpipe_maven_resolve_shading_properties_main_pom_wins(
+        self, mock_download_pom_file
+    ):
+        main_pom = self._add_pom_resource(
+            self.project, "to/main/pom.xml", "main-pom-shading.xml"
+        )
+        parent_pom = self._add_pom_resource(
+            self.project, "to/parent/pom.xml", "parent-pom-shading.xml"
+        )
+        mock_download_pom_file.return_value = {
+            "pom_file_path": str(parent_pom.location),
+            "output_path": f"{parent_pom.location}-output.json",
+            "pom_url": "https://repo1.maven.org/maven2/org/parent/parent/1.0/parent-1.0.pom",
+        }
+
+        result = maven.resolve_shading_properties(main_pom, {"shading.prefix"})
+
+        self.assertEqual(result, {"shading.prefix": "org.main"})
+        mock_download_pom_file.assert_called_once()
+
+    def test_scanpipe_maven_resolve_relocation_placeholders(self):
+        main_pom = self._add_pom_resource(
+            self.project, "to/main/pom.xml", "parent-pom-shading.xml"
+        )
+        relocations = {
+            "${shading.prefix}.commons.logging": "org.apache.commons.logging",
+            "org.apache.htrace.fasterxml.jackson": "com.fasterxml.jackson",
+        }
+
+        result = maven.resolve_relocation_placeholders(
+            self.project, relocations, main_pom
+        )
+
+        self.assertEqual(
+            result,
+            {
+                "org.shaded.commons.logging": "org.apache.commons.logging",
+                "org.apache.htrace.fasterxml.jackson": "com.fasterxml.jackson",
+            },
+        )
+        self.assertFalse(self.project.projectmessages.filter(severity="error").exists())
+
+    @mock.patch("scanpipe.pipes.maven.download_pom_file", return_value={})
+    def test_scanpipe_maven_resolve_relocation_placeholders_unresolved(
+        self, mock_download_pom_file
+    ):
+        main_pom = self._add_pom_resource(
+            self.project, "to/main/pom.xml", "parent-pom.xml"
+        )
+        relocations = {
+            "${shading.prefix}.commons.logging": "org.apache.commons.logging"
+        }
+
+        result = maven.resolve_relocation_placeholders(
+            self.project, relocations, main_pom
+        )
+
+        self.assertEqual(result, relocations)
+        error = self.project.projectmessages.get(severity="error")
+        self.assertIn("Unresolved Maven properties", error.description)
+        mock_download_pom_file.assert_called_once()
 
     def test_scanpipe_maven_get_maven_dependency_packages(self):
         main_purl = PackageURL.from_string(
@@ -944,33 +1005,10 @@ class ScanPipeMavenPipesTest(TestCase):
             project,
             package_url="pkg:maven/commons-logging/commons-logging@1.1.1",
         )
-        pom_content = """<?xml version="1.0" encoding="UTF-8"?>
-<project>
-  <modelVersion>4.0.0</modelVersion>
-  <groupId>org.apache.htrace</groupId>
-  <artifactId>htrace-core</artifactId>
-  <version>4.0.0-incubating</version>
-  <build>
-    <plugins>
-      <plugin>
-        <artifactId>maven-shade-plugin</artifactId>
-        <configuration>
-          <relocations>
-            <relocation>
-              <pattern>org.apache.unknown</pattern>
-              <shadedPattern>org.apache.htrace.unknown</shadedPattern>
-            </relocation>
-          </relocations>
-        </configuration>
-      </plugin>
-    </plugins>
-  </build>
-</project>
-"""
         self._add_pom_resource(
             project,
             "to/META-INF/maven/org.apache.htrace/htrace-core/pom.xml",
-            pom_content=pom_content,
+            "htrace-core-unknown-shaded-pom.xml",
         )
         shaded_class = make_resource_file(
             project,
@@ -984,9 +1022,6 @@ class ScanPipeMavenPipesTest(TestCase):
 
         shaded_class.refresh_from_db()
         self.assertEqual(shaded_class.status, flag.REQUIRES_REVIEW)
-        self.assertEqual(
-            shaded_class.extra_data.get("review_reason"), "no_package_match"
-        )
         self.assertEqual(
             shaded_class.extra_data.get("shaded_from_namespace"),
             "org.apache.unknown",
@@ -1013,36 +1048,10 @@ class ScanPipeMavenPipesTest(TestCase):
             project,
             package_url="pkg:maven/commons-logging/commons-logging@1.1.1",
         )
-        pom_content = """<?xml version="1.0" encoding="UTF-8"?>
-<project>
-  <modelVersion>4.0.0</modelVersion>
-  <groupId>org.apache.htrace</groupId>
-  <artifactId>htrace-core</artifactId>
-  <version>4.0.0-incubating</version>
-  <properties>
-    <shading.prefix>org.apache.htrace</shading.prefix>
-  </properties>
-  <build>
-    <plugins>
-      <plugin>
-        <artifactId>maven-shade-plugin</artifactId>
-        <configuration>
-          <relocations>
-            <relocation>
-              <pattern>org.apache.commons.logging</pattern>
-              <shadedPattern>${shading.prefix}.commons.logging</shadedPattern>
-            </relocation>
-          </relocations>
-        </configuration>
-      </plugin>
-    </plugins>
-  </build>
-</project>
-"""
         self._add_pom_resource(
             project,
             "to/META-INF/maven/org.apache.htrace/htrace-core/pom.xml",
-            pom_content=pom_content,
+            "htrace-core-placeholder-pom.xml",
         )
         commons_class = make_resource_file(
             project,
@@ -1178,32 +1187,10 @@ class ScanPipeMavenPipesTest(TestCase):
         main_purl = PackageURL.from_string(
             "pkg:maven/org.apache.htrace/htrace-core@4.0.0-incubating"
         )
-        pom_content = """<?xml version="1.0" encoding="UTF-8"?>
-<project>
-  <groupId>org.apache.htrace</groupId>
-  <artifactId>htrace-core</artifactId>
-  <version>4.0.0-incubating</version>
-  <build>
-    <plugins>
-      <plugin>
-        <artifactId>maven-shade-plugin</artifactId>
-        <configuration>
-          <relocations>
-            <relocation>
-              <pattern>org.apache.commons.logging</pattern>
-              <shadedPattern>org.apache.htrace.commons.logging</shadedPattern>
-            </relocation>
-          </relocations>
-        </configuration>
-      </plugin>
-    </plugins>
-  </build>
-</project>
-"""
         self._add_pom_resource(
             project,
             "to/META-INF/maven/org.apache.htrace/htrace-core/pom.xml",
-            pom_content=pom_content,
+            "htrace-core-shaded-pom.xml",
         )
         shaded_class = make_resource_file(
             project,
@@ -1219,6 +1206,51 @@ class ScanPipeMavenPipesTest(TestCase):
             shaded_class.extra_data.get("shaded_from_namespace"),
             "org.apache.commons.logging.impl",
         )
+        self.assertEqual(shaded_class.discovered_packages.count(), 0)
+
+    def test_scanpipe_maven_map_shaded_classes_no_main_pom(self):
+        main_purl = PackageURL.from_string(
+            "pkg:maven/org.apache.htrace/htrace-core@4.0.0-incubating"
+        )
+        make_package(
+            self.project,
+            package_url="pkg:maven/org.apache.htrace/htrace-core@4.0.0-incubating",
+        )
+        shaded_class = make_resource_file(
+            self.project,
+            "to/org/apache/htrace/commons/logging/impl/AvalonLogger.class",
+            status=flag.REQUIRES_REVIEW,
+        )
+
+        maven.map_shaded_classes_to_maven_packages(self.project, purl=main_purl)
+
+        shaded_class.refresh_from_db()
+        self.assertEqual(shaded_class.status, flag.REQUIRES_REVIEW)
+        self.assertEqual(shaded_class.discovered_packages.count(), 0)
+
+    def test_scanpipe_maven_map_shaded_classes_pom_without_relocation(self):
+        main_purl = PackageURL.from_string(
+            "pkg:maven/org.apache.htrace/htrace-core@4.0.0-incubating"
+        )
+        make_package(
+            self.project,
+            package_url="pkg:maven/org.apache.htrace/htrace-core@4.0.0-incubating",
+        )
+        self._add_pom_resource(
+            self.project,
+            "to/META-INF/maven/org.apache.htrace/htrace-core/pom.xml",
+            "no-relocations-pom.xml",
+        )
+        shaded_class = make_resource_file(
+            self.project,
+            "to/org/apache/htrace/commons/logging/impl/AvalonLogger.class",
+            status=flag.REQUIRES_REVIEW,
+        )
+
+        maven.map_shaded_classes_to_maven_packages(self.project, purl=main_purl)
+
+        shaded_class.refresh_from_db()
+        self.assertEqual(shaded_class.status, flag.REQUIRES_REVIEW)
         self.assertEqual(shaded_class.discovered_packages.count(), 0)
 
     def test_scanpipe_maven_map_shaded_classes_reuses_dependency_package(self):
@@ -1325,9 +1357,9 @@ class ScanPipeMavenPipesTest(TestCase):
     def test_scanpipe_maven_map_shaded_classes_kyuubi_sample(
         self, mock_download_pom_file
     ):
-        # The main POM is only available in from/, the
-        # shadedPattern uses a ${shading.prefix} placeholder resolved from
-        # the parent POM, and no dependency packages exist.
+        # The main POM is only available in from/, the shadedPattern uses
+        # ${shading.prefix}.thrift and ${shading.prefix}.fb303 from the
+        # parent POM, and no dependency packages exist.
         project = self.project
         main_purl = PackageURL.from_string(
             "pkg:maven/org.apache.kyuubi/kyuubi-relocated-thrift@0.4.1"
@@ -1339,54 +1371,30 @@ class ScanPipeMavenPipesTest(TestCase):
         self._add_pom_resource(
             project,
             "from/META-INF/maven/org.apache.kyuubi/kyuubi-relocated-thrift/pom.xml",
-            pom_content="""<?xml version="1.0" encoding="UTF-8"?>
-<project>
-  <parent>
-    <groupId>org.apache.kyuubi</groupId>
-    <artifactId>kyuubi-relocated-parent</artifactId>
-    <version>0.4.1</version>
-  </parent>
-  <build>
-    <plugins>
-      <plugin>
-        <artifactId>maven-shade-plugin</artifactId>
-        <configuration>
-          <relocations>
-            <relocation>
-              <pattern>org.apache.thrift</pattern>
-              <shadedPattern>${shading.prefix}.org.apache.thrift</shadedPattern>
-            </relocation>
-          </relocations>
-        </configuration>
-      </plugin>
-    </plugins>
-  </build>
-</project>
-""",
+            "kyuubi-pom.xml",
         )
         parent_pom = self._add_pom_resource(
-            project,
-            "tmp/kyuubi-parent-pom.xml",
-            pom_content="""<?xml version="1.0" encoding="UTF-8"?>
-<project>
-  <properties>
-    <shading.prefix>org.apache.kyuubi.shaded</shading.prefix>
-  </properties>
-</project>
-""",
+            project, "tmp/kyuubi-parent-pom.xml", "kyuubi-parent-pom.xml"
+        )
+        parent_pom_url = (
+            "https://repo.maven.apache.org/maven2/org/apache/kyuubi/"
+            "kyuubi-relocated-parent/0.4.1/kyuubi-relocated-parent-0.4.1.pom"
         )
         mock_download_pom_file.return_value = {
             "pom_file_path": str(parent_pom.location),
+            "output_path": f"{parent_pom.location}-output.json",
+            "pom_url": parent_pom_url,
         }
 
         shaded_class = make_resource_file(
             project,
-            "to/org/apache/kyuubi/shaded/org/apache/thrift/TBase.class",
+            "to/org/apache/kyuubi/shaded/thrift/TBase.class",
             status=flag.APPLICATION_PACKAGE,
         )
 
         maven.map_shaded_classes_to_maven_packages(project, purl=main_purl)
 
+        mock_download_pom_file.assert_called_once_with(parent_pom_url)
         shaded_class.refresh_from_db()
         self.assertEqual(shaded_class.status, flag.REQUIRES_REVIEW)
         self.assertEqual(
@@ -1397,4 +1405,3 @@ class ScanPipeMavenPipesTest(TestCase):
             shaded_class.extra_data.get("original_fqn"),
             "org.apache.thrift.TBase",
         )
-        self.assertFalse(project.discovereddependencies.filter(type="maven").exists())

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project>
+  <parent>
+    <groupId>org.apache.kyuubi</groupId>
+    <artifactId>kyuubi-relocated-parent</artifactId>
+    <version>0.4.1</version>
+  </parent>
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-shade-plugin</artifactId>
+        <configuration>
+          <relocations>
+            <relocation>
+              <pattern>org.apache.thrift</pattern>
+              <shadedPattern>${shading.prefix}.thrift</shadedPattern>
+            </relocation>
+            <relocation>
+              <pattern>com.facebook.fb303</pattern>
+              <shadedPattern>${shading.prefix}.fb303</shadedPattern>
+            </relocation>
+          </relocations>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>

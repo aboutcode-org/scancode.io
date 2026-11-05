@@ -239,8 +239,10 @@ def get_main_maven_pom(project, purl):
     name = purl.name
 
     expected_suffix = f"{namespace}/{name}/pom.xml"
-    base = project.codebaseresources.files().filter(path__endswith=expected_suffix)
-    return base.to_codebase().first() or base.from_codebase().first()
+    pom_resources = project.codebaseresources.files().filter(
+        path__endswith=expected_suffix
+    )
+    return pom_resources.to_codebase().first() or pom_resources.from_codebase().first()
 
 
 def get_maven_shade_relocations(project, pom_resource):
@@ -294,9 +296,9 @@ def get_maven_shade_relocations(project, pom_resource):
 
 def _extract_parent_keys(root):
     """Return ``(groupId, artifactId, version)`` from ``<parent>``, or None."""
-    parent = root.find(".//{*}parent")
+    parent = root.find("{*}parent")
     if parent is None:
-        return None
+        return
     keys = tuple(
         parent.findtext(f"{{*}}{key}", "").strip()
         for key in ("groupId", "artifactId", "version")
@@ -306,43 +308,35 @@ def _extract_parent_keys(root):
 
 def _extract_properties(root):
     """Return the ``{name: value}`` map from the ``<properties>`` block."""
-    properties = {}
-    element = root.find(".//{*}properties")
-    if element is not None:
-        for prop in element:
-            if not isinstance(prop.tag, str):
-                continue
-            name = prop.tag.rpartition("}")[2]
-            properties[name] = (prop.text or "").strip()
-    return properties
+    properties_element = root.find("{*}properties")
+    if properties_element is None:
+        return {}
+    return {
+        child.tag.rpartition("}")[2]: (child.text or "").strip()
+        for child in properties_element
+    }
 
 
-def _walk_parent_poms(main_pom, max_depth=MAX_PARENT_CHAIN_DEPTH):
+def _walk_parent_poms(main_pom):
     """
-    Yield ``(path, root)`` for ``main_pom`` and each ancestor POM
-    reachable through the ``<parent>`` chain, up to ``max_depth`` levels.
+    Yield the root element of ``main_pom`` and each ancestor POM reachable
+    through the ``<parent>`` chain, up to ``MAX_PARENT_CHAIN_DEPTH`` levels.
 
-    Stops at the first parse error, missing parent coordinates, cycle,
-    or download failure.
+    Stops at the first parse error, missing parent coordinates, or
+    download failure.
     """
-    if not main_pom:
-        return
-
-    visited = set()
     current_path = main_pom.location
-    depth = 0
 
-    while current_path and depth < max_depth:
+    for _ in range(MAX_PARENT_CHAIN_DEPTH):
         try:
             root = SafeElementTree.parse(current_path).getroot()
         except (SafeElementTree.ParseError, OSError, ValueError):
             return
-        yield current_path, root
+        yield root
 
         parent_keys = _extract_parent_keys(root)
-        if not parent_keys or parent_keys in visited:
+        if not parent_keys:
             return
-        visited.add(parent_keys)
 
         group, artifact, version = parent_keys
         parent_purl = PackageURL(
@@ -358,46 +352,54 @@ def _walk_parent_poms(main_pom, max_depth=MAX_PARENT_CHAIN_DEPTH):
         if not pom_file:
             return
         current_path = pom_file["pom_file_path"]
-        depth += 1
 
 
-def resolve_shading_properties(
-    main_pom, required_properties, max_depth=MAX_PARENT_CHAIN_DEPTH
-):
+def resolve_shading_properties(main_pom, required_properties):
     """
     Walk the parent chain of ``main_pom`` and return the
     ``{property_name: value}`` map.
     """
     properties = {}
-    for _, root in _walk_parent_poms(main_pom, max_depth):
+    for root in _walk_parent_poms(main_pom):
         for key, value in _extract_properties(root).items():
             properties.setdefault(key, value)
-        if required_properties and required_properties.issubset(properties):
+        if required_properties.issubset(properties):
             break
     return properties
 
 
-def resolve_relocation_placeholders(relocations, properties):
+def resolve_relocation_placeholders(project, relocations, main_pom):
     """Replace ``${...}`` placeholders in relocation keys with their values."""
-    resolved = {}
-    for shaded_pattern, original_pattern in relocations.items():
-        new_shaded = _resolve_maven_properties(shaded_pattern, properties)
-        resolved[new_shaded] = original_pattern
-    return resolved
+    required_properties = {
+        property_name
+        for shaded_pattern in relocations
+        for property_name in MAVEN_PROPERTY_PLACEHOLDER_RE.findall(shaded_pattern)
+    }
+    if not required_properties:
+        return relocations
+
+    properties = resolve_shading_properties(main_pom, required_properties)
+    missing_properties = required_properties.difference(properties)
+    if missing_properties:
+        project.add_error(
+            description=f"Unresolved Maven properties: {sorted(missing_properties)}",
+            model="map_shaded_classes_to_maven_packages",
+            details={"resource_path": main_pom.path},
+        )
+
+    return {
+        _resolve_maven_properties(shaded_pattern, properties): original_pattern
+        for shaded_pattern, original_pattern in relocations.items()
+    }
 
 
-def _resolve_maven_properties(text, properties, max_iterations=10):
+def _resolve_maven_properties(text, properties):
     """
     Replace ``${name}`` placeholders in ``text`` with values from
-    ``properties``, resolving chains such as ``{"a": "${b}", "b": "2"}``.
-    Unknown placeholders are left untouched.
+    ``properties``. Unknown placeholders are left untouched.
     """
-    for _ in range(max_iterations):
-        previous = text
-        for name, value in properties.items():
-            text = text.replace(f"${{{name}}}", value)
-        if text == previous:
-            break
+    for name, value in properties.items():
+        text = text.replace(f"${{{name}}}", value)
     return text
 
 
@@ -723,7 +725,6 @@ def _map_shaded_class_resource(resource, relocations, dependency_packages, match
                 **resource.extra_data,
                 "shaded_from_namespace": original_java_package,
                 "original_fqn": original_fqn,
-                "review_reason": "no_package_match",
             },
         )
         return True
@@ -765,7 +766,7 @@ def get_or_create_dependency_package(dependency):
     return dependency.resolved_to_package
 
 
-def map_shaded_classes_to_maven_packages(project, purl, logger=None):  # noqa: C901
+def map_shaded_classes_to_maven_packages(project, purl, logger=None):
     """Map shaded ".class" resources to their Maven dependency packages."""
     if logger:
         logger("Mapping shaded .class resources to Maven dependency packages.")
@@ -797,35 +798,15 @@ def map_shaded_classes_to_maven_packages(project, purl, logger=None):  # noqa: C
         return
 
     main_pom = get_main_maven_pom(project, purl)
-    if not main_pom:
-        if logger:
-            logger("No main POM found; nothing to map.")
-        return
-    relocations = get_maven_shade_relocations(project, main_pom)
-    if not relocations:
+    raw_relocations = get_maven_shade_relocations(project, main_pom)
+    if not raw_relocations:
         if logger:
             logger("No Maven relocations found in the main POM.")
         return
 
+    relocations = resolve_relocation_placeholders(project, raw_relocations, main_pom)
+
     dependency_packages = get_maven_dependency_packages(project, main_purl=purl)
-
-    if not dependency_packages:
-        if logger:
-            logger(
-                f"No Maven dependency packages found for "
-                f"{to_classes_count:,d} unmapped .class resources."
-            )
-
-    # Resolve any ${...} placeholders in shadedPattern values so they
-    # can be matched against the relocated FQNs.
-    if any(MAVEN_PROPERTY_PLACEHOLDER_RE.search(pattern) for pattern in relocations):
-        required_properties = set()
-        for shaded_pattern in relocations:
-            required_properties.update(
-                MAVEN_PROPERTY_PLACEHOLDER_RE.findall(shaded_pattern)
-            )
-        properties = resolve_shading_properties(main_pom, required_properties)
-        relocations = resolve_relocation_placeholders(relocations, properties)
 
     mapped_count = 0
     review_count = 0
