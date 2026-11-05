@@ -22,6 +22,7 @@
 
 import json
 import shutil
+from datetime import date
 from pathlib import Path
 from unittest import mock
 
@@ -49,8 +50,11 @@ def make_unsaved_origin_match(
     purls=None,
     similarity=None,
     origin_path="",
+    release_date="",
 ):
     extra_data = {"purls": purls} if purls else {}
+    if release_date:
+        extra_data["release_date"] = release_date
     return OriginMatch(
         purl=purl,
         tool=tool,
@@ -68,9 +72,10 @@ def make_origin(
     purls=None,
     similarity=None,
     origin_path="",
+    release_date="",
 ):
     origin_match = make_unsaved_origin_match(
-        purl, tool, match_type, purls, similarity, origin_path
+        purl, tool, match_type, purls, similarity, origin_path, release_date
     )
     return origin.Origin.from_origin_match(origin_match)
 
@@ -224,6 +229,16 @@ class ScanPipeOriginPipesTest(TestCase):
         self.assertEqual(expected, origin.get_path_names(path))
         self.assertEqual({"six"}, origin.get_path_names("six.py"))
 
+    def test_scanpipe_pipes_origin_get_release_date(self):
+        origin_match = make_unsaved_origin_match("pkg:pypi/six@1.16.0")
+        self.assertIsNone(origin.get_release_date(origin_match))
+
+        origin_match.extra_data["release_date"] = "2021-05-05"
+        self.assertEqual(date(2021, 5, 5), origin.get_release_date(origin_match))
+
+        origin_match.extra_data["release_date"] = "May 5, 2021"
+        self.assertIsNone(origin.get_release_date(origin_match))
+
     def test_scanpipe_pipes_origin_get_versionless_purl(self):
         purl = "pkg:pypi/six@1.17.0?file_name=six-1.17.0.tar.gz#six.py"
         self.assertEqual("pkg:pypi/six", origin.get_versionless_purl(purl))
@@ -285,6 +300,14 @@ class ScanPipeOriginPipesTest(TestCase):
         six_origin.merge(make_origin("pkg:pypi/six@1.17.0", similarity=94))
         six_origin.merge(make_origin("pkg:pypi/six@1.17.0", similarity=95))
         self.assertEqual(95, six_origin.similarity)
+
+    def test_scanpipe_pipes_origin_origin_release_date(self):
+        six_origin = make_origin("pkg:pypi/six@1.16.0")
+        self.assertIsNone(six_origin.release_date)
+
+        six_origin.merge(make_origin("pkg:pypi/six@1.16.0", release_date="2021-06-01"))
+        six_origin.merge(make_origin("pkg:pypi/six@1.16.0", release_date="2021-05-05"))
+        self.assertEqual(date(2021, 5, 5), six_origin.release_date)
 
     def test_scanpipe_pipes_origin_origin_is_same_package(self):
         scanoss_origin = make_scanoss_six_origin()
@@ -521,6 +544,37 @@ class ScanPipeOriginPipesTest(TestCase):
             origin.get_contained_origin([pip_origin, six_origin, lodash_origin])
         )
 
+    def test_scanpipe_pipes_origin_get_only_origin_with(self):
+        six_origin = make_origin("pkg:pypi/six@1.16.0", similarity=100)
+        pip_origin = make_origin("pkg:pypi/pip@24.0", similarity=100)
+        urllib3_origin = make_origin("pkg:pypi/urllib3@1.26.20", similarity=90)
+        origins = [six_origin, pip_origin, urllib3_origin]
+
+        only_origin = origin.get_only_origin_with(origins, "similarity", 90)
+        self.assertEqual(urllib3_origin, only_origin)
+        self.assertIsNone(origin.get_only_origin_with(origins, "similarity", 100))
+        self.assertIsNone(origin.get_only_origin_with(origins, "similarity", 50))
+
+    def test_scanpipe_pipes_origin_get_earliest_release_origin(self):
+        six_origin = make_origin("pkg:pypi/six@1.16.0", release_date="2021-05-05")
+        pip_origin = make_origin("pkg:pypi/pip@24.0", release_date="2024-02-03")
+        urllib3_origin = make_origin("pkg:pypi/urllib3@1.26.20")
+
+        earliest_origin = origin.get_earliest_release_origin([pip_origin, six_origin])
+        self.assertEqual(six_origin, earliest_origin)
+
+        # A copy is not dated without the release date of all the candidates.
+        earliest_origin = origin.get_earliest_release_origin(
+            [pip_origin, six_origin, urllib3_origin]
+        )
+        self.assertIsNone(earliest_origin)
+
+        same_day_origin = make_origin("pkg:pypi/ms@2.1.3", release_date="2021-05-05")
+        earliest_origin = origin.get_earliest_release_origin(
+            [pip_origin, six_origin, same_day_origin]
+        )
+        self.assertIsNone(earliest_origin)
+
     def test_scanpipe_pipes_origin_get_preferred_version_origin(self):
         r62_origin = make_origin("pkg:github/benhoyt/inih@r62", similarity=90)
         commit_origin = make_origin(
@@ -579,6 +633,14 @@ class ScanPipeOriginPipesTest(TestCase):
             [pip_origin, six_16_origin]
         )
         self.assertEqual((origin.CONTAINMENT_RULE, six_16_origin), rule_and_candidate)
+
+        dated_six_origin = make_origin("pkg:pypi/six@1.16.0", release_date="2021-05-05")
+        dated_pip_origin = make_origin("pkg:pypi/pip@24.0", release_date="2024-02-03")
+        rule_and_candidate = origin.get_conflict_rule_and_candidate(
+            [dated_pip_origin, dated_six_origin]
+        )
+        expected = (origin.EARLIEST_RELEASE_RULE, dated_six_origin)
+        self.assertEqual(expected, rule_and_candidate)
 
         rule_and_candidate = origin.get_conflict_rule_and_candidate(
             [r62_origin, commit_origin]

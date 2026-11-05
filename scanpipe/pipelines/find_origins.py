@@ -108,9 +108,11 @@ class FindOrigins(Pipeline):
         tools report the same package, with at least one exact match. Otherwise,
         the origin needs a review. When the tools report different packages, and the
         copy in all of them but one is in a directory or file named after another
-        candidate, as a vendored copy, the remaining package is proposed. When the
-        tools report different versions of the same package, the release version
-        is proposed over a commit, or else the version with the highest similarity.
+        candidate, as a vendored copy, the remaining package is proposed, or else
+        the package released before all the others, when all release dates are
+        known. When the tools report different versions of the same package, the
+        release version is proposed over a commit, or else the version with the
+        highest similarity.
         The snippet matches shorter than 20 lines, such as a common license header,
         are ignored. The origins confirmed by a user are kept.
         The files and directories of a confirmed origin are assigned to the origin

@@ -23,6 +23,7 @@
 import re
 from contextlib import suppress
 from dataclasses import dataclass
+from datetime import date
 from itertools import batched
 from itertools import groupby
 from operator import attrgetter
@@ -41,6 +42,7 @@ from scanpipe.pipes.resolve import convert_spdx_expression
 
 CONFLICTING_CANDIDATES_RULE = "conflicting-candidates"
 CONTAINMENT_RULE = "containment"
+EARLIEST_RELEASE_RULE = "earliest-release"
 CONFLICTING_VERSIONS_RULE = "conflicting-versions"
 PREFERRED_VERSION_RULE = "preferred-version"
 NO_EXACT_MATCH_RULE = "no-exact-match"
@@ -126,6 +128,19 @@ def get_path_names(path):
     file_path = PurePosixPath(path)
     names = [*file_path.parent.parts, file_path.stem]
     return {normalize_name(name) for name in names}
+
+
+def get_release_date(origin_match):
+    """
+    Return the release date of the ``origin_match`` package, None when the tool
+    does not report a valid date.
+    """
+    release_date = origin_match.extra_data.get("release_date")
+    if not release_date:
+        return
+
+    with suppress(ValueError):
+        return date.fromisoformat(release_date)
 
 
 def get_versionless_purl(purl):
@@ -216,6 +231,16 @@ class Origin:
             if origin_match.similarity is not None
         ]
         return max(similarities, default=0)
+
+    @property
+    def release_date(self):
+        """Return the earliest release date of the origin matches, None if unknown."""
+        release_dates = [
+            release_date
+            for origin_match in self.origin_matches
+            if (release_date := get_release_date(origin_match))
+        ]
+        return min(release_dates, default=None)
 
     def is_same_package(self, other_origin):
         return bool(self.equivalent_purls & other_origin.equivalent_purls)
@@ -327,6 +352,18 @@ def is_same_package_versions(origins):
     return bool(set.intersection(*(origin.versionless_purls for origin in origins)))
 
 
+def get_only_origin_with(origins, attribute_name, value):
+    """
+    Return the only origin among the ``origins`` with the ``value`` of
+    ``attribute_name``, None when there is none or several.
+    """
+    matching_origins = [
+        origin for origin in origins if getattr(origin, attribute_name) == value
+    ]
+    if len(matching_origins) == 1:
+        return matching_origins[0]
+
+
 def get_preferred_version_origin(origins):
     """
     Return the origin of the preferred version among the ``origins`` versions of
@@ -340,14 +377,21 @@ def get_preferred_version_origin(origins):
 
     candidate_origins = release_origins or origins
     highest_similarity = max(origin.similarity for origin in candidate_origins)
-    most_similar_origins = [
-        origin
-        for origin in candidate_origins
-        if origin.similarity == highest_similarity
-    ]
-    has_single_most_similar = len(most_similar_origins) == 1
-    if highest_similarity and has_single_most_similar:
-        return most_similar_origins[0]
+    if highest_similarity:
+        return get_only_origin_with(candidate_origins, "similarity", highest_similarity)
+
+
+def get_earliest_release_origin(origins):
+    """
+    Return the origin released before all the other ``origins``, as a copy cannot
+    be older than its origin. Return None when a release date is unknown, or when
+    the earliest date is shared.
+    """
+    release_dates = [origin.release_date for origin in origins]
+    if None in release_dates:
+        return
+
+    return get_only_origin_with(origins, "release_date", min(release_dates))
 
 
 def is_carrier_origin(origin, other_origins):
@@ -389,6 +433,8 @@ def get_conflict_rule_and_candidate(origins):
     if not is_same_package_versions(origins):
         if contained_origin := get_contained_origin(origins):
             return CONTAINMENT_RULE, contained_origin
+        if earliest_origin := get_earliest_release_origin(origins):
+            return EARLIEST_RELEASE_RULE, earliest_origin
         return CONFLICTING_CANDIDATES_RULE, None
 
     if preferred_origin := get_preferred_version_origin(origins):
