@@ -481,20 +481,25 @@ class ScanPipeMavenPipesTest(TestCase):
         self.assertEqual(result, {"shading.prefix": "org.shaded"})
         mock_download_pom_file.assert_not_called()
 
+    @mock.patch("scanpipe.pipes.maven.purl2url.get_download_url")
     @mock.patch("scanpipe.pipes.maven.download_pom_file")
     def test_scanpipe_maven_resolve_shading_properties_walks_parent_chain(
-        self, mock_download_pom_file
+        self, mock_download_pom_file, mock_get_download_url
     ):
         main_pom = self._add_pom_resource(
-            self.project, "to/main/pom.xml", "main-pom-properties.xml"
+            self.project, "to/main/pom.xml", "main-pom_properties.xml"
         )
         parent_pom = self._add_pom_resource(
-            self.project, "to/parent/pom.xml", "parent-pom-properties.xml"
+            self.project, "to/parent/pom.xml", "parent-pom_properties.xml"
         )
+        parent_pom_url = (
+            "https://repo1.maven.org/maven2/org/parent/parent/1.0/parent-1.0.pom"
+        )
+        mock_get_download_url.return_value = parent_pom_url
         mock_download_pom_file.return_value = {
             "pom_file_path": str(parent_pom.location),
             "output_path": f"{parent_pom.location}-output.json",
-            "pom_url": "https://repo1.maven.org/maven2/org/parent/parent/1.0/parent-1.0.pom",
+            "pom_url": parent_pom_url,
         }
 
         result = maven.resolve_shading_properties(main_pom, {"shading.prefix"})
@@ -503,13 +508,12 @@ class ScanPipeMavenPipesTest(TestCase):
             result,
             {"property1": "1", "property2": "2", "shading.prefix": "org.shaded"},
         )
-        mock_download_pom_file.assert_called_once_with(
-            "https://repo1.maven.org/maven2/org/parent/parent/1.0/parent-1.0.pom"
-        )
+        mock_download_pom_file.assert_called_once_with(parent_pom_url)
 
+    @mock.patch("scanpipe.pipes.maven.purl2url.get_download_url")
     @mock.patch("scanpipe.pipes.maven.download_pom_file")
     def test_scanpipe_maven_resolve_shading_properties_main_pom_wins(
-        self, mock_download_pom_file
+        self, mock_download_pom_file, mock_get_download_url
     ):
         main_pom = self._add_pom_resource(
             self.project, "to/main/pom.xml", "main-pom-shading.xml"
@@ -517,16 +521,20 @@ class ScanPipeMavenPipesTest(TestCase):
         parent_pom = self._add_pom_resource(
             self.project, "to/parent/pom.xml", "parent-pom-shading.xml"
         )
+        parent_pom_url = (
+            "https://repo1.maven.org/maven2/org/parent/parent/1.0/parent-1.0.pom"
+        )
+        mock_get_download_url.return_value = parent_pom_url
         mock_download_pom_file.return_value = {
             "pom_file_path": str(parent_pom.location),
             "output_path": f"{parent_pom.location}-output.json",
-            "pom_url": "https://repo1.maven.org/maven2/org/parent/parent/1.0/parent-1.0.pom",
+            "pom_url": parent_pom_url,
         }
 
         result = maven.resolve_shading_properties(main_pom, {"shading.prefix"})
 
         self.assertEqual(result, {"shading.prefix": "org.main"})
-        mock_download_pom_file.assert_called_once()
+        mock_download_pom_file.assert_called_once_with(parent_pom_url)
 
     def test_scanpipe_maven_resolve_relocation_placeholders(self):
         main_pom = self._add_pom_resource(
