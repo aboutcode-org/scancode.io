@@ -133,7 +133,13 @@ class ScanRepoGrimoirelabTest(TestCase):
         metadata = {"ecosystem": "npm", "model": "health", "version": "0.1"}
         expected_model = "npm-health-0.1"
 
-        for value, expected_score in [(0.0, 1.0), (1.0, 0.0), (0.5, 0.5)]:
+        for value, expected_score in [
+            (0.0, 1.0),
+            (1.0, 0.0),
+            (0.5, 0.5),
+            (0.7, 0.3),
+            (0.2, 0.8),
+        ]:
             score_data = {"value": value, "metadata": metadata}
             with self.subTest(value=value):
                 self.assertEqual(
