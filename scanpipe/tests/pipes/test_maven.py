@@ -487,10 +487,10 @@ class ScanPipeMavenPipesTest(TestCase):
         self, mock_download_pom_file, mock_get_download_url
     ):
         main_pom = self._add_pom_resource(
-            self.project, "to/main/pom.xml", "main-pom_properties.xml"
+            self.project, "to/main/pom.xml", "main-pom-properties.xml"
         )
         parent_pom = self._add_pom_resource(
-            self.project, "to/parent/pom.xml", "parent-pom_properties.xml"
+            self.project, "to/parent/pom.xml", "parent-pom-properties.xml"
         )
         parent_pom_url = (
             "https://repo1.maven.org/maven2/org/parent/parent/1.0/parent-1.0.pom"
@@ -531,7 +531,12 @@ class ScanPipeMavenPipesTest(TestCase):
             "pom_url": parent_pom_url,
         }
 
-        result = maven.resolve_shading_properties(main_pom, {"shading.prefix"})
+        # "only.in.parent" is not declared in any POM; it forces the walk
+        # to reach the parent POM so we actually exercise the setdefault
+        # precedence between main and parent.
+        result = maven.resolve_shading_properties(
+            main_pom, {"shading.prefix", "only.in.parent"}
+        )
 
         self.assertEqual(result, {"shading.prefix": "org.main"})
         mock_download_pom_file.assert_called_once_with(parent_pom_url)
