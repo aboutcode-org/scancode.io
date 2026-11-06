@@ -200,16 +200,18 @@ class ScanPipeOriginPipesTest(TestCase):
         expected = {"pkg:pypi/six@1.17.0"}
         self.assertEqual(expected, origin.get_equivalent_purls(origin_match))
 
-    def test_scanpipe_pipes_origin_is_commit_version(self):
-        self.assertTrue(origin.is_commit_version("498f34b"))
-        self.assertTrue(
-            origin.is_commit_version("498f34b4c6b5d8a0e3f1a2b7c9d0e1f2a3b4c5d6")
+    def test_scanpipe_pipes_origin_is_release_version(self):
+        self.assertFalse(origin.is_release_version("498f34b"))
+        self.assertFalse(
+            origin.is_release_version("498f34b4c6b5d8a0e3f1a2b7c9d0e1f2a3b4c5d6")
         )
-        self.assertFalse(origin.is_commit_version("r62"))
-        self.assertFalse(origin.is_commit_version("1.17.0"))
-        self.assertFalse(origin.is_commit_version("v1.0.3"))
-        self.assertFalse(origin.is_commit_version("20240101"))
-        self.assertFalse(origin.is_commit_version("abc12"))
+        self.assertFalse(origin.is_release_version(None))
+        self.assertFalse(origin.is_release_version(""))
+        self.assertTrue(origin.is_release_version("r62"))
+        self.assertTrue(origin.is_release_version("1.17.0"))
+        self.assertTrue(origin.is_release_version("v1.0.3"))
+        self.assertTrue(origin.is_release_version("20240101"))
+        self.assertTrue(origin.is_release_version("abc12"))
 
     def test_scanpipe_pipes_origin_normalize_name(self):
         self.assertEqual(
@@ -310,10 +312,12 @@ class ScanPipeOriginPipesTest(TestCase):
         expected = {"pip_24.0", "_vendor", "six"}
         self.assertEqual(expected, pip_origin.origin_path_names)
 
-    def test_scanpipe_pipes_origin_origin_is_commit_version(self):
+    def test_scanpipe_pipes_origin_origin_is_release_version(self):
         commit_origin = make_origin("pkg:github/benhoyt/inih@498f34b", tool="scanoss")
-        self.assertTrue(commit_origin.is_commit_version)
-        self.assertFalse(make_origin("pkg:github/benhoyt/inih@r62").is_commit_version)
+        self.assertFalse(commit_origin.is_release_version)
+        self.assertTrue(make_origin("pkg:github/benhoyt/inih@r62").is_release_version)
+        versionless_origin = make_origin("pkg:github/benhoyt/inih", tool="scanoss")
+        self.assertFalse(versionless_origin.is_release_version)
 
     def test_scanpipe_pipes_origin_origin_similarity(self):
         six_origin = make_origin("pkg:pypi/six@1.17.0")
@@ -664,6 +668,18 @@ class ScanPipeOriginPipesTest(TestCase):
         self.assertIsNone(
             origin.get_preferred_version_origin([six_17_origin, six_16_origin])
         )
+
+        # Regression test: a versionless candidate raised a TypeError.
+        versionless_origin = make_origin("pkg:pypi/six", tool="scanoss")
+        preferred_origin = origin.get_preferred_version_origin(
+            [versionless_origin, six_16_origin]
+        )
+        self.assertEqual(six_16_origin, preferred_origin)
+        versionless_inih_origin = make_origin("pkg:github/benhoyt/inih", tool="scanoss")
+        rule_and_candidate = origin.get_conflict_rule_and_candidate(
+            [versionless_inih_origin, commit_origin]
+        )
+        self.assertEqual((origin.CONFLICTING_VERSIONS_RULE, None), rule_and_candidate)
 
     def test_scanpipe_pipes_origin_get_conflict_rule_and_candidate(self):
         r62_origin = make_origin("pkg:github/benhoyt/inih@r62", similarity=95)

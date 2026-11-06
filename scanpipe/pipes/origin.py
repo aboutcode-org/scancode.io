@@ -127,10 +127,16 @@ def get_equivalent_purls(origin_match):
     return get_versioned_purls([origin_match.purl, *tool_purls], version)
 
 
-def is_commit_version(version):
-    """Return True when the ``version`` is a commit hash instead of a release."""
+def is_release_version(version):
+    """
+    Return True when the ``version`` is a release, as opposed to a commit hash or
+    a missing version, such as a SCANOSS component without version.
+    """
+    if not version:
+        return False
+
     # A date version, such as "20240101", is not a commit hash.
-    return bool(COMMIT_HASH_PATTERN.fullmatch(version)) and not version.isdigit()
+    return version.isdigit() or not COMMIT_HASH_PATTERN.fullmatch(version)
 
 
 def normalize_name(name):
@@ -280,8 +286,8 @@ class Origin:
         return vendored_package_names
 
     @property
-    def is_commit_version(self):
-        return is_commit_version(PackageURL.from_string(self.purl).version)
+    def is_release_version(self):
+        return is_release_version(PackageURL.from_string(self.purl).version)
 
     @property
     def similarity(self):
@@ -419,7 +425,7 @@ def get_preferred_version_origin(origins):
     the same package: the only release version, as opposed to a commit, or else
     the clearly most similar version. Return None when no version is preferred.
     """
-    release_origins = [origin for origin in origins if not origin.is_commit_version]
+    release_origins = [origin for origin in origins if origin.is_release_version]
     if len(release_origins) == 1:
         return release_origins[0]
 
