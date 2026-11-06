@@ -1080,6 +1080,36 @@ class ScanPipeOriginPipesTest(TestCase):
             origin.get_origin_packages(self.project1), [origin_package]
         )
 
+    def test_scanpipe_pipes_origin_get_scan_package(self):
+        purl = "pkg:maven/org.slf4j/slf4j-nop@2.0.16"
+        self.assertIsNone(origin.get_scan_package(self.project1, purl))
+
+        make_package(
+            self.project1,
+            "pkg:maven/org.slf4j/slf4j-nop@2.0.16",
+            datasource_ids=[origin.ORIGIN_DATASOURCE_ID],
+        )
+        make_package(self.project1, "pkg:maven/org.slf4j/slf4j-nop@2.0.15")
+        self.assertIsNone(origin.get_scan_package(self.project1, purl))
+
+        sources_package = make_package(
+            self.project1, "pkg:maven/org.slf4j/slf4j-nop@2.0.16?classifier=sources"
+        )
+        self.assertEqual(sources_package, origin.get_scan_package(self.project1, purl))
+
+        jar_package = make_package(
+            self.project1, "pkg:maven/org.slf4j/slf4j-nop@2.0.16?type=jar"
+        )
+        no_qualifiers_package = make_package(
+            self.project1, "pkg:maven/org.slf4j/slf4j-nop@2.0.16"
+        )
+        self.assertEqual(
+            no_qualifiers_package, origin.get_scan_package(self.project1, purl)
+        )
+
+        jar_purl = "pkg:maven/org.slf4j/slf4j-nop@2.0.16?type=jar"
+        self.assertEqual(jar_package, origin.get_scan_package(self.project1, jar_purl))
+
     def test_scanpipe_pipes_origin_get_or_create_origin_package(self):
         scan_package = make_package(self.project1, "pkg:npm/ms@2.1.3")
         resources = self.project1.codebaseresources.all()
@@ -1087,6 +1117,15 @@ class ScanPipeOriginPipesTest(TestCase):
             self.project1, "pkg:npm/ms@2.1.3", resources
         )
         self.assertEqual(scan_package, package)
+
+        # Regression test: the scan package with qualifiers was not found.
+        sources_package = make_package(
+            self.project1, "pkg:maven/org.slf4j/slf4j-nop@2.0.16?classifier=sources"
+        )
+        package = origin.get_or_create_origin_package(
+            self.project1, "pkg:maven/org.slf4j/slf4j-nop@2.0.16", resources
+        )
+        self.assertEqual(sources_package, package)
 
         resource = make_resource_file(self.project1, path="six.py")
         self.make_origin_match(

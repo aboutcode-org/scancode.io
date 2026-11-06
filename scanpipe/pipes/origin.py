@@ -706,15 +706,38 @@ def get_origin_packages(project):
     return project.discoveredpackages.filter(datasource_ids=[ORIGIN_DATASOURCE_ID])
 
 
+def get_scan_package(project, purl):
+    """
+    Return the ``project`` package of ``purl`` detected by the codebase scan, or
+    else the same package version with other qualifiers or subpath, such as a
+    Maven package with a "sources" classifier, the one without qualifiers first.
+    Return None when there is none.
+    """
+    purl_data = PackageURL.from_string(purl).to_dict()
+    lookup_purl_data = DiscoveredPackage.extract_purl_data(purl_data)
+    version_purl_data = {
+        field_name: value
+        for field_name, value in lookup_purl_data.items()
+        if field_name not in ["qualifiers", "subpath"]
+    }
+    same_version_packages = project.discoveredpackages.filter(
+        **version_purl_data
+    ).exclude(datasource_ids=[ORIGIN_DATASOURCE_ID])
+
+    if package := same_version_packages.filter(**lookup_purl_data).first():
+        return package
+    return same_version_packages.order_by("qualifiers", "subpath").first()
+
+
 def get_or_create_origin_package(project, purl, resources):
     """
     Return the ``project`` package of ``purl``, such as a package detected by the
     codebase scan, or else create it from the ``resources`` origin matches.
     """
-    purl_data = PackageURL.from_string(purl).to_dict()
-    lookup_purl_data = DiscoveredPackage.extract_purl_data(purl_data)
-    if package := project.discoveredpackages.filter(**lookup_purl_data).first():
+    if package := get_scan_package(project, purl):
         return package
+
+    purl_data = PackageURL.from_string(purl).to_dict()
 
     origin_matches = get_purl_origin_matches(project, purl, resources)
     package_data = {
