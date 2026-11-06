@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project>
+  <groupId>org.apache.htrace</groupId>
+  <artifactId>htrace-core</artifactId>
+  <version>4.0.0-incubating</version>
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-shade-plugin</artifactId>
+        <configuration>
+          <relocations>
+            <relocation>
+              <pattern>org.apache.commons.logging</pattern>
+              <shadedPattern>org.apache.htrace.commons.logging</shadedPattern>
+            </relocation>
+          </relocations>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>
