@@ -26,6 +26,7 @@ from dataclasses import dataclass
 from datetime import date
 from itertools import batched
 from itertools import groupby
+from itertools import pairwise
 from operator import attrgetter
 from pathlib import PurePosixPath
 
@@ -77,6 +78,17 @@ MIN_SIMILARITY_MARGIN = 20
 # A Git commit hash, full or abbreviated, such as the "498f34b" version reported by
 # SCANOSS for a modified copy of inih.
 COMMIT_HASH_PATTERN = re.compile(r"[0-9a-f]{7,40}")
+
+# The directories where a package keeps its copies of other packages, such as
+# "pip/_vendor/requests/" or "urllib3/packages/six.py".
+VENDOR_DIRECTORY_NAMES = {
+    "_vendor",
+    "vendor",
+    "vendored",
+    "packages",
+    "third_party",
+    "extern",
+}
 
 
 def get_package_purl(purl, version=None):
@@ -134,11 +146,18 @@ def normalize_name(name):
 
 def get_path_names(path):
     """
-    Return the normalized names of the directories of ``path`` and of its file
-    name without extension.
+    Return the normalized names that can identify the package of the file at
+    ``path``: its file name without extensions, such as "jquery.min" and "jquery"
+    for "jquery.min.js", and the directories just under a vendor directory, such
+    as "requests" for "pip/_vendor/requests/models.py".
     """
     file_path = PurePosixPath(path)
-    names = [*file_path.parent.parts, file_path.stem]
+    names = {file_path.stem, file_path.name.partition(".")[0]}
+
+    for directory_name, child_directory_name in pairwise(file_path.parent.parts):
+        if normalize_name(directory_name) in VENDOR_DIRECTORY_NAMES:
+            names.add(child_directory_name)
+
     return {normalize_name(name) for name in names}
 
 
@@ -222,7 +241,7 @@ class Origin:
 
     @property
     def origin_path_names(self):
-        """Return the names in the paths of the copies in the origin package."""
+        """Return the names identifying the copies in the origin package."""
         return {
             name
             for origin_match in self.origin_matches
@@ -414,10 +433,10 @@ def get_most_similar_origin(origins):
 
 def is_carrier_origin(origin, other_origins):
     """
-    Return True when the copy in the ``origin`` package is in a directory or file
-    named after one of the ``other_origins`` packages, such as six.py vendored by
-    pip in "pip/_vendor/six.py": the ``origin`` carries the copy of another
-    package.
+    Return True when the copy in the ``origin`` package is in a file, or in a
+    directory just under a vendor directory, named after one of the
+    ``other_origins`` packages, such as six.py vendored by pip in
+    "pip/_vendor/six.py": the ``origin`` carries the copy of another package.
     """
     return any(
         origin.origin_path_names & other_origin.package_names

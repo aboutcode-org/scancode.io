@@ -220,16 +220,20 @@ class ScanPipeOriginPipesTest(TestCase):
 
     def test_scanpipe_pipes_origin_get_path_names(self):
         path = "pip-24.0.tar.gz-extract/pip-24.0/src/pip/_vendor/six.py"
-        expected = {
-            "pip_24.0.tar.gz_extract",
-            "pip_24.0",
-            "src",
-            "pip",
-            "_vendor",
-            "six",
-        }
-        self.assertEqual(expected, origin.get_path_names(path))
+        self.assertEqual({"six"}, origin.get_path_names(path))
         self.assertEqual({"six"}, origin.get_path_names("six.py"))
+
+        path = "pip-24.0/src/pip/_vendor/requests/models.py"
+        self.assertEqual({"requests", "models"}, origin.get_path_names(path))
+
+        # The other directories are not named after a package, such as "utils".
+        path = "foo-1.0/src/utils/index.js"
+        self.assertEqual({"index"}, origin.get_path_names(path))
+
+        expected = {"jquery.min", "jquery"}
+        self.assertEqual(expected, origin.get_path_names("vendor/jquery.min.js"))
+        expected = {"socket.io", "socket"}
+        self.assertEqual(expected, origin.get_path_names("socket.io.js"))
 
     def test_scanpipe_pipes_origin_get_release_date(self):
         origin_match = make_unsaved_origin_match("pkg:pypi/six@1.16.0")
@@ -287,8 +291,7 @@ class ScanPipeOriginPipesTest(TestCase):
         pip_origin.merge(
             make_origin("pkg:pypi/pip@24.0", origin_path="pip-24.0/_vendor/six.py")
         )
-        expected = {"pip_24.0", "_vendor", "six"}
-        self.assertEqual(expected, pip_origin.origin_path_names)
+        self.assertEqual({"six"}, pip_origin.origin_path_names)
 
     def test_scanpipe_pipes_origin_origin_is_release_version(self):
         commit_origin = make_origin("pkg:github/benhoyt/inih@498f34b", tool="scanoss")
@@ -511,6 +514,20 @@ class ScanPipeOriginPipesTest(TestCase):
         self.assertFalse(
             origin.is_carrier_origin(make_origin("pkg:pypi/pip@24.0"), [six_origin])
         )
+
+        # A directory that is not under a vendor directory.
+        foo_origin = make_origin(
+            "pkg:npm/foo@1.0.0", origin_path="foo-1.0/src/utils/index.js"
+        )
+        utils_origin = make_origin("pkg:npm/utils@0.3.1")
+        self.assertFalse(origin.is_carrier_origin(foo_origin, [utils_origin]))
+
+        jquery_origin = make_origin("pkg:npm/jquery@3.7.1")
+        bootstrap_origin = make_origin(
+            "pkg:npm/bootstrap@5.3.3",
+            origin_path="bootstrap-5.3.3/site/static/vendor/jquery.min.js",
+        )
+        self.assertTrue(origin.is_carrier_origin(bootstrap_origin, [jquery_origin]))
 
     def test_scanpipe_pipes_origin_get_contained_origin(self):
         six_origin = make_origin("pkg:pypi/six@1.16.0", origin_path="six-1.16.0/six.py")

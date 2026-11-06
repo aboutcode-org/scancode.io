@@ -62,9 +62,11 @@ determination.
       - Status
       - Proposed origin
     * - ``containment``
-      - Different packages: the copy in all the candidates but one is in a
-        directory or file named after another candidate, such as
-        ``pip/_vendor/six.py`` in pip.
+      - Different packages: the copy in all the candidates but one is in a file,
+        or in a directory just under a vendor directory, named after another
+        candidate, such as ``pip/_vendor/six.py`` in pip. The vendor directories
+        are ``_vendor``, ``vendor``, ``vendored``, ``packages``,
+        ``third_party``, and ``extern``.
       - ``needs-review``
       - The remaining candidate.
     * - ``highest-similarity``
