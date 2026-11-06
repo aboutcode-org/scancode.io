@@ -43,6 +43,7 @@ from scanpipe.pipes.resolve import convert_spdx_expression
 CONFLICTING_CANDIDATES_RULE = "conflicting-candidates"
 CONTAINMENT_RULE = "containment"
 EARLIEST_RELEASE_RULE = "earliest-release"
+HIGHEST_SIMILARITY_RULE = "highest-similarity"
 CONFLICTING_VERSIONS_RULE = "conflicting-versions"
 PREFERRED_VERSION_RULE = "preferred-version"
 NO_EXACT_MATCH_RULE = "no-exact-match"
@@ -67,6 +68,11 @@ SCANOSS_COMPONENT_LICENSE_SOURCES = ["component_declared", "license_file"]
 # unrelated packages: the MIT license header is 19 lines long. Counted in lines,
 # not in percentage, to keep a copy of a few dozen lines in a large file.
 MIN_SNIPPET_LINE_COUNT = 20
+
+# The tools measure the similarity of a copy differently, a few points apart: a
+# modified copy of inih "ini.c" is 95% similar for MatchCode.io and 94% for SCANOSS.
+# A candidate is more similar than another only beyond this margin, in points.
+MIN_SIMILARITY_MARGIN = 20
 
 # A Git commit hash, full or abbreviated, such as the "498f34b" version reported by
 # SCANOSS for a modified copy of inih.
@@ -394,6 +400,22 @@ def get_earliest_release_origin(origins):
     return get_only_origin_with(origins, "release_date", min(release_dates))
 
 
+def get_most_similar_origin(origins):
+    """
+    Return the origin more similar than all the other ``origins`` by at least
+    ``MIN_SIMILARITY_MARGIN`` points, as the copy resembles it the most. Return None
+    when a similarity is unknown, or when the margin is not reached.
+    """
+    similarities = sorted((origin.similarity for origin in origins), reverse=True)
+    has_unknown_similarity = 0 in similarities
+    if has_unknown_similarity:
+        return
+
+    highest_similarity, second_highest_similarity = similarities[:2]
+    if highest_similarity - second_highest_similarity >= MIN_SIMILARITY_MARGIN:
+        return get_only_origin_with(origins, "similarity", highest_similarity)
+
+
 def is_carrier_origin(origin, other_origins):
     """
     Return True when the copy in the ``origin`` package is in a directory or file
@@ -435,6 +457,8 @@ def get_conflict_rule_and_candidate(origins):
             return CONTAINMENT_RULE, contained_origin
         if earliest_origin := get_earliest_release_origin(origins):
             return EARLIEST_RELEASE_RULE, earliest_origin
+        if most_similar_origin := get_most_similar_origin(origins):
+            return HIGHEST_SIMILARITY_RULE, most_similar_origin
         return CONFLICTING_CANDIDATES_RULE, None
 
     if preferred_origin := get_preferred_version_origin(origins):

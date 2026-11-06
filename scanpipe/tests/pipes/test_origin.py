@@ -575,6 +575,36 @@ class ScanPipeOriginPipesTest(TestCase):
         )
         self.assertIsNone(earliest_origin)
 
+    def test_scanpipe_pipes_origin_get_most_similar_origin(self):
+        lodash_origin = make_origin("pkg:npm/lodash@4.17.21", similarity=75)
+        underscore_origin = make_origin("pkg:npm/underscore@1.13.7", similarity=40)
+        debounce_origin = make_origin("pkg:npm/debounce@2.2.0", similarity=60)
+
+        most_similar_origin = origin.get_most_similar_origin(
+            [underscore_origin, lodash_origin]
+        )
+        self.assertEqual(lodash_origin, most_similar_origin)
+
+        # The second highest similarity is within the margin.
+        most_similar_origin = origin.get_most_similar_origin(
+            [underscore_origin, lodash_origin, debounce_origin]
+        )
+        self.assertIsNone(most_similar_origin)
+
+        exact_six_origin = make_origin("pkg:pypi/six@1.16.0", similarity=100)
+        exact_pip_origin = make_origin("pkg:pypi/pip@24.0", similarity=100)
+        most_similar_origin = origin.get_most_similar_origin(
+            [exact_six_origin, exact_pip_origin]
+        )
+        self.assertIsNone(most_similar_origin)
+
+        # A directory match has no similarity.
+        directory_origin = make_origin("pkg:npm/ms@2.1.3", match_type="directory")
+        most_similar_origin = origin.get_most_similar_origin(
+            [lodash_origin, directory_origin]
+        )
+        self.assertIsNone(most_similar_origin)
+
     def test_scanpipe_pipes_origin_get_preferred_version_origin(self):
         r62_origin = make_origin("pkg:github/benhoyt/inih@r62", similarity=90)
         commit_origin = make_origin(
@@ -640,6 +670,14 @@ class ScanPipeOriginPipesTest(TestCase):
             [dated_pip_origin, dated_six_origin]
         )
         expected = (origin.EARLIEST_RELEASE_RULE, dated_six_origin)
+        self.assertEqual(expected, rule_and_candidate)
+
+        lodash_origin = make_origin("pkg:npm/lodash@4.17.21", similarity=75)
+        underscore_origin = make_origin("pkg:npm/underscore@1.13.7", similarity=40)
+        rule_and_candidate = origin.get_conflict_rule_and_candidate(
+            [underscore_origin, lodash_origin]
+        )
+        expected = (origin.HIGHEST_SIMILARITY_RULE, lodash_origin)
         self.assertEqual(expected, rule_and_candidate)
 
         rule_and_candidate = origin.get_conflict_rule_and_candidate(
