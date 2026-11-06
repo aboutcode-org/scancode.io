@@ -106,7 +106,9 @@ class FindOrigins(Pipeline):
         Determine the origin of each matched file and directory from the origin
         matches of all the tools. An origin is confirmed automatically when two
         tools report the same package, with at least one exact match. Otherwise,
-        the origin needs a review. When the tools report different packages, and the
+        the origin needs a review. When the copy in a reported package is in its
+        vendor directory, such as "urllib3/packages/six.py", the vendored package is
+        proposed without version. When the tools report different packages, and the
         copy in all of them but one is in a directory or file named after another
         candidate, as a vendored copy, the remaining package is proposed, or else
         the package released before all the others, when all release dates are
