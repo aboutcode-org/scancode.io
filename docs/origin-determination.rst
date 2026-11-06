@@ -67,24 +67,25 @@ determination.
         ``pip/_vendor/six.py`` in pip.
       - ``needs-review``
       - The remaining candidate.
-    * - ``earliest-release``
-      - Different packages: one candidate was released before all the others,
-        and all the release dates are known.
-      - ``needs-review``
-      - The earliest released candidate.
     * - ``highest-similarity``
       - Different packages: one candidate is more similar than all the others by
         at least 20 points, and all the similarities are known.
       - ``needs-review``
       - The most similar candidate.
+    * - ``earliest-release``
+      - Different packages: one candidate was released before all the others,
+        and all the release dates are known.
+      - ``needs-review``
+      - The earliest released candidate.
     * - ``conflicting-candidates``
       - Different packages, not resolved by the previous rules.
       - ``needs-review``
       - None.
     * - ``preferred-version``
-      - Versions of the same package: only one is a release, as opposed to a
-        commit hash, or else one is more similar than all the others by at least
-        20 points.
+      - Versions of the same package: one is more similar than all the others by
+        at least 20 points, or else only one is a release, as opposed to a commit
+        hash or a missing version, or else one release is more similar than the
+        other releases by at least 20 points.
       - ``needs-review``
       - The preferred version.
     * - ``conflicting-versions``
@@ -117,6 +118,9 @@ Similarity and release date
   the 20 points margin.
 - The release date is reported by SCANOSS, and by MatchCode.io when PurlDB
   knows it. A copy cannot be older than its origin.
+- The similarity is checked before the release date, as it is measured on the
+  copy itself, while a release date only tells that a package version could
+  have been copied.
 
 Re-running the pipeline
 -----------------------

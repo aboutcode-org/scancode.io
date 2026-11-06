@@ -367,14 +367,19 @@ def is_same_package_versions(origins):
 def get_preferred_version_origin(origins):
     """
     Return the origin of the preferred version among the ``origins`` versions of
-    the same package: the only release version, as opposed to a commit, or else
-    the clearly most similar version. Return None when no version is preferred.
+    the same package: the clearly most similar version, or else the only release
+    version, as opposed to a commit, or else the clearly most similar release.
+    Return None when no version is preferred.
     """
+    if most_similar_origin := get_most_similar_origin(origins):
+        return most_similar_origin
+
     release_origins = [origin for origin in origins if origin.is_release_version]
     if len(release_origins) == 1:
         return release_origins[0]
 
-    return get_most_similar_origin(release_origins or origins)
+    if len(release_origins) > 1:
+        return get_most_similar_origin(release_origins)
 
 
 def get_earliest_release_origin(origins):
@@ -397,7 +402,7 @@ def get_most_similar_origin(origins):
     ``MIN_SIMILARITY_MARGIN`` points, as the copy resembles it the most. Return None
     when a similarity is unknown, or when the margin is not reached.
     """
-    if not all(origin.similarity for origin in origins):
+    if not all(origin.similarity is not None for origin in origins):
         return
 
     most_similar_origin, next_origin = sorted(
@@ -446,10 +451,12 @@ def get_conflict_rule_and_candidate(origins):
     if not is_same_package_versions(origins):
         if contained_origin := get_contained_origin(origins):
             return CONTAINMENT_RULE, contained_origin
-        if earliest_origin := get_earliest_release_origin(origins):
-            return EARLIEST_RELEASE_RULE, earliest_origin
+        # The similarity is measured on the copy itself, while a release date only
+        # tells that a package version could have been copied.
         if most_similar_origin := get_most_similar_origin(origins):
             return HIGHEST_SIMILARITY_RULE, most_similar_origin
+        if earliest_origin := get_earliest_release_origin(origins):
+            return EARLIEST_RELEASE_RULE, earliest_origin
         return CONFLICTING_CANDIDATES_RULE, None
 
     if preferred_origin := get_preferred_version_origin(origins):

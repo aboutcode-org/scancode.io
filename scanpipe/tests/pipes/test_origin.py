@@ -598,6 +598,13 @@ class ScanPipeOriginPipesTest(TestCase):
         )
         self.assertIsNone(most_similar_origin)
 
+        # A snippet in a large file is rounded to a known 0 similarity.
+        rounded_origin = make_origin("pkg:npm/ms@2.1.3", similarity=0)
+        most_similar_origin = origin.get_most_similar_origin(
+            [rounded_origin, underscore_origin]
+        )
+        self.assertEqual(underscore_origin, most_similar_origin)
+
     def test_scanpipe_pipes_origin_get_preferred_version_origin(self):
         r62_origin = make_origin("pkg:github/benhoyt/inih@r62", similarity=90)
         commit_origin = make_origin(
@@ -608,11 +615,23 @@ class ScanPipeOriginPipesTest(TestCase):
             "pkg:github/benhoyt/inih@577ae2d", tool="scanoss", similarity=60
         )
 
-        # The release is preferred over a commit with a higher similarity.
+        # The release is preferred over a commit with a similarity within the margin.
         preferred_origin = origin.get_preferred_version_origin(
             [r62_origin, commit_origin]
         )
         self.assertEqual(r62_origin, preferred_origin)
+
+        # An exact copy of a commit is preferred over a short release snippet.
+        exact_commit_origin = make_origin(
+            "pkg:github/benhoyt/inih@498f34b", tool="scanoss", similarity=100
+        )
+        snippet_release_origin = make_origin(
+            "pkg:github/benhoyt/inih@r1", match_type="snippet", similarity=10
+        )
+        preferred_origin = origin.get_preferred_version_origin(
+            [snippet_release_origin, exact_commit_origin]
+        )
+        self.assertEqual(exact_commit_origin, preferred_origin)
 
         # Between releases, the clearly most similar.
         preferred_origin = origin.get_preferred_version_origin(
@@ -683,6 +702,22 @@ class ScanPipeOriginPipesTest(TestCase):
             [underscore_origin, lodash_origin]
         )
         expected = (origin.HIGHEST_SIMILARITY_RULE, lodash_origin)
+        self.assertEqual(expected, rule_and_candidate)
+
+        # An exact copy is preferred over an older package matched on a snippet.
+        exact_pip_origin = make_origin(
+            "pkg:pypi/pip@24.0", similarity=100, release_date="2024-02-03"
+        )
+        older_snippet_origin = make_origin(
+            "pkg:pypi/six@1.16.0",
+            match_type="snippet",
+            similarity=10,
+            release_date="2021-05-05",
+        )
+        rule_and_candidate = origin.get_conflict_rule_and_candidate(
+            [older_snippet_origin, exact_pip_origin]
+        )
+        expected = (origin.HIGHEST_SIMILARITY_RULE, exact_pip_origin)
         self.assertEqual(expected, rule_and_candidate)
 
         rule_and_candidate = origin.get_conflict_rule_and_candidate(
