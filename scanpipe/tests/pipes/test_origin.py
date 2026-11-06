@@ -200,6 +200,25 @@ class ScanPipeOriginPipesTest(TestCase):
         expected = {"pkg:pypi/six@1.17.0"}
         self.assertEqual(expected, origin.get_equivalent_purls(origin_match))
 
+        origin_match = make_unsaved_origin_match(
+            "pkg:github/component/escape-html@v1.0.3",
+            tool="scanoss",
+            purls=["pkg:npm/escape-html"],
+        )
+        expected = {
+            "pkg:github/component/escape-html@v1.0.3",
+            "pkg:github/component/escape-html@1.0.3",
+            "pkg:npm/escape-html@v1.0.3",
+            "pkg:npm/escape-html@1.0.3",
+        }
+        self.assertEqual(expected, origin.get_equivalent_purls(origin_match))
+
+    def test_scanpipe_pipes_origin_get_equivalent_versions(self):
+        self.assertEqual(["v1.0.3", "1.0.3"], origin.get_equivalent_versions("v1.0.3"))
+        self.assertEqual(["1.0.3"], origin.get_equivalent_versions("1.0.3"))
+        self.assertEqual(["vanilla"], origin.get_equivalent_versions("vanilla"))
+        self.assertEqual([None], origin.get_equivalent_versions(None))
+
     def test_scanpipe_pipes_origin_is_release_version(self):
         self.assertFalse(origin.is_release_version("498f34b"))
         self.assertFalse(
@@ -218,22 +237,22 @@ class ScanPipeOriginPipesTest(TestCase):
             "typing_extensions", origin.normalize_name("Typing-Extensions")
         )
 
-    def test_scanpipe_pipes_origin_get_path_names(self):
+    def test_scanpipe_pipes_origin_get_copy_names(self):
         path = "pip-24.0.tar.gz-extract/pip-24.0/src/pip/_vendor/six.py"
-        self.assertEqual({"six"}, origin.get_path_names(path))
-        self.assertEqual({"six"}, origin.get_path_names("six.py"))
+        self.assertEqual({"six"}, origin.get_copy_names(path))
+        self.assertEqual({"six"}, origin.get_copy_names("six.py"))
 
         path = "pip-24.0/src/pip/_vendor/requests/models.py"
-        self.assertEqual({"requests", "models"}, origin.get_path_names(path))
+        self.assertEqual({"requests", "models"}, origin.get_copy_names(path))
 
         # The other directories are not named after a package, such as "utils".
         path = "foo-1.0/src/utils/index.js"
-        self.assertEqual({"index"}, origin.get_path_names(path))
+        self.assertEqual({"index"}, origin.get_copy_names(path))
 
         expected = {"jquery.min", "jquery"}
-        self.assertEqual(expected, origin.get_path_names("vendor/jquery.min.js"))
+        self.assertEqual(expected, origin.get_copy_names("vendor/jquery.min.js"))
         expected = {"socket.io", "socket"}
-        self.assertEqual(expected, origin.get_path_names("socket.io.js"))
+        self.assertEqual(expected, origin.get_copy_names("socket.io.js"))
 
     def test_scanpipe_pipes_origin_get_release_date(self):
         origin_match = make_unsaved_origin_match("pkg:pypi/six@1.16.0")
@@ -284,14 +303,14 @@ class ScanPipeOriginPipesTest(TestCase):
         typing_origin = make_origin("pkg:pypi/Typing-Extensions@4.9.0")
         self.assertEqual({"typing_extensions"}, typing_origin.package_names)
 
-    def test_scanpipe_pipes_origin_origin_origin_path_names(self):
+    def test_scanpipe_pipes_origin_origin_copy_names(self):
         pip_origin = make_origin("pkg:pypi/pip@24.0")
-        self.assertEqual(set(), pip_origin.origin_path_names)
+        self.assertEqual(set(), pip_origin.copy_names)
 
         pip_origin.merge(
             make_origin("pkg:pypi/pip@24.0", origin_path="pip-24.0/_vendor/six.py")
         )
-        self.assertEqual({"six"}, pip_origin.origin_path_names)
+        self.assertEqual({"six"}, pip_origin.copy_names)
 
     def test_scanpipe_pipes_origin_origin_is_release_version(self):
         commit_origin = make_origin("pkg:github/benhoyt/inih@498f34b", tool="scanoss")
@@ -369,6 +388,19 @@ class ScanPipeOriginPipesTest(TestCase):
             ["pkg:pypi/urllib3@1.26.20", "pkg:pypi/six@1.17.0"], origin_purls
         )
         self.assertEqual({"matchcode", "scanoss"}, origins[1].tools)
+
+        # The "v" prefix of a SCANOSS Git tag does not split the package.
+        origin_matches = [
+            make_unsaved_origin_match("pkg:npm/escape-html@1.0.3"),
+            make_unsaved_origin_match(
+                "pkg:github/component/escape-html@v1.0.3",
+                tool="scanoss",
+                purls=["pkg:npm/escape-html"],
+            ),
+        ]
+        origins = origin.group_origin_matches(origin_matches)
+        self.assertEqual(1, len(origins))
+        self.assertEqual("pkg:npm/escape-html@1.0.3", origins[0].purl)
 
     def test_scanpipe_pipes_origin_iter_resource_origins(self):
         six_resource = make_resource_file(self.project1, path="six.py")
@@ -563,6 +595,17 @@ class ScanPipeOriginPipesTest(TestCase):
         # Several origins that do not carry another.
         self.assertIsNone(
             origin.get_contained_origin([pip_origin, six_origin, lodash_origin])
+        )
+
+        # Regression test: the versions of six carried each other, and the copier
+        # was proposed.
+        six_17_origin = make_origin(
+            "pkg:pypi/six@1.17.0", origin_path="six-1.17.0/six.py"
+        )
+        foo_origin = make_origin("pkg:pypi/foo@1.0", origin_path="foo/compat.py")
+        self.assertFalse(origin.is_carrier_origin(six_origin, [six_17_origin]))
+        self.assertIsNone(
+            origin.get_contained_origin([six_origin, six_17_origin, foo_origin])
         )
 
     def test_scanpipe_pipes_origin_get_earliest_release_origin(self):
@@ -920,13 +963,20 @@ class ScanPipeOriginPipesTest(TestCase):
         expected = {origin.ORIGIN_RESOURCE_PATHS_KEY: ["six.py"]}
         self.assertEqual(expected, scan_package.extra_data)
 
+        # Regression test: the paths of a second origin PURL replaced the first.
+        test_six = make_resource_file(self.project1, path="test_six.py")
+        origin.assign_origin_package_resources(scan_package, resources)
+        expected = {origin.ORIGIN_RESOURCE_PATHS_KEY: ["six.py", "test_six.py"]}
+        self.assertEqual(expected, scan_package.extra_data)
+        self.assertIn(test_six, scan_package.codebase_resources.all())
+
         origin_package = make_package(
             self.project1,
             "pkg:npm/ms@2.1.3",
             datasource_ids=[origin.ORIGIN_DATASOURCE_ID],
         )
         origin.assign_origin_package_resources(origin_package, resources)
-        self.assertEqual(2, origin_package.codebase_resources.count())
+        self.assertEqual(3, origin_package.codebase_resources.count())
         self.assertEqual({}, origin_package.extra_data)
 
     def test_scanpipe_pipes_origin_unassign_scan_package_resources(self):

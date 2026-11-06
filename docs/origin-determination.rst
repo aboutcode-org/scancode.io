@@ -22,7 +22,8 @@ candidates:
 - The matches of the same package version are one candidate, even when the tools
   report different PURLs, such as ``pkg:github/benjaminp/six@1.17.0`` and
   ``pkg:pypi/six@1.17.0``, as SCANOSS reports the equivalent PURLs of a
-  component.
+  component. A version with a ``v`` prefix, such as the ``v1.0.3`` Git tag, is
+  the same as the ``1.0.3`` release.
 - The snippet matches covering fewer than 20 lines of the file are ignored, such
   as a common license header found in many unrelated packages. They are still
   stored as origin matches.

@@ -765,11 +765,13 @@ class MatchCodePipesTest(TestCase):
         make_resource_file(self.project1, "lib/six.py", sha1=SIX_16_SHA1)
         make_resource_file(self.project1, "index.js", sha1="ea869663")
         make_resource_file(self.project1, "empty.py")
+        make_resource_file(self.project1, "LICENSE", sha1="2b8b815229aa8a61")
         results_by_path = {
             "six.py": {"status": "matched-to-purldb-resource"},
             "lib/six.py": {"status": "matched-to-purldb-resource"},
             "index.js": {"status": "matched-to-purldb-directory"},
             "empty.py": {"status": "matched-to-purldb-resource"},
+            "LICENSE": {"status": "matched-to-purldb-resource"},
         }
 
         sha1s = matchcode.get_matched_file_sha1s(self.project1, results_by_path)

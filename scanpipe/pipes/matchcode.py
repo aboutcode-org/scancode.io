@@ -695,11 +695,16 @@ def make_origin_matches(
 
 
 def get_matched_file_sha1s(project, results_by_path):
-    """Return the distinct sha1 of the ``project`` files matched to a PurlDB file."""
+    """
+    Return the distinct sha1 of the ``project`` files matched to a PurlDB file.
+    The legal files are excluded, as a common license file is found in many
+    packages.
+    """
     matched_file_paths = [
         path
         for path, resource_results in results_by_path.items()
         if resource_results.get("status") == flag.MATCHED_TO_PURLDB_RESOURCE
+        and not is_legal_file_path(path)
     ]
     matched_files = project.codebaseresources.filter(
         path__in=matched_file_paths

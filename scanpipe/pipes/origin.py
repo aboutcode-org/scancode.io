@@ -41,12 +41,12 @@ from scanpipe.models import OriginDetermination
 from scanpipe.models import OriginMatch
 from scanpipe.pipes.resolve import convert_spdx_expression
 
-CONFLICTING_CANDIDATES_RULE = "conflicting-candidates"
 CONTAINMENT_RULE = "containment"
-EARLIEST_RELEASE_RULE = "earliest-release"
 HIGHEST_SIMILARITY_RULE = "highest-similarity"
-CONFLICTING_VERSIONS_RULE = "conflicting-versions"
+EARLIEST_RELEASE_RULE = "earliest-release"
+CONFLICTING_CANDIDATES_RULE = "conflicting-candidates"
 PREFERRED_VERSION_RULE = "preferred-version"
+CONFLICTING_VERSIONS_RULE = "conflicting-versions"
 NO_EXACT_MATCH_RULE = "no-exact-match"
 SINGLE_TOOL_RULE = "single-tool"
 CONFIRMED_BY_TWO_TOOLS_RULE = "confirmed-by-two-tools"
@@ -117,14 +117,29 @@ def get_versioned_purls(purls, version):
     return versioned_purls
 
 
+def get_equivalent_versions(version):
+    """
+    Return the ``version`` and its form without "v" prefix, such as "1.0.3" for
+    the "v1.0.3" Git tag reported by SCANOSS for the "1.0.3" npm release.
+    """
+    has_v_prefix = bool(version) and version[0] == "v" and version[1:2].isdigit()
+    if has_v_prefix:
+        return [version, version[1:]]
+    return [version]
+
+
 def get_equivalent_purls(origin_match):
     """
     Return the PURLs identifying the ``origin_match`` package: its own PURL and
     the equivalent PURLs reported by the tool, such as the SCANOSS ``purls``.
     """
     version = PackageURL.from_string(origin_match.purl).version
-    tool_purls = origin_match.extra_data.get("purls", [])
-    return get_versioned_purls([origin_match.purl, *tool_purls], version)
+    purls = [origin_match.purl, *origin_match.extra_data.get("purls", [])]
+    return {
+        equivalent_purl
+        for equivalent_version in get_equivalent_versions(version)
+        for equivalent_purl in get_versioned_purls(purls, equivalent_version)
+    }
 
 
 def is_release_version(version):
@@ -144,7 +159,7 @@ def normalize_name(name):
     return name.lower().replace("-", "_")
 
 
-def get_path_names(path):
+def get_copy_names(path):
     """
     Return the normalized names that can identify the package of the file at
     ``path``: its file name without extensions, such as "jquery.min" and "jquery"
@@ -240,13 +255,13 @@ class Origin:
         }
 
     @property
-    def origin_path_names(self):
+    def copy_names(self):
         """Return the names identifying the copies in the origin package."""
         return {
             name
             for origin_match in self.origin_matches
             if origin_match.origin_path
-            for name in get_path_names(origin_match.origin_path)
+            for name in get_copy_names(origin_match.origin_path)
         }
 
     @property
@@ -437,10 +452,12 @@ def is_carrier_origin(origin, other_origins):
     directory just under a vendor directory, named after one of the
     ``other_origins`` packages, such as six.py vendored by pip in
     "pip/_vendor/six.py": the ``origin`` carries the copy of another package.
+    A copy named after the ``origin`` package itself is its own file, such as
+    "six.py" in another version of six.
     """
+    carried_names = origin.copy_names - origin.package_names
     return any(
-        origin.origin_path_names & other_origin.package_names
-        for other_origin in other_origins
+        carried_names & other_origin.package_names for other_origin in other_origins
     )
 
 
@@ -457,8 +474,8 @@ def get_contained_origin(origins):
         if not is_carrier_origin(origin, other_origins):
             non_carrier_origins.append(origin)
 
-    has_carrier_origin = len(non_carrier_origins) < len(origins)
-    if has_carrier_origin and len(non_carrier_origins) == 1:
+    # Called with several origins: a single non carrier means the others carry.
+    if len(non_carrier_origins) == 1:
         return non_carrier_origins[0]
 
 
@@ -696,8 +713,13 @@ def assign_origin_package_resources(package, resources):
         return
 
     package.add_resources(new_resources)
-    new_resource_paths = [resource.path for resource in new_resources]
-    package.update_extra_data({ORIGIN_RESOURCE_PATHS_KEY: new_resource_paths})
+    # Several origin PURLs can lead to the same scan package, such as a PURL with
+    # qualifiers confirmed by a user and the same PURL without qualifiers.
+    origin_resource_paths = [
+        *package.extra_data.get(ORIGIN_RESOURCE_PATHS_KEY, []),
+        *(resource.path for resource in new_resources),
+    ]
+    package.update_extra_data({ORIGIN_RESOURCE_PATHS_KEY: origin_resource_paths})
 
 
 def unassign_scan_package_resources(project):
