@@ -285,13 +285,13 @@ class Origin:
 
     @property
     def similarity(self):
-        """Return the highest similarity of the origin matches, 0 when unknown."""
+        """Return the highest similarity of the origin matches, None if unknown."""
         similarities = [
             origin_match.similarity
             for origin_match in self.origin_matches
             if origin_match.similarity is not None
         ]
-        return max(similarities, default=0)
+        return max(similarities, default=None)
 
     @property
     def release_date(self):
@@ -413,18 +413,6 @@ def is_same_package_versions(origins):
     return bool(set.intersection(*(origin.versionless_purls for origin in origins)))
 
 
-def get_only_origin_with(origins, attribute_name, value):
-    """
-    Return the only origin among the ``origins`` with the ``value`` of
-    ``attribute_name``, None when there is none or several.
-    """
-    matching_origins = [
-        origin for origin in origins if getattr(origin, attribute_name) == value
-    ]
-    if len(matching_origins) == 1:
-        return matching_origins[0]
-
-
 def get_preferred_version_origin(origins):
     """
     Return the origin of the preferred version among the ``origins`` versions of
@@ -444,11 +432,12 @@ def get_earliest_release_origin(origins):
     be older than its origin. Return None when a release date is unknown, or when
     the earliest date is shared.
     """
-    release_dates = [origin.release_date for origin in origins]
-    if None in release_dates:
+    if not all(origin.release_date for origin in origins):
         return
 
-    return get_only_origin_with(origins, "release_date", min(release_dates))
+    earliest_origin, next_origin = sorted(origins, key=attrgetter("release_date"))[:2]
+    if earliest_origin.release_date < next_origin.release_date:
+        return earliest_origin
 
 
 def get_most_similar_origin(origins):
@@ -457,14 +446,14 @@ def get_most_similar_origin(origins):
     ``MIN_SIMILARITY_MARGIN`` points, as the copy resembles it the most. Return None
     when a similarity is unknown, or when the margin is not reached.
     """
-    similarities = sorted((origin.similarity for origin in origins), reverse=True)
-    has_unknown_similarity = 0 in similarities
-    if has_unknown_similarity:
+    if not all(origin.similarity for origin in origins):
         return
 
-    highest_similarity, second_highest_similarity = similarities[:2]
-    if highest_similarity - second_highest_similarity >= MIN_SIMILARITY_MARGIN:
-        return get_only_origin_with(origins, "similarity", highest_similarity)
+    most_similar_origin, next_origin = sorted(
+        origins, key=attrgetter("similarity"), reverse=True
+    )[:2]
+    if most_similar_origin.similarity - next_origin.similarity >= MIN_SIMILARITY_MARGIN:
+        return most_similar_origin
 
 
 def is_carrier_origin(origin, other_origins):

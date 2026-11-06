@@ -317,7 +317,7 @@ class ScanPipeOriginPipesTest(TestCase):
 
     def test_scanpipe_pipes_origin_origin_similarity(self):
         six_origin = make_origin("pkg:pypi/six@1.17.0")
-        self.assertEqual(0, six_origin.similarity)
+        self.assertIsNone(six_origin.similarity)
 
         six_origin.merge(make_origin("pkg:pypi/six@1.17.0", similarity=94))
         six_origin.merge(make_origin("pkg:pypi/six@1.17.0", similarity=95))
@@ -577,17 +577,6 @@ class ScanPipeOriginPipesTest(TestCase):
         self.assertIsNone(
             origin.get_contained_origin([pip_origin, six_origin, lodash_origin])
         )
-
-    def test_scanpipe_pipes_origin_get_only_origin_with(self):
-        six_origin = make_origin("pkg:pypi/six@1.16.0", similarity=100)
-        pip_origin = make_origin("pkg:pypi/pip@24.0", similarity=100)
-        urllib3_origin = make_origin("pkg:pypi/urllib3@1.26.20", similarity=90)
-        origins = [six_origin, pip_origin, urllib3_origin]
-
-        only_origin = origin.get_only_origin_with(origins, "similarity", 90)
-        self.assertEqual(urllib3_origin, only_origin)
-        self.assertIsNone(origin.get_only_origin_with(origins, "similarity", 100))
-        self.assertIsNone(origin.get_only_origin_with(origins, "similarity", 50))
 
     def test_scanpipe_pipes_origin_get_earliest_release_origin(self):
         six_origin = make_origin("pkg:pypi/six@1.16.0", release_date="2021-05-05")
