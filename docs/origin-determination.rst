@@ -61,12 +61,6 @@ determination.
       - Applies when
       - Status
       - Proposed origin
-    * - ``vendored-package``
-      - The copy in a candidate is in a vendor directory of this candidate, such
-        as ``urllib3/packages/six.py``, and the vendored package is not itself a
-        candidate.
-      - ``needs-review``
-      - The vendored package, without version, such as ``pkg:pypi/six``.
     * - ``containment``
       - Different packages: the copy in all the candidates but one is in a
         directory or file named after another candidate, such as
@@ -113,28 +107,6 @@ determination.
       - ``auto-confirmed``
       - The candidate.
 
-Vendored copies
-^^^^^^^^^^^^^^^
-
-A package often keeps a copy of another package in a vendor directory, and a
-codebase can take its copy from this vendoring package. The tools then report
-the vendoring package, and possibly the same one, while the ultimate origin is
-the vendored package. This is why the ``vendored-package`` rule is evaluated
-before ``confirmed-by-two-tools``.
-
-- The vendor directories are ``_vendor``, ``vendor``, ``vendored``,
-  ``packages``, ``third_party``, and ``extern``, directly under the directory
-  named after the vendoring package.
-- For a package vendored by a vendored package, such as
-  ``pip/_vendor/urllib3/packages/six.py``, the deepest one is proposed.
-- The proposed PURL has the type of the vendoring package. Its version is
-  selected during the review.
-- The path of a copy in its package is fetched from PurlDB for the MatchCode.io
-  file matches, when PurlDB is configured. SCANOSS only reports the file name.
-
-When the vendored package is itself a candidate, the ``containment`` rule
-proposes it with its version.
-
 Similarity and release date
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -174,6 +146,5 @@ Limitations
 
 - A single tool never confirms an origin automatically: MatchCode.io stops at
   the first package matched, and SCANOSS reports one component per file.
-- A vendored package is proposed without version.
 - MatchCode.io rarely reports a release date, so the ``earliest-release`` rule
   rarely applies to its candidates.

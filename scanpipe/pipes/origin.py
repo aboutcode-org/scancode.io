@@ -40,7 +40,6 @@ from scanpipe.models import OriginDetermination
 from scanpipe.models import OriginMatch
 from scanpipe.pipes.resolve import convert_spdx_expression
 
-VENDORED_PACKAGE_RULE = "vendored-package"
 CONFLICTING_CANDIDATES_RULE = "conflicting-candidates"
 CONTAINMENT_RULE = "containment"
 EARLIEST_RELEASE_RULE = "earliest-release"
@@ -78,17 +77,6 @@ MIN_SIMILARITY_MARGIN = 20
 # A Git commit hash, full or abbreviated, such as the "498f34b" version reported by
 # SCANOSS for a modified copy of inih.
 COMMIT_HASH_PATTERN = re.compile(r"[0-9a-f]{7,40}")
-
-# The directories where a package keeps its copies of other packages, such as
-# "pip/_vendor/six.py" or "urllib3/packages/six.py".
-VENDOR_DIRECTORY_NAMES = {
-    "_vendor",
-    "vendor",
-    "vendored",
-    "packages",
-    "third_party",
-    "extern",
-}
 
 
 def get_package_purl(purl, version=None):
@@ -152,36 +140,6 @@ def get_path_names(path):
     file_path = PurePosixPath(path)
     names = [*file_path.parent.parts, file_path.stem]
     return {normalize_name(name) for name in names}
-
-
-def get_vendored_package_name(path, carrier_names):
-    """
-    Return the name of the package vendored at ``path`` in a vendor directory of
-    one of the ``carrier_names`` packages, such as "six" for
-    "urllib3/packages/six.py", or the deepest for a package vendored by a vendored
-    package, such as "pip/_vendor/urllib3/packages/six.py". Return an empty string
-    when ``path`` is not in a vendor directory of a carrier.
-    """
-    path_parts = PurePosixPath(path).parts
-    owner_names = carrier_names
-    vendored_package_name = ""
-
-    for parent_name, directory_name, child_name in zip(
-        path_parts, path_parts[1:], path_parts[2:]
-    ):
-        is_owner_vendor_directory = (
-            normalize_name(parent_name) in owner_names
-            and normalize_name(directory_name) in VENDOR_DIRECTORY_NAMES
-        )
-        child_stem = PurePosixPath(child_name).stem
-        # A private name, such as "_vendor/__init__.py", is not a package.
-        if not is_owner_vendor_directory or child_stem.startswith("_"):
-            continue
-
-        vendored_package_name = child_stem
-        owner_names = {normalize_name(vendored_package_name)}
-
-    return vendored_package_name
 
 
 def get_release_date(origin_match):
@@ -271,19 +229,6 @@ class Origin:
             if origin_match.origin_path
             for name in get_path_names(origin_match.origin_path)
         }
-
-    @property
-    def vendored_package_names(self):
-        """
-        Return the names of the packages vendored by this origin package at the
-        paths of the copies.
-        """
-        vendored_package_names = {
-            get_vendored_package_name(origin_match.origin_path, self.package_names)
-            for origin_match in self.origin_matches
-        }
-        vendored_package_names.discard("")
-        return vendored_package_names
 
     @property
     def is_release_version(self):
@@ -538,43 +483,9 @@ def get_rule_and_candidate(origins):
     return get_single_origin_rule(origin), origin
 
 
-def get_vendored_package_purl(origins):
-    """
-    Return the versionless PURL of the only package vendored by the ``origins``
-    packages at the paths of the copies, when it is not itself a candidate, such
-    as six for a copy of six taken from urllib3. Return an empty string otherwise.
-    """
-    candidate_names = set().union(*(origin.package_names for origin in origins))
-    vendored_package_purls = {
-        PackageURL(
-            type=PackageURL.from_string(origin.purl).type,
-            name=vendored_package_name,
-        ).to_string()
-        for origin in origins
-        for vendored_package_name in origin.vendored_package_names
-        if normalize_name(vendored_package_name) not in candidate_names
-    }
-    if len(vendored_package_purls) == 1:
-        return vendored_package_purls.pop()
-    return ""
-
-
-def get_rule_and_purl(origins):
-    """
-    Return the determination rule of the candidate ``origins`` of a resource, and
-    the proposed PURL, empty when there is no proposal. The package vendored by a
-    candidate is the ultimate origin of the copy: its version is unknown.
-    """
-    if vendored_package_purl := get_vendored_package_purl(origins):
-        return VENDORED_PACKAGE_RULE, vendored_package_purl
-
-    rule, candidate_origin = get_rule_and_candidate(origins)
-    return rule, candidate_origin.purl if candidate_origin else ""
-
-
 def make_origin_determination(project, resource, origins):
     """Return an unsaved OriginDetermination for the ``resource`` ``origins``."""
-    rule, purl = get_rule_and_purl(origins)
+    rule, candidate_origin = get_rule_and_candidate(origins)
     status = OriginDetermination.Status.NEEDS_REVIEW
     if rule == CONFIRMED_BY_TWO_TOOLS_RULE:
         status = OriginDetermination.Status.AUTO_CONFIRMED
@@ -582,7 +493,7 @@ def make_origin_determination(project, resource, origins):
     return OriginDetermination(
         project=project,
         resource=resource,
-        purl=purl,
+        purl=candidate_origin.purl if candidate_origin else "",
         status=status,
         rule=rule,
     )

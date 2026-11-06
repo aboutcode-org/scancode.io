@@ -107,7 +107,7 @@ class FindOrigins(Pipeline):
         matches of all the tools. An origin is confirmed automatically when two
         tools report the same package, with at least one exact match. Otherwise,
         the origin needs a review, with a proposed origin when a rule can select one
-        among the candidates, such as the package vendored by another candidate.
+        among the candidates, such as the candidate vendored by another candidate.
         The origins confirmed by a user are kept.
         The files and directories of a confirmed origin are assigned to the origin
         package, created from the tools data when the codebase scan did not

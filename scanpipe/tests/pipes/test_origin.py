@@ -231,28 +231,6 @@ class ScanPipeOriginPipesTest(TestCase):
         self.assertEqual(expected, origin.get_path_names(path))
         self.assertEqual({"six"}, origin.get_path_names("six.py"))
 
-    def test_scanpipe_pipes_origin_get_vendored_package_name(self):
-        path = "urllib3-1.26.20/src/urllib3/packages/six.py"
-        self.assertEqual("six", origin.get_vendored_package_name(path, {"urllib3"}))
-
-        # The deepest vendored package.
-        path = "pip-24.0/src/pip/_vendor/urllib3/packages/six.py"
-        self.assertEqual("six", origin.get_vendored_package_name(path, {"pip"}))
-
-        path = "pip-24.0/src/pip/_vendor/urllib3/connection.py"
-        self.assertEqual("urllib3", origin.get_vendored_package_name(path, {"pip"}))
-
-        # Not in a vendor directory of the carrier.
-        path = "urllib3-1.26.20/src/urllib3/connection.py"
-        self.assertEqual("", origin.get_vendored_package_name(path, {"urllib3"}))
-        path = "babel-7.26.0/packages/babel-core/src/index.js"
-        self.assertEqual("", origin.get_vendored_package_name(path, {"babel"}))
-        self.assertEqual("", origin.get_vendored_package_name("six.py", {"six"}))
-        self.assertEqual("", origin.get_vendored_package_name("", {"six"}))
-
-        path = "pip-24.0/src/pip/_vendor/__init__.py"
-        self.assertEqual("", origin.get_vendored_package_name(path, {"pip"}))
-
     def test_scanpipe_pipes_origin_get_release_date(self):
         origin_match = make_unsaved_origin_match("pkg:pypi/six@1.16.0")
         self.assertIsNone(origin.get_release_date(origin_match))
@@ -334,18 +312,6 @@ class ScanPipeOriginPipesTest(TestCase):
         six_origin.merge(make_origin("pkg:pypi/six@1.16.0", release_date="2021-06-01"))
         six_origin.merge(make_origin("pkg:pypi/six@1.16.0", release_date="2021-05-05"))
         self.assertEqual(date(2021, 5, 5), six_origin.release_date)
-
-    def test_scanpipe_pipes_origin_origin_vendored_package_names(self):
-        urllib3_origin = make_origin("pkg:pypi/urllib3@1.26.20")
-        self.assertEqual(set(), urllib3_origin.vendored_package_names)
-
-        urllib3_origin.merge(
-            make_origin(
-                "pkg:pypi/urllib3@1.26.20",
-                origin_path="urllib3-1.26.20/src/urllib3/packages/six.py",
-            )
-        )
-        self.assertEqual({"six"}, urllib3_origin.vendored_package_names)
 
     def test_scanpipe_pipes_origin_origin_is_same_package(self):
         scanoss_origin = make_scanoss_six_origin()
@@ -755,62 +721,6 @@ class ScanPipeOriginPipesTest(TestCase):
         rule_and_candidate = origin.get_rule_and_candidate([six_origin, urllib3_origin])
         self.assertEqual((origin.CONFLICTING_CANDIDATES_RULE, None), rule_and_candidate)
 
-    def test_scanpipe_pipes_origin_get_vendored_package_purl(self):
-        urllib3_origin = make_origin(
-            "pkg:pypi/urllib3@1.26.20",
-            origin_path="urllib3-1.26.20/src/urllib3/packages/six.py",
-        )
-        anime365_origin = make_origin(
-            "pkg:github/piotrmasek/anime365@0.1-Ryucon",
-            tool="scanoss",
-            origin_path="six.py",
-        )
-        self.assertEqual(
-            "pkg:pypi/six",
-            origin.get_vendored_package_purl([urllib3_origin, anime365_origin]),
-        )
-
-        # The vendored package is a candidate, for the containment rule.
-        pip_origin = make_origin(
-            "pkg:pypi/pip@24.0", origin_path="pip-24.0/src/pip/_vendor/six.py"
-        )
-        six_origin = make_origin("pkg:pypi/six@1.16.0")
-        vendored_package_purl = origin.get_vendored_package_purl(
-            [pip_origin, six_origin]
-        )
-        self.assertEqual("", vendored_package_purl)
-
-        self.assertEqual("", origin.get_vendored_package_purl([six_origin]))
-
-        # Different vendored packages.
-        appdirs_origin = make_origin(
-            "pkg:pypi/setuptools@69.0.0",
-            origin_path="setuptools-69.0.0/setuptools/_vendor/appdirs.py",
-        )
-        vendored_package_purl = origin.get_vendored_package_purl(
-            [urllib3_origin, appdirs_origin]
-        )
-        self.assertEqual("", vendored_package_purl)
-
-    def test_scanpipe_pipes_origin_get_rule_and_purl(self):
-        urllib3_origin = make_origin(
-            "pkg:pypi/urllib3@1.26.20",
-            origin_path="urllib3-1.26.20/src/urllib3/packages/six.py",
-        )
-        rule_and_purl = origin.get_rule_and_purl([urllib3_origin])
-        expected = (origin.VENDORED_PACKAGE_RULE, "pkg:pypi/six")
-        self.assertEqual(expected, rule_and_purl)
-
-        six_origin = make_origin("pkg:pypi/six@1.17.0")
-        rule_and_purl = origin.get_rule_and_purl([six_origin])
-        self.assertEqual(
-            (origin.SINGLE_TOOL_RULE, "pkg:pypi/six@1.17.0"), rule_and_purl
-        )
-
-        lodash_origin = make_origin("pkg:npm/lodash@4.17.21")
-        rule_and_purl = origin.get_rule_and_purl([six_origin, lodash_origin])
-        self.assertEqual((origin.CONFLICTING_CANDIDATES_RULE, ""), rule_and_purl)
-
     def test_scanpipe_pipes_origin_make_origin_determination(self):
         resource = make_resource_file(self.project1, path="six.py")
         six_origin = make_origin("pkg:pypi/six@1.17.0")
@@ -842,19 +752,6 @@ class ScanPipeOriginPipesTest(TestCase):
         self.assertEqual("pkg:github/benhoyt/inih@r62", determination.purl)
         self.assertEqual("needs-review", determination.status)
         self.assertEqual(origin.PREFERRED_VERSION_RULE, determination.rule)
-
-        # The vendored package is proposed over the confirmed vendoring package.
-        vendoring_origin = make_origin(
-            "pkg:pypi/urllib3@1.26.20",
-            origin_path="urllib3-1.26.20/src/urllib3/packages/six.py",
-        )
-        vendoring_origin.merge(make_origin("pkg:pypi/urllib3@1.26.20", tool="scanoss"))
-        determination = origin.make_origin_determination(
-            self.project1, resource, [vendoring_origin]
-        )
-        self.assertEqual("pkg:pypi/six", determination.purl)
-        self.assertEqual("needs-review", determination.status)
-        self.assertEqual(origin.VENDORED_PACKAGE_RULE, determination.rule)
 
         six_origin.merge(make_scanoss_six_origin())
         determination = origin.make_origin_determination(
@@ -1269,13 +1166,12 @@ class ScanPipeOriginPipesTest(TestCase):
                     origin.CONFIRMED_BY_TWO_TOOLS_RULE,
                 ),
             ],
-            # six is found in the urllib3 vendor directory, without version.
             "vendored-copy": [
                 (
                     "myapp/_vendor/urllib3/packages/six.py",
-                    "pkg:pypi/six",
+                    "",
                     "needs-review",
-                    origin.VENDORED_PACKAGE_RULE,
+                    origin.CONFLICTING_CANDIDATES_RULE,
                 ),
             ],
             # The r62 release is preferred over the 498f34b commit.
@@ -1405,8 +1301,8 @@ class ScanPipeOriginPipesTest(TestCase):
                 "vendored-copy": [
                     (
                         "myapp/_vendor/urllib3/packages/six.py",
-                        "pkg:pypi/six",
-                        "vendored-package",
+                        "pkg:pypi/urllib3@1.26.20",
+                        "single-tool",
                     ),
                 ],
                 "modified-copy": [
