@@ -152,3 +152,6 @@ Limitations
   the first package matched, and SCANOSS reports one component per file.
 - MatchCode.io rarely reports a release date, so the ``earliest-release`` rule
   rarely applies to its candidates.
+- The ``containment`` rule needs the path of the copy in each candidate.
+  SCANOSS only reports the file name, and the path of a MatchCode.io match is
+  fetched from PurlDB, when configured.

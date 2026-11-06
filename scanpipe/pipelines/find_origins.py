@@ -25,6 +25,7 @@ import subprocess
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import matchcode
 from scanpipe.pipes import origin
+from scanpipe.pipes import purldb
 from scanpipe.pipes import scanoss
 
 
@@ -39,7 +40,9 @@ class FindOrigins(Pipeline):
     Supported tools:
 
     - MatchCode.io: the codebase scan, including file and directory
-      fingerprints, is sent to the configured MatchCode.io server.
+      fingerprints, is sent to the configured MatchCode.io server. When PurlDB is
+      configured, the paths of the matched files in their package are fetched
+      from PurlDB.
     - SCANOSS: the codebase files are fingerprinted locally, then their paths,
       checksums, sizes, and fingerprints are sent to the configured SCANOSS
       server. The file contents are not sent.
@@ -76,6 +79,12 @@ class FindOrigins(Pipeline):
                 self.project, match_results
             )
             self.log(f"{origin_match_count:,d} MatchCode.io origin matches processed.")
+
+        if not purldb.is_configured():
+            self.log(
+                "PurlDB is not configured: the paths of the files matched by "
+                "MatchCode.io in their package are not available."
+            )
 
     def find_scanoss_origin_matches(self):
         """Scan the codebase with SCANOSS and store the reported origin matches."""

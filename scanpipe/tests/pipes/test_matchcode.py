@@ -738,12 +738,36 @@ class MatchCodePipesTest(TestCase):
         self.assertEqual(expected, matchcode.get_origin_paths([SIX_16_SHA1]))
         mock_match_resources.assert_called_once_with([SIX_16_SHA1])
 
+    @mock.patch("scanpipe.pipes.purldb.match_resources")
+    @mock.patch("scanpipe.pipes.purldb.is_configured")
+    def test_scanpipe_pipes_matchcode_get_origin_paths_batches(
+        self, mock_is_configured, mock_match_resources
+    ):
+        mock_is_configured.return_value = True
+        mock_match_resources.side_effect = [
+            [{"purl": "pkg:pypi/six@1.16.0", "sha1": "sha1_a", "path": "six.py"}],
+            [{"purl": "pkg:npm/ms@2.1.3", "sha1": "sha1_c", "path": "index.js"}],
+        ]
+
+        origin_paths = matchcode.get_origin_paths(
+            ["sha1_a", "sha1_b", "sha1_c"], batch_size=2
+        )
+        expected = {
+            ("pkg:pypi/six@1.16.0", "sha1_a"): "six.py",
+            ("pkg:npm/ms@2.1.3", "sha1_c"): "index.js",
+        }
+        self.assertEqual(expected, origin_paths)
+        expected_calls = [mock.call(["sha1_a", "sha1_b"]), mock.call(["sha1_c"])]
+        self.assertEqual(expected_calls, mock_match_resources.call_args_list)
+
     def test_scanpipe_pipes_matchcode_get_matched_file_sha1s(self):
         make_resource_file(self.project1, "six.py", sha1=SIX_16_SHA1)
+        make_resource_file(self.project1, "lib/six.py", sha1=SIX_16_SHA1)
         make_resource_file(self.project1, "index.js", sha1="ea869663")
         make_resource_file(self.project1, "empty.py")
         results_by_path = {
             "six.py": {"status": "matched-to-purldb-resource"},
+            "lib/six.py": {"status": "matched-to-purldb-resource"},
             "index.js": {"status": "matched-to-purldb-directory"},
             "empty.py": {"status": "matched-to-purldb-resource"},
         }

@@ -24,6 +24,7 @@ import json
 import logging
 from collections import defaultdict
 from functools import partial
+from itertools import batched
 from pathlib import Path
 
 from django.conf import settings
@@ -599,18 +600,24 @@ def get_path_depth_and_path(purldb_resource):
     return path.count("/"), path
 
 
-def get_origin_paths(sha1_list):
+def get_origin_paths(sha1_list, batch_size=1000):
     """
     Return the paths of the ``sha1_list`` files in the PurlDB packages, as a
     mapping of (package PURL, sha1) to path, as MatchCode.io does not report the
     path of a matched file. When a package has several copies of a file, the
     shallowest path is kept. Empty when PurlDB is not configured.
+    The sha1 are sent to PurlDB by batches of ``batch_size``.
     """
     if not sha1_list or not purldb.is_configured():
         return {}
 
     purldb_resources = sorted(
-        purldb.match_resources(sha1_list), key=get_path_depth_and_path
+        (
+            purldb_resource
+            for sha1_batch in batched(sha1_list, batch_size)
+            for purldb_resource in purldb.match_resources(list(sha1_batch))
+        ),
+        key=get_path_depth_and_path,
     )
     origin_paths = {}
     for purldb_resource in purldb_resources:
@@ -688,7 +695,7 @@ def make_origin_matches(
 
 
 def get_matched_file_sha1s(project, results_by_path):
-    """Return the sha1 of the ``project`` files matched to a PurlDB file."""
+    """Return the distinct sha1 of the ``project`` files matched to a PurlDB file."""
     matched_file_paths = [
         path
         for path, resource_results in results_by_path.items()
@@ -697,7 +704,8 @@ def get_matched_file_sha1s(project, results_by_path):
     matched_files = project.codebaseresources.filter(
         path__in=matched_file_paths
     ).exclude(sha1="")
-    return list(matched_files.values_list("sha1", flat=True))
+    matched_file_sha1s = matched_files.order_by("sha1").values_list("sha1", flat=True)
+    return list(matched_file_sha1s.distinct())
 
 
 def load_matchcode_results(project, match_results):
