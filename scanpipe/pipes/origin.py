@@ -20,10 +20,13 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
+import re
 from contextlib import suppress
 from dataclasses import dataclass
+from datetime import date
 from itertools import batched
 from itertools import groupby
+from itertools import pairwise
 from operator import attrgetter
 from pathlib import PurePosixPath
 
@@ -38,7 +41,11 @@ from scanpipe.models import OriginDetermination
 from scanpipe.models import OriginMatch
 from scanpipe.pipes.resolve import convert_spdx_expression
 
+CONTAINMENT_RULE = "containment"
+HIGHEST_SIMILARITY_RULE = "highest-similarity"
+EARLIEST_RELEASE_RULE = "earliest-release"
 CONFLICTING_CANDIDATES_RULE = "conflicting-candidates"
+PREFERRED_VERSION_RULE = "preferred-version"
 CONFLICTING_VERSIONS_RULE = "conflicting-versions"
 NO_EXACT_MATCH_RULE = "no-exact-match"
 SINGLE_TOOL_RULE = "single-tool"
@@ -57,6 +64,31 @@ ORIGIN_RESOURCE_PATHS_KEY = "origin_resource_paths"
 # "file_header", are the licenses of the matched file, already detected by the
 # codebase scan.
 SCANOSS_COMPONENT_LICENSE_SOURCES = ["component_declared", "license_file"]
+
+# The shorter snippet matches are noise, such as a common license header matching
+# unrelated packages: the MIT license header is 19 lines long. Counted in lines,
+# not in percentage, to keep a copy of a few dozen lines in a large file.
+MIN_SNIPPET_LINE_COUNT = 20
+
+# The tools measure the similarity of a copy differently, a few points apart: a
+# modified copy of inih "ini.c" is 95% similar for MatchCode.io and 94% for SCANOSS.
+# A candidate is more similar than another only beyond this margin, in points.
+MIN_SIMILARITY_MARGIN = 20
+
+# A Git commit hash, full or abbreviated, such as the "498f34b" version reported by
+# SCANOSS for a modified copy of inih.
+COMMIT_HASH_PATTERN = re.compile(r"[0-9a-f]{7,40}")
+
+# The directories where a package keeps its copies of other packages, such as
+# "pip/_vendor/requests/" or "urllib3/packages/six.py".
+VENDOR_DIRECTORY_NAMES = {
+    "_vendor",
+    "vendor",
+    "vendored",
+    "packages",
+    "third_party",
+    "extern",
+}
 
 
 def get_package_purl(purl, version=None):
@@ -85,14 +117,76 @@ def get_versioned_purls(purls, version):
     return versioned_purls
 
 
+def get_equivalent_versions(version):
+    """
+    Return the ``version`` and its form without "v" prefix, such as "1.0.3" for
+    the "v1.0.3" Git tag reported by SCANOSS for the "1.0.3" npm release.
+    """
+    has_v_prefix = bool(version) and version[0] == "v" and version[1:2].isdigit()
+    if has_v_prefix:
+        return [version, version[1:]]
+    return [version]
+
+
 def get_equivalent_purls(origin_match):
     """
     Return the PURLs identifying the ``origin_match`` package: its own PURL and
     the equivalent PURLs reported by the tool, such as the SCANOSS ``purls``.
     """
     version = PackageURL.from_string(origin_match.purl).version
-    tool_purls = origin_match.extra_data.get("purls", [])
-    return get_versioned_purls([origin_match.purl, *tool_purls], version)
+    purls = [origin_match.purl, *origin_match.extra_data.get("purls", [])]
+    return {
+        equivalent_purl
+        for equivalent_version in get_equivalent_versions(version)
+        for equivalent_purl in get_versioned_purls(purls, equivalent_version)
+    }
+
+
+def is_release_version(version):
+    """
+    Return True when the ``version`` is a release, as opposed to a commit hash or
+    a missing version, such as a SCANOSS component without version.
+    """
+    if not version:
+        return False
+
+    # A date version, such as "20240101", is not a commit hash.
+    return version.isdigit() or not COMMIT_HASH_PATTERN.fullmatch(version)
+
+
+def normalize_name(name):
+    """Return the ``name`` of a package or path segment in a comparable form."""
+    return name.lower().replace("-", "_")
+
+
+def get_copy_names(path):
+    """
+    Return the normalized names that can identify the package of the file at
+    ``path``: its file name without extensions, such as "jquery.min" and "jquery"
+    for "jquery.min.js", and the directories just under a vendor directory, such
+    as "requests" for "pip/_vendor/requests/models.py".
+    """
+    file_path = PurePosixPath(path)
+    names = {file_path.stem, file_path.name.partition(".")[0]}
+
+    for directory_name, child_directory_name in pairwise(file_path.parent.parts):
+        if normalize_name(directory_name) in VENDOR_DIRECTORY_NAMES:
+            names.add(child_directory_name)
+
+    return {normalize_name(name) for name in names}
+
+
+def get_release_date(origin_match):
+    """
+    Return the release date of the ``origin_match`` package, None when the tool
+    does not report a valid date.
+    """
+    release_date = origin_match.extra_data.get("release_date")
+    if not release_date:
+        return
+
+    with suppress(ValueError):
+        return date.fromisoformat(release_date)
 
 
 def get_versionless_purl(purl):
@@ -153,6 +247,47 @@ class Origin:
     def versionless_purls(self):
         return {get_versionless_purl(purl) for purl in self.equivalent_purls}
 
+    @property
+    def package_names(self):
+        return {
+            normalize_name(PackageURL.from_string(purl).name)
+            for purl in self.equivalent_purls
+        }
+
+    @property
+    def copy_names(self):
+        """Return the names identifying the copies in the origin package."""
+        return {
+            name
+            for origin_match in self.origin_matches
+            if origin_match.origin_path
+            for name in get_copy_names(origin_match.origin_path)
+        }
+
+    @property
+    def is_release_version(self):
+        return is_release_version(PackageURL.from_string(self.purl).version)
+
+    @property
+    def similarity(self):
+        """Return the highest similarity of the origin matches, None if unknown."""
+        similarities = [
+            origin_match.similarity
+            for origin_match in self.origin_matches
+            if origin_match.similarity is not None
+        ]
+        return max(similarities, default=None)
+
+    @property
+    def release_date(self):
+        """Return the earliest release date of the origin matches, None if unknown."""
+        release_dates = [
+            release_date
+            for origin_match in self.origin_matches
+            if (release_date := get_release_date(origin_match))
+        ]
+        return min(release_dates, default=None)
+
     def is_same_package(self, other_origin):
         return bool(self.equivalent_purls & other_origin.equivalent_purls)
 
@@ -182,11 +317,41 @@ def group_origin_matches(origin_matches):
     return origins
 
 
+def get_matched_line_count(origin_match):
+    """Return the number of resource lines covered by the ``origin_match``."""
+    matched_lines = {
+        line
+        for line_range in origin_match.line_ranges
+        for line in range(line_range["lines"][0], line_range["lines"][1] + 1)
+    }
+    return len(matched_lines)
+
+
+def is_short_snippet_match(origin_match):
+    """Return True when ``origin_match`` is a snippet match too short to count."""
+    is_snippet_match = origin_match.match_type == OriginMatch.MatchType.SNIPPET
+    return (
+        is_snippet_match
+        and get_matched_line_count(origin_match) < MIN_SNIPPET_LINE_COUNT
+    )
+
+
 def iter_resource_origins(origin_matches):
-    """Yield (resource, origins) for the ``origin_matches`` ordered by resource."""
+    """
+    Yield (resource, origins) for the ``origin_matches`` ordered by resource.
+    The short snippet matches are ignored.
+    """
     get_resource = attrgetter("resource")
     for resource, resource_origin_matches in groupby(origin_matches, key=get_resource):
-        yield resource, group_origin_matches(resource_origin_matches)
+        counted_origin_matches = [
+            origin_match
+            for origin_match in resource_origin_matches
+            if not is_short_snippet_match(origin_match)
+        ]
+        if not counted_origin_matches:
+            continue
+
+        yield resource, group_origin_matches(counted_origin_matches)
 
 
 def get_ancestor_paths(path):
@@ -233,37 +398,145 @@ def is_same_package_versions(origins):
     return bool(set.intersection(*(origin.versionless_purls for origin in origins)))
 
 
-def get_rule(origins):
-    """Return the determination rule of the candidate ``origins`` of a resource."""
-    if len(origins) > 1:
-        if is_same_package_versions(origins):
-            return CONFLICTING_VERSIONS_RULE
-        return CONFLICTING_CANDIDATES_RULE
+def get_preferred_version_origin(origins):
+    """
+    Return the origin of the preferred version among the ``origins`` versions of
+    the same package: the clearly most similar version, or else the only release
+    version, as opposed to a commit, or else the clearly most similar release.
+    Return None when no version is preferred.
+    """
+    if most_similar_origin := get_most_similar_origin(origins):
+        return most_similar_origin
 
-    origin = origins[0]
+    release_origins = [origin for origin in origins if origin.is_release_version]
+    if len(release_origins) == 1:
+        return release_origins[0]
+
+    if len(release_origins) > 1:
+        return get_most_similar_origin(release_origins)
+
+
+def get_earliest_release_origin(origins):
+    """
+    Return the origin released before all the other ``origins``, as a copy cannot
+    be older than its origin. Return None when a release date is unknown, or when
+    the earliest date is shared.
+    """
+    if not all(origin.release_date for origin in origins):
+        return
+
+    earliest_origin, next_origin = sorted(origins, key=attrgetter("release_date"))[:2]
+    if earliest_origin.release_date < next_origin.release_date:
+        return earliest_origin
+
+
+def get_most_similar_origin(origins):
+    """
+    Return the origin more similar than all the other ``origins`` by at least
+    ``MIN_SIMILARITY_MARGIN`` points, as the copy resembles it the most. Return None
+    when a similarity is unknown, or when the margin is not reached.
+    """
+    if not all(origin.similarity is not None for origin in origins):
+        return
+
+    most_similar_origin, next_origin = sorted(
+        origins, key=attrgetter("similarity"), reverse=True
+    )[:2]
+    if most_similar_origin.similarity - next_origin.similarity >= MIN_SIMILARITY_MARGIN:
+        return most_similar_origin
+
+
+def is_carrier_origin(origin, other_origins):
+    """
+    Return True when the copy in the ``origin`` package is in a file, or in a
+    directory just under a vendor directory, named after one of the
+    ``other_origins`` packages, such as six.py vendored by pip in
+    "pip/_vendor/six.py": the ``origin`` carries the copy of another package.
+    A copy named after the ``origin`` package itself is its own file, such as
+    "six.py" in another version of six.
+    """
+    carried_names = origin.copy_names - origin.package_names
+    return any(
+        carried_names & other_origin.package_names for other_origin in other_origins
+    )
+
+
+def get_contained_origin(origins):
+    """
+    Return the only origin among the ``origins`` of different packages that does
+    not carry the copy of another, when the others do. Return None otherwise.
+    """
+    non_carrier_origins = []
+    for origin in origins:
+        other_origins = [
+            other_origin for other_origin in origins if other_origin is not origin
+        ]
+        if not is_carrier_origin(origin, other_origins):
+            non_carrier_origins.append(origin)
+
+    # Called with several origins: a single non carrier means the others carry.
+    if len(non_carrier_origins) == 1:
+        return non_carrier_origins[0]
+
+
+def get_conflict_rule_and_candidate(origins):
+    """
+    Return the determination rule of the conflicting candidate ``origins`` of a
+    resource, and the proposed candidate origin, None when there is no proposal.
+    """
+    if not is_same_package_versions(origins):
+        if contained_origin := get_contained_origin(origins):
+            return CONTAINMENT_RULE, contained_origin
+        # The similarity is measured on the copy itself, while a release date only
+        # tells that a package version could have been copied.
+        if most_similar_origin := get_most_similar_origin(origins):
+            return HIGHEST_SIMILARITY_RULE, most_similar_origin
+        if earliest_origin := get_earliest_release_origin(origins):
+            return EARLIEST_RELEASE_RULE, earliest_origin
+        return CONFLICTING_CANDIDATES_RULE, None
+
+    if preferred_origin := get_preferred_version_origin(origins):
+        return PREFERRED_VERSION_RULE, preferred_origin
+
+    return CONFLICTING_VERSIONS_RULE, None
+
+
+def get_single_origin_rule(origin):
+    """Return the determination rule of the only candidate ``origin`` of a resource."""
     if not origin.has_exact_match:
         return NO_EXACT_MATCH_RULE
 
-    # A single tool can miss the other candidates: MatchCode.io stops at the
-    # first package matched, and SCANOSS reports one component per file.
+    # A single tool can miss the other candidates: SCANOSS reports one component
+    # per file, and MatchCode.io only knows the indexed packages.
     if len(origin.tools) < 2:
         return SINGLE_TOOL_RULE
 
     return CONFIRMED_BY_TWO_TOOLS_RULE
 
 
+def get_rule_and_candidate(origins):
+    """
+    Return the determination rule of the candidate ``origins`` of a resource, and
+    the proposed candidate origin, None when there is no proposal.
+    """
+    if len(origins) > 1:
+        return get_conflict_rule_and_candidate(origins)
+
+    origin = origins[0]
+    return get_single_origin_rule(origin), origin
+
+
 def make_origin_determination(project, resource, origins):
     """Return an unsaved OriginDetermination for the ``resource`` ``origins``."""
-    rule = get_rule(origins)
+    rule, candidate_origin = get_rule_and_candidate(origins)
     status = OriginDetermination.Status.NEEDS_REVIEW
     if rule == CONFIRMED_BY_TWO_TOOLS_RULE:
         status = OriginDetermination.Status.AUTO_CONFIRMED
 
-    has_single_candidate = len(origins) == 1
     return OriginDetermination(
         project=project,
         resource=resource,
-        purl=origins[0].purl if has_single_candidate else "",
+        purl=candidate_origin.purl if candidate_origin else "",
         status=status,
         rule=rule,
     )
@@ -382,15 +655,38 @@ def get_origin_packages(project):
     return project.discoveredpackages.filter(datasource_ids=[ORIGIN_DATASOURCE_ID])
 
 
+def get_scan_package(project, purl):
+    """
+    Return the ``project`` package of ``purl`` detected by the codebase scan, or
+    else the same package version with other qualifiers or subpath, such as a
+    Maven package with a "sources" classifier, the one without qualifiers first.
+    Return None when there is none.
+    """
+    purl_data = PackageURL.from_string(purl).to_dict()
+    lookup_purl_data = DiscoveredPackage.extract_purl_data(purl_data)
+    version_purl_data = {
+        field_name: value
+        for field_name, value in lookup_purl_data.items()
+        if field_name not in ["qualifiers", "subpath"]
+    }
+    same_version_packages = project.discoveredpackages.filter(
+        **version_purl_data
+    ).exclude(datasource_ids=[ORIGIN_DATASOURCE_ID])
+
+    if package := same_version_packages.filter(**lookup_purl_data).first():
+        return package
+    return same_version_packages.order_by("qualifiers", "subpath").first()
+
+
 def get_or_create_origin_package(project, purl, resources):
     """
     Return the ``project`` package of ``purl``, such as a package detected by the
     codebase scan, or else create it from the ``resources`` origin matches.
     """
-    purl_data = PackageURL.from_string(purl).to_dict()
-    lookup_purl_data = DiscoveredPackage.extract_purl_data(purl_data)
-    if package := project.discoveredpackages.filter(**lookup_purl_data).first():
+    if package := get_scan_package(project, purl):
         return package
+
+    purl_data = PackageURL.from_string(purl).to_dict()
 
     origin_matches = get_purl_origin_matches(project, purl, resources)
     package_data = {
@@ -417,8 +713,13 @@ def assign_origin_package_resources(package, resources):
         return
 
     package.add_resources(new_resources)
-    new_resource_paths = [resource.path for resource in new_resources]
-    package.update_extra_data({ORIGIN_RESOURCE_PATHS_KEY: new_resource_paths})
+    # Several origin PURLs can lead to the same scan package, such as a PURL with
+    # qualifiers confirmed by a user and the same PURL without qualifiers.
+    origin_resource_paths = [
+        *package.extra_data.get(ORIGIN_RESOURCE_PATHS_KEY, []),
+        *(resource.path for resource in new_resources),
+    ]
+    package.update_extra_data({ORIGIN_RESOURCE_PATHS_KEY: origin_resource_paths})
 
 
 def unassign_scan_package_resources(project):
@@ -541,6 +842,9 @@ def determine_origins(project, batch_size=2000):
                 "purl",
                 "match_type",
                 "tool",
+                "origin_path",
+                "line_ranges",
+                "similarity",
                 "extra_data",
                 "resource__path",
                 "resource__type",

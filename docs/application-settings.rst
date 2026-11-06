@@ -381,6 +381,13 @@ API key using ``MATCHCODEIO_API_KEY``::
 
     MATCHCODEIO_API_KEY=insert_your_api_key_here
 
+.. note::
+    MatchCode.io does not report the path of a matched file in its package.
+    The :ref:`pipeline_find_origins` pipeline fetches this path from PurlDB when
+    :ref:`scancodeio_settings_purldb` is configured. Without it, the
+    ``containment`` rule of the :ref:`origin_determination` cannot apply to the
+    MatchCode.io matches.
+
 .. _scancodeio_settings_scanoss:
 
 SCANOSS

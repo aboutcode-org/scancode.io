@@ -243,6 +243,26 @@ class ScanPipePurlDBTest(TestCase):
         self.assertEqual(expected_data, mock_request_post_call_kwargs["data"])
         self.project1.runs.all().delete()
 
+    @mock.patch("scanpipe.pipes.purldb.request_post")
+    def test_scanpipe_pipes_purldb_collect_response_results(self, mock_request_post):
+        first_page = {"count": 3, "results": [1], "next": "http://purldb/?page=2"}
+        second_page = {"count": 3, "results": [2], "next": "http://purldb/?page=3"}
+        last_page = {"count": 3, "results": [3], "next": None}
+        mock_request_post.side_effect = [second_page, last_page]
+
+        results = purldb.collect_response_results(first_page, data={})
+        self.assertEqual([1, 2, 3], results)
+        self.assertEqual(2, mock_request_post.call_count)
+
+        # Regression test: a failed next page request looped forever.
+        mock_request_post.reset_mock()
+        mock_request_post.side_effect = [second_page, None]
+        results = purldb.collect_response_results(first_page, data={})
+        self.assertEqual([1, 2], results)
+        self.assertEqual(2, mock_request_post.call_count)
+
+        self.assertEqual([], purldb.collect_response_results(None, data={}))
+
     def test_scanpipe_pipes_purldb_create_project_name(self):
         download_url = "https://registry.npmjs.org/asdf/-/asdf-1.0.1.tgz"
         scannable_uri_uuid = "52b2930d-6e85-4b3e-ba3e-17dd9a618650"

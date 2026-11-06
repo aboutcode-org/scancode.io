@@ -150,6 +150,10 @@ Find Origins (addon)
     :ref:`scancodeio_settings_scanoss` to configure access to MatchCode.io and
     SCANOSS in your ScanCode.io instance.
 
+.. seealso::
+    :ref:`origin_determination` for the rules that determine the origin of each
+    file and directory.
+
 .. autoclass:: scanpipe.pipelines.find_origins.FindOrigins()
     :members:
     :member-order: bysource
