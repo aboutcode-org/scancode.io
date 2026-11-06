@@ -150,8 +150,9 @@ their own.
 Limitations
 -----------
 
-- A single tool never confirms an origin automatically: MatchCode.io stops at
-  the first package matched, and SCANOSS reports one component per file.
+- A single tool never confirms an origin automatically, as it can miss other
+  candidates: SCANOSS reports one component per file, and MatchCode.io only
+  knows the indexed packages.
 - MatchCode.io rarely reports a release date, so the ``earliest-release`` rule
   rarely applies to its candidates.
 - The ``earliest-release`` rule compares the release dates of the matched
@@ -164,4 +165,5 @@ Limitations
   lines, is ignored.
 - The ``containment`` rule needs the path of the copy in each candidate.
   SCANOSS only reports the file name, and the path of a MatchCode.io match is
-  fetched from PurlDB, when configured.
+  fetched from PurlDB, when configured. When a PurlDB request fails, the paths
+  are partial and the rule does not apply to the files without a path.

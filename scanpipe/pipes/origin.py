@@ -489,8 +489,8 @@ def get_single_origin_rule(origin):
     if not origin.has_exact_match:
         return NO_EXACT_MATCH_RULE
 
-    # A single tool can miss the other candidates: MatchCode.io stops at the
-    # first package matched, and SCANOSS reports one component per file.
+    # A single tool can miss the other candidates: SCANOSS reports one component
+    # per file, and MatchCode.io only knows the indexed packages.
     if len(origin.tools) < 2:
         return SINGLE_TOOL_RULE
 
