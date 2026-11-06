@@ -149,8 +149,16 @@ RUN apt-get update \
        libguestfs-tools \
        linux-image-amd64 \
        openjdk-21-jre-headless \
+       nix-bin \
+       zstd \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# Single-user Nix for the "scan_nix_package" pipeline: the store is owned by the
+# app user, and the build sandbox is not available in an unprivileged container.
+RUN mkdir --parents /nix/store /nix/var/nix /etc/nix \
+ && chown --recursive $APP_USER:$APP_USER /nix \
+ && printf 'sandbox = false\nbuild-users-group =\n' > /etc/nix/nix.conf
 
 # jadx (runs on the OpenJDK above) decompiles the Android .dex files into Java
 # sources for the "android_d2d" pipeline provided by android-inspector.

@@ -52,6 +52,7 @@ from scanpipe.pipelines import is_pipeline
 from scanpipe.pipelines import scan_single_package
 from scanpipe.pipelines.find_origins import FindOrigins
 from scanpipe.pipelines.find_vulnerabilities import FindVulnerabilities
+from scanpipe.pipelines.scan_nix_package import ScanNixPackage
 from scanpipe.pipes import d2d
 from scanpipe.pipes import flag
 from scanpipe.pipes import matchcode
@@ -184,6 +185,88 @@ class ScanPipePipelinesTest(TestCase):
 
         mock_scanoss_is_configured.return_value = True
         self.assertIsNone(FindOrigins.get_availability())
+
+    @mock.patch("scanpipe.pipes.nix.get_missing_commands")
+    def test_scanpipe_scan_nix_package_get_availability(self, mock_missing_commands):
+        mock_missing_commands.return_value = ["nix-build", "zstd"]
+        self.assertEqual(
+            "Missing commands: nix-build, zstd. Use the full ScanCode.io image.",
+            ScanNixPackage.get_availability(),
+        )
+
+        mock_missing_commands.return_value = []
+        self.assertIsNone(ScanNixPackage.get_availability())
+
+    def test_scanpipe_scan_nix_package_selected_groups(self):
+        project1 = make_project()
+        run = project1.add_pipeline("scan_nix_package")
+        self.assertEqual(["Elf"], run.make_pipeline_instance().selected_groups)
+
+        run = project1.add_pipeline("scan_nix_package", selected_groups=["Python"])
+        pipeline = run.make_pipeline_instance()
+        self.assertEqual(["Python", "Elf"], pipeline.selected_groups)
+        self.assertEqual(["Python"], run.selected_groups)
+
+        steps = ScanNixPackage.get_steps(groups=pipeline.selected_groups)
+        self.assertIn(ScanNixPackage.map_elf, steps)
+
+    @mock.patch("scanpipe.pipes.nix.get_package_metadata")
+    def test_scanpipe_scan_nix_package_get_nix_package_metadata(self, mock_metadata):
+        project1 = make_project()
+        pipeline = project1.add_pipeline("scan_nix_package").make_pipeline_instance()
+        pipeline.purl = PackageURL.from_string(
+            "pkg:nix/nixpkgs/hello@2.12.3?system=x86_64-linux"
+        )
+        pipeline.commit = "55ba7f49ef2962b42cbd126522b7df5f95037679"
+
+        mock_metadata.return_value = {"version": "2.12.3"}
+        pipeline.get_nix_package_metadata()
+        self.assertEqual(0, project1.projectmessages.count())
+
+        mock_metadata.return_value = {"version": "2.12.2"}
+        pipeline.get_nix_package_metadata()
+        message = project1.projectmessages.get()
+        self.assertEqual(
+            "The PURL version 2.12.3 differs from the nixpkgs version 2.12.2 at commit "
+            "55ba7f49ef2962b42cbd126522b7df5f95037679.",
+            message.description,
+        )
+
+    @mock.patch("scanpipe.pipes.nix.fetch_binary")
+    def test_scanpipe_scan_nix_package_fetch_nix_binary_output(self, mock_fetch):
+        project1 = make_project()
+        pipeline = project1.add_pipeline("scan_nix_package").make_pipeline_instance()
+        pipeline.purl = PackageURL.from_string(
+            "pkg:nix/nixpkgs/hello@2.12.3?system=x86_64-linux&output=man"
+        )
+        pipeline.metadata = {
+            "outputs": {"out": "/nix/store/aaa-hello", "man": "/nix/store/bbb-man"}
+        }
+        mock_fetch.return_value = True
+
+        pipeline.fetch_nix_binary()
+        mock_fetch.assert_called_once()
+        self.assertEqual(
+            "/nix/store/bbb-man", mock_fetch.call_args.kwargs["store_path"]
+        )
+        self.assertEqual(
+            project1.codebase_path / "to" / "man",
+            mock_fetch.call_args.kwargs["destination"],
+        )
+        self.assertEqual(0, project1.projectmessages.count())
+
+    def test_scanpipe_scan_nix_package_check_nix_package_license(self):
+        project1 = make_project()
+        pipeline = project1.add_pipeline("scan_nix_package").make_pipeline_instance()
+        pipeline.package = make_package(project1, "pkg:nix/nixpkgs/hello@2.12.3")
+
+        pipeline.check_nix_package_license()
+        self.assertEqual({}, pipeline.package.extra_data)
+        message = project1.projectmessages.get()
+        self.assertEqual(
+            "No declared license in nixpkgs, license check skipped.",
+            message.description,
+        )
 
     def test_scanpipe_pipeline_class_get_summary(self):
         expected = "Do nothing, in 2 steps."
@@ -2483,3 +2566,90 @@ class PipelinesIntegrationTest(TestCase):
         )
         expected_file = self.data / "benchmark" / "alpine-3.22.1-expected-benchmark.txt"
         self.assertEqual(expected_file.read_text(), result_file.read_text())
+
+    @skipIf(sys.platform == "darwin", "Not supported on macOS")
+    @mock.patch("scanpipe.pipes.nix.collect_garbage")
+    @mock.patch("scanpipe.pipes.nix.fetch_binary")
+    @mock.patch("scanpipe.pipes.nix.fetch_source")
+    @mock.patch("scanpipe.pipes.nix.get_package_metadata")
+    @mock.patch("scanpipe.pipes.nix.get_nixpkgs_commit")
+    def test_scanpipe_scan_nix_package_pipeline_integration(
+        self,
+        mock_get_commit,
+        mock_get_metadata,
+        mock_fetch_source,
+        mock_fetch_binary,
+        mock_collect_garbage,
+    ):
+        nix_data = self.data / "nix"
+        commit = "55ba7f49ef2962b42cbd126522b7df5f95037679"
+        mock_get_commit.return_value = commit
+        mock_get_metadata.return_value = {
+            "version": "2.12.3",
+            "description": "Program that produces a familiar, friendly greeting",
+            "homepage": "https://www.gnu.org/software/hello/manual/",
+            "licenses": ["GPL-3.0-or-later"],
+            "outputs": {
+                "out": "/nix/store/5z2yp3ysx8476c8g5w25b0smlgkjvaq3-hello-2.12.3",
+                "man": "/nix/store/00000000000000000000000000000000-hello-man",
+            },
+        }
+
+        def fetch_source(attribute_path, commit, destination):
+            shutil.copytree(nix_data / "source", destination)
+            return "patch failed"
+
+        def fetch_binary(store_path, destination, download_directory):
+            if store_path.endswith("-man"):
+                return False
+            shutil.copytree(nix_data / "binary", destination)
+            return True
+
+        mock_fetch_source.side_effect = fetch_source
+        mock_fetch_binary.side_effect = fetch_binary
+
+        project1 = make_project()
+        project1.add_input_source(
+            download_url="pkg:nix/nixpkgs/hello@2.12.3?system=x86_64-linux"
+        )
+        run = project1.add_pipeline("scan_nix_package")
+        pipeline = run.make_pipeline_instance()
+
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+
+        self.assertEqual("x86_64-linux", mock_get_metadata.call_args.kwargs["system"])
+        mock_collect_garbage.assert_called_once()
+        self.assertIn("Step [map_elf] completed", run.log)
+
+        relation = project1.codebaserelations.get()
+        self.assertEqual("sha1", relation.map_type)
+        self.assertEqual("from/src/hello.c", relation.from_resource.path)
+        self.assertEqual("to/out/doc/hello.c", relation.to_resource.path)
+
+        helper = project1.codebaseresources.get(path="from/src/helper.c")
+        self.assertEqual(flag.NOT_DEPLOYED, helper.status)
+        self.assertEqual("mit", helper.detected_license_expression)
+
+        package = project1.discoveredpackages.get()
+        self.assertEqual("pkg:nix/nixpkgs/hello@2.12.3", package.purl)
+        self.assertEqual("gpl-3.0-plus", package.declared_license_expression)
+        self.assertEqual({"uncovered_licenses": ["mit"]}, package.extra_data)
+        self.assertEqual(
+            project1.codebaseresources.files().count(),
+            package.codebase_resources.count(),
+        )
+
+        warnings = sorted(
+            project1.projectmessages.values_list("description", flat=True)
+        )
+        self.assertEqual(
+            [
+                "Outputs not available in the Nix binary cache: man",
+                "The nixpkgs patches cannot be applied, the upstream source is used "
+                "instead.",
+            ],
+            warnings,
+        )
+        patch_warning = project1.projectmessages.get(details__has_key="error")
+        self.assertEqual({"error": "patch failed"}, patch_warning.details)

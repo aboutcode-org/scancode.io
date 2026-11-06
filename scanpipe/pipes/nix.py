@@ -1,0 +1,540 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# http://nexb.com and https://github.com/aboutcode-org/scancode.io
+# The ScanCode.io software is licensed under the Apache License version 2.0.
+# Data generated with ScanCode.io is provided as-is without warranties.
+# ScanCode is a trademark of nexB Inc.
+#
+# You may not use this software except in compliance with the License.
+# You may obtain a copy of the License at: http://apache.org/licenses/LICENSE-2.0
+# Unless required by applicable law or agreed to in writing, software distributed
+# under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+# CONDITIONS OF ANY KIND, either express or implied. See the License for the
+# specific language governing permissions and limitations under the License.
+#
+# Data Generated with ScanCode.io is provided on an "AS IS" BASIS, WITHOUT WARRANTIES
+# OR CONDITIONS OF ANY KIND, either express or implied. No content created from
+# ScanCode.io should be considered or used as legal advice. Consult an Attorney
+# for any legal advice.
+#
+# ScanCode.io is a free software code scanning tool from nexB Inc. and others.
+# Visit https://github.com/aboutcode-org/scancode.io for support and download.
+
+import json
+import os
+import re
+import shutil
+import stat
+import subprocess
+from itertools import islice
+from pathlib import Path
+from urllib.parse import urlencode
+
+from license_expression import Licensing
+from packageurl import PackageURL
+
+from scanpipe import pipes
+from scanpipe.pipes import fetch
+from scanpipe.pipes import flag
+from scanpipe.pipes import scancode
+from scanpipe.pipes.resolve import convert_spdx_expression
+from scanpipe.settings import scanpipe_settings
+
+REQUIRED_COMMANDS = ["nix-build", "nix-instantiate", "nix-store", "xz", "zstd"]
+NIX_CACHE_URL = "https://cache.nixos.org"
+DEVBOX_SEARCH_URL = "https://search.devbox.sh/v2/pkg"
+NIXPKGS_API_URL = "https://api.github.com/repos/NixOS/nixpkgs"
+
+NIX_EVAL_TIMEOUT = 600
+NIX_BUILD_TIMEOUT = 1800
+
+# The PURL values end up in Nix expressions arguments, URLs, and file paths:
+# only a strict set of characters is accepted.
+ATTRIBUTE_PATH_REGEX = re.compile(r"[a-zA-Z0-9_][a-zA-Z0-9_\-+.]*")
+COMMIT_REGEX = re.compile(r"[0-9a-f]{40}")
+SYSTEM_REGEX = re.compile(r"[a-z0-9_]+-[a-z0-9_]+")
+OUTPUT_REGEX = re.compile(r"[a-z][a-z0-9]*")
+
+DECOMPRESS_COMMANDS = {
+    "none": ["cat"],
+    "xz": ["xz", "--decompress", "--stdout"],
+    "zstd": ["zstd", "--decompress", "--stdout"],
+}
+
+# Licenses detected in the source that are not useful to compare with the
+# declared license.
+IGNORED_LICENSE_KEYS = {
+    "free-unknown",
+    "unknown",
+    "unknown-license-reference",
+    "unknown-spdx",
+}
+
+# The user input is passed as `--argstr` values, never interpolated in the
+# expression. `fetchTarball` downloads nixpkgs at the given commit, no local
+# clone is required.
+NIXPKGS_EXPRESSION = """
+{ commit, attributePath, system ? builtins.currentSystem }:
+let
+  nixpkgs = fetchTarball "https://github.com/NixOS/nixpkgs/archive/${commit}.tar.gz";
+  pkgs = import nixpkgs {
+    inherit system;
+    config = {
+      allowUnfree = true;
+      allowBroken = true;
+      allowUnsupportedSystem = true;
+      allowInsecurePredicate = _: true;
+    };
+  };
+  package = pkgs.lib.getAttrFromPath (pkgs.lib.splitString "." attributePath) pkgs;
+in
+"""
+
+METADATA_EXPRESSION = (
+    NIXPKGS_EXPRESSION
+    + """
+let
+  meta = package.meta or { };
+  getLicenseId = license:
+    if builtins.isAttrs license then license.spdxId or null
+    else if builtins.isString license then license
+    else null;
+  licenseIds = map getLicenseId (pkgs.lib.toList (meta.license or [ ]));
+  getOutputPath = output: { name = output; value = package.${output}.outPath; };
+in
+{
+  version = package.version or "";
+  description = meta.description or "";
+  homepage = meta.homepage or "";
+  licenses = builtins.filter (licenseId: licenseId != null) licenseIds;
+  outputs = builtins.listToAttrs (map getOutputPath (package.outputs or [ "out" ]));
+}
+"""
+)
+
+PATCHED_SOURCE_EXPRESSION = (
+    NIXPKGS_EXPRESSION
+    + """
+pkgs.applyPatches {
+  name = "source";
+  src = package.src;
+  patches = package.patches or [ ];
+  prePatch = package.prePatch or "";
+  postPatch = package.postPatch or "";
+}
+"""
+)
+
+UPSTREAM_SOURCE_EXPRESSION = NIXPKGS_EXPRESSION + "package.src"
+
+
+class NixCommandError(Exception):
+    pass
+
+
+def get_missing_commands():
+    """Return the list of commands required by the Nix pipeline not installed."""
+    return [command for command in REQUIRED_COMMANDS if not shutil.which(command)]
+
+
+def get_nix_purl(project):
+    """Return the Nix PURL provided as the unique input of the ``project``."""
+    input_sources = project.inputsources.all()
+    if len(input_sources) != 1:
+        raise ValueError("Only 1 Nix PURL is accepted as input.")
+
+    purl = PackageURL.from_string(input_sources[0].download_url)
+    validate_nix_purl(purl)
+    return purl
+
+
+def validate_nix_purl(purl):
+    """Raise a ValueError if the ``purl`` is not a supported Nix PURL."""
+    if purl.type != "nix" or purl.namespace != "nixpkgs":
+        raise ValueError("Only pkg:nix/nixpkgs/ PURLs are supported.")
+
+    if not ATTRIBUTE_PATH_REGEX.fullmatch(purl.name):
+        raise ValueError(f"Invalid Nix package name: {purl.name!r}")
+
+    qualifiers = purl.qualifiers or {}
+    system = qualifiers.get("system", "")
+    if not SYSTEM_REGEX.fullmatch(system):
+        raise ValueError(
+            "A valid 'system' qualifier is required, for example: system=x86_64-linux"
+        )
+
+    commit = qualifiers.get("commit", "")
+    if commit and not COMMIT_REGEX.fullmatch(commit):
+        raise ValueError(f"Invalid commit: {commit!r}, a 40 characters SHA-1.")
+
+    if not commit and not purl.version:
+        raise ValueError("A version or a 'commit' qualifier is required.")
+
+    output = qualifiers.get("output", "")
+    if output and not OUTPUT_REGEX.fullmatch(output):
+        raise ValueError(f"Invalid output: {output!r}")
+
+
+def get_nixpkgs_commit(purl):
+    """
+    Return the nixpkgs commit of the ``purl``, from its qualifiers or from the
+    package releases listed by search.devbox.sh, after checking that the commit
+    belongs to the official NixOS/nixpkgs history.
+    """
+    commit = purl.qualifiers.get("commit") or find_release_commit(purl)
+
+    if not COMMIT_REGEX.fullmatch(commit):
+        raise ValueError(f"Invalid commit: {commit!r}")
+
+    if not is_official_nixpkgs_commit(commit):
+        raise ValueError(
+            f"The commit {commit} is not part of the official NixOS/nixpkgs "
+            "master or release-* branches."
+        )
+
+    return commit
+
+
+def find_release_commit(purl):
+    """Return the nixpkgs commit of the ``purl`` version and system on devbox."""
+    query = urlencode({"name": purl.name})
+    session = fetch.get_request_session(DEVBOX_SEARCH_URL)
+    response = session.get(
+        f"{DEVBOX_SEARCH_URL}?{query}", timeout=fetch.HTTP_REQUEST_TIMEOUT
+    )
+    response.raise_for_status()
+
+    system = purl.qualifiers["system"]
+    for release in response.json().get("releases") or []:
+        if release.get("version") != purl.version:
+            continue
+        for platform in release.get("platforms") or []:
+            if platform.get("system") == system:
+                return platform.get("commit_hash", "")
+
+    raise ValueError(
+        f"No nixpkgs commit found for {purl.name}@{purl.version} on {system}. "
+        "Provide the nixpkgs commit with the 'commit' qualifier."
+    )
+
+
+def is_official_nixpkgs_commit(commit):
+    """
+    Return True if the ``commit`` is reachable from the master branch, or from
+    a release-* branch for backports.
+    A fork commit can be downloaded through the official repository URL, so the
+    commit is checked against the official branches.
+    """
+    session = fetch.get_request_session(NIXPKGS_API_URL)
+    if is_commit_on_branch(session, commit, "master"):
+        return True
+
+    release_branches = get_release_branches(session)
+    return any(
+        is_commit_on_branch(session, commit, branch) for branch in release_branches
+    )
+
+
+def is_commit_on_branch(session, commit, branch):
+    """Return True if the ``commit`` is an ancestor of, or equal to, the ``branch``."""
+    compare_url = f"{NIXPKGS_API_URL}/compare/{commit}...{branch}"
+    response = session.get(compare_url, timeout=fetch.HTTP_REQUEST_TIMEOUT)
+    if response.status_code == 404:
+        return False
+
+    response.raise_for_status()
+    # "ahead" means the branch has commits after the commit.
+    return response.json().get("status") in ("ahead", "identical")
+
+
+def get_release_branches(session):
+    """Return the nixpkgs release-* branch names, most recent first."""
+    url = f"{NIXPKGS_API_URL}/git/matching-refs/heads/release-?per_page=100"
+    branches = []
+    while url:
+        response = session.get(url, timeout=fetch.HTTP_REQUEST_TIMEOUT)
+        response.raise_for_status()
+        branches.extend(
+            ref["ref"].removeprefix("refs/heads/") for ref in response.json()
+        )
+        url = response.links.get("next", {}).get("url")
+
+    return sorted(branches, reverse=True)
+
+
+def run_nix_command(arguments, timeout):
+    """Run a Nix command and return its standard output."""
+    completed_process = subprocess.run(  # noqa: S603
+        arguments,
+        capture_output=True,
+        text=True,
+        timeout=timeout,
+    )
+
+    if completed_process.returncode:
+        error_lines = completed_process.stderr.strip().splitlines()
+        raise NixCommandError("\n".join(error_lines[-20:]))
+
+    return completed_process.stdout
+
+
+def get_nix_expression_arguments(attribute_path, commit, system=None):
+    """Return the ``--argstr`` arguments of the nixpkgs expressions."""
+    arguments = [
+        "--argstr",
+        "attributePath",
+        attribute_path,
+        "--argstr",
+        "commit",
+        commit,
+    ]
+    if system:
+        arguments.extend(["--argstr", "system", system])
+    return arguments
+
+
+def get_package_metadata(attribute_path, commit, system):
+    """
+    Return the version, description, homepage, licenses SPDX ids, and the store
+    path of each output of the package for the target ``system``.
+    """
+    arguments = [
+        "nix-instantiate",
+        "--eval",
+        "--strict",
+        "--json",
+        *get_nix_expression_arguments(attribute_path, commit, system),
+        "--expr",
+        METADATA_EXPRESSION,
+    ]
+    output = run_nix_command(arguments, timeout=NIX_EVAL_TIMEOUT)
+    return json.loads(output)
+
+
+def build_source(expression, attribute_path, commit):
+    """Build the source ``expression`` and return its store path."""
+    arguments = [
+        "nix-build",
+        "--no-out-link",
+        *get_nix_expression_arguments(attribute_path, commit),
+        "--expr",
+        expression,
+    ]
+    output = run_nix_command(arguments, timeout=NIX_BUILD_TIMEOUT)
+    return output.strip().splitlines()[-1]
+
+
+def fetch_source(attribute_path, commit, destination):
+    """
+    Copy the package source, with the nixpkgs patches applied, to ``destination``.
+    Fall back to the upstream source when the patches cannot be applied, and
+    return the patches error, or an empty string when the patches were applied.
+
+    The source is evaluated for the system running ScanCode.io: the patches
+    are the same for most systems.
+    """
+    patch_error = ""
+    try:
+        store_path = build_source(PATCHED_SOURCE_EXPRESSION, attribute_path, commit)
+    except NixCommandError as error:
+        patch_error = str(error)
+        store_path = build_source(UPSTREAM_SOURCE_EXPRESSION, attribute_path, commit)
+
+    copy_store_path(store_path, destination)
+    return patch_error
+
+
+def copy_store_path(store_path, destination):
+    """
+    Copy the ``store_path`` content to ``destination``. A store path can be a
+    directory or a single file, such as a source archive.
+    """
+    store_path = Path(store_path)
+    destination.mkdir(parents=True, exist_ok=True)
+
+    if store_path.is_dir():
+        shutil.copytree(store_path, destination, symlinks=True, dirs_exist_ok=True)
+    else:
+        archive_name = store_path.name.split("-", 1)[-1]
+        shutil.copyfile(store_path, destination / archive_name)
+
+    make_writable(destination)
+
+
+def make_writable(directory):
+    """
+    Add the write permission on all the ``directory`` content, as the Nix store
+    files are read-only and the project work directory must remain deletable.
+    """
+    for path in [directory, *directory.rglob("*")]:
+        if path.is_symlink():
+            continue
+        path.chmod(path.stat().st_mode | stat.S_IWUSR)
+
+
+def get_narinfo(store_path):
+    """
+    Return the narinfo entries of the ``store_path`` from the Nix binary cache,
+    or an empty dict when the store path is not available in the cache.
+    """
+    store_hash = Path(store_path).name.split("-", 1)[0]
+    narinfo_url = f"{NIX_CACHE_URL}/{store_hash}.narinfo"
+    session = fetch.get_request_session(narinfo_url)
+    response = session.get(narinfo_url, timeout=fetch.HTTP_REQUEST_TIMEOUT)
+    if response.status_code == 404:
+        return {}
+
+    response.raise_for_status()
+    entries = [line.split(": ", 1) for line in response.text.splitlines()]
+    return {entry[0]: entry[1] for entry in entries if len(entry) == 2}
+
+
+def fetch_binary(store_path, destination, download_directory):
+    """
+    Download the ``store_path`` from the Nix binary cache and extract it to
+    ``destination``. Return False when the store path is not in the cache.
+    """
+    narinfo = get_narinfo(store_path)
+    if not narinfo:
+        return False
+
+    downloaded = fetch.fetch_http(
+        f"{NIX_CACHE_URL}/{narinfo['URL']}", to=download_directory
+    )
+    restore_nar(downloaded.path, narinfo.get("Compression", "none"), destination)
+    downloaded.path.unlink()
+    return True
+
+
+def restore_nar(nar_location, compression, destination):
+    """Extract the ``compression`` compressed NAR archive to ``destination``."""
+    decompress_command = DECOMPRESS_COMMANDS.get(compression)
+    if not decompress_command:
+        raise ValueError(f"Unsupported NAR compression: {compression}")
+
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    with open(nar_location, "rb") as nar_file:
+        decompress_process = subprocess.Popen(  # noqa: S603
+            decompress_command, stdin=nar_file, stdout=subprocess.PIPE
+        )
+        restore_process = subprocess.run(  # noqa: S603
+            ["nix-store", "--restore", str(destination)],  # noqa: S607
+            stdin=decompress_process.stdout,
+            capture_output=True,
+            text=True,
+            timeout=NIX_BUILD_TIMEOUT,
+        )
+        decompress_process.stdout.close()
+        decompress_process.wait()
+
+    if decompress_process.returncode or restore_process.returncode:
+        raise NixCommandError(
+            f"Cannot extract {nar_location}: {restore_process.stderr}"
+        )
+
+    make_writable(destination)
+
+
+def get_nix_cache_directory():
+    """Return the Nix user cache directory, where nixpkgs tarballs are kept."""
+    cache_home = os.environ.get("XDG_CACHE_HOME") or Path.home() / ".cache"
+    return Path(cache_home) / "nix"
+
+
+def collect_garbage():
+    """
+    Delete the Nix store paths fetched and built during the pipeline run, and
+    the nixpkgs tarballs cache, so the disk usage does not grow across scans.
+    """
+    run_nix_command(["nix-store", "--gc"], timeout=NIX_BUILD_TIMEOUT)
+    shutil.rmtree(get_nix_cache_directory(), ignore_errors=True)
+
+
+def create_nix_package(project, purl, metadata):
+    """Create the Nix package of the ``project`` from the nixpkgs ``metadata``."""
+    declared_license_spdx = " AND ".join(metadata["licenses"])
+    declared_license = ""
+    if declared_license_spdx:
+        declared_license = convert_spdx_expression(declared_license_spdx)
+
+    homepage = metadata["homepage"]
+    if isinstance(homepage, list):
+        homepage = homepage[0] if homepage else ""
+
+    package_data = {
+        "type": purl.type,
+        "namespace": purl.namespace,
+        "name": purl.name,
+        "version": purl.version or metadata["version"],
+        "declared_license_expression": declared_license,
+        "declared_license_expression_spdx": declared_license_spdx,
+        "homepage_url": homepage,
+        "description": metadata["description"],
+        "datasource_id": "nixpkgs_meta",
+    }
+    return pipes.update_or_create_package(project, package_data)
+
+
+def add_resources_to_package(package, resource_qs, batch_size=2000):
+    """Assign the ``resource_qs`` resources to the ``package``, by batches."""
+    through_model = package.codebase_resources.through
+    resource_ids = resource_qs.values_list("id", flat=True).iterator()
+
+    while batch := list(islice(resource_ids, batch_size)):
+        through_model.objects.bulk_create(
+            [
+                through_model(
+                    discoveredpackage_id=package.pk,
+                    codebaseresource_id=resource_id,
+                )
+                for resource_id in batch
+            ],
+            ignore_conflicts=True,
+        )
+
+
+def save_scan_results_keeping_status(codebase_resource, scan_results, scan_errors):
+    """Save the resource scan results without changing its status."""
+    if scan_errors:
+        codebase_resource.add_errors(scan_errors)
+    codebase_resource.set_scan_results(scan_results)
+
+
+def scan_undeployed_from_files(project, progress_logger=None):
+    """
+    Scan the ``from/`` files not deployed in the binary, keeping their
+    ``not-deployed`` status. The license check needs the whole source, including
+    the legal files that are usually not deployed.
+    """
+    resource_qs = project.codebaseresources.from_codebase().files()
+    file_size_limit = (
+        project.get_scan_max_file_size or scanpipe_settings.SCAN_MAX_FILE_SIZE
+    )
+
+    scancode.scan_resources(
+        resource_qs=resource_qs.filter(status=flag.NOT_DEPLOYED),
+        scan_func=scancode.scan_file,
+        save_func=save_scan_results_keeping_status,
+        progress_logger=progress_logger,
+        file_size_limit=file_size_limit,
+    )
+
+
+def get_uncovered_license_keys(project, declared_license_expression):
+    """
+    Return the sorted license keys detected in the ``from/`` source that are not
+    part of the ``declared_license_expression``.
+    """
+    licensing = Licensing()
+    declared_keys = set(licensing.license_keys(declared_license_expression))
+
+    from_resources = project.codebaseresources.from_codebase().has_license_expression()
+    detected_expressions = from_resources.values_list(
+        "detected_license_expression", flat=True
+    ).distinct()
+
+    detected_keys = set()
+    for detected_expression in detected_expressions.iterator():
+        detected_keys.update(licensing.license_keys(detected_expression))
+
+    return sorted(detected_keys - declared_keys - IGNORED_LICENSE_KEYS)
