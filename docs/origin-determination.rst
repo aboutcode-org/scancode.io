@@ -154,6 +154,14 @@ Limitations
   the first package matched, and SCANOSS reports one component per file.
 - MatchCode.io rarely reports a release date, so the ``earliest-release`` rule
   rarely applies to its candidates.
+- The ``earliest-release`` rule compares the release dates of the matched
+  versions, not of the first version containing the file. With an incomplete
+  index, the package that vendors a copy can be dated before the indexed
+  version of the original package.
+- The 20 lines threshold is calibrated on the MIT license header. A longer
+  header, such as the BSD-3-Clause one, still counts as a snippet match.
+- A small file copied with changes, matched as a snippet on fewer than 20
+  lines, is ignored.
 - The ``containment`` rule needs the path of the copy in each candidate.
   SCANOSS only reports the file name, and the path of a MatchCode.io match is
   fetched from PurlDB, when configured.
