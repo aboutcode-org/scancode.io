@@ -2567,6 +2567,7 @@ class PipelinesIntegrationTest(TestCase):
         expected_file = self.data / "benchmark" / "alpine-3.22.1-expected-benchmark.txt"
         self.assertEqual(expected_file.read_text(), result_file.read_text())
 
+    @skipIf(sys.platform == "darwin", "Not supported on macOS")
     @mock.patch("scanpipe.pipes.nix.collect_garbage")
     @mock.patch("scanpipe.pipes.nix.fetch_binary")
     @mock.patch("scanpipe.pipes.nix.fetch_source")
