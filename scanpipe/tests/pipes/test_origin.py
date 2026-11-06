@@ -610,7 +610,7 @@ class ScanPipeOriginPipesTest(TestCase):
         commit_origin = make_origin(
             "pkg:github/benhoyt/inih@498f34b", tool="scanoss", similarity=94
         )
-        r61_origin = make_origin("pkg:github/benhoyt/inih@r61", similarity=80)
+        r61_origin = make_origin("pkg:github/benhoyt/inih@r61", similarity=60)
         other_commit_origin = make_origin(
             "pkg:github/benhoyt/inih@577ae2d", tool="scanoss", similarity=60
         )
@@ -621,20 +621,20 @@ class ScanPipeOriginPipesTest(TestCase):
         )
         self.assertEqual(r62_origin, preferred_origin)
 
-        # Between releases, the most similar.
+        # Between releases, the clearly most similar.
         preferred_origin = origin.get_preferred_version_origin(
             [r61_origin, r62_origin, commit_origin]
         )
         self.assertEqual(r62_origin, preferred_origin)
 
-        # Between commits only, the most similar.
+        # Between commits only, the clearly most similar.
         preferred_origin = origin.get_preferred_version_origin(
             [other_commit_origin, commit_origin]
         )
         self.assertEqual(commit_origin, preferred_origin)
 
-        # No preference on equal or unknown similarities.
-        r60_origin = make_origin("pkg:github/benhoyt/inih@r60", similarity=90)
+        # No preference within the margin, or on unknown similarities.
+        r60_origin = make_origin("pkg:github/benhoyt/inih@r60", similarity=80)
         self.assertIsNone(origin.get_preferred_version_origin([r60_origin, r62_origin]))
         six_17_origin = make_origin("pkg:pypi/six@1.17.0")
         six_16_origin = make_origin("pkg:pypi/six@1.16.0")

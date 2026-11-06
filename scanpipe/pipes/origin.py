@@ -374,17 +374,13 @@ def get_preferred_version_origin(origins):
     """
     Return the origin of the preferred version among the ``origins`` versions of
     the same package: the only release version, as opposed to a commit, or else
-    the version with the highest similarity. Return None when no version is
-    preferred.
+    the clearly most similar version. Return None when no version is preferred.
     """
     release_origins = [origin for origin in origins if not origin.is_commit_version]
     if len(release_origins) == 1:
         return release_origins[0]
 
-    candidate_origins = release_origins or origins
-    highest_similarity = max(origin.similarity for origin in candidate_origins)
-    if highest_similarity:
-        return get_only_origin_with(candidate_origins, "similarity", highest_similarity)
+    return get_most_similar_origin(release_origins or origins)
 
 
 def get_earliest_release_origin(origins):
