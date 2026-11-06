@@ -468,6 +468,34 @@ class ScanPipeMavenPipesTest(TestCase):
         self.assertEqual(len(roots), 1)
         mock_dl.assert_not_called()
 
+    @mock.patch("scanpipe.pipes.maven.purl2url.get_download_url")
+    @mock.patch("scanpipe.pipes.maven.download_pom_file")
+    def test_scanpipe_maven_walk_parent_poms_depth_limit(
+        self, mock_download_pom_file, mock_get_download_url
+    ):
+        main_pom = self._add_pom_resource(
+            self.project, "to/main/pom.xml", "parent-pom.xml"
+        )
+        looping_parent = self._add_pom_resource(
+            self.project, "tmp/looping-parent.xml", "parent-pom.xml"
+        )
+        parent_pom_url = (
+            "https://repo1.maven.org/maven2/org/parent/parent/1.0/parent-1.0.pom"
+        )
+        mock_get_download_url.return_value = parent_pom_url
+        mock_download_pom_file.return_value = {
+            "pom_file_path": str(looping_parent.location),
+            "output_path": f"{looping_parent.location}-output.json",
+            "pom_url": parent_pom_url,
+        }
+
+        roots = list(maven._walk_parent_poms(main_pom))
+
+        self.assertEqual(len(roots), maven.MAX_PARENT_CHAIN_DEPTH)
+        self.assertEqual(
+            mock_download_pom_file.call_count, maven.MAX_PARENT_CHAIN_DEPTH
+        )
+
     @mock.patch("scanpipe.pipes.maven.download_pom_file")
     def test_scanpipe_maven_resolve_shading_properties_same_pom(
         self, mock_download_pom_file
