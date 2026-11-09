@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<project>
-  <properties>
-    <shading.prefix>org.shaded</shading.prefix>
-  </properties>
-</project>
