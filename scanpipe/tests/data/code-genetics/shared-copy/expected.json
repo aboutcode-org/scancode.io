@@ -1,0 +1,15 @@
+{
+  "description": "Unmodified six.py, identical in six and in pip, which vendors it. The origin is six, not pip.",
+  "resources": [
+    {
+      "path": "third_party/six.py",
+      "match_type": "exact",
+      "origin": {
+        "purl": "pkg:pypi/six@1.16.0",
+        "download_url": "https://files.pythonhosted.org/packages/source/s/six/six-1.16.0.tar.gz",
+        "path": "six-1.16.0/six.py",
+        "sha1": "d2b72496fefbd26201ecc94881e42bb0ac6e3374"
+      }
+    }
+  ]
+}

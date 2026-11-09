@@ -1,0 +1,51 @@
+{
+  "headers": [
+    {
+      "tool_name": "scanpipe",
+      "tool_version": "38.1.0"
+    }
+  ],
+  "packages": [
+    {
+      "purl": "pkg:pypi/pip@24.0",
+      "type": "pypi",
+      "namespace": "",
+      "name": "pip",
+      "version": "24.0",
+      "package_uid": "pkg:pypi/pip@24.0?uuid=9b42306f-61c6-48e3-81a3-966eba6a24c3",
+      "release_date": "2024-02-03",
+      "declared_license_expression": "",
+      "download_url": "https://files.pythonhosted.org/packages/source/p/pip/pip-24.0.tar.gz"
+    },
+    {
+      "purl": "pkg:pypi/six@1.16.0",
+      "type": "pypi",
+      "namespace": "",
+      "name": "six",
+      "version": "1.16.0",
+      "package_uid": "pkg:pypi/six@1.16.0?uuid=c23c7e08-8906-4468-973b-333a7ab91cf7",
+      "release_date": "2021-05-05",
+      "declared_license_expression": "",
+      "download_url": "https://files.pythonhosted.org/packages/source/s/six/six-1.16.0.tar.gz"
+    }
+  ],
+  "files": [
+    {
+      "path": "third_party",
+      "type": "directory",
+      "status": "",
+      "for_packages": [],
+      "extra_data": {}
+    },
+    {
+      "path": "third_party/six.py",
+      "type": "file",
+      "status": "matched-to-purldb-resource",
+      "for_packages": [
+        "pkg:pypi/pip@24.0?uuid=9b42306f-61c6-48e3-81a3-966eba6a24c3",
+        "pkg:pypi/six@1.16.0?uuid=c23c7e08-8906-4468-973b-333a7ab91cf7"
+      ],
+      "extra_data": {}
+    }
+  ]
+}

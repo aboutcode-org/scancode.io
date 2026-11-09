@@ -22,7 +22,9 @@
 
 import json
 import shutil
+from datetime import date
 from pathlib import Path
+from unittest import mock
 
 from django.test import TestCase
 
@@ -31,6 +33,7 @@ from scanpipe.models import OriginMatch
 from scanpipe.pipes import collect_and_create_codebase_resources
 from scanpipe.pipes import matchcode
 from scanpipe.pipes import origin
+from scanpipe.pipes import purldb
 from scanpipe.pipes import scanoss
 from scanpipe.tests import make_package
 from scanpipe.tests import make_project
@@ -40,15 +43,40 @@ from scanpipe.tests import make_resource_file
 SCANOSS_SIX_PURLS = ["pkg:github/benjaminp/six", "pkg:pypi/six", "pkg:conda/six"]
 
 
-def make_unsaved_origin_match(purl, tool="matchcode", match_type="file", purls=None):
+def make_unsaved_origin_match(
+    purl,
+    tool="matchcode",
+    match_type="file",
+    purls=None,
+    similarity=None,
+    origin_path="",
+    release_date="",
+):
     extra_data = {"purls": purls} if purls else {}
+    if release_date:
+        extra_data["release_date"] = release_date
     return OriginMatch(
-        purl=purl, tool=tool, match_type=match_type, extra_data=extra_data
+        purl=purl,
+        tool=tool,
+        match_type=match_type,
+        origin_path=origin_path,
+        similarity=similarity,
+        extra_data=extra_data,
     )
 
 
-def make_origin(purl, tool="matchcode", match_type="file", purls=None):
-    origin_match = make_unsaved_origin_match(purl, tool, match_type, purls)
+def make_origin(
+    purl,
+    tool="matchcode",
+    match_type="file",
+    purls=None,
+    similarity=None,
+    origin_path="",
+    release_date="",
+):
+    origin_match = make_unsaved_origin_match(
+        purl, tool, match_type, purls, similarity, origin_path, release_date
+    )
     return origin.Origin.from_origin_match(origin_match)
 
 
@@ -73,7 +101,13 @@ class ScanPipeOriginPipesTest(TestCase):
         self.project1 = make_project()
 
     def make_origin_match(
-        self, resource, purl, tool="matchcode", match_type="file", extra_data=None
+        self,
+        resource,
+        purl,
+        tool="matchcode",
+        match_type="file",
+        extra_data=None,
+        line_ranges=None,
     ):
         return OriginMatch.objects.create(
             project=self.project1,
@@ -82,7 +116,16 @@ class ScanPipeOriginPipesTest(TestCase):
             match_type=match_type,
             tool=tool,
             extra_data=extra_data or {},
+            line_ranges=line_ranges or [],
         )
+
+    @staticmethod
+    def get_purldb_resources(case_path):
+        """Return the PurlDB resources of the files matched by MatchCode.io."""
+        resources_location = case_path / "purldb-resources.json"
+        if not resources_location.exists():
+            return []
+        return json.loads(resources_location.read_text())
 
     def load_data_set_case(self, case_name, tools=None):
         """
@@ -100,7 +143,14 @@ class ScanPipeOriginPipesTest(TestCase):
         if matchcode.TOOL_NAME in tools:
             results_location = case_path / "matchcode-results.json"
             match_results = json.loads(results_location.read_text())
-            matchcode.load_matchcode_results(project, match_results)
+            purldb_resources = self.get_purldb_resources(case_path)
+            with (
+                mock.patch.object(purldb, "is_configured", return_value=True),
+                mock.patch.object(
+                    purldb, "match_resources", return_value=purldb_resources
+                ),
+            ):
+                matchcode.load_matchcode_results(project, match_results)
 
         if scanoss.TOOL_NAME in tools:
             results_location = case_path / "scanoss-results.json"
@@ -150,6 +200,70 @@ class ScanPipeOriginPipesTest(TestCase):
         expected = {"pkg:pypi/six@1.17.0"}
         self.assertEqual(expected, origin.get_equivalent_purls(origin_match))
 
+        origin_match = make_unsaved_origin_match(
+            "pkg:github/component/escape-html@v1.0.3",
+            tool="scanoss",
+            purls=["pkg:npm/escape-html"],
+        )
+        expected = {
+            "pkg:github/component/escape-html@v1.0.3",
+            "pkg:github/component/escape-html@1.0.3",
+            "pkg:npm/escape-html@v1.0.3",
+            "pkg:npm/escape-html@1.0.3",
+        }
+        self.assertEqual(expected, origin.get_equivalent_purls(origin_match))
+
+    def test_scanpipe_pipes_origin_get_equivalent_versions(self):
+        self.assertEqual(["v1.0.3", "1.0.3"], origin.get_equivalent_versions("v1.0.3"))
+        self.assertEqual(["1.0.3"], origin.get_equivalent_versions("1.0.3"))
+        self.assertEqual(["vanilla"], origin.get_equivalent_versions("vanilla"))
+        self.assertEqual([None], origin.get_equivalent_versions(None))
+
+    def test_scanpipe_pipes_origin_is_release_version(self):
+        self.assertFalse(origin.is_release_version("498f34b"))
+        self.assertFalse(
+            origin.is_release_version("498f34b4c6b5d8a0e3f1a2b7c9d0e1f2a3b4c5d6")
+        )
+        self.assertFalse(origin.is_release_version(None))
+        self.assertFalse(origin.is_release_version(""))
+        self.assertTrue(origin.is_release_version("r62"))
+        self.assertTrue(origin.is_release_version("1.17.0"))
+        self.assertTrue(origin.is_release_version("v1.0.3"))
+        self.assertTrue(origin.is_release_version("20240101"))
+        self.assertTrue(origin.is_release_version("abc12"))
+
+    def test_scanpipe_pipes_origin_normalize_name(self):
+        self.assertEqual(
+            "typing_extensions", origin.normalize_name("Typing-Extensions")
+        )
+
+    def test_scanpipe_pipes_origin_get_copy_names(self):
+        path = "pip-24.0.tar.gz-extract/pip-24.0/src/pip/_vendor/six.py"
+        self.assertEqual({"six"}, origin.get_copy_names(path))
+        self.assertEqual({"six"}, origin.get_copy_names("six.py"))
+
+        path = "pip-24.0/src/pip/_vendor/requests/models.py"
+        self.assertEqual({"requests", "models"}, origin.get_copy_names(path))
+
+        # The other directories are not named after a package, such as "utils".
+        path = "foo-1.0/src/utils/index.js"
+        self.assertEqual({"index"}, origin.get_copy_names(path))
+
+        expected = {"jquery.min", "jquery"}
+        self.assertEqual(expected, origin.get_copy_names("vendor/jquery.min.js"))
+        expected = {"socket.io", "socket"}
+        self.assertEqual(expected, origin.get_copy_names("socket.io.js"))
+
+    def test_scanpipe_pipes_origin_get_release_date(self):
+        origin_match = make_unsaved_origin_match("pkg:pypi/six@1.16.0")
+        self.assertIsNone(origin.get_release_date(origin_match))
+
+        origin_match.extra_data["release_date"] = "2021-05-05"
+        self.assertEqual(date(2021, 5, 5), origin.get_release_date(origin_match))
+
+        origin_match.extra_data["release_date"] = "May 5, 2021"
+        self.assertIsNone(origin.get_release_date(origin_match))
+
     def test_scanpipe_pipes_origin_get_versionless_purl(self):
         purl = "pkg:pypi/six@1.17.0?file_name=six-1.17.0.tar.gz#six.py"
         self.assertEqual("pkg:pypi/six", origin.get_versionless_purl(purl))
@@ -183,6 +297,43 @@ class ScanPipeOriginPipesTest(TestCase):
     def test_scanpipe_pipes_origin_origin_versionless_purls(self):
         expected = {"pkg:github/benjaminp/six", "pkg:pypi/six", "pkg:conda/six"}
         self.assertEqual(expected, make_scanoss_six_origin().versionless_purls)
+
+    def test_scanpipe_pipes_origin_origin_package_names(self):
+        self.assertEqual({"six"}, make_scanoss_six_origin().package_names)
+        typing_origin = make_origin("pkg:pypi/Typing-Extensions@4.9.0")
+        self.assertEqual({"typing_extensions"}, typing_origin.package_names)
+
+    def test_scanpipe_pipes_origin_origin_copy_names(self):
+        pip_origin = make_origin("pkg:pypi/pip@24.0")
+        self.assertEqual(set(), pip_origin.copy_names)
+
+        pip_origin.merge(
+            make_origin("pkg:pypi/pip@24.0", origin_path="pip-24.0/_vendor/six.py")
+        )
+        self.assertEqual({"six"}, pip_origin.copy_names)
+
+    def test_scanpipe_pipes_origin_origin_is_release_version(self):
+        commit_origin = make_origin("pkg:github/benhoyt/inih@498f34b", tool="scanoss")
+        self.assertFalse(commit_origin.is_release_version)
+        self.assertTrue(make_origin("pkg:github/benhoyt/inih@r62").is_release_version)
+        versionless_origin = make_origin("pkg:github/benhoyt/inih", tool="scanoss")
+        self.assertFalse(versionless_origin.is_release_version)
+
+    def test_scanpipe_pipes_origin_origin_similarity(self):
+        six_origin = make_origin("pkg:pypi/six@1.17.0")
+        self.assertIsNone(six_origin.similarity)
+
+        six_origin.merge(make_origin("pkg:pypi/six@1.17.0", similarity=94))
+        six_origin.merge(make_origin("pkg:pypi/six@1.17.0", similarity=95))
+        self.assertEqual(95, six_origin.similarity)
+
+    def test_scanpipe_pipes_origin_origin_release_date(self):
+        six_origin = make_origin("pkg:pypi/six@1.16.0")
+        self.assertIsNone(six_origin.release_date)
+
+        six_origin.merge(make_origin("pkg:pypi/six@1.16.0", release_date="2021-06-01"))
+        six_origin.merge(make_origin("pkg:pypi/six@1.16.0", release_date="2021-05-05"))
+        self.assertEqual(date(2021, 5, 5), six_origin.release_date)
 
     def test_scanpipe_pipes_origin_origin_is_same_package(self):
         scanoss_origin = make_scanoss_six_origin()
@@ -237,6 +388,19 @@ class ScanPipeOriginPipesTest(TestCase):
             ["pkg:pypi/urllib3@1.26.20", "pkg:pypi/six@1.17.0"], origin_purls
         )
         self.assertEqual({"matchcode", "scanoss"}, origins[1].tools)
+
+        # The "v" prefix of a SCANOSS Git tag does not split the package.
+        origin_matches = [
+            make_unsaved_origin_match("pkg:npm/escape-html@1.0.3"),
+            make_unsaved_origin_match(
+                "pkg:github/component/escape-html@v1.0.3",
+                tool="scanoss",
+                purls=["pkg:npm/escape-html"],
+            ),
+        ]
+        origins = origin.group_origin_matches(origin_matches)
+        self.assertEqual(1, len(origins))
+        self.assertEqual("pkg:npm/escape-html@1.0.3", origins[0].purl)
 
     def test_scanpipe_pipes_origin_iter_resource_origins(self):
         six_resource = make_resource_file(self.project1, path="six.py")
@@ -306,23 +470,336 @@ class ScanPipeOriginPipesTest(TestCase):
             origin.is_same_package_versions([six_16_origin, urllib3_origin])
         )
 
-    def test_scanpipe_pipes_origin_get_rule(self):
-        six_origin = make_origin("pkg:pypi/six@1.17.0")
+    def test_scanpipe_pipes_origin_is_carrier_origin(self):
+        six_origin = make_origin("pkg:pypi/six@1.16.0", origin_path="six-1.16.0/six.py")
+        pip_origin = make_origin(
+            "pkg:pypi/pip@24.0", origin_path="pip-24.0/src/pip/_vendor/six.py"
+        )
+        urllib3_origin = make_origin(
+            "pkg:pypi/urllib3@1.26.20",
+            origin_path="urllib3-1.26.20/src/urllib3/packages/six.py",
+        )
+
+        self.assertTrue(origin.is_carrier_origin(pip_origin, [six_origin]))
+        self.assertFalse(origin.is_carrier_origin(six_origin, [pip_origin]))
+        self.assertFalse(origin.is_carrier_origin(urllib3_origin, [pip_origin]))
+        # Without origin path, the content of a package is unknown.
+        self.assertFalse(
+            origin.is_carrier_origin(make_origin("pkg:pypi/pip@24.0"), [six_origin])
+        )
+
+        # A directory that is not under a vendor directory.
+        foo_origin = make_origin(
+            "pkg:npm/foo@1.0.0", origin_path="foo-1.0/src/utils/index.js"
+        )
+        utils_origin = make_origin("pkg:npm/utils@0.3.1")
+        self.assertFalse(origin.is_carrier_origin(foo_origin, [utils_origin]))
+
+        jquery_origin = make_origin("pkg:npm/jquery@3.7.1")
+        bootstrap_origin = make_origin(
+            "pkg:npm/bootstrap@5.3.3",
+            origin_path="bootstrap-5.3.3/site/static/vendor/jquery.min.js",
+        )
+        self.assertTrue(origin.is_carrier_origin(bootstrap_origin, [jquery_origin]))
+
+    def test_scanpipe_pipes_origin_get_non_carrier_origins(self):
+        six_origin = make_origin("pkg:pypi/six@1.16.0", origin_path="six-1.16.0/six.py")
+        pip_origin = make_origin(
+            "pkg:pypi/pip@24.0", origin_path="pip-24.0/src/pip/_vendor/six.py"
+        )
+        virtualenv_origin = make_origin(
+            "pkg:pypi/virtualenv@20.0.0",
+            origin_path="virtualenv-20.0.0/src/virtualenv/six.py",
+        )
+        # SCANOSS reports the file name only.
+        anime365_origin = make_origin(
+            "pkg:github/piotrmasek/anime365@0.1-Ryucon",
+            tool="scanoss",
+            origin_path="six.py",
+        )
+        lodash_origin = make_origin(
+            "pkg:npm/lodash@4.17.21", origin_path="package/debounce.js"
+        )
+
+        non_carrier_origins = origin.get_non_carrier_origins([pip_origin, six_origin])
+        self.assertEqual([six_origin], non_carrier_origins)
+        non_carrier_origins = origin.get_non_carrier_origins(
+            [pip_origin, virtualenv_origin, six_origin]
+        )
+        self.assertEqual([six_origin], non_carrier_origins)
+        non_carrier_origins = origin.get_non_carrier_origins(
+            [anime365_origin, six_origin]
+        )
+        self.assertEqual([six_origin], non_carrier_origins)
+
+        # No carrier.
+        non_carrier_origins = origin.get_non_carrier_origins(
+            [lodash_origin, six_origin]
+        )
+        self.assertEqual([lodash_origin, six_origin], non_carrier_origins)
+        # Several origins that do not carry another.
+        non_carrier_origins = origin.get_non_carrier_origins(
+            [pip_origin, six_origin, lodash_origin]
+        )
+        self.assertEqual([six_origin, lodash_origin], non_carrier_origins)
+
+        # Regression test: the versions of six carried each other, and the copier
+        # was proposed.
+        six_17_origin = make_origin(
+            "pkg:pypi/six@1.17.0", origin_path="six-1.17.0/six.py"
+        )
+        foo_origin = make_origin("pkg:pypi/foo@1.0", origin_path="foo/compat.py")
+        self.assertFalse(origin.is_carrier_origin(six_origin, [six_17_origin]))
+        non_carrier_origins = origin.get_non_carrier_origins(
+            [six_origin, six_17_origin, foo_origin]
+        )
+        self.assertEqual([six_origin, six_17_origin, foo_origin], non_carrier_origins)
+
+    def test_scanpipe_pipes_origin_get_earliest_release_origin(self):
+        six_origin = make_origin("pkg:pypi/six@1.16.0", release_date="2021-05-05")
+        pip_origin = make_origin("pkg:pypi/pip@24.0", release_date="2024-02-03")
+        urllib3_origin = make_origin("pkg:pypi/urllib3@1.26.20")
+
+        earliest_origin = origin.get_earliest_release_origin([pip_origin, six_origin])
+        self.assertEqual(six_origin, earliest_origin)
+
+        # A copy is not dated without the release date of all the candidates.
+        earliest_origin = origin.get_earliest_release_origin(
+            [pip_origin, six_origin, urllib3_origin]
+        )
+        self.assertIsNone(earliest_origin)
+
+        same_day_origin = make_origin("pkg:pypi/ms@2.1.3", release_date="2021-05-05")
+        earliest_origin = origin.get_earliest_release_origin(
+            [pip_origin, six_origin, same_day_origin]
+        )
+        self.assertIsNone(earliest_origin)
+
+    def test_scanpipe_pipes_origin_get_most_similar_origin(self):
+        lodash_origin = make_origin("pkg:npm/lodash@4.17.21", similarity=75)
+        underscore_origin = make_origin("pkg:npm/underscore@1.13.7", similarity=40)
+        debounce_origin = make_origin("pkg:npm/debounce@2.2.0", similarity=60)
+
+        most_similar_origin = origin.get_most_similar_origin(
+            [underscore_origin, lodash_origin]
+        )
+        self.assertEqual(lodash_origin, most_similar_origin)
+
+        # The second highest similarity is within the margin.
+        most_similar_origin = origin.get_most_similar_origin(
+            [underscore_origin, lodash_origin, debounce_origin]
+        )
+        self.assertIsNone(most_similar_origin)
+
+        exact_six_origin = make_origin("pkg:pypi/six@1.16.0", similarity=100)
+        exact_pip_origin = make_origin("pkg:pypi/pip@24.0", similarity=100)
+        most_similar_origin = origin.get_most_similar_origin(
+            [exact_six_origin, exact_pip_origin]
+        )
+        self.assertIsNone(most_similar_origin)
+
+        # A directory match has no similarity.
+        directory_origin = make_origin("pkg:npm/ms@2.1.3", match_type="directory")
+        most_similar_origin = origin.get_most_similar_origin(
+            [lodash_origin, directory_origin]
+        )
+        self.assertIsNone(most_similar_origin)
+
+        # A snippet in a large file is rounded to a known 0 similarity.
+        rounded_origin = make_origin("pkg:npm/ms@2.1.3", similarity=0)
+        most_similar_origin = origin.get_most_similar_origin(
+            [rounded_origin, underscore_origin]
+        )
+        self.assertEqual(underscore_origin, most_similar_origin)
+
+    def test_scanpipe_pipes_origin_get_preferred_version_origin(self):
+        r62_origin = make_origin("pkg:github/benhoyt/inih@r62", similarity=90)
+        commit_origin = make_origin(
+            "pkg:github/benhoyt/inih@498f34b", tool="scanoss", similarity=94
+        )
+        r61_origin = make_origin("pkg:github/benhoyt/inih@r61", similarity=60)
+        other_commit_origin = make_origin(
+            "pkg:github/benhoyt/inih@577ae2d", tool="scanoss", similarity=60
+        )
+
+        # The release is preferred over a commit with a similarity within the margin.
+        preferred_origin = origin.get_preferred_version_origin(
+            [r62_origin, commit_origin]
+        )
+        self.assertEqual(r62_origin, preferred_origin)
+
+        # An exact copy of a commit is preferred over a short release snippet.
+        exact_commit_origin = make_origin(
+            "pkg:github/benhoyt/inih@498f34b", tool="scanoss", similarity=100
+        )
+        snippet_release_origin = make_origin(
+            "pkg:github/benhoyt/inih@r1", match_type="snippet", similarity=10
+        )
+        preferred_origin = origin.get_preferred_version_origin(
+            [snippet_release_origin, exact_commit_origin]
+        )
+        self.assertEqual(exact_commit_origin, preferred_origin)
+
+        # Between releases, the clearly most similar.
+        preferred_origin = origin.get_preferred_version_origin(
+            [r61_origin, r62_origin, commit_origin]
+        )
+        self.assertEqual(r62_origin, preferred_origin)
+
+        # Between commits only, the clearly most similar.
+        preferred_origin = origin.get_preferred_version_origin(
+            [other_commit_origin, commit_origin]
+        )
+        self.assertEqual(commit_origin, preferred_origin)
+
+        # No preference within the margin, or on unknown similarities.
+        r60_origin = make_origin("pkg:github/benhoyt/inih@r60", similarity=80)
+        self.assertIsNone(origin.get_preferred_version_origin([r60_origin, r62_origin]))
+        six_17_origin = make_origin("pkg:pypi/six@1.17.0")
+        six_16_origin = make_origin("pkg:pypi/six@1.16.0")
+        self.assertIsNone(
+            origin.get_preferred_version_origin([six_17_origin, six_16_origin])
+        )
+
+        # The same file in several releases: the earliest release.
+        dated_six_17_origin = make_origin(
+            "pkg:pypi/six@1.17.0", similarity=100, release_date="2024-12-04"
+        )
+        dated_six_16_origin = make_origin(
+            "pkg:pypi/six@1.16.0", similarity=100, release_date="2021-05-05"
+        )
+        preferred_origin = origin.get_preferred_version_origin(
+            [dated_six_17_origin, dated_six_16_origin]
+        )
+        self.assertEqual(dated_six_16_origin, preferred_origin)
+
+        # Regression test: a versionless candidate raised a TypeError.
+        versionless_origin = make_origin("pkg:pypi/six", tool="scanoss")
+        preferred_origin = origin.get_preferred_version_origin(
+            [versionless_origin, six_16_origin]
+        )
+        self.assertEqual(six_16_origin, preferred_origin)
+        versionless_inih_origin = make_origin("pkg:github/benhoyt/inih", tool="scanoss")
+        rule_and_candidate = origin.get_conflict_rule_and_candidate(
+            [versionless_inih_origin, commit_origin]
+        )
+        self.assertEqual((origin.CONFLICTING_VERSIONS_RULE, None), rule_and_candidate)
+
+    def test_scanpipe_pipes_origin_get_conflict_rule_and_candidate(self):
+        r62_origin = make_origin("pkg:github/benhoyt/inih@r62", similarity=95)
+        commit_origin = make_origin(
+            "pkg:github/benhoyt/inih@498f34b", tool="scanoss", similarity=94
+        )
+        six_17_origin = make_origin("pkg:pypi/six@1.17.0")
         six_16_origin = make_origin("pkg:pypi/six@1.16.0")
         urllib3_origin = make_origin("pkg:pypi/urllib3@1.26.20")
+
+        rule_and_candidate = origin.get_conflict_rule_and_candidate(
+            [six_16_origin, urllib3_origin]
+        )
+        self.assertEqual((origin.CONFLICTING_CANDIDATES_RULE, None), rule_and_candidate)
+
+        pip_origin = make_origin(
+            "pkg:pypi/pip@24.0", origin_path="pip-24.0/src/pip/_vendor/six.py"
+        )
+        rule_and_candidate = origin.get_conflict_rule_and_candidate(
+            [pip_origin, six_16_origin]
+        )
+        self.assertEqual((origin.CONTAINMENT_RULE, six_16_origin), rule_and_candidate)
+
+        # The carrier is removed before comparing the versions of six, even without
+        # its release date.
+        dated_six_17_origin = make_origin(
+            "pkg:pypi/six@1.17.0", similarity=100, release_date="2024-12-04"
+        )
+        dated_six_16_origin = make_origin(
+            "pkg:pypi/six@1.16.0", similarity=100, release_date="2021-05-05"
+        )
+        carrier_pip_origin = make_origin(
+            "pkg:pypi/pip@24.0",
+            similarity=100,
+            origin_path="pip-24.0/src/pip/_vendor/six.py",
+        )
+        rule_and_candidate = origin.get_conflict_rule_and_candidate(
+            [dated_six_17_origin, carrier_pip_origin, dated_six_16_origin]
+        )
+        expected = (origin.PREFERRED_VERSION_RULE, dated_six_16_origin)
+        self.assertEqual(expected, rule_and_candidate)
+
+        # The release date does not decide between different packages.
+        dated_rich_origin = make_origin(
+            "pkg:pypi/rich@13.7.0", similarity=100, release_date="2023-11-15"
+        )
+        dated_copy_origin = make_origin(
+            "pkg:github/dreamsavior/yojet-server@v1.0.1",
+            tool="scanoss",
+            similarity=100,
+            release_date="2022-08-01",
+        )
+        rule_and_candidate = origin.get_conflict_rule_and_candidate(
+            [dated_rich_origin, dated_copy_origin]
+        )
+        self.assertEqual((origin.CONFLICTING_CANDIDATES_RULE, None), rule_and_candidate)
+
+        lodash_origin = make_origin("pkg:npm/lodash@4.17.21", similarity=75)
+        underscore_origin = make_origin("pkg:npm/underscore@1.13.7", similarity=40)
+        rule_and_candidate = origin.get_conflict_rule_and_candidate(
+            [underscore_origin, lodash_origin]
+        )
+        expected = (origin.HIGHEST_SIMILARITY_RULE, lodash_origin)
+        self.assertEqual(expected, rule_and_candidate)
+
+        # An exact copy is preferred over an older package matched on a snippet.
+        exact_pip_origin = make_origin(
+            "pkg:pypi/pip@24.0", similarity=100, release_date="2024-02-03"
+        )
+        older_snippet_origin = make_origin(
+            "pkg:pypi/six@1.16.0",
+            match_type="snippet",
+            similarity=10,
+            release_date="2021-05-05",
+        )
+        rule_and_candidate = origin.get_conflict_rule_and_candidate(
+            [older_snippet_origin, exact_pip_origin]
+        )
+        expected = (origin.HIGHEST_SIMILARITY_RULE, exact_pip_origin)
+        self.assertEqual(expected, rule_and_candidate)
+
+        rule_and_candidate = origin.get_conflict_rule_and_candidate(
+            [r62_origin, commit_origin]
+        )
+        self.assertEqual(
+            (origin.PREFERRED_VERSION_RULE, r62_origin), rule_and_candidate
+        )
+
+        rule_and_candidate = origin.get_conflict_rule_and_candidate(
+            [six_17_origin, six_16_origin]
+        )
+        self.assertEqual((origin.CONFLICTING_VERSIONS_RULE, None), rule_and_candidate)
+
+    def test_scanpipe_pipes_origin_get_single_origin_rule(self):
+        six_origin = make_origin("pkg:pypi/six@1.17.0")
         snippet_origin = make_origin("pkg:npm/lodash@4.17.21", match_type="snippet")
 
-        rule = origin.get_rule([six_origin, urllib3_origin])
-        self.assertEqual(origin.CONFLICTING_CANDIDATES_RULE, rule)
-        rule = origin.get_rule([six_origin, six_16_origin])
-        self.assertEqual(origin.CONFLICTING_VERSIONS_RULE, rule)
-        rule = origin.get_rule([snippet_origin])
+        rule = origin.get_single_origin_rule(snippet_origin)
         self.assertEqual(origin.NO_EXACT_MATCH_RULE, rule)
-        self.assertEqual(origin.SINGLE_TOOL_RULE, origin.get_rule([six_origin]))
+        self.assertEqual(
+            origin.SINGLE_TOOL_RULE, origin.get_single_origin_rule(six_origin)
+        )
 
         six_origin.merge(make_scanoss_six_origin())
-        rule = origin.get_rule([six_origin])
+        rule = origin.get_single_origin_rule(six_origin)
         self.assertEqual(origin.CONFIRMED_BY_TWO_TOOLS_RULE, rule)
+
+    def test_scanpipe_pipes_origin_get_rule_and_candidate(self):
+        six_origin = make_origin("pkg:pypi/six@1.17.0")
+        urllib3_origin = make_origin("pkg:pypi/urllib3@1.26.20")
+
+        rule_and_candidate = origin.get_rule_and_candidate([six_origin])
+        self.assertEqual((origin.SINGLE_TOOL_RULE, six_origin), rule_and_candidate)
+
+        rule_and_candidate = origin.get_rule_and_candidate([six_origin, urllib3_origin])
+        self.assertEqual((origin.CONFLICTING_CANDIDATES_RULE, None), rule_and_candidate)
 
     def test_scanpipe_pipes_origin_make_origin_determination(self):
         resource = make_resource_file(self.project1, path="six.py")
@@ -343,6 +820,18 @@ class ScanPipeOriginPipesTest(TestCase):
         self.assertEqual("", determination.purl)
         self.assertEqual("needs-review", determination.status)
         self.assertEqual(origin.CONFLICTING_CANDIDATES_RULE, determination.rule)
+
+        # The preferred version is proposed for review.
+        r62_origin = make_origin("pkg:github/benhoyt/inih@r62", similarity=95)
+        commit_origin = make_origin(
+            "pkg:github/benhoyt/inih@498f34b", tool="scanoss", similarity=94
+        )
+        determination = origin.make_origin_determination(
+            self.project1, resource, [r62_origin, commit_origin]
+        )
+        self.assertEqual("pkg:github/benhoyt/inih@r62", determination.purl)
+        self.assertEqual("needs-review", determination.status)
+        self.assertEqual(origin.PREFERRED_VERSION_RULE, determination.rule)
 
         six_origin.merge(make_scanoss_six_origin())
         determination = origin.make_origin_determination(
@@ -459,13 +948,20 @@ class ScanPipeOriginPipesTest(TestCase):
         expected = {origin.ORIGIN_RESOURCE_PATHS_KEY: ["six.py"]}
         self.assertEqual(expected, scan_package.extra_data)
 
+        # Regression test: the paths of a second origin PURL replaced the first.
+        test_six = make_resource_file(self.project1, path="test_six.py")
+        origin.assign_origin_package_resources(scan_package, resources)
+        expected = {origin.ORIGIN_RESOURCE_PATHS_KEY: ["six.py", "test_six.py"]}
+        self.assertEqual(expected, scan_package.extra_data)
+        self.assertIn(test_six, scan_package.codebase_resources.all())
+
         origin_package = make_package(
             self.project1,
             "pkg:npm/ms@2.1.3",
             datasource_ids=[origin.ORIGIN_DATASOURCE_ID],
         )
         origin.assign_origin_package_resources(origin_package, resources)
-        self.assertEqual(2, origin_package.codebase_resources.count())
+        self.assertEqual(3, origin_package.codebase_resources.count())
         self.assertEqual({}, origin_package.extra_data)
 
     def test_scanpipe_pipes_origin_unassign_scan_package_resources(self):
@@ -573,6 +1069,36 @@ class ScanPipeOriginPipesTest(TestCase):
             origin.get_origin_packages(self.project1), [origin_package]
         )
 
+    def test_scanpipe_pipes_origin_get_scan_package(self):
+        purl = "pkg:maven/org.slf4j/slf4j-nop@2.0.16"
+        self.assertIsNone(origin.get_scan_package(self.project1, purl))
+
+        make_package(
+            self.project1,
+            "pkg:maven/org.slf4j/slf4j-nop@2.0.16",
+            datasource_ids=[origin.ORIGIN_DATASOURCE_ID],
+        )
+        make_package(self.project1, "pkg:maven/org.slf4j/slf4j-nop@2.0.15")
+        self.assertIsNone(origin.get_scan_package(self.project1, purl))
+
+        sources_package = make_package(
+            self.project1, "pkg:maven/org.slf4j/slf4j-nop@2.0.16?classifier=sources"
+        )
+        self.assertEqual(sources_package, origin.get_scan_package(self.project1, purl))
+
+        jar_package = make_package(
+            self.project1, "pkg:maven/org.slf4j/slf4j-nop@2.0.16?type=jar"
+        )
+        no_qualifiers_package = make_package(
+            self.project1, "pkg:maven/org.slf4j/slf4j-nop@2.0.16"
+        )
+        self.assertEqual(
+            no_qualifiers_package, origin.get_scan_package(self.project1, purl)
+        )
+
+        jar_purl = "pkg:maven/org.slf4j/slf4j-nop@2.0.16?type=jar"
+        self.assertEqual(jar_package, origin.get_scan_package(self.project1, jar_purl))
+
     def test_scanpipe_pipes_origin_get_or_create_origin_package(self):
         scan_package = make_package(self.project1, "pkg:npm/ms@2.1.3")
         resources = self.project1.codebaseresources.all()
@@ -580,6 +1106,15 @@ class ScanPipeOriginPipesTest(TestCase):
             self.project1, "pkg:npm/ms@2.1.3", resources
         )
         self.assertEqual(scan_package, package)
+
+        # Regression test: the scan package with qualifiers was not found.
+        sources_package = make_package(
+            self.project1, "pkg:maven/org.slf4j/slf4j-nop@2.0.16?classifier=sources"
+        )
+        package = origin.get_or_create_origin_package(
+            self.project1, "pkg:maven/org.slf4j/slf4j-nop@2.0.16", resources
+        )
+        self.assertEqual(sources_package, package)
 
         resource = make_resource_file(self.project1, path="six.py")
         self.make_origin_match(
@@ -726,12 +1261,13 @@ class ScanPipeOriginPipesTest(TestCase):
                     origin.CONFLICTING_CANDIDATES_RULE,
                 ),
             ],
+            # The r62 release is preferred over the 498f34b commit.
             "modified-copy": [
                 (
                     "src/inih/ini.c",
-                    "",
+                    "pkg:github/benhoyt/inih@r62",
                     "needs-review",
-                    origin.CONFLICTING_VERSIONS_RULE,
+                    origin.PREFERRED_VERSION_RULE,
                 ),
                 (
                     "src/inih/ini.h",
@@ -757,6 +1293,33 @@ class ScanPipeOriginPipesTest(TestCase):
                 ),
             ],
             "no-origin": [],
+            # The origin six and pip, which vendors six, are both reported.
+            "shared-copy": [
+                (
+                    "third_party/six.py",
+                    "pkg:pypi/six@1.16.0",
+                    "needs-review",
+                    origin.CONTAINMENT_RULE,
+                ),
+            ],
+            "embedded-archive": [
+                (
+                    "jars/slf4j-nop-2.0.16.jar",
+                    "pkg:maven/org.slf4j/slf4j-nop@2.0.16",
+                    "auto-confirmed",
+                    origin.CONFIRMED_BY_TWO_TOOLS_RULE,
+                ),
+            ],
+            "single-tool-copy": [
+                (
+                    "static/js/escape-html.js",
+                    "pkg:github/component/escape-html@v1.0.3",
+                    "needs-review",
+                    origin.SINGLE_TOOL_RULE,
+                ),
+            ],
+            # The license header snippet matches are too short to count.
+            "license-header": [],
         }
 
         expected_packages_by_case = {
@@ -775,6 +1338,13 @@ class ScanPipeOriginPipesTest(TestCase):
                         "vendor/ms/package.json",
                         "vendor/ms/readme.md",
                     ],
+                )
+            ],
+            "embedded-archive": [
+                (
+                    "pkg:maven/org.slf4j/slf4j-nop@2.0.16",
+                    "mit",
+                    ["jars/slf4j-nop-2.0.16.jar"],
                 )
             ],
         }
@@ -833,6 +1403,19 @@ class ScanPipeOriginPipesTest(TestCase):
                     ("vendor/ms", "pkg:npm/ms@2.1.3", "no-exact-match"),
                 ],
                 "no-origin": [],
+                "shared-copy": [
+                    ("third_party/six.py", "pkg:pypi/six@1.16.0", "containment"),
+                ],
+                "embedded-archive": [
+                    (
+                        "jars/slf4j-nop-2.0.16.jar",
+                        "pkg:maven/org.slf4j/slf4j-nop@2.0.16",
+                        "single-tool",
+                    ),
+                ],
+                # Not in the MatchCode.io index.
+                "single-tool-copy": [],
+                "license-header": [],
             },
             scanoss.TOOL_NAME: {
                 "exact-copy": [
@@ -862,6 +1445,28 @@ class ScanPipeOriginPipesTest(TestCase):
                     ("vendor/ms/index.js", "pkg:github/vercel/ms@2.1.3", "single-tool"),
                 ],
                 "no-origin": [],
+                "shared-copy": [
+                    (
+                        "third_party/six.py",
+                        "pkg:github/benjaminp/six@1.16.0",
+                        "single-tool",
+                    ),
+                ],
+                "embedded-archive": [
+                    (
+                        "jars/slf4j-nop-2.0.16.jar",
+                        "pkg:maven/org.slf4j/slf4j-nop@2.0.16",
+                        "single-tool",
+                    ),
+                ],
+                "single-tool-copy": [
+                    (
+                        "static/js/escape-html.js",
+                        "pkg:github/component/escape-html@v1.0.3",
+                        "single-tool",
+                    ),
+                ],
+                "license-header": [],
             },
         }
 

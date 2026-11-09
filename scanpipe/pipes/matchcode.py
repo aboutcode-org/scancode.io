@@ -24,6 +24,7 @@ import json
 import logging
 from collections import defaultdict
 from functools import partial
+from itertools import batched
 from pathlib import Path
 
 from django.conf import settings
@@ -44,6 +45,7 @@ from scanpipe.pipes import create_origin_matches
 from scanpipe.pipes import flag
 from scanpipe.pipes import make_origin_match
 from scanpipe.pipes import poll_until_success
+from scanpipe.pipes import purldb
 from scanpipe.pipes.output import to_json
 from scanpipe.pipes.scancode import _scan_resource
 from scanpipe.pipes.scancode import scan_resources
@@ -524,6 +526,33 @@ def get_origin_match_extra_data(package_data):
     }
 
 
+def merge_matched_snippets(matched_snippets):
+    """
+    Return the ``matched_snippets`` merged by package and origin file, as
+    MatchCode.io can report several snippets of the same origin file.
+    The merged snippet has all the matched token positions and the highest
+    similarity.
+    """
+    merged_snippets = {}
+    for matched_snippet in matched_snippets:
+        origin_key = (matched_snippet["package"], matched_snippet["resource"])
+        merged_snippet = merged_snippets.get(origin_key)
+        if not merged_snippet:
+            merged_snippets[origin_key] = dict(matched_snippet)
+            continue
+
+        match_detections = {
+            *merged_snippet["match_detections"],
+            *matched_snippet["match_detections"],
+        }
+        merged_snippet["match_detections"] = sorted(match_detections)
+        merged_snippet["similarity"] = max(
+            merged_snippet["similarity"], matched_snippet["similarity"]
+        )
+
+    return list(merged_snippets.values())
+
+
 def make_snippet_origin_matches(
     resource, matched_snippets, package_data_by_purl, tool_version
 ):
@@ -536,7 +565,7 @@ def make_snippet_origin_matches(
     """
     line_by_pos = get_resource_line_by_pos(resource)
 
-    for matched_snippet in matched_snippets:
+    for matched_snippet in merge_matched_snippets(matched_snippets):
         origin_path = matched_snippet["resource"]
         if is_legal_file_path(origin_path):
             continue
@@ -566,10 +595,53 @@ def make_snippet_origin_matches(
         )
 
 
+def get_path_depth_and_path(purldb_resource):
+    path = purldb_resource["path"]
+    return path.count("/"), path
+
+
+def get_origin_paths(sha1_list, candidate_purls, batch_size=1000):
+    """
+    Return the paths of the ``sha1_list`` files in the ``candidate_purls``
+    packages, as a mapping of (package PURL, sha1) to path, as MatchCode.io does
+    not report the path of a matched file. PurlDB reports the copies of a file in
+    all its packages: only the candidate packages are kept. When a package has
+    several copies of a file, the shallowest path is kept. Empty when PurlDB is not
+    configured.
+    The sha1 are sent to PurlDB by batches of ``batch_size``.
+    """
+    if not sha1_list or not purldb.is_configured():
+        return {}
+
+    purldb_resources = sorted(
+        (
+            purldb_resource
+            for sha1_batch in batched(sha1_list, batch_size)
+            for purldb_resource in purldb.match_resources(list(sha1_batch))
+            if purldb_resource["purl"] in candidate_purls
+        ),
+        key=get_path_depth_and_path,
+    )
+    origin_paths = {}
+    for purldb_resource in purldb_resources:
+        origin_key = (purldb_resource["purl"], purldb_resource["sha1"])
+        origin_paths.setdefault(origin_key, purldb_resource["path"])
+    return origin_paths
+
+
 def make_package_origin_matches(
-    resource, match_type, package_uids, package_data_by_uid, tool_version
+    resource,
+    match_type,
+    package_uids,
+    package_data_by_uid,
+    tool_version,
+    origin_paths,
 ):
-    """Yield unsaved OriginMatch instances for the ``resource`` matched packages."""
+    """
+    Yield unsaved OriginMatch instances for the ``resource`` matched packages.
+    The ``origin_paths`` mapping of (package PURL, sha1) to path provides the path
+    of a matched file in its package.
+    """
     similarity = 100 if match_type in OriginMatch.EXACT_MATCH_TYPES else None
     seen_purls = set()
 
@@ -586,13 +658,19 @@ def make_package_origin_matches(
             tool_version,
             purl=purl,
             match_type=match_type,
+            origin_path=origin_paths.get((purl, resource.sha1), ""),
             similarity=similarity,
             extra_data=get_origin_match_extra_data(package_data),
         )
 
 
 def make_origin_matches(
-    resource, resource_results, package_data_by_uid, package_data_by_purl, tool_version
+    resource,
+    resource_results,
+    package_data_by_uid,
+    package_data_by_purl,
+    tool_version,
+    origin_paths,
 ):
     """Yield unsaved OriginMatch instances from a ``resource`` match results."""
     matched_snippets = (resource_results.get("extra_data") or {}).get(
@@ -614,13 +692,34 @@ def make_origin_matches(
         resource_results["for_packages"],
         package_data_by_uid,
         tool_version,
+        origin_paths,
     )
+
+
+def get_matched_file_sha1s(project, results_by_path):
+    """
+    Return the distinct sha1 of the ``project`` files matched to a PurlDB file.
+    The legal files are excluded, as a common license file is found in many
+    packages.
+    """
+    matched_file_paths = [
+        path
+        for path, resource_results in results_by_path.items()
+        if resource_results.get("status") == flag.MATCHED_TO_PURLDB_RESOURCE
+        and not is_legal_file_path(path)
+    ]
+    matched_files = project.codebaseresources.filter(
+        path__in=matched_file_paths
+    ).exclude(sha1="")
+    matched_file_sha1s = matched_files.order_by("sha1").values_list("sha1", flat=True)
+    return list(matched_file_sha1s.distinct())
 
 
 def load_matchcode_results(project, match_results):
     """
     Create OriginMatch records for the ``project`` resources from the MatchCode.io
-    ``match_results``. Return the number of processed origin matches.
+    ``match_results``. The path of the matched files in their package is fetched
+    from PurlDB when configured. Return the number of processed origin matches.
     """
     packages_data = match_results.get("packages", [])
     package_data_by_uid = {
@@ -634,11 +733,13 @@ def load_matchcode_results(project, match_results):
         for resource_results in match_results.get("files", [])
         if resource_results.get("for_packages")
     }
+    matched_file_sha1s = get_matched_file_sha1s(project, results_by_path)
     make_matchcode_origin_matches = partial(
         make_origin_matches,
         package_data_by_uid=package_data_by_uid,
         package_data_by_purl=package_data_by_purl,
         tool_version=match_results["headers"][0]["tool_version"],
+        origin_paths=get_origin_paths(matched_file_sha1s, package_data_by_purl.keys()),
     )
 
     origin_match_count, _ = create_origin_matches(

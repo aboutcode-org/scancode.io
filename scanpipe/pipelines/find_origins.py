@@ -25,6 +25,7 @@ import subprocess
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import matchcode
 from scanpipe.pipes import origin
+from scanpipe.pipes import purldb
 from scanpipe.pipes import scanoss
 
 
@@ -39,7 +40,9 @@ class FindOrigins(Pipeline):
     Supported tools:
 
     - MatchCode.io: the codebase scan, including file and directory
-      fingerprints, is sent to the configured MatchCode.io server.
+      fingerprints, is sent to the configured MatchCode.io server. When PurlDB is
+      configured, the paths of the matched files in their package are fetched
+      from PurlDB.
     - SCANOSS: the codebase files are fingerprinted locally, then their paths,
       checksums, sizes, and fingerprints are sent to the configured SCANOSS
       server. The file contents are not sent.
@@ -77,6 +80,12 @@ class FindOrigins(Pipeline):
             )
             self.log(f"{origin_match_count:,d} MatchCode.io origin matches processed.")
 
+        if not purldb.is_configured():
+            self.log(
+                "PurlDB is not configured: the paths of the files matched by "
+                "MatchCode.io in their package are not available."
+            )
+
     def find_scanoss_origin_matches(self):
         """Scan the codebase with SCANOSS and store the reported origin matches."""
         if not scanoss.is_configured():
@@ -106,7 +115,9 @@ class FindOrigins(Pipeline):
         Determine the origin of each matched file and directory from the origin
         matches of all the tools. An origin is confirmed automatically when two
         tools report the same package, with at least one exact match. Otherwise,
-        the origin needs a review. The origins confirmed by a user are kept.
+        the origin needs a review, with a proposed origin when a rule can select one
+        among the candidates, such as the candidate vendored by another candidate.
+        The origins confirmed by a user are kept.
         The files and directories of a confirmed origin are assigned to the origin
         package, created from the tools data when the codebase scan did not
         detect it.
