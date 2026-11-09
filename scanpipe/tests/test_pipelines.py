@@ -57,6 +57,7 @@ from scanpipe.pipes import d2d
 from scanpipe.pipes import flag
 from scanpipe.pipes import matchcode
 from scanpipe.pipes import maven
+from scanpipe.pipes import nix
 from scanpipe.pipes import output
 from scanpipe.pipes import scancode
 from scanpipe.pipes.input import copy_input
@@ -218,12 +219,23 @@ class ScanPipePipelinesTest(TestCase):
             "pkg:nix/nixpkgs/hello@2.12.3?system=x86_64-linux"
         )
         pipeline.commit = "55ba7f49ef2962b42cbd126522b7df5f95037679"
+        outputs = {"out": "/nix/store/aaa-hello", "man": "/nix/store/bbb-man"}
 
-        mock_metadata.return_value = {"version": "2.12.3"}
+        mock_metadata.return_value = {"version": "2.12.3", "outputs": outputs}
         pipeline.get_nix_package_metadata()
+        self.assertEqual({"out": "/nix/store/aaa-hello"}, pipeline.selected_outputs)
         self.assertEqual(0, project1.projectmessages.count())
 
-        mock_metadata.return_value = {"version": "2.12.2"}
+        pipeline.purl = PackageURL.from_string(
+            "pkg:nix/nixpkgs/hello@2.12.3?system=x86_64-linux&output=debug"
+        )
+        with self.assertRaisesMessage(ValueError, "The output 'debug' does not"):
+            pipeline.get_nix_package_metadata()
+
+        pipeline.purl = PackageURL.from_string(
+            "pkg:nix/nixpkgs/hello@2.12.3?system=x86_64-linux"
+        )
+        mock_metadata.return_value = {"version": "2.12.2", "outputs": outputs}
         pipeline.get_nix_package_metadata()
         message = project1.projectmessages.get()
         self.assertEqual(
@@ -232,34 +244,61 @@ class ScanPipePipelinesTest(TestCase):
             message.description,
         )
 
-    @mock.patch("scanpipe.pipes.nix.fetch_binary")
-    def test_scanpipe_scan_nix_package_fetch_nix_binary_output(self, mock_fetch):
+    @mock.patch("scanpipe.pipes.nix.fetch_source")
+    def test_scanpipe_scan_nix_package_fetch_nix_source_error(self, mock_fetch):
         project1 = make_project()
         pipeline = project1.add_pipeline("scan_nix_package").make_pipeline_instance()
         pipeline.purl = PackageURL.from_string(
-            "pkg:nix/nixpkgs/hello@2.12.3?system=x86_64-linux&output=man"
+            "pkg:nix/nixpkgs/papertrail@0.11.3?system=x86_64-linux"
         )
-        pipeline.metadata = {
-            "outputs": {"out": "/nix/store/aaa-hello", "man": "/nix/store/bbb-man"}
+        pipeline.commit = "55ba7f49ef2962b42cbd126522b7df5f95037679"
+        mock_fetch.side_effect = nix.NixCommandError("attribute 'src' missing")
+
+        pipeline.fetch_nix_source()
+        message = project1.projectmessages.get()
+        self.assertEqual(
+            "The source cannot be fetched, the binary is analyzed alone and the "
+            "license check is skipped.",
+            message.description,
+        )
+        self.assertEqual({"error": "attribute 'src' missing"}, message.details)
+
+    @mock.patch("scanpipe.pipes.nix.fetch_binary")
+    def test_scanpipe_scan_nix_package_fetch_nix_binary(self, mock_fetch):
+        project1 = make_project()
+        pipeline = project1.add_pipeline("scan_nix_package").make_pipeline_instance()
+        pipeline.selected_outputs = {
+            "out": "/nix/store/aaa-hello",
+            "debug": "/nix/store/bbb-debug",
         }
-        mock_fetch.return_value = True
+
+        def fetch_binary(store_path, destination, download_directory):
+            return store_path.endswith("-hello")
+
+        mock_fetch.side_effect = fetch_binary
 
         pipeline.fetch_nix_binary()
-        mock_fetch.assert_called_once()
+        self.assertEqual(2, mock_fetch.call_count)
         self.assertEqual(
-            "/nix/store/bbb-man", mock_fetch.call_args.kwargs["store_path"]
+            project1.codebase_path / "to" / "out",
+            mock_fetch.call_args_list[0].kwargs["destination"],
         )
+        message = project1.projectmessages.get()
         self.assertEqual(
-            project1.codebase_path / "to" / "man",
-            mock_fetch.call_args.kwargs["destination"],
+            "Outputs not available in the Nix binary cache: debug",
+            message.description,
         )
-        self.assertEqual(0, project1.projectmessages.count())
 
     def test_scanpipe_scan_nix_package_check_nix_package_license(self):
         project1 = make_project()
         pipeline = project1.add_pipeline("scan_nix_package").make_pipeline_instance()
         pipeline.package = make_package(project1, "pkg:nix/nixpkgs/hello@2.12.3")
 
+        pipeline.check_nix_package_license()
+        self.assertEqual({}, pipeline.package.extra_data)
+        self.assertEqual(0, project1.projectmessages.count())
+
+        make_resource_file(project1, "from/src/hello.c")
         pipeline.check_nix_package_license()
         self.assertEqual({}, pipeline.package.extra_data)
         message = project1.projectmessages.get()
@@ -2571,24 +2610,13 @@ class PipelinesIntegrationTest(TestCase):
         expected_file = self.data / "benchmark" / "alpine-3.22.1-expected-benchmark.txt"
         self.assertEqual(expected_file.read_text(), result_file.read_text())
 
-    @skipIf(sys.platform == "darwin", "Not supported on macOS")
-    @mock.patch("scanpipe.pipes.nix.collect_garbage")
-    @mock.patch("scanpipe.pipes.nix.fetch_binary")
-    @mock.patch("scanpipe.pipes.nix.fetch_source")
-    @mock.patch("scanpipe.pipes.nix.get_package_metadata")
-    @mock.patch("scanpipe.pipes.nix.get_nixpkgs_commit")
-    def test_scanpipe_scan_nix_package_pipeline_integration(
-        self,
-        mock_get_commit,
-        mock_get_metadata,
-        mock_fetch_source,
-        mock_fetch_binary,
-        mock_collect_garbage,
-    ):
+    def run_scan_nix_package_pipeline(self, fetch_source_effect):
+        """
+        Run the ``scan_nix_package`` pipeline on the hello test data, with the Nix
+        commands mocked, and return the pipeline run.
+        """
         nix_data = self.data / "nix"
-        commit = "55ba7f49ef2962b42cbd126522b7df5f95037679"
-        mock_get_commit.return_value = commit
-        mock_get_metadata.return_value = {
+        metadata = {
             "version": "2.12.3",
             "description": "Program that produces a familiar, friendly greeting",
             "homepage": "https://www.gnu.org/software/hello/manual/",
@@ -2596,21 +2624,15 @@ class PipelinesIntegrationTest(TestCase):
             "outputs": {
                 "out": "/nix/store/5z2yp3ysx8476c8g5w25b0smlgkjvaq3-hello-2.12.3",
                 "man": "/nix/store/00000000000000000000000000000000-hello-man",
+                "debug": "/nix/store/11111111111111111111111111111111-hello-debug",
             },
         }
 
-        def fetch_source(attribute_path, commit, destination):
-            shutil.copytree(nix_data / "source", destination)
-            return "patch failed"
-
         def fetch_binary(store_path, destination, download_directory):
-            if store_path.endswith("-man"):
+            if store_path.endswith("-debug"):
                 return False
             shutil.copytree(nix_data / "binary", destination)
             return True
-
-        mock_fetch_source.side_effect = fetch_source
-        mock_fetch_binary.side_effect = fetch_binary
 
         project1 = make_project()
         project1.add_input_source(
@@ -2619,11 +2641,45 @@ class PipelinesIntegrationTest(TestCase):
         run = project1.add_pipeline("scan_nix_package")
         pipeline = run.make_pipeline_instance()
 
-        exitcode, out = pipeline.execute()
-        self.assertEqual(0, exitcode, msg=out)
+        with (
+            mock.patch(
+                "scanpipe.pipes.nix.get_nixpkgs_commit",
+                return_value="55ba7f49ef2962b42cbd126522b7df5f95037679",
+            ),
+            mock.patch(
+                "scanpipe.pipes.nix.get_package_metadata", return_value=metadata
+            ) as mock_get_metadata,
+            mock.patch(
+                "scanpipe.pipes.nix.fetch_source", side_effect=fetch_source_effect
+            ),
+            mock.patch(
+                "scanpipe.pipes.nix.fetch_binary", side_effect=fetch_binary
+            ) as mock_fetch_binary,
+            mock.patch("scanpipe.pipes.nix.collect_garbage") as mock_collect_garbage,
+        ):
+            exitcode, out = pipeline.execute()
 
+        self.assertEqual(0, exitcode, msg=out)
         self.assertEqual("x86_64-linux", mock_get_metadata.call_args.kwargs["system"])
         mock_collect_garbage.assert_called_once()
+
+        fetched_outputs = [
+            call.kwargs["destination"].name for call in mock_fetch_binary.call_args_list
+        ]
+        self.assertEqual(["out", "debug"], fetched_outputs)
+
+        return run
+
+    @skipIf(sys.platform == "darwin", "Not supported on macOS")
+    def test_scanpipe_scan_nix_package_pipeline_integration(self):
+        nix_data = self.data / "nix"
+
+        def fetch_source(attribute_path, commit, destination):
+            shutil.copytree(nix_data / "source", destination)
+            return "patch failed"
+
+        run = self.run_scan_nix_package_pipeline(fetch_source)
+        project1 = run.project
         self.assertIn("Step [map_elf] completed", run.log)
 
         relation = project1.codebaserelations.get()
@@ -2649,7 +2705,7 @@ class PipelinesIntegrationTest(TestCase):
         )
         self.assertEqual(
             [
-                "Outputs not available in the Nix binary cache: man",
+                "Outputs not available in the Nix binary cache: debug",
                 "The nixpkgs patches cannot be applied, the upstream source is used "
                 "instead.",
             ],
@@ -2657,3 +2713,32 @@ class PipelinesIntegrationTest(TestCase):
         )
         patch_warning = project1.projectmessages.get(details__has_key="error")
         self.assertEqual({"error": "patch failed"}, patch_warning.details)
+
+    @skipIf(sys.platform == "darwin", "Not supported on macOS")
+    def test_scanpipe_scan_nix_package_pipeline_integration_without_source(self):
+        source_error = nix.NixCommandError("attribute 'src' missing")
+        project1 = self.run_scan_nix_package_pipeline(source_error).project
+
+        self.assertEqual(0, project1.codebaseresources.from_codebase().count())
+        self.assertEqual(0, project1.codebaserelations.count())
+        binary = project1.codebaseresources.get(path="to/out/hello")
+        self.assertEqual(flag.REQUIRES_REVIEW, binary.status)
+
+        package = project1.discoveredpackages.get()
+        self.assertEqual({}, package.extra_data)
+        self.assertEqual(
+            project1.codebaseresources.files().count(),
+            package.codebase_resources.count(),
+        )
+
+        warnings = sorted(
+            project1.projectmessages.values_list("description", flat=True)
+        )
+        self.assertEqual(
+            [
+                "Outputs not available in the Nix binary cache: debug",
+                "The source cannot be fetched, the binary is analyzed alone and the "
+                "license check is skipped.",
+            ],
+            warnings,
+        )

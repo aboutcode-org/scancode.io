@@ -39,6 +39,13 @@ class ScanNixPackage(DeployToDevelop):
     runs between them, and the whole source is scanned to compare the detected
     licenses with the license declared in nixpkgs.
 
+    The package outputs holding only headers and documentation, such as ``dev``,
+    ``doc``, or ``man``, are not downloaded. A single output can be selected with
+    the ``output`` qualifier.
+
+    When the source cannot be fetched, for a package without a ``src`` attribute,
+    the binary is analyzed alone and the license check is skipped.
+
     The ELF binaries mapping is always enabled, as nixpkgs binaries are ELF
     files on Linux. It relies on the DWARF debug paths, available only for the
     packages that provide a ``debug`` output.
@@ -101,6 +108,10 @@ class ScanNixPackage(DeployToDevelop):
             commit=self.commit,
             system=self.purl.qualifiers["system"],
         )
+        self.selected_outputs = nix.get_selected_outputs(
+            outputs=self.metadata["outputs"],
+            selected_output=self.purl.qualifiers.get("output"),
+        )
 
         version = self.metadata["version"]
         if self.purl.version and self.purl.version != version:
@@ -114,11 +125,23 @@ class ScanNixPackage(DeployToDevelop):
 
     def fetch_nix_source(self):
         """Fetch the source to ``from/``, with the nixpkgs patches applied."""
-        patch_error = nix.fetch_source(
-            attribute_path=self.purl.name,
-            commit=self.commit,
-            destination=self.project.codebase_path / d2d.FROM,
-        )
+        try:
+            patch_error = nix.fetch_source(
+                attribute_path=self.purl.name,
+                commit=self.commit,
+                destination=self.project.codebase_path / d2d.FROM,
+            )
+        except nix.NixCommandError as error:
+            self.project.add_warning(
+                description=(
+                    "The source cannot be fetched, the binary is analyzed alone "
+                    "and the license check is skipped."
+                ),
+                model=self.pipeline_name,
+                details={"error": str(error)},
+            )
+            return
+
         if patch_error:
             self.project.add_warning(
                 description=(
@@ -131,12 +154,8 @@ class ScanNixPackage(DeployToDevelop):
 
     def fetch_nix_binary(self):
         """Download the package outputs from the Nix binary cache to ``to/``."""
-        selected_output = self.purl.qualifiers.get("output")
         missing_outputs = []
-        for output, store_path in self.metadata["outputs"].items():
-            if selected_output and output != selected_output:
-                continue
-
+        for output, store_path in self.selected_outputs.items():
             is_fetched = nix.fetch_binary(
                 store_path=store_path,
                 destination=self.project.codebase_path / d2d.TO / output,
@@ -171,6 +190,10 @@ class ScanNixPackage(DeployToDevelop):
 
     def check_nix_package_license(self):
         """Store the licenses detected in the source but not declared in nixpkgs."""
+        has_source = self.project.codebaseresources.from_codebase().files().exists()
+        if not has_source:
+            return
+
         declared_license = self.package.declared_license_expression
         if not declared_license:
             self.project.add_warning(

@@ -55,6 +55,9 @@ COMMIT_REGEX = re.compile(r"[0-9a-f]{40}")
 SYSTEM_REGEX = re.compile(r"[a-z0-9_]+-[a-z0-9_]+")
 OUTPUT_REGEX = re.compile(r"[a-z][a-z0-9]*")
 
+# The package outputs holding headers and documentation, not the deployed code.
+NON_DEPLOYED_OUTPUTS = {"dev", "devdoc", "devman", "doc", "info", "man"}
+
 DECOMPRESS_COMMANDS = {
     "none": ["cat"],
     "xz": ["xz", "--decompress", "--stdout"],
@@ -309,6 +312,30 @@ def get_package_metadata(attribute_path, commit, system):
     ]
     output = run_nix_command(arguments, timeout=NIX_EVAL_TIMEOUT)
     return json.loads(output)
+
+
+def get_selected_outputs(outputs, selected_output=None):
+    """
+    Return the ``outputs`` to download: the ``selected_output`` when provided, or
+    else the outputs holding deployed code, or else all the outputs.
+    Raise a ValueError if the ``selected_output`` is not one of the ``outputs``.
+    """
+    if not selected_output:
+        deployed_outputs = {
+            output: store_path
+            for output, store_path in outputs.items()
+            if output not in NON_DEPLOYED_OUTPUTS
+        }
+        return deployed_outputs or outputs
+
+    if selected_output not in outputs:
+        available_outputs = ", ".join(sorted(outputs))
+        raise ValueError(
+            f"The output {selected_output!r} does not exist, "
+            f"available outputs: {available_outputs}"
+        )
+
+    return {selected_output: outputs[selected_output]}
 
 
 def build_source(expression, attribute_path, commit):

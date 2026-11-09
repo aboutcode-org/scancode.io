@@ -244,6 +244,37 @@ class ScanPipeNixPipesTest(TestCase):
         self.assertIn("x86_64-linux", arguments)
         self.assertEqual(nix.METADATA_EXPRESSION, arguments[-1])
 
+    def test_scanpipe_nix_get_selected_outputs(self):
+        outputs = {
+            "bin": "/nix/store/aaa-curl-bin",
+            "dev": "/nix/store/bbb-curl-dev",
+            "out": "/nix/store/ccc-curl",
+            "man": "/nix/store/ddd-curl-man",
+            "devdoc": "/nix/store/eee-curl-devdoc",
+            "debug": "/nix/store/fff-curl-debug",
+        }
+        expected = {
+            "bin": "/nix/store/aaa-curl-bin",
+            "out": "/nix/store/ccc-curl",
+            "debug": "/nix/store/fff-curl-debug",
+        }
+        self.assertEqual(expected, nix.get_selected_outputs(outputs))
+
+        expected = {"man": "/nix/store/ddd-curl-man"}
+        self.assertEqual(expected, nix.get_selected_outputs(outputs, "man"))
+
+        expected_message = (
+            "The output 'lib' does not exist, available outputs: "
+            "bin, debug, dev, devdoc, man, out"
+        )
+        with self.assertRaisesMessage(ValueError, expected_message):
+            nix.get_selected_outputs(outputs, "lib")
+
+        documentation_outputs = {"dev": "/nix/store/aaa-dev", "doc": "/nix/store/b"}
+        self.assertEqual(
+            documentation_outputs, nix.get_selected_outputs(documentation_outputs)
+        )
+
     @mock.patch("scanpipe.pipes.nix.run_nix_command")
     def test_scanpipe_nix_build_source(self, mock_run):
         mock_run.return_value = "warning: unknown setting\n/nix/store/abc-source\n"
