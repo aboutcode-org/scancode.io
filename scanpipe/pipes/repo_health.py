@@ -187,8 +187,7 @@ def normalize_score_and_model(score_data):
             f"Invalid score value it should be between 0 and 1, score: {score}"
         )
 
-    score = round(score, 2)
-    score = 1.0 - score
+    score = round(1.0 - score, 2)
 
     score_ecosystem = score_meta.get("ecosystem") or ""
     score_model = score_meta.get("model") or ""
