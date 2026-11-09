@@ -71,15 +71,6 @@ identified by the ``containment`` rule, are not compared by the next rules.
         ``third_party``, and ``extern``.
       - ``needs-review``
       - The remaining candidate.
-    * - ``highest-similarity``
-      - Different packages: one candidate is more similar than all the others by
-        at least 20 points, and all the similarities are known.
-      - ``needs-review``
-      - The most similar candidate.
-    * - ``conflicting-candidates``
-      - Different packages, not resolved by the previous rules.
-      - ``needs-review``
-      - None.
     * - ``preferred-version``
       - Versions of the same package: one is more similar than all the others by
         at least 20 points, or else only one is a release, as opposed to a commit
@@ -91,6 +82,15 @@ identified by the ``containment`` rule, are not compared by the next rules.
       - The preferred version.
     * - ``conflicting-versions``
       - Versions of the same package, without a preferred version.
+      - ``needs-review``
+      - None.
+    * - ``highest-similarity``
+      - Different packages: one candidate is more similar than all the others by
+        at least 20 points, and all the similarities are known.
+      - ``needs-review``
+      - The most similar candidate.
+    * - ``conflicting-candidates``
+      - Different packages, not resolved by the previous rules.
       - ``needs-review``
       - None.
     * - ``no-exact-match``

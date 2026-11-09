@@ -42,10 +42,10 @@ from scanpipe.models import OriginMatch
 from scanpipe.pipes.resolve import convert_spdx_expression
 
 CONTAINMENT_RULE = "containment"
-HIGHEST_SIMILARITY_RULE = "highest-similarity"
-CONFLICTING_CANDIDATES_RULE = "conflicting-candidates"
 PREFERRED_VERSION_RULE = "preferred-version"
 CONFLICTING_VERSIONS_RULE = "conflicting-versions"
+HIGHEST_SIMILARITY_RULE = "highest-similarity"
+CONFLICTING_CANDIDATES_RULE = "conflicting-candidates"
 NO_EXACT_MATCH_RULE = "no-exact-match"
 SINGLE_TOOL_RULE = "single-tool"
 CONFIRMED_BY_TWO_TOOLS_RULE = "confirmed-by-two-tools"
@@ -389,9 +389,10 @@ def get_preferred_version_origin(origins):
 
 def get_earliest_release_origin(origins):
     """
-    Return the origin released before all the other ``origins``, as a copy cannot
-    be older than its origin. Return None when a release date is unknown, or when
-    the earliest date is shared.
+    Return the origin released before all the other ``origins`` versions of the
+    same package, as a file often stays the same in several releases and was
+    copied at the earliest. Return None when a release date is unknown, or when the
+    earliest date is shared.
     """
     if not all(origin.release_date for origin in origins):
         return
