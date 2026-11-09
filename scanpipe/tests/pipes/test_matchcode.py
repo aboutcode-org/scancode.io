@@ -649,6 +649,7 @@ class MatchCodePipesTest(TestCase):
                 ["uid1", "uid2"],
                 package_data_by_uid,
                 "38.1.0",
+                origin_paths={},
             )
         )
         self.assertEqual(1, len(origin_matches))
@@ -662,6 +663,7 @@ class MatchCodePipesTest(TestCase):
                 ["uid1"],
                 package_data_by_uid,
                 "38.1.0",
+                origin_paths={},
             )
         )
         self.assertEqual(100, origin_matches[0].similarity)
@@ -705,12 +707,14 @@ class MatchCodePipesTest(TestCase):
     def test_scanpipe_pipes_matchcode_get_origin_paths(
         self, mock_is_configured, mock_match_resources
     ):
+        candidate_purls = {"pkg:pypi/six@1.16.0", "pkg:pypi/pip@24.0"}
         mock_is_configured.return_value = False
-        self.assertEqual({}, matchcode.get_origin_paths([SIX_16_SHA1]))
+        origin_paths = matchcode.get_origin_paths([SIX_16_SHA1], candidate_purls)
+        self.assertEqual({}, origin_paths)
         mock_match_resources.assert_not_called()
 
         mock_is_configured.return_value = True
-        self.assertEqual({}, matchcode.get_origin_paths([]))
+        self.assertEqual({}, matchcode.get_origin_paths([], candidate_purls))
         mock_match_resources.assert_not_called()
 
         shared_copy_resources_location = (
@@ -725,6 +729,14 @@ class MatchCodePipesTest(TestCase):
                 "path": "pip-24.0.tar.gz-extract/pip-24.0/tests/data/pkg/lib/six.py",
             }
         )
+        # A copy of the file in a package that is not a candidate.
+        purldb_resources.append(
+            {
+                "purl": "pkg:pypi/virtualenv@20.0.0",
+                "sha1": SIX_16_SHA1,
+                "path": "virtualenv-20.0.0/src/virtualenv/six.py",
+            }
+        )
         mock_match_resources.return_value = purldb_resources
 
         expected = {
@@ -735,7 +747,8 @@ class MatchCodePipesTest(TestCase):
                 "pip-24.0.tar.gz-extract/pip-24.0/src/pip/_vendor/six.py"
             ),
         }
-        self.assertEqual(expected, matchcode.get_origin_paths([SIX_16_SHA1]))
+        origin_paths = matchcode.get_origin_paths([SIX_16_SHA1], candidate_purls)
+        self.assertEqual(expected, origin_paths)
         mock_match_resources.assert_called_once_with([SIX_16_SHA1])
 
     @mock.patch("scanpipe.pipes.purldb.match_resources")
@@ -750,7 +763,9 @@ class MatchCodePipesTest(TestCase):
         ]
 
         origin_paths = matchcode.get_origin_paths(
-            ["sha1_a", "sha1_b", "sha1_c"], batch_size=2
+            ["sha1_a", "sha1_b", "sha1_c"],
+            {"pkg:pypi/six@1.16.0", "pkg:npm/ms@2.1.3"},
+            batch_size=2,
         )
         expected = {
             ("pkg:pypi/six@1.16.0", "sha1_a"): "six.py",
@@ -795,6 +810,7 @@ class MatchCodePipesTest(TestCase):
                 package_data_by_uid,
                 package_data_by_purl,
                 "38.1.0",
+                origin_paths={},
             )
         )
         self.assertEqual(OriginMatch.MatchType.FILE, origin_matches[0].match_type)
@@ -820,6 +836,7 @@ class MatchCodePipesTest(TestCase):
                 package_data_by_uid,
                 package_data_by_purl,
                 "38.1.0",
+                origin_paths={},
             )
         )
         self.assertEqual(OriginMatch.MatchType.SNIPPET, origin_matches[0].match_type)
@@ -831,6 +848,7 @@ class MatchCodePipesTest(TestCase):
             package_data_by_uid,
             package_data_by_purl,
             "38.1.0",
+            origin_paths={},
         )
         self.assertEqual([], list(origin_matches))
 

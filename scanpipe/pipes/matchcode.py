@@ -600,12 +600,14 @@ def get_path_depth_and_path(purldb_resource):
     return path.count("/"), path
 
 
-def get_origin_paths(sha1_list, batch_size=1000):
+def get_origin_paths(sha1_list, candidate_purls, batch_size=1000):
     """
-    Return the paths of the ``sha1_list`` files in the PurlDB packages, as a
-    mapping of (package PURL, sha1) to path, as MatchCode.io does not report the
-    path of a matched file. When a package has several copies of a file, the
-    shallowest path is kept. Empty when PurlDB is not configured.
+    Return the paths of the ``sha1_list`` files in the ``candidate_purls``
+    packages, as a mapping of (package PURL, sha1) to path, as MatchCode.io does
+    not report the path of a matched file. PurlDB reports the copies of a file in
+    all its packages: only the candidate packages are kept. When a package has
+    several copies of a file, the shallowest path is kept. Empty when PurlDB is not
+    configured.
     The sha1 are sent to PurlDB by batches of ``batch_size``.
     """
     if not sha1_list or not purldb.is_configured():
@@ -616,6 +618,7 @@ def get_origin_paths(sha1_list, batch_size=1000):
             purldb_resource
             for sha1_batch in batched(sha1_list, batch_size)
             for purldb_resource in purldb.match_resources(list(sha1_batch))
+            if purldb_resource["purl"] in candidate_purls
         ),
         key=get_path_depth_and_path,
     )
@@ -632,7 +635,7 @@ def make_package_origin_matches(
     package_uids,
     package_data_by_uid,
     tool_version,
-    origin_paths=None,
+    origin_paths,
 ):
     """
     Yield unsaved OriginMatch instances for the ``resource`` matched packages.
@@ -640,7 +643,6 @@ def make_package_origin_matches(
     of a matched file in its package.
     """
     similarity = 100 if match_type in OriginMatch.EXACT_MATCH_TYPES else None
-    origin_paths = origin_paths or {}
     seen_purls = set()
 
     for package_uid in package_uids:
@@ -668,7 +670,7 @@ def make_origin_matches(
     package_data_by_uid,
     package_data_by_purl,
     tool_version,
-    origin_paths=None,
+    origin_paths,
 ):
     """Yield unsaved OriginMatch instances from a ``resource`` match results."""
     matched_snippets = (resource_results.get("extra_data") or {}).get(
@@ -737,7 +739,7 @@ def load_matchcode_results(project, match_results):
         package_data_by_uid=package_data_by_uid,
         package_data_by_purl=package_data_by_purl,
         tool_version=match_results["headers"][0]["tool_version"],
-        origin_paths=get_origin_paths(matched_file_sha1s),
+        origin_paths=get_origin_paths(matched_file_sha1s, package_data_by_purl),
     )
 
     origin_match_count, _ = create_origin_matches(

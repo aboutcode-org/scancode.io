@@ -52,7 +52,8 @@ Rules
 -----
 
 The rules are evaluated in this order, and the first rule that applies sets the
-determination.
+determination. The candidates that carry the copy of another candidate, as
+identified by the ``containment`` rule, are not compared by the next rules.
 
 .. list-table::
     :header-rows: 1
@@ -88,7 +89,9 @@ determination.
       - Versions of the same package: one is more similar than all the others by
         at least 20 points, or else only one is a release, as opposed to a commit
         hash or a missing version, or else one release is more similar than the
-        other releases by at least 20 points.
+        other releases by at least 20 points, or else one release was released
+        before the other releases, as a file often stays the same in several
+        releases.
       - ``needs-review``
       - The preferred version.
     * - ``conflicting-versions``

@@ -367,7 +367,8 @@ def get_preferred_version_origin(origins):
     """
     Return the origin of the preferred version among the ``origins`` versions of
     the same package: the clearly most similar version, or else the only release
-    version, as opposed to a commit, or else the clearly most similar release.
+    version, as opposed to a commit, or else the clearly most similar release, or
+    else the earliest release, as a file often stays the same in several releases.
     Return None when no version is preferred.
     """
     if most_similar_origin := get_most_similar_origin(origins):
@@ -378,7 +379,9 @@ def get_preferred_version_origin(origins):
         return release_origins[0]
 
     if len(release_origins) > 1:
-        return get_most_similar_origin(release_origins)
+        return get_most_similar_origin(release_origins) or get_earliest_release_origin(
+            release_origins
+        )
 
 
 def get_earliest_release_origin(origins):
@@ -426,11 +429,8 @@ def is_carrier_origin(origin, other_origins):
     )
 
 
-def get_contained_origin(origins):
-    """
-    Return the only origin among the ``origins`` of different packages that does
-    not carry the copy of another, when the others do. Return None otherwise.
-    """
+def get_non_carrier_origins(origins):
+    """Return the ``origins`` that do not carry the copy of another origin."""
     non_carrier_origins = []
     for origin in origins:
         other_origins = [
@@ -438,32 +438,35 @@ def get_contained_origin(origins):
         ]
         if not is_carrier_origin(origin, other_origins):
             non_carrier_origins.append(origin)
-
-    # Called with several origins: a single non carrier means the others carry.
-    if len(non_carrier_origins) == 1:
-        return non_carrier_origins[0]
+    return non_carrier_origins
 
 
 def get_conflict_rule_and_candidate(origins):
     """
     Return the determination rule of the conflicting candidate ``origins`` of a
     resource, and the proposed candidate origin, None when there is no proposal.
+    The candidates that carry the copy of another candidate are not its origin:
+    the other rules only compare the remaining candidates.
     """
-    if not is_same_package_versions(origins):
-        if contained_origin := get_contained_origin(origins):
-            return CONTAINMENT_RULE, contained_origin
-        # The similarity is measured on the copy itself, while a release date only
-        # tells that a package version could have been copied.
-        if most_similar_origin := get_most_similar_origin(origins):
-            return HIGHEST_SIMILARITY_RULE, most_similar_origin
-        if earliest_origin := get_earliest_release_origin(origins):
-            return EARLIEST_RELEASE_RULE, earliest_origin
-        return CONFLICTING_CANDIDATES_RULE, None
+    non_carrier_origins = get_non_carrier_origins(origins)
+    if len(non_carrier_origins) == 1:
+        return CONTAINMENT_RULE, non_carrier_origins[0]
 
-    if preferred_origin := get_preferred_version_origin(origins):
-        return PREFERRED_VERSION_RULE, preferred_origin
+    # All the candidates are kept when they all carry the copy of another.
+    candidate_origins = non_carrier_origins or origins
 
-    return CONFLICTING_VERSIONS_RULE, None
+    if is_same_package_versions(candidate_origins):
+        if preferred_origin := get_preferred_version_origin(candidate_origins):
+            return PREFERRED_VERSION_RULE, preferred_origin
+        return CONFLICTING_VERSIONS_RULE, None
+
+    # The similarity is measured on the copy itself, while a release date only
+    # tells that a package version could have been copied.
+    if most_similar_origin := get_most_similar_origin(candidate_origins):
+        return HIGHEST_SIMILARITY_RULE, most_similar_origin
+    if earliest_origin := get_earliest_release_origin(candidate_origins):
+        return EARLIEST_RELEASE_RULE, earliest_origin
+    return CONFLICTING_CANDIDATES_RULE, None
 
 
 def get_single_origin_rule(origin):

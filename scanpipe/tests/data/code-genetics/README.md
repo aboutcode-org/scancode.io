@@ -23,7 +23,7 @@ Each case directory contains:
 - `expected.json`: the ground truth.
 - `matchcode-results.json`: the MatchCode.io match results, reduced to the fields used by the importer.
 - `scanoss-results.json`: the SCANOSS raw results, with paths relative to `codebase/`.
-- `purldb-resources.json`: the PurlDB resources of the files matched by MatchCode.io, reduced to their package `purl`, `sha1` and `path`, as returned by the `resources/filter_by_checksums/` API. Only for the cases with a MatchCode.io file match.
+- `purldb-resources.json`: the PurlDB resources of the files matched by MatchCode.io, reduced to their package `purl`, `sha1` and `path`, as returned by the `resources/filter_by_checksums/` API. Only for the `shared-copy` case, where the paths of the copies decide the origin.
 
 ## expected.json
 

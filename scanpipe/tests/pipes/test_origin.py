@@ -502,7 +502,7 @@ class ScanPipeOriginPipesTest(TestCase):
         )
         self.assertTrue(origin.is_carrier_origin(bootstrap_origin, [jquery_origin]))
 
-    def test_scanpipe_pipes_origin_get_contained_origin(self):
+    def test_scanpipe_pipes_origin_get_non_carrier_origins(self):
         six_origin = make_origin("pkg:pypi/six@1.16.0", origin_path="six-1.16.0/six.py")
         pip_origin = make_origin(
             "pkg:pypi/pip@24.0", origin_path="pip-24.0/src/pip/_vendor/six.py"
@@ -521,22 +521,27 @@ class ScanPipeOriginPipesTest(TestCase):
             "pkg:npm/lodash@4.17.21", origin_path="package/debounce.js"
         )
 
-        self.assertEqual(
-            six_origin, origin.get_contained_origin([pip_origin, six_origin])
-        )
-        contained_origin = origin.get_contained_origin(
+        non_carrier_origins = origin.get_non_carrier_origins([pip_origin, six_origin])
+        self.assertEqual([six_origin], non_carrier_origins)
+        non_carrier_origins = origin.get_non_carrier_origins(
             [pip_origin, virtualenv_origin, six_origin]
         )
-        self.assertEqual(six_origin, contained_origin)
-        contained_origin = origin.get_contained_origin([anime365_origin, six_origin])
-        self.assertEqual(six_origin, contained_origin)
+        self.assertEqual([six_origin], non_carrier_origins)
+        non_carrier_origins = origin.get_non_carrier_origins(
+            [anime365_origin, six_origin]
+        )
+        self.assertEqual([six_origin], non_carrier_origins)
 
         # No carrier.
-        self.assertIsNone(origin.get_contained_origin([lodash_origin, six_origin]))
-        # Several origins that do not carry another.
-        self.assertIsNone(
-            origin.get_contained_origin([pip_origin, six_origin, lodash_origin])
+        non_carrier_origins = origin.get_non_carrier_origins(
+            [lodash_origin, six_origin]
         )
+        self.assertEqual([lodash_origin, six_origin], non_carrier_origins)
+        # Several origins that do not carry another.
+        non_carrier_origins = origin.get_non_carrier_origins(
+            [pip_origin, six_origin, lodash_origin]
+        )
+        self.assertEqual([six_origin, lodash_origin], non_carrier_origins)
 
         # Regression test: the versions of six carried each other, and the copier
         # was proposed.
@@ -545,9 +550,10 @@ class ScanPipeOriginPipesTest(TestCase):
         )
         foo_origin = make_origin("pkg:pypi/foo@1.0", origin_path="foo/compat.py")
         self.assertFalse(origin.is_carrier_origin(six_origin, [six_17_origin]))
-        self.assertIsNone(
-            origin.get_contained_origin([six_origin, six_17_origin, foo_origin])
+        non_carrier_origins = origin.get_non_carrier_origins(
+            [six_origin, six_17_origin, foo_origin]
         )
+        self.assertEqual([six_origin, six_17_origin, foo_origin], non_carrier_origins)
 
     def test_scanpipe_pipes_origin_get_earliest_release_origin(self):
         six_origin = make_origin("pkg:pypi/six@1.16.0", release_date="2021-05-05")
@@ -655,6 +661,18 @@ class ScanPipeOriginPipesTest(TestCase):
             origin.get_preferred_version_origin([six_17_origin, six_16_origin])
         )
 
+        # The same file in several releases: the earliest release.
+        dated_six_17_origin = make_origin(
+            "pkg:pypi/six@1.17.0", similarity=100, release_date="2024-12-04"
+        )
+        dated_six_16_origin = make_origin(
+            "pkg:pypi/six@1.16.0", similarity=100, release_date="2021-05-05"
+        )
+        preferred_origin = origin.get_preferred_version_origin(
+            [dated_six_17_origin, dated_six_16_origin]
+        )
+        self.assertEqual(dated_six_16_origin, preferred_origin)
+
         # Regression test: a versionless candidate raised a TypeError.
         versionless_origin = make_origin("pkg:pypi/six", tool="scanoss")
         preferred_origin = origin.get_preferred_version_origin(
@@ -688,6 +706,25 @@ class ScanPipeOriginPipesTest(TestCase):
             [pip_origin, six_16_origin]
         )
         self.assertEqual((origin.CONTAINMENT_RULE, six_16_origin), rule_and_candidate)
+
+        # The carrier is removed before comparing the versions of six, even without
+        # its release date.
+        dated_six_17_origin = make_origin(
+            "pkg:pypi/six@1.17.0", similarity=100, release_date="2024-12-04"
+        )
+        dated_six_16_origin = make_origin(
+            "pkg:pypi/six@1.16.0", similarity=100, release_date="2021-05-05"
+        )
+        carrier_pip_origin = make_origin(
+            "pkg:pypi/pip@24.0",
+            similarity=100,
+            origin_path="pip-24.0/src/pip/_vendor/six.py",
+        )
+        rule_and_candidate = origin.get_conflict_rule_and_candidate(
+            [dated_six_17_origin, carrier_pip_origin, dated_six_16_origin]
+        )
+        expected = (origin.PREFERRED_VERSION_RULE, dated_six_16_origin)
+        self.assertEqual(expected, rule_and_candidate)
 
         dated_six_origin = make_origin("pkg:pypi/six@1.16.0", release_date="2021-05-05")
         dated_pip_origin = make_origin("pkg:pypi/pip@24.0", release_date="2024-02-03")
