@@ -24,9 +24,9 @@ candidates:
   ``pkg:pypi/six@1.17.0``, as SCANOSS reports the equivalent PURLs of a
   component. A version with a ``v`` prefix, such as the ``v1.0.3`` Git tag, is
   the same as the ``1.0.3`` release.
-- The snippet matches covering fewer than 20 lines of the file are ignored, such
-  as a common license header found in many unrelated packages. They are still
-  stored as origin matches.
+- The snippet matches covering fewer than 20 lines of the file are not stored
+  as origin matches, such as a common license header found in many unrelated
+  packages. The raw tool results are kept in the project output files.
 - When nested directories are matched to the same package, the deepest
   directory is kept as the most precise match.
 - A file matched only to the package of its closest matched directory has no

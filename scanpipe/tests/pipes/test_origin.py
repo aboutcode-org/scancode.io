@@ -416,65 +416,6 @@ class ScanPipeOriginPipesTest(TestCase):
         ]
         self.assertEqual([("ini.c", 1), ("six.py", 2)], resource_origins)
 
-    def test_scanpipe_pipes_origin_iter_resource_origins_short_snippet_matches(self):
-        header_resource = make_resource_file(self.project1, path="header.py")
-        debounce_resource = make_resource_file(self.project1, path="debounce.js")
-        self.make_origin_match(
-            header_resource,
-            "pkg:pypi/six@1.16.0",
-            match_type="snippet",
-            line_ranges=[{"lines": [3, 19]}],
-        )
-        self.make_origin_match(
-            debounce_resource,
-            "pkg:npm/lodash@4.17.21",
-            match_type="snippet",
-            line_ranges=[{"lines": [26, 140]}],
-        )
-        self.make_origin_match(
-            debounce_resource,
-            "pkg:pypi/six@1.16.0",
-            match_type="snippet",
-            line_ranges=[{"lines": [1, 5]}],
-        )
-
-        origin_matches = self.project1.originmatchs.order_by("resource__path")
-        resource_origins = [
-            (resource.path, [resource_origin.purl for resource_origin in origins])
-            for resource, origins in origin.iter_resource_origins(origin_matches)
-        ]
-        self.assertEqual(
-            [("debounce.js", ["pkg:npm/lodash@4.17.21"])], resource_origins
-        )
-
-    def test_scanpipe_pipes_origin_get_matched_line_count(self):
-        origin_match = OriginMatch(line_ranges=[])
-        self.assertEqual(0, origin.get_matched_line_count(origin_match))
-
-        origin_match.line_ranges = [{"lines": [3, 19]}]
-        self.assertEqual(17, origin.get_matched_line_count(origin_match))
-
-        # Overlapping ranges count each line once.
-        origin_match.line_ranges = [
-            {"lines": [1, 36], "origin_lines": [1, 36]},
-            {"lines": [30, 40], "origin_lines": [30, 40]},
-        ]
-        self.assertEqual(40, origin.get_matched_line_count(origin_match))
-
-    def test_scanpipe_pipes_origin_is_short_snippet_match(self):
-        origin_match = OriginMatch(match_type="snippet", line_ranges=[])
-        self.assertTrue(origin.is_short_snippet_match(origin_match))
-
-        origin_match.line_ranges = [{"lines": [1, 19]}]
-        self.assertTrue(origin.is_short_snippet_match(origin_match))
-
-        origin_match.line_ranges = [{"lines": [1, 20]}]
-        self.assertFalse(origin.is_short_snippet_match(origin_match))
-
-        # Only the snippet matches have a minimum length.
-        file_match = OriginMatch(match_type="file", line_ranges=[])
-        self.assertFalse(origin.is_short_snippet_match(file_match))
-
     def test_scanpipe_pipes_origin_get_ancestor_paths(self):
         expected = ["vendor/ms", "vendor"]
         self.assertEqual(expected, origin.get_ancestor_paths("vendor/ms/index.js"))
