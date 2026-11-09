@@ -29,6 +29,7 @@ from unittest import mock
 
 from django.test import TestCase
 
+import requests
 from packageurl import PackageURL
 
 from scanpipe.pipes import flag
@@ -39,8 +40,10 @@ from scanpipe.tests import make_resource_file
 COMMIT = "55ba7f49ef2962b42cbd126522b7df5f95037679"
 
 
-def make_response(status_code=200, json_data=None, text="", links=None):
-    response = mock.Mock(status_code=status_code, text=text, links=links or {})
+def make_response(status_code=200, json_data=None, text="", links=None, headers=None):
+    response = mock.Mock(
+        status_code=status_code, text=text, links=links or {}, headers=headers or {}
+    )
     response.json.return_value = json_data
     return response
 
@@ -68,6 +71,21 @@ class ScanPipeNixPipesTest(TestCase):
         self.project.add_input_source(download_url="pkg:nix/nixpkgs/other@1.0")
         with self.assertRaisesMessage(ValueError, "Only 1 Nix PURL is accepted"):
             nix.get_nix_purl(self.project)
+
+    def test_scanpipe_nix_get_binary_group(self):
+        self.assertEqual("Elf", nix.get_binary_group(self.project))
+
+        cases = [
+            ("pkg:nix/nixpkgs/hello@2.12.3?system=x86_64-linux", "Elf"),
+            ("pkg:nix/nixpkgs/hello@2.12.3?system=aarch64-darwin", "MacOS"),
+            ("pkg:nix/nixpkgs/hello@2.12.3", "Elf"),
+            ("not a purl", "Elf"),
+        ]
+        for download_url, expected in cases:
+            with self.subTest(download_url=download_url):
+                project = make_project()
+                project.add_input_source(download_url=download_url)
+                self.assertEqual(expected, nix.get_binary_group(project))
 
     def test_scanpipe_nix_validate_nix_purl(self):
         valid_purls = [
@@ -177,6 +195,26 @@ class ScanPipeNixPipesTest(TestCase):
         mock_release_branches.return_value = ["release-25.11"]
         self.assertFalse(nix.is_official_nixpkgs_commit(COMMIT))
 
+    def test_scanpipe_nix_check_github_response(self):
+        nix.check_github_response(make_response())
+
+        rate_limited_responses = [
+            make_response(status_code=403, headers={"x-ratelimit-remaining": "0"}),
+            make_response(status_code=429),
+        ]
+        for response in rate_limited_responses:
+            with self.subTest(status_code=response.status_code):
+                with self.assertRaisesMessage(
+                    requests.HTTPError, "SCANCODEIO_FETCH_HEADERS"
+                ):
+                    nix.check_github_response(response)
+                response.raise_for_status.assert_not_called()
+
+        response = make_response(status_code=500)
+        response.raise_for_status.side_effect = requests.HTTPError("500")
+        with self.assertRaisesMessage(requests.HTTPError, "500"):
+            nix.check_github_response(response)
+
     def test_scanpipe_nix_is_commit_on_branch(self):
         session = mock.Mock()
         cases = [
@@ -235,6 +273,11 @@ class ScanPipeNixPipesTest(TestCase):
         with self.assertRaises(nix.NixCommandError) as context:
             nix.run_nix_command(["nix-store", "--gc"], 10)
         self.assertEqual("\n".join(error_lines[-20:]), str(context.exception))
+
+        mock_run.side_effect = subprocess.TimeoutExpired(cmd="nix-build", timeout=10)
+        expected_message = "nix-build timed out after 10 seconds"
+        with self.assertRaisesMessage(nix.NixCommandError, expected_message):
+            nix.run_nix_command(["nix-build"], 10)
 
     def test_scanpipe_nix_get_nix_expression_arguments(self):
         expected = ["--argstr", "attributePath", "hello", "--argstr", "commit", COMMIT]
@@ -381,7 +424,7 @@ class ScanPipeNixPipesTest(TestCase):
         self.assertEqual({}, nix.get_narinfo(store_path))
 
     @mock.patch("scanpipe.pipes.nix.restore_nar")
-    @mock.patch("scanpipe.pipes.nix.fetch.fetch_http")
+    @mock.patch("scanpipe.pipes.nix.download_file")
     @mock.patch("scanpipe.pipes.nix.get_narinfo")
     def test_scanpipe_nix_fetch_binary(self, mock_narinfo, mock_fetch, mock_restore):
         store_path = "/nix/store/5z2yp3ysx8476c8g5w25b0smlgkjvaq3-hello-2.12.3"
@@ -392,9 +435,15 @@ class ScanPipeNixPipesTest(TestCase):
         mock_fetch.assert_not_called()
 
         with tempfile.TemporaryDirectory() as temp_directory:
-            nar_location = Path(temp_directory) / "hello.nar.zst"
-            nar_location.write_bytes(b"nar")
-            mock_fetch.return_value = mock.Mock(path=nar_location)
+            nar_location = (
+                Path(temp_directory)
+                / "5z2yp3ysx8476c8g5w25b0smlgkjvaq3-hello-2.12.3.nar"
+            )
+
+            def download_file(url, file_location):
+                file_location.write_bytes(b"nar")
+
+            mock_fetch.side_effect = download_file
             mock_narinfo.return_value = {
                 "URL": "nar/abc.nar.zst",
                 "Compression": "zstd",
@@ -402,10 +451,26 @@ class ScanPipeNixPipesTest(TestCase):
 
             self.assertTrue(nix.fetch_binary(store_path, destination, temp_directory))
             mock_fetch.assert_called_once_with(
-                "https://cache.nixos.org/nar/abc.nar.zst", to=temp_directory
+                "https://cache.nixos.org/nar/abc.nar.zst", nar_location
             )
             mock_restore.assert_called_once_with(nar_location, "zstd", destination)
             self.assertFalse(nar_location.exists())
+
+    @mock.patch("scanpipe.pipes.nix.fetch.get_request_session")
+    def test_scanpipe_nix_download_file(self, mock_session):
+        response = mock.MagicMock()
+        response.iter_content.return_value = [b"first ", b"second"]
+        mock_session.return_value.get.return_value.__enter__.return_value = response
+
+        with tempfile.TemporaryDirectory() as temp_directory:
+            file_location = Path(temp_directory) / "hello.nar"
+            nix.download_file("https://cache.nixos.org/nar/abc.nar", file_location)
+            self.assertEqual(b"first second", file_location.read_bytes())
+
+        self.assertTrue(mock_session.return_value.get.call_args.kwargs["stream"])
+        response.iter_content.assert_called_once_with(
+            chunk_size=nix.DOWNLOAD_CHUNK_SIZE
+        )
 
     @mock.patch("scanpipe.pipes.nix.make_writable")
     @mock.patch("scanpipe.pipes.nix.subprocess.run")
@@ -419,7 +484,9 @@ class ScanPipeNixPipesTest(TestCase):
             with self.assertRaisesMessage(ValueError, "Unsupported NAR compression"):
                 nix.restore_nar(nar_location, "lzip", destination)
 
-            mock_popen.return_value.returncode = 0
+            decompress_process = mock_popen.return_value.__enter__.return_value
+            decompress_process.returncode = 0
+            decompress_process.stderr.read.return_value = b""
             mock_run.return_value = mock.Mock(returncode=0, stderr="")
             nix.restore_nar(nar_location, "xz", destination)
             self.assertEqual(
@@ -434,6 +501,19 @@ class ScanPipeNixPipesTest(TestCase):
             mock_run.return_value = mock.Mock(returncode=1, stderr="bad archive")
             with self.assertRaisesMessage(nix.NixCommandError, "bad archive"):
                 nix.restore_nar(nar_location, "xz", destination)
+
+            decompress_process.returncode = 1
+            decompress_process.stderr.read.return_value = b"xz: Unexpected end"
+            mock_run.return_value = mock.Mock(returncode=0, stderr="")
+            with self.assertRaisesMessage(nix.NixCommandError, "xz: Unexpected end"):
+                nix.restore_nar(nar_location, "xz", destination)
+
+            mock_run.side_effect = subprocess.TimeoutExpired(
+                cmd="nix-store", timeout=nix.NIX_BUILD_TIMEOUT
+            )
+            with self.assertRaisesMessage(nix.NixCommandError, "timed out"):
+                nix.restore_nar(nar_location, "xz", destination)
+            decompress_process.kill.assert_called_once()
 
     @mock.patch("scanpipe.pipes.nix.run_nix_command")
     def test_scanpipe_nix_collect_garbage(self, mock_run):
@@ -579,3 +659,30 @@ class ScanPipeNixPipesTest(TestCase):
         self.assertEqual(
             [], nix.get_uncovered_license_keys(self.project, "gpl-3.0-plus AND mit")
         )
+
+        # The GPL text of a COPYING file is detected without "or later".
+        make_resource_file(
+            self.project, "from/COPYING", detected_license_expression="gpl-3.0"
+        )
+        self.assertEqual(
+            ["mit"], nix.get_uncovered_license_keys(self.project, "gpl-3.0-plus")
+        )
+        self.assertEqual(
+            ["mit"], nix.get_uncovered_license_keys(self.project, "gpl-3.0")
+        )
+        self.assertEqual(
+            ["gpl-3.0", "gpl-3.0-plus"],
+            nix.get_uncovered_license_keys(self.project, "gpl-2.0-plus AND mit"),
+        )
+
+    def test_scanpipe_nix_get_base_license_key(self):
+        cases = [
+            ("gpl-3.0-plus", "gpl-3.0"),
+            ("lgpl-2.1-plus", "lgpl-2.1"),
+            ("gpl-3.0", "gpl-3.0"),
+            ("m-plus", "m-plus"),
+            ("mit", "mit"),
+        ]
+        for license_key, expected in cases:
+            with self.subTest(license_key=license_key):
+                self.assertEqual(expected, nix.get_base_license_key(license_key))

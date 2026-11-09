@@ -46,15 +46,20 @@ class ScanNixPackage(DeployToDevelop):
     When the source cannot be fetched, for a package without a ``src`` attribute,
     the binary is analyzed alone and the license check is skipped.
 
-    The ELF binaries mapping is always enabled, as nixpkgs binaries are ELF
-    files on Linux. It relies on the DWARF debug paths, available only for the
-    packages that provide a ``debug`` output.
+    The binaries mapping is always enabled: ELF for a Linux ``system``, and
+    Mach-O for a macOS ``system``. The ELF mapping relies on the DWARF debug
+    paths, available only for the packages that provide a ``debug`` output.
 
     The source is evaluated for the Linux system running ScanCode.io: for a
     macOS ``system``, the source does not include the macOS specific patches.
 
     Add the ``match_to_matchcode`` addon pipeline to the project to match the
     source with MatchCode.io and find the code borrowed from other packages.
+
+    The nixpkgs commit is checked with the GitHub API, limited to 60 requests
+    per hour without a token. Provide a token with the
+    ``SCANCODEIO_FETCH_HEADERS`` setting, for example:
+    ``api.github.com=Authorization=token <YOUR_TOKEN>``.
 
     This pipeline requires the ``nix`` command, available in the full
     ScanCode.io image.
@@ -64,8 +69,9 @@ class ScanNixPackage(DeployToDevelop):
 
     def __init__(self, run_instance):
         super().__init__(run_instance)
-        if "Elf" not in self.selected_groups:
-            self.selected_groups = [*self.selected_groups, "Elf"]
+        binary_group = nix.get_binary_group(self.project)
+        if binary_group not in self.selected_groups:
+            self.selected_groups = [*self.selected_groups, binary_group]
 
     @classmethod
     def get_availability(cls):
@@ -148,8 +154,8 @@ class ScanNixPackage(DeployToDevelop):
         if patch_error:
             self.project.add_warning(
                 description=(
-                    "The nixpkgs patches cannot be applied, the upstream source "
-                    "is used instead."
+                    "The source with the nixpkgs patches cannot be built, the "
+                    "upstream source is used instead."
                 ),
                 model=self.pipeline_name,
                 details={"error": patch_error},

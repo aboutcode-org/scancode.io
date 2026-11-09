@@ -211,6 +211,16 @@ class ScanPipePipelinesTest(TestCase):
         steps = ScanNixPackage.get_steps(groups=pipeline.selected_groups)
         self.assertIn(ScanNixPackage.map_elf, steps)
 
+        project2 = make_project()
+        project2.add_input_source(
+            download_url="pkg:nix/nixpkgs/hello@2.12.3?system=aarch64-darwin"
+        )
+        pipeline = project2.add_pipeline("scan_nix_package").make_pipeline_instance()
+        self.assertEqual(["MacOS"], pipeline.selected_groups)
+        steps = ScanNixPackage.get_steps(groups=pipeline.selected_groups)
+        self.assertIn(ScanNixPackage.map_macho, steps)
+        self.assertNotIn(ScanNixPackage.map_elf, steps)
+
     @mock.patch("scanpipe.pipes.nix.get_package_metadata")
     def test_scanpipe_scan_nix_package_get_nix_package_metadata(self, mock_metadata):
         project1 = make_project()
@@ -2724,8 +2734,8 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual(
             [
                 "Outputs not available in the Nix binary cache: debug",
-                "The nixpkgs patches cannot be applied, the upstream source is used "
-                "instead.",
+                "The source with the nixpkgs patches cannot be built, the upstream "
+                "source is used instead.",
             ],
             warnings,
         )

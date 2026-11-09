@@ -26,10 +26,12 @@ import re
 import shutil
 import stat
 import subprocess
+from contextlib import suppress
 from itertools import islice
 from pathlib import Path
 from urllib.parse import urlencode
 
+import requests
 from license_expression import Licensing
 from packageurl import PackageURL
 
@@ -46,6 +48,12 @@ NIXPKGS_API_URL = "https://api.github.com/repos/NixOS/nixpkgs"
 
 NIX_EVAL_TIMEOUT = 600
 NIX_BUILD_TIMEOUT = 1800
+DOWNLOAD_CHUNK_SIZE = 1024 * 1024
+
+GITHUB_RATE_LIMIT_ERROR = (
+    "The GitHub API rate limit is reached. Provide a GitHub token for "
+    "api.github.com with the SCANCODEIO_FETCH_HEADERS setting."
+)
 
 # The PURL values end up in Nix expressions arguments, URLs, and file paths:
 # only a strict set of characters is accepted.
@@ -58,6 +66,10 @@ OUTPUT_REGEX = re.compile(r"[a-z][a-z0-9]*")
 # known by ScanCode: a single one would turn the whole expression into "unknown".
 NIXOS_LICENSE_REF_REGEX = re.compile(r"LicenseRef-nixos-[\w.+-]+")
 UNKNOWN_LICENSE_REF = "LicenseRef-scancode-unknown-license-reference"
+
+# A ScanCode "or later" license key: a versioned license key followed by "-plus",
+# such as "gpl-3.0-plus" for "gpl-3.0". The "m-plus" font license is not one.
+OR_LATER_LICENSE_KEY_REGEX = re.compile(r"(?P<base_key>.+-\d+(\.\d+)*)-plus")
 
 # The package outputs holding headers and documentation, not the deployed code.
 NON_DEPLOYED_OUTPUTS = {"dev", "devdoc", "devman", "doc", "info", "man"}
@@ -187,6 +199,26 @@ def validate_nix_purl(purl):
         raise ValueError(f"Invalid output: {output!r}")
 
 
+def get_binary_group(project):
+    """
+    Return the optional steps group mapping the binaries of the ``project`` Nix
+    PURL input: "MacOS" for a macOS ``system`` qualifier, or else "Elf". The
+    input is validated later by the pipeline.
+    """
+    input_source = project.inputsources.first()
+    if not input_source:
+        return "Elf"
+
+    system = ""
+    with suppress(ValueError):
+        purl = PackageURL.from_string(input_source.download_url)
+        system = purl.qualifiers.get("system", "")
+
+    if system.endswith("-darwin"):
+        return "MacOS"
+    return "Elf"
+
+
 def get_nixpkgs_commit(purl):
     """
     Return the nixpkgs commit of the ``purl``, from its qualifiers or from the
@@ -257,6 +289,21 @@ def is_official_nixpkgs_commit(commit):
     )
 
 
+def check_github_response(response):
+    """
+    Raise an HTTPError for an error ``response`` of the GitHub API, with a hint
+    to provide a token when the rate limit is reached.
+    """
+    is_rate_limited = (
+        response.status_code == 429
+        or response.headers.get("x-ratelimit-remaining") == "0"
+    )
+    if is_rate_limited:
+        raise requests.HTTPError(GITHUB_RATE_LIMIT_ERROR, response=response)
+
+    response.raise_for_status()
+
+
 def is_commit_on_branch(session, commit, branch):
     """Return True if the ``commit`` is an ancestor of, or equal to, the ``branch``."""
     compare_url = f"{NIXPKGS_API_URL}/compare/{commit}...{branch}"
@@ -264,7 +311,7 @@ def is_commit_on_branch(session, commit, branch):
     if response.status_code == 404:
         return False
 
-    response.raise_for_status()
+    check_github_response(response)
     # "ahead" means the branch has commits after the commit.
     return response.json().get("status") in ("ahead", "identical")
 
@@ -275,7 +322,7 @@ def get_release_branches(session):
     branches = []
     while url:
         response = session.get(url, timeout=fetch.HTTP_REQUEST_TIMEOUT)
-        response.raise_for_status()
+        check_github_response(response)
         branches.extend(
             ref["ref"].removeprefix("refs/heads/") for ref in response.json()
         )
@@ -293,13 +340,18 @@ def run_nix_command(arguments, timeout, cache_directory=None):
     if cache_directory:
         environment = {**os.environ, "XDG_CACHE_HOME": str(cache_directory)}
 
-    completed_process = subprocess.run(  # noqa: S603
-        arguments,
-        capture_output=True,
-        text=True,
-        timeout=timeout,
-        env=environment,
-    )
+    try:
+        completed_process = subprocess.run(  # noqa: S603
+            arguments,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            env=environment,
+        )
+    except subprocess.TimeoutExpired as error:
+        raise NixCommandError(
+            f"{arguments[0]} timed out after {timeout} seconds"
+        ) from error
 
     if completed_process.returncode:
         error_lines = completed_process.stderr.strip().splitlines()
@@ -385,8 +437,8 @@ def build_source(expression, attribute_path, commit, cache_directory=None):
 def fetch_source(attribute_path, commit, destination, cache_directory=None):
     """
     Copy the package source, with the nixpkgs patches applied, to ``destination``.
-    Fall back to the upstream source when the patches cannot be applied, and
-    return the patches error, or an empty string when the patches were applied.
+    Fall back to the upstream source when the patched source cannot be built, for
+    a patch or an evaluation error, and return this error, or an empty string.
 
     The source is evaluated for the system running ScanCode.io: the patches
     are the same for most systems.
@@ -460,12 +512,24 @@ def fetch_binary(store_path, destination, download_directory):
     if not narinfo:
         return False
 
-    downloaded = fetch.fetch_http(
-        f"{NIX_CACHE_URL}/{narinfo['URL']}", to=download_directory
-    )
-    restore_nar(downloaded.path, narinfo.get("Compression", "none"), destination)
-    downloaded.path.unlink()
+    nar_location = Path(download_directory) / f"{Path(store_path).name}.nar"
+    download_file(f"{NIX_CACHE_URL}/{narinfo['URL']}", nar_location)
+    restore_nar(nar_location, narinfo.get("Compression", "none"), destination)
+    nar_location.unlink()
     return True
+
+
+def download_file(url, file_location):
+    """
+    Download the ``url`` to ``file_location`` by chunks, as a NAR archive can be
+    larger than the available memory.
+    """
+    session = fetch.get_request_session(url)
+    with session.get(url, stream=True, timeout=fetch.HTTP_REQUEST_TIMEOUT) as response:
+        response.raise_for_status()
+        chunks = response.iter_content(chunk_size=DOWNLOAD_CHUNK_SIZE)
+        with open(file_location, "wb") as downloaded_file:
+            downloaded_file.writelines(chunks)
 
 
 def restore_nar(nar_location, compression, destination):
@@ -475,24 +539,39 @@ def restore_nar(nar_location, compression, destination):
         raise ValueError(f"Unsupported NAR compression: {compression}")
 
     destination.parent.mkdir(parents=True, exist_ok=True)
-    with open(nar_location, "rb") as nar_file:
-        decompress_process = subprocess.Popen(  # noqa: S603
-            decompress_command, stdin=nar_file, stdout=subprocess.PIPE
-        )
-        restore_process = subprocess.run(  # noqa: S603
-            ["nix-store", "--restore", str(destination)],  # noqa: S607
-            stdin=decompress_process.stdout,
-            capture_output=True,
-            text=True,
-            timeout=NIX_BUILD_TIMEOUT,
-        )
+    with (
+        open(nar_location, "rb") as nar_file,
+        subprocess.Popen(  # noqa: S603
+            decompress_command,
+            stdin=nar_file,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        ) as decompress_process,
+    ):
+        try:
+            restore_process = subprocess.run(  # noqa: S603
+                ["nix-store", "--restore", str(destination)],  # noqa: S607
+                stdin=decompress_process.stdout,
+                capture_output=True,
+                text=True,
+                timeout=NIX_BUILD_TIMEOUT,
+            )
+        except subprocess.TimeoutExpired as error:
+            decompress_process.kill()
+            raise NixCommandError(
+                f"Cannot extract {nar_location}: timed out after "
+                f"{NIX_BUILD_TIMEOUT} seconds"
+            ) from error
+
+        # Closing the pipe stops the decompression when the restore failed.
         decompress_process.stdout.close()
+        decompress_error = decompress_process.stderr.read().decode()
         decompress_process.wait()
 
     if decompress_process.returncode or restore_process.returncode:
-        raise NixCommandError(
-            f"Cannot extract {nar_location}: {restore_process.stderr}"
-        )
+        extract_errors = [decompress_error.strip(), restore_process.stderr.strip()]
+        extract_error = "\n".join(error for error in extract_errors if error)
+        raise NixCommandError(f"Cannot extract {nar_location}: {extract_error}")
 
     make_writable(destination)
 
@@ -601,10 +680,19 @@ def scan_undeployed_from_files(project, progress_logger=None):
     ).update(status=flag.NOT_DEPLOYED)
 
 
+def get_base_license_key(license_key):
+    """Return the ``license_key`` without its "or later" suffix."""
+    if or_later_match := OR_LATER_LICENSE_KEY_REGEX.fullmatch(license_key):
+        return or_later_match.group("base_key")
+    return license_key
+
+
 def get_uncovered_license_keys(project, declared_license_expression):
     """
     Return the sorted license keys detected in the ``from/`` source that are not
-    part of the ``declared_license_expression``.
+    part of the ``declared_license_expression``. A license and its "or later"
+    variant cover each other, as the GPL text of a COPYING file is detected
+    without the "or later" notice of the source headers.
     """
     licensing = Licensing()
     declared_keys = set(licensing.license_keys(declared_license_expression))
@@ -618,4 +706,9 @@ def get_uncovered_license_keys(project, declared_license_expression):
     for detected_expression in detected_expressions.iterator():
         detected_keys.update(licensing.license_keys(detected_expression))
 
-    return sorted(detected_keys - declared_keys - IGNORED_LICENSE_KEYS)
+    declared_base_keys = {get_base_license_key(key) for key in declared_keys}
+    return sorted(
+        key
+        for key in detected_keys - IGNORED_LICENSE_KEYS
+        if get_base_license_key(key) not in declared_base_keys
+    )
