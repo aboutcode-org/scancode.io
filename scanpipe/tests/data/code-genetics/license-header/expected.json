@@ -1,0 +1,10 @@
+{
+  "description": "Original application code with the common MIT license header. Any match is a false positive.",
+  "resources": [
+    {
+      "path": "src/sensor_calibration.py",
+      "match_type": "none",
+      "origin": null
+    }
+  ]
+}

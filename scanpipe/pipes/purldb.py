@@ -166,9 +166,12 @@ def collect_response_results(response, data, timeout=DEFAULT_TIMEOUT):
         next_page = response.get("next")
         while next_page:
             response = request_post(url=next_page, data=data, timeout=timeout)
-            if response and response.get("count"):
-                results.extend(response["results"])
-                next_page = response.get("next")
+            # A failed request returns None, the same next page would be requested
+            # forever.
+            if not (response and response.get("count")):
+                break
+            results.extend(response["results"])
+            next_page = response.get("next")
     return results
 
 

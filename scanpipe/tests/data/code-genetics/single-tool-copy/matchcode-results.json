@@ -1,0 +1,32 @@
+{
+  "headers": [
+    {
+      "tool_name": "scanpipe",
+      "tool_version": "38.1.0"
+    }
+  ],
+  "packages": [],
+  "files": [
+    {
+      "path": "static",
+      "type": "directory",
+      "status": "",
+      "for_packages": [],
+      "extra_data": {}
+    },
+    {
+      "path": "static/js",
+      "type": "directory",
+      "status": "",
+      "for_packages": [],
+      "extra_data": {}
+    },
+    {
+      "path": "static/js/escape-html.js",
+      "type": "file",
+      "status": "",
+      "for_packages": [],
+      "extra_data": {}
+    }
+  ]
+}

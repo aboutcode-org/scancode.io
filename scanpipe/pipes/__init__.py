@@ -619,6 +619,31 @@ def run_command_safely(command_args, env=None):
     return completed_process.stdout
 
 
+# The shorter snippet matches are noise, such as a common license header matching
+# unrelated packages: the MIT license header is 19 lines long. Counted in lines,
+# not in percentage, to keep a copy of a few dozen lines in a large file.
+MIN_SNIPPET_LINE_COUNT = 20
+
+
+def get_matched_line_count(origin_match):
+    """Return the number of resource lines covered by the ``origin_match``."""
+    matched_lines = {
+        line
+        for line_range in origin_match.line_ranges
+        for line in range(line_range["lines"][0], line_range["lines"][1] + 1)
+    }
+    return len(matched_lines)
+
+
+def is_short_snippet_match(origin_match):
+    """Return True when ``origin_match`` is a snippet match too short to count."""
+    is_snippet_match = origin_match.match_type == OriginMatch.MatchType.SNIPPET
+    return (
+        is_snippet_match
+        and get_matched_line_count(origin_match) < MIN_SNIPPET_LINE_COUNT
+    )
+
+
 def make_origin_match(resource, tool, tool_version, **origin_match_data):
     """Return an unsaved OriginMatch of the ``resource`` reported by ``tool``."""
     return OriginMatch(
@@ -642,6 +667,8 @@ def create_origin_matches(
     The previous origin matches of ``tool`` are replaced, so a candidate that the
     tool does not report anymore is not kept. The replacement is atomic: on error,
     the previous origin matches are kept unchanged.
+    The snippet matches shorter than ``MIN_SNIPPET_LINE_COUNT`` lines are not
+    created. The raw tool results are kept in the project output files.
     Return the number of processed origin matches and the list of paths missing
     from the project codebase.
     """
@@ -663,6 +690,7 @@ def create_origin_matches(
                 origin_match
                 for path, resource in resources_by_path.items()
                 for origin_match in make_origin_matches(resource, results_by_path[path])
+                if not is_short_snippet_match(origin_match)
             ]
             OriginMatch.objects.bulk_create(origin_matches, ignore_conflicts=True)
             origin_match_count += len(origin_matches)

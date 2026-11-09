@@ -1758,6 +1758,7 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual("v5.2.1", scorecard_entry.scoring_tool_version)
         self.assertTrue(scorecard_entry.score)
 
+    @mock.patch("scanpipe.pipes.purldb.is_configured")
     @mock.patch("scanpipe.pipes.scanoss.scan_codebase")
     @mock.patch("scanpipe.pipes.scanoss.get_uvx_location")
     @mock.patch("scanpipe.pipes.scanoss.is_configured")
@@ -1770,6 +1771,7 @@ class PipelinesIntegrationTest(TestCase):
         mock_scanoss_is_configured,
         mock_get_uvx_location,
         mock_scan_codebase,
+        mock_purldb_is_configured,
     ):
         pipeline_name = "find_origins"
         project1 = make_project()
@@ -1796,11 +1798,13 @@ class PipelinesIntegrationTest(TestCase):
         mock_scanoss_is_configured.return_value = True
         mock_get_uvx_location.return_value = "/usr/bin/uvx"
         mock_scan_codebase.side_effect = write_scanoss_results
+        mock_purldb_is_configured.return_value = False
 
         run = project1.add_pipeline(pipeline_name)
         pipeline = run.make_pipeline_instance()
         exitcode, out = pipeline.execute()
         self.assertEqual(0, exitcode, msg=out)
+        self.assertIn("PurlDB is not configured", run.log)
 
         origin_matches = project1.originmatchs.order_by("tool", "resource__path")
         expected = [

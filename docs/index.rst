@@ -124,6 +124,7 @@ Indices and tables
     tutorial_web_ui_scan_repo_health
     scanpipe-concepts
     built-in-pipelines
+    origin-determination
     custom-pipelines
     scanpipe-pipes
     project-configuration

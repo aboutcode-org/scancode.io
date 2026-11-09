@@ -1,0 +1,46 @@
+{
+  "third_party/six.py": [
+    {
+      "component": "six",
+      "file": "six.py",
+      "file_hash": "9379cf68c692d9a9f92e5d29f6a54549",
+      "file_url": " ",
+      "id": "file",
+      "latest": "1.16.0",
+      "licenses": [
+        {
+          "checklist_url": "https://www.osadl.org/fileadmin/checklists/unreflicenses/MIT.txt",
+          "copyleft": "no",
+          "name": "MIT",
+          "osadl_updated": "2026-10-22T15:26:00+0000",
+          "patent_hints": "no",
+          "source": "component_declared",
+          "url": "https://spdx.org/licenses/MIT.html"
+        }
+      ],
+      "lines": "all",
+      "matched": "100%",
+      "oss_lines": "all",
+      "purl": [
+        "pkg:github/benjaminp/six",
+        "pkg:pypi/six",
+        "pkg:golang/github.com/benjaminp/six",
+        "pkg:conda/six"
+      ],
+      "release_date": "2021-05-05",
+      "server": {
+        "kb_version": {
+          "daily": "26.11.03",
+          "monthly": "26.10"
+        },
+        "version": "5.4.28"
+      },
+      "source_hash": "9379cf68c692d9a9f92e5d29f6a54549",
+      "status": "pending",
+      "url": "https://github.com/benjaminp/six",
+      "url_hash": "3d21479ad1558562f8ea4ff43a1c0c72",
+      "vendor": "benjaminp",
+      "version": "1.16.0"
+    }
+  ]
+}

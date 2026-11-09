@@ -24,6 +24,7 @@ import difflib
 import itertools
 import json
 import logging
+import re
 from pathlib import PurePosixPath
 from urllib.parse import urlparse
 
@@ -41,6 +42,13 @@ from scanpipe.pipes import jvm
 from scanpipe.pipes import scancode
 
 logger = logging.getLogger(__name__)
+
+# Matches Maven property placeholders ${name}.
+# e.g. ${shading.prefix}, ${rename.offset}
+MAVEN_PROPERTY_PLACEHOLDER_RE = re.compile(r"\$\{([^}]+)\}")
+
+# Number of parent POMs to walk before giving up.
+MAX_PARENT_CHAIN_DEPTH = 10
 
 
 def check_input_and_return_purl(project):
@@ -221,17 +229,20 @@ def get_main_maven_pom(project, purl):
 
     The main POM is typically located at:
         .../META-INF/maven/<groupId>/<artifactId>/pom.xml
+
+    Search the deployment (``to/``) codebase first, then the development
+    (``from/``) codebase: the binary archive may exclude
+    ``META-INF/maven/**`` (a common shade-plugin setting), in which case
+    the POM is only available on the source side.
     """
     namespace = purl.namespace
     name = purl.name
 
     expected_suffix = f"{namespace}/{name}/pom.xml"
-    return (
-        project.codebaseresources.files()
-        .to_codebase()
-        .filter(path__endswith=expected_suffix)
-        .first()
+    pom_resources = project.codebaseresources.files().filter(
+        path__endswith=expected_suffix
     )
+    return pom_resources.to_codebase().first() or pom_resources.from_codebase().first()
 
 
 def get_maven_shade_relocations(project, pom_resource):
@@ -281,6 +292,116 @@ def get_maven_shade_relocations(project, pom_resource):
                 relocations[shaded_pattern] = pattern
 
     return relocations
+
+
+def _extract_parent_keys(root):
+    """Return ``(groupId, artifactId, version)`` from ``<parent>``, or None."""
+    parent = root.find("{*}parent")
+    if parent is None:
+        return
+    keys = tuple(
+        parent.findtext(f"{{*}}{key}", "").strip()
+        for key in ("groupId", "artifactId", "version")
+    )
+    return keys if all(keys) else None
+
+
+def _extract_properties(root):
+    """Return the ``{name: value}`` map from the ``<properties>`` block."""
+    properties_element = root.find("{*}properties")
+    if properties_element is None:
+        return {}
+    return {
+        child.tag.rpartition("}")[2]: (child.text or "").strip()
+        for child in properties_element
+    }
+
+
+def _walk_parent_poms(main_pom):
+    """
+    Yield the root element of ``main_pom`` and each ancestor POM reachable
+    through the ``<parent>`` chain, up to ``MAX_PARENT_CHAIN_DEPTH`` levels.
+
+    Stops at the first parse error, missing parent coordinates, or
+    download failure.
+    """
+    current_path = main_pom.location
+
+    for _ in range(MAX_PARENT_CHAIN_DEPTH):
+        try:
+            root = SafeElementTree.parse(current_path).getroot()
+        except (SafeElementTree.ParseError, OSError, ValueError):
+            return
+        yield root
+
+        parent_keys = _extract_parent_keys(root)
+        if not parent_keys:
+            return
+
+        group, artifact, version = parent_keys
+        parent_purl = PackageURL(
+            type="maven",
+            namespace=group,
+            name=artifact,
+            version=version,
+        )
+        pom_file = download_pom_file(get_pom_url(parent_purl))
+        if not pom_file:
+            return
+        current_path = pom_file["pom_file_path"]
+
+
+def resolve_shading_properties(main_pom, required_properties):
+    """
+    Walk the parent chain of ``main_pom`` and return the
+    ``{property_name: value}`` map.
+    """
+    properties = {}
+    for root in _walk_parent_poms(main_pom):
+        for key, value in _extract_properties(root).items():
+            properties.setdefault(key, value)
+        if required_properties.issubset(properties):
+            break
+    return properties
+
+
+def resolve_relocation_placeholders(project, relocations, main_pom):
+    """Replace ``${...}`` placeholders in relocation keys with their values."""
+    required_properties = {
+        property_name
+        for shaded_pattern in relocations
+        for property_name in MAVEN_PROPERTY_PLACEHOLDER_RE.findall(shaded_pattern)
+    }
+    if not required_properties:
+        return relocations
+
+    properties = resolve_shading_properties(main_pom, required_properties)
+    resolved_relocations = {
+        _resolve_maven_properties(shaded_pattern, properties): original_pattern
+        for shaded_pattern, original_pattern in relocations.items()
+    }
+    unresolved_patterns = [
+        shaded_pattern
+        for shaded_pattern in resolved_relocations
+        if MAVEN_PROPERTY_PLACEHOLDER_RE.search(shaded_pattern)
+    ]
+    if unresolved_patterns:
+        project.add_error(
+            description=f"Unresolved Maven properties: {unresolved_patterns}",
+            model="map_shaded_classes_to_maven_packages",
+            details={"resource_path": main_pom.path},
+        )
+    return resolved_relocations
+
+
+def _resolve_maven_properties(text, properties):
+    """
+    Replace ``${name}`` placeholders in ``text`` with values from
+    ``properties``. Unknown placeholders are left untouched.
+    """
+    for name, value in properties.items():
+        text = text.replace(f"${{{name}}}", value)
+    return text
 
 
 def _dedupe_maven_candidates(candidates, main_purl):
@@ -572,8 +693,8 @@ def _map_shaded_class_resource(resource, relocations, dependency_packages, match
     """
     Try to map a single ".class" resource to a Maven dependency package.
 
-    Return True when the resource was mapped and flagged as shaded, False
-    otherwise.
+    Return True when a relocation applies (whether or not a package was
+    matched), False when no relocation applies.
     """
     fqn = get_java_fqn_from_class_path(resource.path)
     java_package = fqn.rpartition(".")[0]
@@ -583,15 +704,31 @@ def _map_shaded_class_resource(resource, relocations, dependency_packages, match
         if original_java_package is None:
             match_cache[java_package] = None
         else:
-            match_cache[java_package] = match_shaded_class_to_package(
-                original_java_package, dependency_packages
+            match_cache[java_package] = (
+                original_java_package,
+                match_shaded_class_to_package(
+                    original_java_package, dependency_packages
+                ),
             )
 
-    match = match_cache[java_package]
-    if not match:
+    cached = match_cache[java_package]
+    if cached is None:
         return False
 
+    original_java_package, match = cached
     original_fqn = apply_shade_relocations(fqn, relocations)
+
+    if match is None:
+        # Relocation applies but no package could be attributed.
+        resource.update(
+            status=flag.REQUIRES_REVIEW,
+            extra_data={
+                **resource.extra_data,
+                "shaded_from_namespace": original_java_package,
+                "original_fqn": original_fqn,
+            },
+        )
+        return True
 
     matched_package, match_score, match_signals = match
 
@@ -654,40 +791,42 @@ def map_shaded_classes_to_maven_packages(project, purl, logger=None):
         )
         .has_no_relation()
     )
-    to_classes_count = to_classes.count()
 
-    if not to_classes_count:
+    if not to_classes.exists():
         if logger:
             logger("No unmapped .class resources to process.")
         return
 
-    dependency_packages = get_maven_dependency_packages(project, main_purl=purl)
-
-    if not dependency_packages:
-        if logger:
-            logger(
-                f"No Maven dependency packages found for "
-                f"{to_classes_count:,d} unmapped .class resources."
-            )
-        return
-
     main_pom = get_main_maven_pom(project, purl)
     relocations = get_maven_shade_relocations(project, main_pom)
+    if not relocations:
+        if logger:
+            logger("No Maven relocations found in the main POM.")
+        return
+
+    relocations = resolve_relocation_placeholders(project, relocations, main_pom)
+
+    dependency_packages = get_maven_dependency_packages(project, main_purl=purl)
 
     mapped_count = 0
-    unmatched_count = 0
+    review_count = 0
+    not_shaded_count = 0
     match_cache = {}
 
     for resource in to_classes.iterator(chunk_size=2000):
-        if _map_shaded_class_resource(
+        if not _map_shaded_class_resource(
             resource, relocations, dependency_packages, match_cache
         ):
+            not_shaded_count += 1
+        elif resource.status == flag.SHADED_CLASS:
             mapped_count += 1
         else:
-            unmatched_count += 1
+            review_count += 1
 
     if logger:
         logger(
-            f"Mapped {mapped_count:,d} shaded .class resources to Maven "
-            f"dependency packages. {unmatched_count:,d} left for review."
+            f"Attributed {mapped_count:,d} shaded .class resources to Maven "
+            f"packages. {review_count:,d} shaded resources could not be "
+            f"attributed and are flagged for review. {not_shaded_count:,d} "
+            f".class resources are not under any relocation."
         )

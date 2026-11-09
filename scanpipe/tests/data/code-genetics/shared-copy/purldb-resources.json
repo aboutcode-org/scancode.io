@@ -1,0 +1,12 @@
+[
+  {
+    "purl": "pkg:pypi/six@1.16.0",
+    "sha1": "d2b72496fefbd26201ecc94881e42bb0ac6e3374",
+    "path": "six-1.16.0.tar.gz-extract/six-1.16.0/six.py"
+  },
+  {
+    "purl": "pkg:pypi/pip@24.0",
+    "sha1": "d2b72496fefbd26201ecc94881e42bb0ac6e3374",
+    "path": "pip-24.0.tar.gz-extract/pip-24.0/src/pip/_vendor/six.py"
+  }
+]

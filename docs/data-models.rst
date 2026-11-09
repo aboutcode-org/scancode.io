@@ -63,6 +63,9 @@ OriginMatch
 
 OriginDetermination
 -------------------
+.. seealso::
+    :ref:`origin_determination` for the statuses and the values of ``rule``.
+
 .. autoclass:: scanpipe.models.OriginDetermination()
     :members:
     :undoc-members:
