@@ -100,6 +100,7 @@ class ScanNixPackage(DeployToDevelop):
         """Validate the input Nix PURL and get its nixpkgs commit."""
         self.purl = nix.get_nix_purl(self.project)
         self.commit = nix.get_nixpkgs_commit(self.purl)
+        self.log(f"nixpkgs commit: {self.commit}")
 
     def get_nix_package_metadata(self):
         """Get the package metadata and binary store paths from nixpkgs."""
@@ -107,6 +108,7 @@ class ScanNixPackage(DeployToDevelop):
             attribute_path=self.purl.name,
             commit=self.commit,
             system=self.purl.qualifiers["system"],
+            cache_directory=self.project.tmp_path,
         )
         self.selected_outputs = nix.get_selected_outputs(
             outputs=self.metadata["outputs"],
@@ -130,6 +132,7 @@ class ScanNixPackage(DeployToDevelop):
                 attribute_path=self.purl.name,
                 commit=self.commit,
                 destination=self.project.codebase_path / d2d.FROM,
+                cache_directory=self.project.tmp_path,
             )
         except nix.NixCommandError as error:
             self.project.add_warning(
@@ -183,7 +186,9 @@ class ScanNixPackage(DeployToDevelop):
 
     def create_nix_package(self):
         """Create the Nix package and assign the codebase resources to it."""
-        self.package = nix.create_nix_package(self.project, self.purl, self.metadata)
+        self.package = nix.create_nix_package(
+            self.project, self.purl, self.metadata, self.commit
+        )
         nix.add_resources_to_package(
             self.package, self.project.codebaseresources.files()
         )
@@ -208,5 +213,12 @@ class ScanNixPackage(DeployToDevelop):
         self.package.update_extra_data({"uncovered_licenses": uncovered_licenses})
 
     def collect_nix_garbage(self):
-        """Delete the Nix store paths fetched and built for this scan."""
-        nix.collect_garbage()
+        """Delete the Nix store paths not in use, such as the ones of this scan."""
+        try:
+            nix.collect_garbage()
+        except nix.NixCommandError as error:
+            self.project.add_warning(
+                description="The Nix store garbage collection failed.",
+                model=self.pipeline_name,
+                details={"error": str(error)},
+            )

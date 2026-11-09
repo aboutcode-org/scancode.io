@@ -126,20 +126,34 @@ class ScanPipeNixPipesTest(TestCase):
             nix.get_nixpkgs_commit(purl)
 
     @mock.patch("scanpipe.pipes.nix.fetch.get_request_session")
-    def test_scanpipe_nix_find_release_commit(self, mock_session):
+    def test_scanpipe_nix_get_devbox_releases(self, mock_session):
         devbox_data = json.loads((self.data / "devbox-hello.json").read_text())
         mock_session.return_value.get.return_value = make_response(
             json_data=devbox_data
         )
+        self.assertEqual(devbox_data["releases"], nix.get_devbox_releases("hello"))
+        requested_url = mock_session.return_value.get.call_args.args[0]
+        self.assertEqual("https://search.devbox.sh/v2/pkg?name=hello", requested_url)
+
+        mock_session.return_value.get.return_value = make_response(status_code=404)
+        self.assertEqual([], nix.get_devbox_releases("unknown"))
+
+    @mock.patch("scanpipe.pipes.nix.get_devbox_releases")
+    def test_scanpipe_nix_find_release_commit(self, mock_releases):
+        devbox_data = json.loads((self.data / "devbox-hello.json").read_text())
+        mock_releases.return_value = devbox_data["releases"]
 
         purl = PackageURL.from_string(
             "pkg:nix/nixpkgs/hello@2.12.3?system=x86_64-linux"
         )
         self.assertEqual(COMMIT, nix.find_release_commit(purl))
-        requested_url = mock_session.return_value.get.call_args.args[0]
-        self.assertEqual("https://search.devbox.sh/v2/pkg?name=hello", requested_url)
 
         purl = PackageURL.from_string("pkg:nix/nixpkgs/hello@1.0?system=x86_64-linux")
+        with self.assertRaisesMessage(ValueError, "No nixpkgs commit found"):
+            nix.find_release_commit(purl)
+
+        mock_releases.return_value = []
+        purl = PackageURL.from_string("pkg:nix/nixpkgs/unknown@1.0?system=x86_64-linux")
         with self.assertRaisesMessage(ValueError, "No nixpkgs commit found"):
             nix.find_release_commit(purl)
 
@@ -207,6 +221,12 @@ class ScanPipeNixPipesTest(TestCase):
             args=[], returncode=0, stdout="output", stderr=""
         )
         self.assertEqual("output", nix.run_nix_command(["nix-store", "--gc"], 10))
+        self.assertIsNone(mock_run.call_args.kwargs["env"])
+
+        nix.run_nix_command(["nix-build"], 10, cache_directory=Path("/project/tmp"))
+        environment = mock_run.call_args.kwargs["env"]
+        self.assertEqual("/project/tmp", environment["XDG_CACHE_HOME"])
+        self.assertEqual(os.environ["PATH"], environment["PATH"])
 
         error_lines = [f"line {index}" for index in range(30)]
         mock_run.return_value = subprocess.CompletedProcess(
@@ -236,13 +256,16 @@ class ScanPipeNixPipesTest(TestCase):
         }
         mock_run.return_value = json.dumps(metadata)
 
+        cache_directory = Path("/project/tmp")
         self.assertEqual(
-            metadata, nix.get_package_metadata("hello", COMMIT, "x86_64-linux")
+            metadata,
+            nix.get_package_metadata("hello", COMMIT, "x86_64-linux", cache_directory),
         )
         arguments = mock_run.call_args.args[0]
         self.assertEqual(["nix-instantiate", "--eval", "--strict"], arguments[:3])
         self.assertIn("x86_64-linux", arguments)
         self.assertEqual(nix.METADATA_EXPRESSION, arguments[-1])
+        self.assertEqual(cache_directory, mock_run.call_args.kwargs["cache_directory"])
 
     def test_scanpipe_nix_get_selected_outputs(self):
         outputs = {
@@ -291,8 +314,14 @@ class ScanPipeNixPipesTest(TestCase):
         mock_copy.assert_called_once_with("/nix/store/abc-source", destination)
 
         mock_build.side_effect = [nix.NixCommandError("patch failed"), "/nix/store/src"]
-        self.assertEqual("patch failed", nix.fetch_source("hello", COMMIT, destination))
-        self.assertEqual(nix.UPSTREAM_SOURCE_EXPRESSION, mock_build.call_args.args[0])
+        cache_directory = Path("/project/tmp")
+        self.assertEqual(
+            "patch failed",
+            nix.fetch_source("hello", COMMIT, destination, cache_directory),
+        )
+        mock_build.assert_called_with(
+            nix.UPSTREAM_SOURCE_EXPRESSION, "hello", COMMIT, cache_directory
+        )
         mock_copy.assert_called_with("/nix/store/src", destination)
 
     def test_scanpipe_nix_copy_store_path(self):
@@ -406,27 +435,44 @@ class ScanPipeNixPipesTest(TestCase):
             with self.assertRaisesMessage(nix.NixCommandError, "bad archive"):
                 nix.restore_nar(nar_location, "xz", destination)
 
-    def test_scanpipe_nix_get_nix_cache_directory(self):
-        with mock.patch.dict(os.environ, {"XDG_CACHE_HOME": "/var/cache"}):
-            self.assertEqual(Path("/var/cache/nix"), nix.get_nix_cache_directory())
-
-        with mock.patch.dict(os.environ, {"XDG_CACHE_HOME": ""}):
-            expected = Path.home() / ".cache" / "nix"
-            self.assertEqual(expected, nix.get_nix_cache_directory())
-
     @mock.patch("scanpipe.pipes.nix.run_nix_command")
     def test_scanpipe_nix_collect_garbage(self, mock_run):
-        with tempfile.TemporaryDirectory() as temp_directory:
-            tarball_cache = Path(temp_directory) / "nix" / "tarball-cache"
-            tarball_cache.mkdir(parents=True)
+        nix.collect_garbage()
+        mock_run.assert_called_once_with(
+            ["nix-store", "--gc"], timeout=nix.NIX_BUILD_TIMEOUT
+        )
 
-            with mock.patch.dict(os.environ, {"XDG_CACHE_HOME": temp_directory}):
-                nix.collect_garbage()
+    def test_scanpipe_nix_combine_license_expressions(self):
+        cases = [
+            ([], ""),
+            (["Unlicense OR MIT"], "Unlicense OR MIT"),
+            (["Apache-2.0", "MIT"], "Apache-2.0 AND MIT"),
+            (
+                ["Unlicense OR MIT", "GPL-3.0-or-later"],
+                "(Unlicense OR MIT) AND GPL-3.0-or-later",
+            ),
+        ]
+        for license_expressions, expected in cases:
+            with self.subTest(license_expressions=license_expressions):
+                self.assertEqual(
+                    expected, nix.combine_license_expressions(license_expressions)
+                )
 
-            mock_run.assert_called_once_with(
-                ["nix-store", "--gc"], timeout=nix.NIX_BUILD_TIMEOUT
-            )
-            self.assertFalse((Path(temp_directory) / "nix").exists())
+    def test_scanpipe_nix_convert_nixpkgs_license_expression(self):
+        cases = [
+            ("Unlicense OR MIT", "unlicense OR mit"),
+            (
+                "LicenseRef-nixos-unfreeRedistributable",
+                "unknown-license-reference",
+            ),
+            ("MIT AND LicenseRef-nixos-free", "mit AND unknown-license-reference"),
+        ]
+        for license_expression_spdx, expected in cases:
+            with self.subTest(license_expression_spdx=license_expression_spdx):
+                self.assertEqual(
+                    expected,
+                    nix.convert_nixpkgs_license_expression(license_expression_spdx),
+                )
 
     def test_scanpipe_nix_create_nix_package(self):
         purl = PackageURL.from_string(
@@ -436,29 +482,44 @@ class ScanPipeNixPipesTest(TestCase):
             "version": "2.12.3",
             "description": "Program that produces a familiar, friendly greeting",
             "homepage": ["https://www.gnu.org/software/hello/", "https://other"],
-            "licenses": ["GPL-3.0-or-later", "MIT"],
+            "licenses": ["GPL-3.0-or-later", "Unlicense OR MIT"],
             "outputs": {},
         }
-        package = nix.create_nix_package(self.project, purl, metadata)
+        package = nix.create_nix_package(self.project, purl, metadata, COMMIT)
         self.assertEqual("pkg:nix/nixpkgs/hello@2.12.3", package.purl)
-        self.assertEqual("gpl-3.0-plus AND mit", package.declared_license_expression)
         self.assertEqual(
-            "GPL-3.0-or-later AND MIT", package.declared_license_expression_spdx
+            "gpl-3.0-plus AND (unlicense OR mit)", package.declared_license_expression
+        )
+        self.assertEqual(
+            "GPL-3.0-or-later AND (Unlicense OR MIT)",
+            package.declared_license_expression_spdx,
         )
         self.assertEqual("https://www.gnu.org/software/hello/", package.homepage_url)
         self.assertEqual(metadata["description"], package.description)
         self.assertEqual(["nixpkgs_meta"], package.datasource_ids)
+        expected_extra_data = {"nixpkgs_commit": COMMIT, "system": "x86_64-linux"}
+        self.assertEqual(expected_extra_data, package.extra_data)
 
-        purl = PackageURL.from_string(f"pkg:nix/nixpkgs/zlib?commit={COMMIT}")
+        purl = PackageURL.from_string(
+            f"pkg:nix/nixpkgs/zlib?system=x86_64-linux&commit={COMMIT}"
+        )
         metadata.update(version="1.3.1", licenses=[], homepage="")
-        package = nix.create_nix_package(self.project, purl, metadata)
+        package = nix.create_nix_package(self.project, purl, metadata, COMMIT)
         self.assertEqual("1.3.1", package.version)
         self.assertEqual("", package.declared_license_expression)
 
+        # The nixpkgs version is the one of the scanned code.
+        purl = PackageURL.from_string("pkg:nix/nixpkgs/curl@8.0?system=x86_64-linux")
+        metadata.update(version="8.16.0")
+        package = nix.create_nix_package(self.project, purl, metadata, COMMIT)
+        self.assertEqual("pkg:nix/nixpkgs/curl@8.16.0", package.purl)
+
     def test_scanpipe_nix_add_resources_to_package(self):
-        purl = PackageURL.from_string("pkg:nix/nixpkgs/hello@2.12.3")
+        purl = PackageURL.from_string(
+            "pkg:nix/nixpkgs/hello@2.12.3?system=x86_64-linux"
+        )
         metadata = {"version": "", "description": "", "homepage": "", "licenses": []}
-        package = nix.create_nix_package(self.project, purl, metadata)
+        package = nix.create_nix_package(self.project, purl, metadata, COMMIT)
         make_resource_file(self.project, "from/hello.c")
         make_resource_file(self.project, "to/bin/hello")
         resource_qs = self.project.codebaseresources.files()
@@ -469,31 +530,35 @@ class ScanPipeNixPipesTest(TestCase):
         nix.add_resources_to_package(package, resource_qs)
         self.assertEqual(2, package.codebase_resources.count())
 
-    def test_scanpipe_nix_save_scan_results_keeping_status(self):
-        resource = make_resource_file(
-            self.project, "from/COPYING", status=flag.NOT_DEPLOYED
-        )
-        scan_results = {"detected_license_expression": "gpl-3.0-plus"}
-        nix.save_scan_results_keeping_status(resource, scan_results, scan_errors=[])
-
-        resource.refresh_from_db()
-        self.assertEqual(flag.NOT_DEPLOYED, resource.status)
-        self.assertEqual("gpl-3.0-plus", resource.detected_license_expression)
-
-        nix.save_scan_results_keeping_status(resource, {}, scan_errors=["error"])
-        self.assertEqual(1, self.project.projectmessages.count())
-
-    @mock.patch("scanpipe.pipes.nix.scancode.scan_resources")
+    @mock.patch("scanpipe.pipes.nix.scancode.scan_for_files")
     def test_scanpipe_nix_scan_undeployed_from_files(self, mock_scan):
         make_resource_file(self.project, "from/COPYING", status=flag.NOT_DEPLOYED)
         make_resource_file(self.project, "from/hello.c", status=flag.SCANNED)
         make_resource_file(self.project, "to/COPYING", status=flag.NOT_DEPLOYED)
+        scanned_paths = []
+
+        def scan_for_files(project, resource_qs, progress_logger=None):
+            scanned_paths.extend(resource.path for resource in resource_qs)
+            resource_qs.update(
+                status=flag.SCANNED, detected_license_expression="gpl-3.0-plus"
+            )
+
+        mock_scan.side_effect = scan_for_files
 
         nix.scan_undeployed_from_files(self.project)
-        scan_kwargs = mock_scan.call_args.kwargs
-        scanned_paths = [resource.path for resource in scan_kwargs["resource_qs"]]
         self.assertEqual(["from/COPYING"], scanned_paths)
-        self.assertEqual(nix.save_scan_results_keeping_status, scan_kwargs["save_func"])
+
+        resource_statuses = dict(
+            self.project.codebaseresources.values_list("path", "status")
+        )
+        expected_statuses = {
+            "from/COPYING": flag.NOT_DEPLOYED,
+            "from/hello.c": flag.SCANNED,
+            "to/COPYING": flag.NOT_DEPLOYED,
+        }
+        self.assertEqual(expected_statuses, resource_statuses)
+        copying = self.project.codebaseresources.get(path="from/COPYING")
+        self.assertEqual("gpl-3.0-plus", copying.detected_license_expression)
 
     def test_scanpipe_nix_get_uncovered_license_keys(self):
         resources = [

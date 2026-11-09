@@ -289,6 +289,19 @@ class ScanPipePipelinesTest(TestCase):
             message.description,
         )
 
+    @mock.patch("scanpipe.pipes.nix.collect_garbage")
+    def test_scanpipe_scan_nix_package_collect_nix_garbage(self, mock_collect):
+        project1 = make_project()
+        pipeline = project1.add_pipeline("scan_nix_package").make_pipeline_instance()
+        mock_collect.side_effect = nix.NixCommandError("store is locked")
+
+        pipeline.collect_nix_garbage()
+        message = project1.projectmessages.get()
+        self.assertEqual(
+            "The Nix store garbage collection failed.", message.description
+        )
+        self.assertEqual({"error": "store is locked"}, message.details)
+
     def test_scanpipe_scan_nix_package_check_nix_package_license(self):
         project1 = make_project()
         pipeline = project1.add_pipeline("scan_nix_package").make_pipeline_instance()
@@ -2674,7 +2687,7 @@ class PipelinesIntegrationTest(TestCase):
     def test_scanpipe_scan_nix_package_pipeline_integration(self):
         nix_data = self.data / "nix"
 
-        def fetch_source(attribute_path, commit, destination):
+        def fetch_source(attribute_path, commit, destination, cache_directory):
             shutil.copytree(nix_data / "source", destination)
             return "patch failed"
 
@@ -2694,7 +2707,12 @@ class PipelinesIntegrationTest(TestCase):
         package = project1.discoveredpackages.get()
         self.assertEqual("pkg:nix/nixpkgs/hello@2.12.3", package.purl)
         self.assertEqual("gpl-3.0-plus", package.declared_license_expression)
-        self.assertEqual({"uncovered_licenses": ["mit"]}, package.extra_data)
+        expected_extra_data = {
+            "nixpkgs_commit": "55ba7f49ef2962b42cbd126522b7df5f95037679",
+            "system": "x86_64-linux",
+            "uncovered_licenses": ["mit"],
+        }
+        self.assertEqual(expected_extra_data, package.extra_data)
         self.assertEqual(
             project1.codebaseresources.files().count(),
             package.codebase_resources.count(),
@@ -2725,7 +2743,7 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual(flag.REQUIRES_REVIEW, binary.status)
 
         package = project1.discoveredpackages.get()
-        self.assertEqual({}, package.extra_data)
+        self.assertNotIn("uncovered_licenses", package.extra_data)
         self.assertEqual(
             project1.codebaseresources.files().count(),
             package.codebase_resources.count(),

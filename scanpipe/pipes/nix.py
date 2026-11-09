@@ -38,7 +38,6 @@ from scanpipe.pipes import fetch
 from scanpipe.pipes import flag
 from scanpipe.pipes import scancode
 from scanpipe.pipes.resolve import convert_spdx_expression
-from scanpipe.settings import scanpipe_settings
 
 REQUIRED_COMMANDS = ["nix-build", "nix-instantiate", "nix-store", "xz", "zstd"]
 NIX_CACHE_URL = "https://cache.nixos.org"
@@ -54,6 +53,11 @@ ATTRIBUTE_PATH_REGEX = re.compile(r"[a-zA-Z0-9_][a-zA-Z0-9_\-+.]*")
 COMMIT_REGEX = re.compile(r"[0-9a-f]{40}")
 SYSTEM_REGEX = re.compile(r"[a-z0-9_]+-[a-z0-9_]+")
 OUTPUT_REGEX = re.compile(r"[a-z][a-z0-9]*")
+
+# The nixpkgs licenses without SPDX id, such as "LicenseRef-nixos-unfree", are not
+# known by ScanCode: a single one would turn the whole expression into "unknown".
+NIXOS_LICENSE_REF_REGEX = re.compile(r"LicenseRef-nixos-[\w.+-]+")
+UNKNOWN_LICENSE_REF = "LicenseRef-scancode-unknown-license-reference"
 
 # The package outputs holding headers and documentation, not the deployed code.
 NON_DEPLOYED_OUTPUTS = {"dev", "devdoc", "devman", "doc", "info", "man"}
@@ -98,18 +102,23 @@ METADATA_EXPRESSION = (
     + """
 let
   meta = package.meta or { };
-  getLicenseId = license:
-    if builtins.isAttrs license then license.spdxId or null
+  # Recent nixpkgs combine licenses with operators, such as "OR [ mit asl20 ]",
+  # converted by toSPDX. A license without SPDX id is a "LicenseRef-nixos-" one.
+  getLicenseExpression = license:
+    if builtins.isAttrs license && license ? licenseType
+    then pkgs.lib.licenses.toSPDX license
+    else if builtins.isAttrs license
+    then license.spdxId or "LicenseRef-nixos-${license.shortName or "unknown"}"
     else if builtins.isString license then license
     else null;
-  licenseIds = map getLicenseId (pkgs.lib.toList (meta.license or [ ]));
+  licenseExpressions = map getLicenseExpression (pkgs.lib.toList (meta.license or [ ]));
   getOutputPath = output: { name = output; value = package.${output}.outPath; };
 in
 {
   version = package.version or "";
   description = meta.description or "";
   homepage = meta.homepage or "";
-  licenses = builtins.filter (licenseId: licenseId != null) licenseIds;
+  licenses = builtins.filter (expression: expression != null) licenseExpressions;
   outputs = builtins.listToAttrs (map getOutputPath (package.outputs or [ "out" ]));
 }
 """
@@ -198,17 +207,27 @@ def get_nixpkgs_commit(purl):
     return commit
 
 
-def find_release_commit(purl):
-    """Return the nixpkgs commit of the ``purl`` version and system on devbox."""
-    query = urlencode({"name": purl.name})
+def get_devbox_releases(package_name):
+    """
+    Return the ``package_name`` releases listed by search.devbox.sh, or an empty
+    list when the package is unknown.
+    """
+    query = urlencode({"name": package_name})
     session = fetch.get_request_session(DEVBOX_SEARCH_URL)
     response = session.get(
         f"{DEVBOX_SEARCH_URL}?{query}", timeout=fetch.HTTP_REQUEST_TIMEOUT
     )
-    response.raise_for_status()
+    if response.status_code == 404:
+        return []
 
+    response.raise_for_status()
+    return response.json().get("releases") or []
+
+
+def find_release_commit(purl):
+    """Return the nixpkgs commit of the ``purl`` version and system on devbox."""
     system = purl.qualifiers["system"]
-    for release in response.json().get("releases") or []:
+    for release in get_devbox_releases(purl.name):
         if release.get("version") != purl.version:
             continue
         for platform in release.get("platforms") or []:
@@ -265,13 +284,21 @@ def get_release_branches(session):
     return sorted(branches, reverse=True)
 
 
-def run_nix_command(arguments, timeout):
-    """Run a Nix command and return its standard output."""
+def run_nix_command(arguments, timeout, cache_directory=None):
+    """
+    Run a Nix command and return its standard output. The nixpkgs tarballs are
+    cached in the ``cache_directory`` when provided, instead of the user cache.
+    """
+    environment = None
+    if cache_directory:
+        environment = {**os.environ, "XDG_CACHE_HOME": str(cache_directory)}
+
     completed_process = subprocess.run(  # noqa: S603
         arguments,
         capture_output=True,
         text=True,
         timeout=timeout,
+        env=environment,
     )
 
     if completed_process.returncode:
@@ -296,10 +323,10 @@ def get_nix_expression_arguments(attribute_path, commit, system=None):
     return arguments
 
 
-def get_package_metadata(attribute_path, commit, system):
+def get_package_metadata(attribute_path, commit, system, cache_directory=None):
     """
-    Return the version, description, homepage, licenses SPDX ids, and the store
-    path of each output of the package for the target ``system``.
+    Return the version, description, homepage, licenses SPDX expressions, and the
+    store path of each output of the package for the target ``system``.
     """
     arguments = [
         "nix-instantiate",
@@ -310,7 +337,9 @@ def get_package_metadata(attribute_path, commit, system):
         "--expr",
         METADATA_EXPRESSION,
     ]
-    output = run_nix_command(arguments, timeout=NIX_EVAL_TIMEOUT)
+    output = run_nix_command(
+        arguments, timeout=NIX_EVAL_TIMEOUT, cache_directory=cache_directory
+    )
     return json.loads(output)
 
 
@@ -338,7 +367,7 @@ def get_selected_outputs(outputs, selected_output=None):
     return {selected_output: outputs[selected_output]}
 
 
-def build_source(expression, attribute_path, commit):
+def build_source(expression, attribute_path, commit, cache_directory=None):
     """Build the source ``expression`` and return its store path."""
     arguments = [
         "nix-build",
@@ -347,11 +376,13 @@ def build_source(expression, attribute_path, commit):
         "--expr",
         expression,
     ]
-    output = run_nix_command(arguments, timeout=NIX_BUILD_TIMEOUT)
+    output = run_nix_command(
+        arguments, timeout=NIX_BUILD_TIMEOUT, cache_directory=cache_directory
+    )
     return output.strip().splitlines()[-1]
 
 
-def fetch_source(attribute_path, commit, destination):
+def fetch_source(attribute_path, commit, destination, cache_directory=None):
     """
     Copy the package source, with the nixpkgs patches applied, to ``destination``.
     Fall back to the upstream source when the patches cannot be applied, and
@@ -362,10 +393,14 @@ def fetch_source(attribute_path, commit, destination):
     """
     patch_error = ""
     try:
-        store_path = build_source(PATCHED_SOURCE_EXPRESSION, attribute_path, commit)
+        store_path = build_source(
+            PATCHED_SOURCE_EXPRESSION, attribute_path, commit, cache_directory
+        )
     except NixCommandError as error:
         patch_error = str(error)
-        store_path = build_source(UPSTREAM_SOURCE_EXPRESSION, attribute_path, commit)
+        store_path = build_source(
+            UPSTREAM_SOURCE_EXPRESSION, attribute_path, commit, cache_directory
+        )
 
     copy_store_path(store_path, destination)
     return patch_error
@@ -462,27 +497,50 @@ def restore_nar(nar_location, compression, destination):
     make_writable(destination)
 
 
-def get_nix_cache_directory():
-    """Return the Nix user cache directory, where nixpkgs tarballs are kept."""
-    cache_home = os.environ.get("XDG_CACHE_HOME") or Path.home() / ".cache"
-    return Path(cache_home) / "nix"
-
-
 def collect_garbage():
     """
-    Delete the Nix store paths fetched and built during the pipeline run, and
-    the nixpkgs tarballs cache, so the disk usage does not grow across scans.
+    Delete the Nix store paths not used by a garbage collector root, such as the
+    nixpkgs and the sources fetched for a scan, so the disk usage does not grow
+    across scans. The installed Nix packages are kept, as their profiles are roots.
     """
     run_nix_command(["nix-store", "--gc"], timeout=NIX_BUILD_TIMEOUT)
-    shutil.rmtree(get_nix_cache_directory(), ignore_errors=True)
 
 
-def create_nix_package(project, purl, metadata):
-    """Create the Nix package of the ``project`` from the nixpkgs ``metadata``."""
-    declared_license_spdx = " AND ".join(metadata["licenses"])
+def combine_license_expressions(license_expressions):
+    """
+    Return the SPDX ``license_expressions`` combined with AND, the compound ones
+    in parentheses.
+    """
+    if len(license_expressions) == 1:
+        return license_expressions[0]
+
+    return " AND ".join(
+        f"({expression})" if " " in expression else expression
+        for expression in license_expressions
+    )
+
+
+def convert_nixpkgs_license_expression(license_expression_spdx):
+    """
+    Return the ScanCode license expression of the nixpkgs SPDX
+    ``license_expression_spdx``, the nixpkgs licenses without SPDX id converted
+    to unknown license references.
+    """
+    known_license_expression_spdx = NIXOS_LICENSE_REF_REGEX.sub(
+        UNKNOWN_LICENSE_REF, license_expression_spdx
+    )
+    return convert_spdx_expression(known_license_expression_spdx)
+
+
+def create_nix_package(project, purl, metadata, commit):
+    """
+    Create the Nix package of the ``project`` from the nixpkgs ``metadata``, with
+    the nixpkgs ``commit`` and the system it was evaluated for.
+    """
+    declared_license_spdx = combine_license_expressions(metadata["licenses"])
     declared_license = ""
     if declared_license_spdx:
-        declared_license = convert_spdx_expression(declared_license_spdx)
+        declared_license = convert_nixpkgs_license_expression(declared_license_spdx)
 
     homepage = metadata["homepage"]
     if isinstance(homepage, list):
@@ -492,12 +550,16 @@ def create_nix_package(project, purl, metadata):
         "type": purl.type,
         "namespace": purl.namespace,
         "name": purl.name,
-        "version": purl.version or metadata["version"],
+        "version": metadata["version"] or purl.version,
         "declared_license_expression": declared_license,
         "declared_license_expression_spdx": declared_license_spdx,
         "homepage_url": homepage,
         "description": metadata["description"],
         "datasource_id": "nixpkgs_meta",
+        "extra_data": {
+            "nixpkgs_commit": commit,
+            "system": purl.qualifiers["system"],
+        },
     }
     return pipes.update_or_create_package(project, package_data)
 
@@ -520,31 +582,23 @@ def add_resources_to_package(package, resource_qs, batch_size=2000):
         )
 
 
-def save_scan_results_keeping_status(codebase_resource, scan_results, scan_errors):
-    """Save the resource scan results without changing its status."""
-    if scan_errors:
-        codebase_resource.add_errors(scan_errors)
-    codebase_resource.set_scan_results(scan_results)
-
-
 def scan_undeployed_from_files(project, progress_logger=None):
     """
     Scan the ``from/`` files not deployed in the binary, keeping their
     ``not-deployed`` status. The license check needs the whole source, including
     the legal files that are usually not deployed.
     """
-    resource_qs = project.codebaseresources.from_codebase().files()
-    file_size_limit = (
-        project.get_scan_max_file_size or scanpipe_settings.SCAN_MAX_FILE_SIZE
+    undeployed_files = (
+        project.codebaseresources.files()
+        .from_codebase()
+        .filter(status=flag.NOT_DEPLOYED)
     )
+    undeployed_file_ids = list(undeployed_files.values_list("id", flat=True))
 
-    scancode.scan_resources(
-        resource_qs=resource_qs.filter(status=flag.NOT_DEPLOYED),
-        scan_func=scancode.scan_file,
-        save_func=save_scan_results_keeping_status,
-        progress_logger=progress_logger,
-        file_size_limit=file_size_limit,
-    )
+    scancode.scan_for_files(project, undeployed_files, progress_logger=progress_logger)
+    project.codebaseresources.filter(
+        id__in=undeployed_file_ids, status=flag.SCANNED
+    ).update(status=flag.NOT_DEPLOYED)
 
 
 def get_uncovered_license_keys(project, declared_license_expression):
