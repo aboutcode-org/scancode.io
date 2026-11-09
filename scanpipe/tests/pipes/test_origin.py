@@ -726,13 +726,20 @@ class ScanPipeOriginPipesTest(TestCase):
         expected = (origin.PREFERRED_VERSION_RULE, dated_six_16_origin)
         self.assertEqual(expected, rule_and_candidate)
 
-        dated_six_origin = make_origin("pkg:pypi/six@1.16.0", release_date="2021-05-05")
-        dated_pip_origin = make_origin("pkg:pypi/pip@24.0", release_date="2024-02-03")
-        rule_and_candidate = origin.get_conflict_rule_and_candidate(
-            [dated_pip_origin, dated_six_origin]
+        # The release date does not decide between different packages.
+        dated_rich_origin = make_origin(
+            "pkg:pypi/rich@13.7.0", similarity=100, release_date="2023-11-15"
         )
-        expected = (origin.EARLIEST_RELEASE_RULE, dated_six_origin)
-        self.assertEqual(expected, rule_and_candidate)
+        dated_copy_origin = make_origin(
+            "pkg:github/dreamsavior/yojet-server@v1.0.1",
+            tool="scanoss",
+            similarity=100,
+            release_date="2022-08-01",
+        )
+        rule_and_candidate = origin.get_conflict_rule_and_candidate(
+            [dated_rich_origin, dated_copy_origin]
+        )
+        self.assertEqual((origin.CONFLICTING_CANDIDATES_RULE, None), rule_and_candidate)
 
         lodash_origin = make_origin("pkg:npm/lodash@4.17.21", similarity=75)
         underscore_origin = make_origin("pkg:npm/underscore@1.13.7", similarity=40)

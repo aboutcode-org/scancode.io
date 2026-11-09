@@ -76,11 +76,6 @@ identified by the ``containment`` rule, are not compared by the next rules.
         at least 20 points, and all the similarities are known.
       - ``needs-review``
       - The most similar candidate.
-    * - ``earliest-release``
-      - Different packages: one candidate was released before all the others,
-        and all the release dates are known.
-      - ``needs-review``
-      - The earliest released candidate.
     * - ``conflicting-candidates``
       - Different packages, not resolved by the previous rules.
       - ``needs-review``
@@ -123,10 +118,10 @@ Similarity and release date
   approximate matches. The tools measure the same copy a few points apart, hence
   the 20 points margin.
 - The release date is reported by SCANOSS, and by MatchCode.io when PurlDB
-  knows it. A copy cannot be older than its origin.
-- The similarity is checked before the release date, as it is measured on the
-  copy itself, while a release date only tells that a package version could
-  have been copied.
+  knows it. It only selects among the versions of the same package, never
+  between different packages: the earliest candidate is often another copy,
+  such as a GitHub repository copying the file, when the original package is
+  not among the candidates.
 
 Re-running the pipeline
 -----------------------
@@ -157,12 +152,8 @@ Limitations
 - A single tool never confirms an origin automatically, as it can miss other
   candidates: SCANOSS reports one component per file, and MatchCode.io only
   knows the indexed packages.
-- MatchCode.io rarely reports a release date, so the ``earliest-release`` rule
-  rarely applies to its candidates.
-- The ``earliest-release`` rule compares the release dates of the matched
-  versions, not of the first version containing the file. With an incomplete
-  index, the package that vendors a copy can be dated before the indexed
-  version of the original package.
+- MatchCode.io rarely reports a release date, so the earliest release rarely
+  selects among the versions of its candidates.
 - The 20 lines threshold is calibrated on the MIT license header. A longer
   header, such as the BSD-3-Clause one, still counts as a snippet match.
 - A small file copied with changes, matched as a snippet on fewer than 20

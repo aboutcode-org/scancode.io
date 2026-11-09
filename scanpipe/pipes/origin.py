@@ -43,7 +43,6 @@ from scanpipe.pipes.resolve import convert_spdx_expression
 
 CONTAINMENT_RULE = "containment"
 HIGHEST_SIMILARITY_RULE = "highest-similarity"
-EARLIEST_RELEASE_RULE = "earliest-release"
 CONFLICTING_CANDIDATES_RULE = "conflicting-candidates"
 PREFERRED_VERSION_RULE = "preferred-version"
 CONFLICTING_VERSIONS_RULE = "conflicting-versions"
@@ -464,12 +463,12 @@ def get_conflict_rule_and_candidate(origins):
             return PREFERRED_VERSION_RULE, preferred_origin
         return CONFLICTING_VERSIONS_RULE, None
 
-    # The similarity is measured on the copy itself, while a release date only
-    # tells that a package version could have been copied.
     if most_similar_origin := get_most_similar_origin(candidate_origins):
         return HIGHEST_SIMILARITY_RULE, most_similar_origin
-    if earliest_origin := get_earliest_release_origin(candidate_origins):
-        return EARLIEST_RELEASE_RULE, earliest_origin
+
+    # The release date does not decide between different packages: the earliest
+    # one is often another copy, such as a GitHub repository copying the file,
+    # when the original package is not among the candidates.
     return CONFLICTING_CANDIDATES_RULE, None
 
 
