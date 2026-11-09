@@ -433,6 +433,16 @@ class ScanPipeMavenPipesTest(TestCase):
             "${unknown}.foo",
         )
 
+    def test_scanpipe_maven_extract_properties_ignores_nested_blocks(self):
+        pom_resource = self._add_pom_resource(
+            self.project, "to/pom.xml", "profile-properties-pom.xml"
+        )
+        root = maven.SafeElementTree.parse(pom_resource.location).getroot()
+
+        result = maven._extract_properties(root)
+
+        self.assertEqual(result, {"shading.prefix": "project"})
+
     def test_scanpipe_maven_walk_parent_poms_download_failure(self):
         main_pom = self._add_pom_resource(self.project, "to/pom.xml", "parent-pom.xml")
         with mock.patch("scanpipe.pipes.maven.download_pom_file", return_value={}):
@@ -456,23 +466,22 @@ class ScanPipeMavenPipesTest(TestCase):
             roots = list(maven._walk_parent_poms(main_pom))
         self.assertEqual(len(roots), 1)
 
-    def test_scanpipe_maven_walk_parent_poms_missing_coordinates(self):
+    @mock.patch("scanpipe.pipes.maven.download_pom_file")
+    def test_scanpipe_maven_walk_parent_poms_missing_coordinates(
+        self, mock_download_pom_file
+    ):
         main_pom = self._add_pom_resource(
             self.project, "to/main/pom.xml", "parent-pom-incomplete.xml"
         )
-        with mock.patch("scanpipe.pipes.maven.download_pom_file") as mock_dl:
-            roots = list(maven._walk_parent_poms(main_pom))
+        roots = list(maven._walk_parent_poms(main_pom))
 
         # Incomplete <parent> (no version) stops the walk after the main
         # POM, so no download is attempted.
         self.assertEqual(len(roots), 1)
-        mock_dl.assert_not_called()
+        mock_download_pom_file.assert_not_called()
 
-    @mock.patch("scanpipe.pipes.maven.purl2url.get_download_url")
     @mock.patch("scanpipe.pipes.maven.download_pom_file")
-    def test_scanpipe_maven_walk_parent_poms_depth_limit(
-        self, mock_download_pom_file, mock_get_download_url
-    ):
+    def test_scanpipe_maven_walk_parent_poms_depth_limit(self, mock_download_pom_file):
         main_pom = self._add_pom_resource(
             self.project, "to/main/pom.xml", "parent-pom.xml"
         )
@@ -480,9 +489,8 @@ class ScanPipeMavenPipesTest(TestCase):
             self.project, "tmp/looping-parent.xml", "parent-pom.xml"
         )
         parent_pom_url = (
-            "https://repo1.maven.org/maven2/org/parent/parent/1.0/parent-1.0.pom"
+            "https://repo.maven.apache.org/maven2/org/parent/parent/1.0/parent-1.0.pom"
         )
-        mock_get_download_url.return_value = parent_pom_url
         mock_download_pom_file.return_value = {
             "pom_file_path": str(looping_parent.location),
             "output_path": f"{looping_parent.location}-output.json",
@@ -501,18 +509,17 @@ class ScanPipeMavenPipesTest(TestCase):
         self, mock_download_pom_file
     ):
         main_pom = self._add_pom_resource(
-            self.project, "to/main/pom.xml", "parent-pom-shading.xml"
+            self.project, "to/main/pom.xml", "main-pom-shading.xml"
         )
 
         result = maven.resolve_shading_properties(main_pom, {"shading.prefix"})
 
-        self.assertEqual(result, {"shading.prefix": "org.shaded"})
+        self.assertEqual(result, {"shading.prefix": "org.main"})
         mock_download_pom_file.assert_not_called()
 
-    @mock.patch("scanpipe.pipes.maven.purl2url.get_download_url")
     @mock.patch("scanpipe.pipes.maven.download_pom_file")
     def test_scanpipe_maven_resolve_shading_properties_walks_parent_chain(
-        self, mock_download_pom_file, mock_get_download_url
+        self, mock_download_pom_file
     ):
         main_pom = self._add_pom_resource(
             self.project, "to/main/pom.xml", "main-pom-properties.xml"
@@ -521,9 +528,8 @@ class ScanPipeMavenPipesTest(TestCase):
             self.project, "to/parent/pom.xml", "parent-pom-properties.xml"
         )
         parent_pom_url = (
-            "https://repo1.maven.org/maven2/org/parent/parent/1.0/parent-1.0.pom"
+            "https://repo.maven.apache.org/maven2/org/parent/parent/1.0/parent-1.0.pom"
         )
-        mock_get_download_url.return_value = parent_pom_url
         mock_download_pom_file.return_value = {
             "pom_file_path": str(parent_pom.location),
             "output_path": f"{parent_pom.location}-output.json",
@@ -538,40 +544,39 @@ class ScanPipeMavenPipesTest(TestCase):
         )
         mock_download_pom_file.assert_called_once_with(parent_pom_url)
 
-    @mock.patch("scanpipe.pipes.maven.purl2url.get_download_url")
     @mock.patch("scanpipe.pipes.maven.download_pom_file")
     def test_scanpipe_maven_resolve_shading_properties_main_pom_wins(
-        self, mock_download_pom_file, mock_get_download_url
+        self, mock_download_pom_file
     ):
         main_pom = self._add_pom_resource(
             self.project, "to/main/pom.xml", "main-pom-shading.xml"
         )
         parent_pom = self._add_pom_resource(
-            self.project, "to/parent/pom.xml", "pom-shading-no-parent.xml"
+            self.project, "to/parent/pom.xml", "parent-pom-properties.xml"
         )
         parent_pom_url = (
-            "https://repo1.maven.org/maven2/org/parent/parent/1.0/parent-1.0.pom"
+            "https://repo.maven.apache.org/maven2/org/parent/parent/1.0/parent-1.0.pom"
         )
-        mock_get_download_url.return_value = parent_pom_url
         mock_download_pom_file.return_value = {
             "pom_file_path": str(parent_pom.location),
             "output_path": f"{parent_pom.location}-output.json",
             "pom_url": parent_pom_url,
         }
 
-        # "only.in.parent" is not declared in any POM; it forces the walk
-        # to reach the parent POM so we actually exercise the setdefault
-        # precedence between main and parent.
+        # "property2" is only declared in the parent POM. Requiring it
+        # forces the walk to actually reach and parse the parent, so this
+        # covers both "main POM wins on overlapping keys" (shading.prefix)
+        # and "parent POM fills in missing keys" (property2).
         result = maven.resolve_shading_properties(
-            main_pom, {"shading.prefix", "only.in.parent"}
+            main_pom, {"shading.prefix", "property2"}
         )
 
-        self.assertEqual(result, {"shading.prefix": "org.main"})
+        self.assertEqual(result, {"shading.prefix": "org.main", "property2": "2"})
         mock_download_pom_file.assert_called_once_with(parent_pom_url)
 
     def test_scanpipe_maven_resolve_relocation_placeholders(self):
         main_pom = self._add_pom_resource(
-            self.project, "to/main/pom.xml", "parent-pom-shading.xml"
+            self.project, "to/main/pom.xml", "main-pom-shading.xml"
         )
         relocations = {
             "${shading.prefix}.commons.logging": "org.apache.commons.logging",
@@ -585,7 +590,7 @@ class ScanPipeMavenPipesTest(TestCase):
         self.assertEqual(
             result,
             {
-                "org.shaded.commons.logging": "org.apache.commons.logging",
+                "org.main.commons.logging": "org.apache.commons.logging",
                 "org.apache.htrace.fasterxml.jackson": "com.fasterxml.jackson",
             },
         )
@@ -1231,7 +1236,7 @@ class ScanPipeMavenPipesTest(TestCase):
         self._add_pom_resource(
             project,
             "to/META-INF/maven/org.apache.htrace/htrace-core/pom.xml",
-            "htrace-core-shaded-pom.xml",
+            "shaded-pom.xml",
         )
         shaded_class = make_resource_file(
             project,
@@ -1260,13 +1265,13 @@ class ScanPipeMavenPipesTest(TestCase):
         shaded_class = make_resource_file(
             self.project,
             "to/org/apache/htrace/commons/logging/impl/AvalonLogger.class",
-            status=flag.REQUIRES_REVIEW,
+            status=flag.APPLICATION_PACKAGE,
         )
 
         maven.map_shaded_classes_to_maven_packages(self.project, purl=main_purl)
 
         shaded_class.refresh_from_db()
-        self.assertEqual(shaded_class.status, flag.REQUIRES_REVIEW)
+        self.assertEqual(shaded_class.status, flag.APPLICATION_PACKAGE)
         self.assertEqual(shaded_class.discovered_packages.count(), 0)
 
     def test_scanpipe_maven_map_shaded_classes_pom_without_relocation(self):
@@ -1285,13 +1290,13 @@ class ScanPipeMavenPipesTest(TestCase):
         shaded_class = make_resource_file(
             self.project,
             "to/org/apache/htrace/commons/logging/impl/AvalonLogger.class",
-            status=flag.REQUIRES_REVIEW,
+            status=flag.APPLICATION_PACKAGE,
         )
 
         maven.map_shaded_classes_to_maven_packages(self.project, purl=main_purl)
 
         shaded_class.refresh_from_db()
-        self.assertEqual(shaded_class.status, flag.REQUIRES_REVIEW)
+        self.assertEqual(shaded_class.status, flag.APPLICATION_PACKAGE)
         self.assertEqual(shaded_class.discovered_packages.count(), 0)
 
     def test_scanpipe_maven_map_shaded_classes_reuses_dependency_package(self):
@@ -1398,9 +1403,10 @@ class ScanPipeMavenPipesTest(TestCase):
     def test_scanpipe_maven_map_shaded_classes_kyuubi_sample(
         self, mock_download_pom_file
     ):
-        # The main POM is only available in from/, the shadedPattern uses
-        # ${shading.prefix}.thrift and ${shading.prefix}.fb303 from the
-        # parent POM, and no dependency packages exist.
+        # The main POM is only available in from/, and its shadedPatterns
+        # use ${shading.prefix}.thrift and ${shading.prefix}.fb303 from the
+        # parent POM. No dependency packages exist, so both classes are
+        # flagged for review with their resolved originating namespace.
         project = self.project
         main_purl = PackageURL.from_string(
             "pkg:maven/org.apache.kyuubi/kyuubi-relocated-thrift@0.4.1"
@@ -1427,22 +1433,39 @@ class ScanPipeMavenPipesTest(TestCase):
             "pom_url": parent_pom_url,
         }
 
-        shaded_class = make_resource_file(
+        thrift_class = make_resource_file(
             project,
             "to/org/apache/kyuubi/shaded/thrift/TBase.class",
+            status=flag.APPLICATION_PACKAGE,
+        )
+        fb303_class = make_resource_file(
+            project,
+            "to/org/apache/kyuubi/shaded/fb303/FacebookService.class",
             status=flag.APPLICATION_PACKAGE,
         )
 
         maven.map_shaded_classes_to_maven_packages(project, purl=main_purl)
 
         mock_download_pom_file.assert_called_once_with(parent_pom_url)
-        shaded_class.refresh_from_db()
-        self.assertEqual(shaded_class.status, flag.REQUIRES_REVIEW)
+
+        thrift_class.refresh_from_db()
+        self.assertEqual(thrift_class.status, flag.REQUIRES_REVIEW)
         self.assertEqual(
-            shaded_class.extra_data.get("shaded_from_namespace"),
+            thrift_class.extra_data.get("shaded_from_namespace"),
             "org.apache.thrift",
         )
         self.assertEqual(
-            shaded_class.extra_data.get("original_fqn"),
+            thrift_class.extra_data.get("original_fqn"),
             "org.apache.thrift.TBase",
+        )
+
+        fb303_class.refresh_from_db()
+        self.assertEqual(fb303_class.status, flag.REQUIRES_REVIEW)
+        self.assertEqual(
+            fb303_class.extra_data.get("shaded_from_namespace"),
+            "com.facebook.fb303",
+        )
+        self.assertEqual(
+            fb303_class.extra_data.get("original_fqn"),
+            "com.facebook.fb303.FacebookService",
         )

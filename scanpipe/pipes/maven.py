@@ -345,10 +345,7 @@ def _walk_parent_poms(main_pom):
             name=artifact,
             version=version,
         )
-        pom_url = get_pom_url(parent_purl)
-        if not pom_url:
-            return
-        pom_file = download_pom_file(pom_url)
+        pom_file = download_pom_file(get_pom_url(parent_purl))
         if not pom_file:
             return
         current_path = pom_file["pom_file_path"]
@@ -379,18 +376,22 @@ def resolve_relocation_placeholders(project, relocations, main_pom):
         return relocations
 
     properties = resolve_shading_properties(main_pom, required_properties)
-    missing_properties = required_properties.difference(properties)
-    if missing_properties:
-        project.add_error(
-            description=f"Unresolved Maven properties: {sorted(missing_properties)}",
-            model="map_shaded_classes_to_maven_packages",
-            details={"resource_path": main_pom.path},
-        )
-
-    return {
+    resolved_relocations = {
         _resolve_maven_properties(shaded_pattern, properties): original_pattern
         for shaded_pattern, original_pattern in relocations.items()
     }
+    unresolved_patterns = [
+        shaded_pattern
+        for shaded_pattern in resolved_relocations
+        if MAVEN_PROPERTY_PLACEHOLDER_RE.search(shaded_pattern)
+    ]
+    if unresolved_patterns:
+        project.add_error(
+            description=f"Unresolved Maven properties: {unresolved_patterns}",
+            model="map_shaded_classes_to_maven_packages",
+            details={"resource_path": main_pom.path},
+        )
+    return resolved_relocations
 
 
 def _resolve_maven_properties(text, properties):
@@ -790,21 +791,20 @@ def map_shaded_classes_to_maven_packages(project, purl, logger=None):
         )
         .has_no_relation()
     )
-    to_classes_count = to_classes.count()
 
-    if not to_classes_count:
+    if not to_classes.exists():
         if logger:
             logger("No unmapped .class resources to process.")
         return
 
     main_pom = get_main_maven_pom(project, purl)
-    raw_relocations = get_maven_shade_relocations(project, main_pom)
-    if not raw_relocations:
+    relocations = get_maven_shade_relocations(project, main_pom)
+    if not relocations:
         if logger:
             logger("No Maven relocations found in the main POM.")
         return
 
-    relocations = resolve_relocation_placeholders(project, raw_relocations, main_pom)
+    relocations = resolve_relocation_placeholders(project, relocations, main_pom)
 
     dependency_packages = get_maven_dependency_packages(project, main_purl=purl)
 
