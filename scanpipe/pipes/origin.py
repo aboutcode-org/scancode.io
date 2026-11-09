@@ -659,7 +659,6 @@ def get_or_create_origin_package(project, purl, resources):
         return package
 
     purl_data = PackageURL.from_string(purl).to_dict()
-
     origin_matches = get_purl_origin_matches(project, purl, resources)
     package_data = {
         **purl_data,

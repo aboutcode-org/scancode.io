@@ -152,6 +152,9 @@ Limitations
 - A single tool never confirms an origin automatically, as it can miss other
   candidates: SCANOSS reports one component per file, and MatchCode.io only
   knows the indexed packages.
+- A copy taken from a package that vendors it, such as ``six.py`` copied from
+  urllib3, is attributed to the vendoring package when no tool reports the
+  original package.
 - MatchCode.io rarely reports a release date, so the earliest release rarely
   selects among the versions of its candidates.
 - The 20 lines threshold is calibrated on the MIT license header. A longer
