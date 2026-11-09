@@ -739,7 +739,7 @@ def load_matchcode_results(project, match_results):
         package_data_by_uid=package_data_by_uid,
         package_data_by_purl=package_data_by_purl,
         tool_version=match_results["headers"][0]["tool_version"],
-        origin_paths=get_origin_paths(matched_file_sha1s, package_data_by_purl),
+        origin_paths=get_origin_paths(matched_file_sha1s, package_data_by_purl.keys()),
     )
 
     origin_match_count, _ = create_origin_matches(

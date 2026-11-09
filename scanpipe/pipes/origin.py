@@ -378,10 +378,14 @@ def get_preferred_version_origin(origins):
     if len(release_origins) == 1:
         return release_origins[0]
 
-    if len(release_origins) > 1:
-        return get_most_similar_origin(release_origins) or get_earliest_release_origin(
-            release_origins
-        )
+    # Both the similarity and the release date compare two releases at least.
+    if len(release_origins) < 2:
+        return
+
+    if most_similar_release_origin := get_most_similar_origin(release_origins):
+        return most_similar_release_origin
+
+    return get_earliest_release_origin(release_origins)
 
 
 def get_earliest_release_origin(origins):
