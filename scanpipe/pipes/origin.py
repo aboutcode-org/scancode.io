@@ -50,6 +50,24 @@ NO_EXACT_MATCH_RULE = "no-exact-match"
 SINGLE_TOOL_RULE = "single-tool"
 CONFIRMED_BY_TWO_TOOLS_RULE = "confirmed-by-two-tools"
 
+RULE_DESCRIPTIONS = {
+    CONTAINMENT_RULE: "The other candidates carry a copy of the proposed one.",
+    PREFERRED_VERSION_RULE: (
+        "Versions of one package: the proposed one is the most similar, the only "
+        "release, or the earliest release."
+    ),
+    CONFLICTING_VERSIONS_RULE: "Versions of one package, none preferred.",
+    HIGHEST_SIMILARITY_RULE: (
+        "Different packages: the proposed one is at least 20 points more similar."
+    ),
+    CONFLICTING_CANDIDATES_RULE: "Different packages, none preferred.",
+    NO_EXACT_MATCH_RULE: "One candidate, with partial matches only.",
+    SINGLE_TOOL_RULE: "One candidate with an exact match, reported by one tool.",
+    CONFIRMED_BY_TWO_TOOLS_RULE: (
+        "One candidate with an exact match, reported by two tools."
+    ),
+}
+
 # Identifies the packages created from an origin determination, as opposed to
 # the packages detected by the codebase scan.
 ORIGIN_DATASOURCE_ID = "origin_determination"

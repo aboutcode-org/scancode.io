@@ -48,6 +48,7 @@ from scanpipe.models import OriginMatch
 from scanpipe.models import Project
 from scanpipe.pipelines.find_origins import FindOrigins
 from scanpipe.pipes import make_relation
+from scanpipe.pipes import origin
 from scanpipe.pipes import update_or_create_dependency
 from scanpipe.pipes.input import copy_input
 from scanpipe.pipes.input import copy_inputs
@@ -1548,6 +1549,8 @@ class ScanPipeViewsTest(TestCase):
         self.assertContains(response, 'id="origin-panel"')
         self.assertContains(response, f'href="{origins_url}?status=needs-review"')
         self.assertContains(response, f'href="{origins_url}?status=auto-confirmed"')
+        self.assertContains(response, "2 Needs Review")
+        self.assertContains(response, "1 Auto Confirmed")
 
         project_url = self.project1.get_absolute_url()
         response = self.client.get(project_url)
@@ -1586,6 +1589,9 @@ class ScanPipeViewsTest(TestCase):
         six_url = reverse("resource_detail", args=[self.project1.slug, "six.py"])
         self.assertContains(response, f'href="{six_url}#origin"')
         self.assertContains(response, 'href="?rule=confirmed-by-two-tools"')
+        rule_description = origin.RULE_DESCRIPTIONS["confirmed-by-two-tools"]
+        self.assertContains(response, f'data-title="{rule_description}"')
+        self.assertContains(response, "Auto Confirmed")
         self.assertContains(response, 'href="?purl=pkg%3Apypi/six%401.17.0"')
         self.assertContains(response, "<div>pkg:pypi/six@1.17.0</div>", html=True)
         self.assertNotContains(response, "pkg:github/benjaminp/six@1.17.0")
@@ -1595,7 +1601,7 @@ class ScanPipeViewsTest(TestCase):
         self.assertContains(
             response, "<div>pkg:github/benhoyt/inih@498f34b</div>", html=True
         )
-        self.assertContains(response, 'title="Directory"')
+        self.assertContains(response, 'href="?type=directory"')
 
         response = self.client.get(url, data={"status": "needs-review"})
         self.assertContains(response, "src/ini.c")
@@ -1627,6 +1633,8 @@ class ScanPipeViewsTest(TestCase):
         self.assertContains(response, 'data-target="tab-origin"')
         self.assertContains(response, 'id="tab-origin"')
         self.assertContains(response, "preferred-version")
+        self.assertContains(response, origin.RULE_DESCRIPTIONS["preferred-version"])
+        self.assertContains(response, "Needs Review")
         self.assertContains(response, "Proposed")
         self.assertNotContains(response, "Not reported by the origin tools")
         candidate_purls = [

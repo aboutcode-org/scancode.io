@@ -974,6 +974,7 @@ class RelationFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
 
 class OriginDeterminationFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     dropdown_widget_fields = [
+        "type",
         "status",
         "rule",
     ]
@@ -987,10 +988,15 @@ class OriginDeterminationFilterSet(FilterSetUtilsMixin, django_filters.FilterSet
         label="Sort",
         fields=[
             ("resource__path", "path"),
+            ("resource__type", "type"),
             "status",
             "rule",
             "purl",
         ],
+    )
+    type = django_filters.ChoiceFilter(
+        field_name="resource__type",
+        choices=CodebaseResource.Type.choices,
     )
     status = ModelFieldValuesFilter()
     rule = ModelFieldValuesFilter(include_empty=True)
@@ -999,6 +1005,7 @@ class OriginDeterminationFilterSet(FilterSetUtilsMixin, django_filters.FilterSet
         model = OriginDetermination
         fields = [
             "search",
+            "type",
             "status",
             "rule",
             "purl",

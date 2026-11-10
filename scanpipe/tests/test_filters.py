@@ -381,7 +381,11 @@ class ScanPipeFilterTest(TestCase):
         )
         user_determination = OriginDetermination.objects.create(
             project=self.project1,
-            resource=make_resource_file(self.project1, "app.py"),
+            resource=CodebaseResource.objects.create(
+                project=self.project1,
+                path="vendor",
+                type=CodebaseResource.Type.DIRECTORY,
+            ),
             status=OriginDetermination.Status.NO_ORIGIN,
         )
         queryset = self.project1.origindeterminations.all()
@@ -400,13 +404,17 @@ class ScanPipeFilterTest(TestCase):
         self.assertEqual(
             [six_determination], filter_determinations(purl="pkg:pypi/six@1.17.0")
         )
+        self.assertEqual([user_determination], filter_determinations(type="directory"))
+        self.assertEqual(
+            [six_determination, ini_determination], filter_determinations(type="file")
+        )
         self.assertEqual([ini_determination], filter_determinations(search="ini"))
         self.assertEqual([six_determination], filter_determinations(search="pypi"))
 
         filterset = OriginDeterminationFilterSet(
             data={"sort": "-path"}, queryset=queryset
         )
-        expected = [ini_determination, six_determination, user_determination]
+        expected = [user_determination, ini_determination, six_determination]
         self.assertEqual(expected, list(filterset.qs))
 
         status_choices = (

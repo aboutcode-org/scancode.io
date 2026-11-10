@@ -1,37 +1,40 @@
-<div class="content">
-  {% if origin_determination %}
-    <dl>
-      <dt class="has-text-weight-semibold">Status</dt>
+{% if origin_determination %}
+  <dl>
+    <dt class="has-text-weight-semibold">Status</dt>
+    <dd class="mb-4">
+      {% include "scanpipe/includes/origin_status_tag.html" with status=origin_determination.status label=origin_determination.get_status_display only %}
+    </dd>
+    {% if origin_determination.rule %}
+      <dt class="has-text-weight-semibold">Rule</dt>
       <dd class="mb-4">
-        {% include "scanpipe/includes/origin_status_tag.html" with status=origin_determination.status only %}
+        <pre class="break-all wrap is-small">{{ origin_determination.rule }}</pre>
+        <p class="help">{{ rule_description }}</p>
       </dd>
-      {% if origin_determination.rule %}
-        <dt class="has-text-weight-semibold">Rule</dt>
-        <dd class="mb-4">{{ origin_determination.rule }}</dd>
-      {% endif %}
-      {% if origin_determination.purl %}
-        <dt class="has-text-weight-semibold">Origin</dt>
-        <dd class="mb-4 break-all">
-          {{ origin_determination.purl }}
-          {% if not determined_origin %}
-            <span class="tag is-danger is-light ml-1">Not reported by the origin tools</span>
-          {% endif %}
-        </dd>
-      {% endif %}
-    </dl>
-  {% elif covering_origin_determination %}
-    <article class="message is-info">
-      <div class="message-body break-all">
-        Determined with the directory
-        <a href="{% url 'resource_detail' project.slug covering_origin_determination.resource.path %}#origin">{{ covering_origin_determination.resource.path }}</a>
-        {% include "scanpipe/includes/origin_status_tag.html" with status=covering_origin_determination.status only %}
-        {{ covering_origin_determination.purl }}
-      </div>
-    </article>
-  {% endif %}
+    {% endif %}
+    {% if origin_determination.purl %}
+      <dt class="has-text-weight-semibold">Origin</dt>
+      <dd class="mb-4">
+        <pre class="break-all wrap is-small">{{ origin_determination.purl }}</pre>
+        {% if not determined_origin %}
+          <p class="help is-danger">Not reported by the origin tools</p>
+        {% endif %}
+      </dd>
+    {% endif %}
+  </dl>
+{% elif covering_origin_determination %}
+  <article class="message is-info">
+    <div class="message-body break-all">
+      Determined with the directory
+      <a href="{% url 'resource_detail' project.slug covering_origin_determination.resource.path %}#origin">{{ covering_origin_determination.resource.path }}</a>
+      {% include "scanpipe/includes/origin_status_tag.html" with status=covering_origin_determination.status label=covering_origin_determination.get_status_display only %}
+      {{ covering_origin_determination.purl }}
+    </div>
+  </article>
+{% endif %}
 
-  {% if candidate_origins %}
-    <table class="table is-bordered is-narrow is-hoverable is-fullwidth is-rounded-table">
+{% if candidate_origins %}
+  <div class="content">
+    <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth is-rounded-table">
       <thead>
         <tr>
           <th>Candidate</th>
@@ -46,33 +49,31 @@
       <tbody>
         {% for candidate_origin in candidate_origins %}
           {% for origin_match in candidate_origin.origin_matches %}
-            <tr>
-              {% if forloop.first %}
-                <td rowspan="{{ candidate_origin.origin_matches|length }}" class="break-all">
-                  {{ candidate_origin.purl }}
-                  {% if candidate_origin is determined_origin %}
-                    {% if origin_determination.status == "needs-review" %}
-                      <span class="tag is-warning ml-1">Proposed</span>
-                    {% else %}
-                      <span class="tag is-success ml-1">Origin</span>
-                    {% endif %}
+            <tr class="break-word">
+              <td class="break-all">
+                {{ candidate_origin.purl }}
+                {% if forloop.first and candidate_origin is determined_origin %}
+                  {% if origin_determination.status == "needs-review" %}
+                    <span class="tag is-rounded is-warning ml-1">Proposed</span>
+                  {% else %}
+                    <span class="tag is-rounded is-success ml-1">Origin</span>
                   {% endif %}
-                </td>
-              {% endif %}
+                {% endif %}
+              </td>
               <td>{{ origin_match.tool }}</td>
               <td>{{ origin_match.match_type }}</td>
               <td>{{ origin_match.similarity|default_if_none:"" }}</td>
               <td class="break-all">{{ origin_match.origin_path }}</td>
-              <td>
+              <td class="nowrap">
                 {% for line_range in origin_match.line_ranges %}
                   <div>{{ line_range.lines.0 }}-{{ line_range.lines.1 }}</div>
                 {% endfor %}
               </td>
-              <td>{{ origin_match.extra_data.release_date }}</td>
+              <td class="nowrap">{{ origin_match.extra_data.release_date }}</td>
             </tr>
           {% endfor %}
         {% endfor %}
       </tbody>
     </table>
-  {% endif %}
-</div>
+  </div>
+{% endif %}

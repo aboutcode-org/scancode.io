@@ -1132,8 +1132,11 @@ class ProjectOriginSummaryView(ConditionalLoginRequired, generic.DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         origin_determinations = self.object.origindeterminations
-        summary = count_group_by(origin_determinations, "status")
-        context["origin_status_summary"] = summary
+        count_by_status = count_group_by(origin_determinations, "status")
+        context["origin_status_summary"] = {
+            OriginDetermination.Status(status): count
+            for status, count in count_by_status.items()
+        }
         context["project_origins_url"] = reverse(
             "project_origins", args=[self.object.slug]
         )
@@ -2006,6 +2009,10 @@ class OriginDeterminationListView(
     table_columns = [
         "path",
         {
+            "field_name": "type",
+            "filter_fieldname": "type",
+        },
+        {
             "field_name": "status",
             "filter_fieldname": "status",
         },
@@ -2043,6 +2050,9 @@ class OriginDeterminationListView(
             origin_matches = determination.resource.origin_matches.all()
             determination.candidate_origins = origin.group_origin_matches(
                 origin_matches
+            )
+            determination.rule_description = origin.RULE_DESCRIPTIONS.get(
+                determination.rule, ""
             )
         return context
 
@@ -2322,8 +2332,15 @@ class CodebaseResourceDetailsView(
                 origin_determination.purl, candidate_origins
             )
 
+        rule_description = ""
+        if origin_determination:
+            rule_description = origin.RULE_DESCRIPTIONS.get(
+                origin_determination.rule, ""
+            )
+
         return {
             "origin_determination": origin_determination,
+            "rule_description": rule_description,
             "covering_origin_determination": covering_origin_determination,
             "candidate_origins": candidate_origins,
             "determined_origin": determined_origin,
