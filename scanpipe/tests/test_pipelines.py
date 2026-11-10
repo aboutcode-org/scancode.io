@@ -221,8 +221,11 @@ class ScanPipePipelinesTest(TestCase):
         self.assertIn(ScanNixPackage.map_macho, steps)
         self.assertNotIn(ScanNixPackage.map_elf, steps)
 
+    @mock.patch("scanpipe.pipes.nix.add_metadata_warnings")
     @mock.patch("scanpipe.pipes.nix.get_package_metadata")
-    def test_scanpipe_scan_nix_package_get_nix_package_metadata(self, mock_metadata):
+    def test_scanpipe_scan_nix_package_get_nix_package_metadata(
+        self, mock_metadata, mock_warnings
+    ):
         project1 = make_project()
         pipeline = project1.add_pipeline("scan_nix_package").make_pipeline_instance()
         pipeline.purl = PackageURL.from_string(
@@ -230,120 +233,21 @@ class ScanPipePipelinesTest(TestCase):
         )
         pipeline.commit = "55ba7f49ef2962b42cbd126522b7df5f95037679"
         outputs = {"out": "/nix/store/aaa-hello", "man": "/nix/store/bbb-man"}
-
         metadata = {"version": "2.12.3", "outputs": outputs, "source_provenance": []}
         mock_metadata.return_value = metadata
+
         pipeline.get_nix_package_metadata()
+        self.assertEqual(metadata, pipeline.metadata)
         self.assertEqual({"out": "/nix/store/aaa-hello"}, pipeline.selected_outputs)
-        self.assertEqual(0, project1.projectmessages.count())
+        mock_warnings.assert_called_once_with(
+            project1, pipeline.purl, pipeline.commit, metadata
+        )
 
         pipeline.purl = PackageURL.from_string(
             "pkg:nix/nixpkgs/hello@2.12.3?system=x86_64-linux&output=debug"
         )
         with self.assertRaisesMessage(ValueError, "The output 'debug' does not"):
             pipeline.get_nix_package_metadata()
-
-        pipeline.purl = PackageURL.from_string(
-            "pkg:nix/nixpkgs/hello@2.12.3?system=x86_64-linux"
-        )
-        mock_metadata.return_value = {**metadata, "version": "2.12.2"}
-        pipeline.get_nix_package_metadata()
-        message = project1.projectmessages.get()
-        self.assertEqual(
-            "The PURL version 2.12.3 differs from the nixpkgs version 2.12.2 at commit "
-            "55ba7f49ef2962b42cbd126522b7df5f95037679.",
-            message.description,
-        )
-        message.delete()
-
-        source_provenance = ["fromSource", "binaryNativeCode"]
-        mock_metadata.return_value = {
-            **metadata,
-            "source_provenance": source_provenance,
-        }
-        pipeline.get_nix_package_metadata()
-        message = project1.projectmessages.get()
-        self.assertEqual(
-            "The nixpkgs package repackages prebuilt binaries (binaryNativeCode): its "
-            "source is not the one of the deployed code.",
-            message.description,
-        )
-
-    @mock.patch("scanpipe.pipes.nix.fetch_source")
-    def test_scanpipe_scan_nix_package_fetch_nix_source_error(self, mock_fetch):
-        project1 = make_project()
-        pipeline = project1.add_pipeline("scan_nix_package").make_pipeline_instance()
-        pipeline.purl = PackageURL.from_string(
-            "pkg:nix/nixpkgs/papertrail@0.11.3?system=x86_64-linux"
-        )
-        pipeline.commit = "55ba7f49ef2962b42cbd126522b7df5f95037679"
-        mock_fetch.side_effect = nix.NixCommandError("attribute 'src' missing")
-
-        pipeline.fetch_nix_source()
-        message = project1.projectmessages.get()
-        self.assertEqual(
-            "The source cannot be fetched, the binary is analyzed alone and the "
-            "license check is skipped.",
-            message.description,
-        )
-        self.assertEqual({"error": "attribute 'src' missing"}, message.details)
-
-    @mock.patch("scanpipe.pipes.nix.fetch_binary")
-    def test_scanpipe_scan_nix_package_fetch_nix_binary(self, mock_fetch):
-        project1 = make_project()
-        pipeline = project1.add_pipeline("scan_nix_package").make_pipeline_instance()
-        pipeline.selected_outputs = {
-            "out": "/nix/store/aaa-hello",
-            "debug": "/nix/store/bbb-debug",
-        }
-
-        def fetch_binary(store_path, destination, download_directory):
-            return store_path.endswith("-hello")
-
-        mock_fetch.side_effect = fetch_binary
-
-        pipeline.fetch_nix_binary()
-        self.assertEqual(2, mock_fetch.call_count)
-        self.assertEqual(
-            project1.codebase_path / "to" / "out",
-            mock_fetch.call_args_list[0].kwargs["destination"],
-        )
-        message = project1.projectmessages.get()
-        self.assertEqual(
-            "Outputs not available in the Nix binary cache: debug",
-            message.description,
-        )
-
-    @mock.patch("scanpipe.pipes.nix.collect_garbage")
-    def test_scanpipe_scan_nix_package_collect_nix_garbage(self, mock_collect):
-        project1 = make_project()
-        pipeline = project1.add_pipeline("scan_nix_package").make_pipeline_instance()
-        mock_collect.side_effect = nix.NixCommandError("store is locked")
-
-        pipeline.collect_nix_garbage()
-        message = project1.projectmessages.get()
-        self.assertEqual(
-            "The Nix store garbage collection failed.", message.description
-        )
-        self.assertEqual({"error": "store is locked"}, message.details)
-
-    def test_scanpipe_scan_nix_package_check_nix_package_license(self):
-        project1 = make_project()
-        pipeline = project1.add_pipeline("scan_nix_package").make_pipeline_instance()
-        pipeline.package = make_package(project1, "pkg:nix/nixpkgs/hello@2.12.3")
-
-        pipeline.check_nix_package_license()
-        self.assertEqual({}, pipeline.package.extra_data)
-        self.assertEqual(0, project1.projectmessages.count())
-
-        make_resource_file(project1, "from/src/hello.c")
-        pipeline.check_nix_package_license()
-        self.assertEqual({}, pipeline.package.extra_data)
-        message = project1.projectmessages.get()
-        self.assertEqual(
-            "No declared license in nixpkgs, license check skipped.",
-            message.description,
-        )
 
     def test_scanpipe_pipeline_class_get_summary(self):
         expected = "Do nothing, in 2 steps."

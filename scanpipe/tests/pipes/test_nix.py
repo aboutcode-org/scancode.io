@@ -33,6 +33,7 @@ import requests
 from packageurl import PackageURL
 
 from scanpipe.pipes import nix
+from scanpipe.tests import make_package
 from scanpipe.tests import make_project
 from scanpipe.tests import make_resource_file
 
@@ -349,6 +350,62 @@ class ScanPipeNixPipesTest(TestCase):
             documentation_outputs, nix.get_selected_outputs(documentation_outputs)
         )
 
+    def test_scanpipe_nix_add_metadata_warnings(self):
+        purl = PackageURL.from_string(
+            "pkg:nix/nixpkgs/hello@2.12.3?system=x86_64-linux"
+        )
+        metadata = {"version": "2.12.3", "source_provenance": ["fromSource"]}
+        nix.add_metadata_warnings(self.project, purl, COMMIT, metadata)
+        self.assertEqual(0, self.project.projectmessages.count())
+
+        metadata = {"version": "2.12.2", "source_provenance": ["binaryNativeCode"]}
+        nix.add_metadata_warnings(self.project, purl, COMMIT, metadata)
+        warnings = self.project.projectmessages.order_by("created_date")
+        expected = [
+            "The PURL version 2.12.3 differs from the nixpkgs version 2.12.2 at "
+            f"commit {COMMIT}.",
+            "The nixpkgs package repackages prebuilt binaries (binaryNativeCode): its "
+            "source is not the one of the deployed code.",
+        ]
+        self.assertEqual(expected, [warning.description for warning in warnings])
+        self.assertEqual(
+            {"add_metadata_warnings"}, {warning.model for warning in warnings}
+        )
+
+    @mock.patch("scanpipe.pipes.nix.fetch_source")
+    def test_scanpipe_nix_fetch_codebase_source(self, mock_fetch):
+        mock_fetch.return_value = ""
+        nix.fetch_codebase_source(self.project, "hello", COMMIT)
+        mock_fetch.assert_called_once_with(
+            attribute_path="hello",
+            commit=COMMIT,
+            destination=self.project.codebase_path / "from",
+            cache_directory=self.project.tmp_path,
+        )
+        self.assertEqual(0, self.project.projectmessages.count())
+
+        mock_fetch.return_value = "patch failed"
+        nix.fetch_codebase_source(self.project, "hello", COMMIT)
+        message = self.project.projectmessages.get()
+        self.assertEqual(
+            "The source with the nixpkgs patches cannot be built, the upstream "
+            "source is used instead.",
+            message.description,
+        )
+        self.assertEqual({"error": "patch failed"}, message.details)
+        message.delete()
+
+        mock_fetch.side_effect = nix.NixCommandError("attribute 'src' missing")
+        nix.fetch_codebase_source(self.project, "papertrail", COMMIT)
+        message = self.project.projectmessages.get()
+        self.assertEqual(
+            "The source cannot be fetched, the binary is analyzed alone and the "
+            "license check is skipped.",
+            message.description,
+        )
+        self.assertEqual("fetch_codebase_source", message.model)
+        self.assertEqual({"error": "attribute 'src' missing"}, message.details)
+
     @mock.patch("scanpipe.pipes.nix.run_nix_command")
     def test_scanpipe_nix_build_source(self, mock_run):
         mock_run.return_value = "warning: unknown setting\n/nix/store/abc-source\n"
@@ -464,6 +521,35 @@ class ScanPipeNixPipesTest(TestCase):
             mock_restore.assert_called_once_with(nar_location, "zstd", destination)
             self.assertFalse(nar_location.exists())
 
+    @mock.patch("scanpipe.pipes.nix.fetch_binary")
+    def test_scanpipe_nix_fetch_codebase_binaries(self, mock_fetch):
+        selected_outputs = {
+            "out": "/nix/store/aaa-hello",
+            "debug": "/nix/store/bbb-debug",
+        }
+
+        def fetch_binary(store_path, destination, download_directory):
+            return store_path.endswith("-hello")
+
+        mock_fetch.side_effect = fetch_binary
+
+        nix.fetch_codebase_binaries(self.project, selected_outputs)
+        expected_calls = [
+            mock.call(
+                store_path=store_path,
+                destination=self.project.codebase_path / "to" / output,
+                download_directory=self.project.tmp_path,
+            )
+            for output, store_path in selected_outputs.items()
+        ]
+        self.assertEqual(expected_calls, mock_fetch.call_args_list)
+        message = self.project.projectmessages.get()
+        self.assertEqual(
+            "Outputs not available in the Nix binary cache: debug",
+            message.description,
+        )
+        self.assertEqual("fetch_codebase_binaries", message.model)
+
     @mock.patch("scanpipe.pipes.nix.fetch.get_request_session")
     def test_scanpipe_nix_download_file(self, mock_session):
         response = mock.MagicMock()
@@ -525,10 +611,20 @@ class ScanPipeNixPipesTest(TestCase):
 
     @mock.patch("scanpipe.pipes.nix.run_nix_command")
     def test_scanpipe_nix_collect_garbage(self, mock_run):
-        nix.collect_garbage()
+        nix.collect_garbage(self.project)
         mock_run.assert_called_once_with(
             ["nix-store", "--gc"], timeout=nix.NIX_BUILD_TIMEOUT
         )
+        self.assertEqual(0, self.project.projectmessages.count())
+
+        mock_run.side_effect = nix.NixCommandError("store is locked")
+        nix.collect_garbage(self.project)
+        message = self.project.projectmessages.get()
+        self.assertEqual(
+            "The Nix store garbage collection failed.", message.description
+        )
+        self.assertEqual("collect_garbage", message.model)
+        self.assertEqual({"error": "store is locked"}, message.details)
 
     def test_scanpipe_nix_combine_license_expressions(self):
         cases = [
@@ -745,3 +841,25 @@ class ScanPipeNixPipesTest(TestCase):
         for license_key, expected in cases:
             with self.subTest(license_key=license_key):
                 self.assertEqual(expected, nix.get_base_license_key(license_key))
+
+    def test_scanpipe_nix_check_package_license(self):
+        package = make_package(self.project, "pkg:nix/nixpkgs/hello@2.12.3")
+        nix.check_package_license(self.project, package)
+        self.assertEqual({}, package.extra_data)
+        self.assertEqual(0, self.project.projectmessages.count())
+
+        make_resource_file(
+            self.project, "from/src/helper.c", detected_license_expression="mit"
+        )
+        nix.check_package_license(self.project, package)
+        self.assertEqual({}, package.extra_data)
+        message = self.project.projectmessages.get()
+        self.assertEqual(
+            "No declared license in nixpkgs, license check skipped.",
+            message.description,
+        )
+        self.assertEqual("check_package_license", message.model)
+
+        package.update(declared_license_expression="gpl-3.0-plus")
+        nix.check_package_license(self.project, package)
+        self.assertEqual({"uncovered_licenses": ["mit"]}, package.extra_data)

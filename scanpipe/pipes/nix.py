@@ -36,6 +36,7 @@ from license_expression import Licensing
 from packageurl import PackageURL
 
 from scanpipe import pipes
+from scanpipe.pipes import d2d
 from scanpipe.pipes import fetch
 from scanpipe.pipes.resolve import convert_spdx_expression
 
@@ -443,6 +444,34 @@ def get_selected_outputs(outputs, selected_output=None):
     return {selected_output: outputs[selected_output]}
 
 
+def add_metadata_warnings(project, purl, commit, metadata):
+    """
+    Add a warning to the ``project`` when the ``purl`` version differs from the
+    nixpkgs version at the ``commit``, and when the nixpkgs ``metadata`` declares
+    prebuilt binaries instead of a build from the source.
+    """
+    version = metadata["version"]
+    if purl.version and purl.version != version:
+        project.add_warning(
+            description=(
+                f"The PURL version {purl.version} differs from the "
+                f"nixpkgs version {version} at commit {commit}."
+            ),
+            model="add_metadata_warnings",
+        )
+
+    source_provenance = metadata["source_provenance"]
+    if binary_provenances := get_binary_provenances(source_provenance):
+        project.add_warning(
+            description=(
+                f"The nixpkgs package repackages prebuilt binaries "
+                f"({', '.join(binary_provenances)}): its source is not the one "
+                f"of the deployed code."
+            ),
+            model="add_metadata_warnings",
+        )
+
+
 def build_source(expression, attribute_path, commit, cache_directory=None):
     """Build the source ``expression`` and return its store path."""
     arguments = [
@@ -480,6 +509,41 @@ def fetch_source(attribute_path, commit, destination, cache_directory=None):
 
     copy_store_path(store_path, destination)
     return patch_error
+
+
+def fetch_codebase_source(project, attribute_path, commit):
+    """
+    Fetch the package source to the ``project`` ``from/`` codebase directory, with
+    the nixpkgs patches applied. Add a warning when the upstream source is used
+    instead, or when the source cannot be fetched.
+    """
+    try:
+        patch_error = fetch_source(
+            attribute_path=attribute_path,
+            commit=commit,
+            destination=project.codebase_path / d2d.FROM,
+            cache_directory=project.tmp_path,
+        )
+    except NixCommandError as error:
+        project.add_warning(
+            description=(
+                "The source cannot be fetched, the binary is analyzed alone "
+                "and the license check is skipped."
+            ),
+            model="fetch_codebase_source",
+            details={"error": str(error)},
+        )
+        return
+
+    if patch_error:
+        project.add_warning(
+            description=(
+                "The source with the nixpkgs patches cannot be built, the "
+                "upstream source is used instead."
+            ),
+            model="fetch_codebase_source",
+            details={"error": patch_error},
+        )
 
 
 def copy_store_path(store_path, destination):
@@ -543,6 +607,32 @@ def fetch_binary(store_path, destination, download_directory):
     return True
 
 
+def fetch_codebase_binaries(project, selected_outputs):
+    """
+    Download the ``selected_outputs`` from the Nix binary cache to the ``project``
+    ``to/`` codebase directory, one directory per output. Add a warning for the
+    outputs not available in the cache.
+    """
+    missing_outputs = []
+    for output, store_path in selected_outputs.items():
+        is_fetched = fetch_binary(
+            store_path=store_path,
+            destination=project.codebase_path / d2d.TO / output,
+            download_directory=project.tmp_path,
+        )
+        if not is_fetched:
+            missing_outputs.append(output)
+
+    if missing_outputs:
+        project.add_warning(
+            description=(
+                f"Outputs not available in the Nix binary cache: "
+                f"{', '.join(missing_outputs)}"
+            ),
+            model="fetch_codebase_binaries",
+        )
+
+
 def download_file(url, file_location):
     """
     Download the ``url`` to ``file_location`` by chunks, as a NAR archive can be
@@ -600,13 +690,21 @@ def restore_nar(nar_location, compression, destination):
     make_writable(destination)
 
 
-def collect_garbage():
+def collect_garbage(project):
     """
     Delete the Nix store paths not used by a garbage collector root, such as the
     nixpkgs and the sources fetched for a scan, so the disk usage does not grow
     across scans. The installed Nix packages are kept, as their profiles are roots.
+    Add a warning to the ``project`` when the garbage collection fails.
     """
-    run_nix_command(["nix-store", "--gc"], timeout=NIX_BUILD_TIMEOUT)
+    try:
+        run_nix_command(["nix-store", "--gc"], timeout=NIX_BUILD_TIMEOUT)
+    except NixCommandError as error:
+        project.add_warning(
+            description="The Nix store garbage collection failed.",
+            model="collect_garbage",
+            details={"error": str(error)},
+        )
 
 
 def combine_license_expressions(license_expressions):
@@ -760,3 +858,25 @@ def get_uncovered_license_keys(project, declared_license_expression):
         for key in detected_keys - IGNORED_LICENSE_KEYS
         if get_base_license_key(key) not in declared_base_keys
     )
+
+
+def check_package_license(project, package):
+    """
+    Store in the ``package`` extra data the licenses detected in the ``project``
+    source but not declared in nixpkgs. The check is skipped without source, and
+    with a warning when nixpkgs declares no license.
+    """
+    has_source = project.codebaseresources.from_codebase().files().exists()
+    if not has_source:
+        return
+
+    declared_license = package.declared_license_expression
+    if not declared_license:
+        project.add_warning(
+            description="No declared license in nixpkgs, license check skipped.",
+            model="check_package_license",
+        )
+        return
+
+    uncovered_licenses = get_uncovered_license_keys(project, declared_license)
+    package.update_extra_data({"uncovered_licenses": uncovered_licenses})

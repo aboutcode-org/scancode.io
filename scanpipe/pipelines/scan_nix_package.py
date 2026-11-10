@@ -103,78 +103,15 @@ class ScanNixPackage(DeployToDevelop):
             outputs=self.metadata["outputs"],
             selected_output=self.purl.qualifiers.get("output"),
         )
-
-        version = self.metadata["version"]
-        if self.purl.version and self.purl.version != version:
-            self.project.add_warning(
-                description=(
-                    f"The PURL version {self.purl.version} differs from the "
-                    f"nixpkgs version {version} at commit {self.commit}."
-                ),
-                model=self.pipeline_name,
-            )
-
-        source_provenance = self.metadata["source_provenance"]
-        if binary_provenances := nix.get_binary_provenances(source_provenance):
-            self.project.add_warning(
-                description=(
-                    f"The nixpkgs package repackages prebuilt binaries "
-                    f"({', '.join(binary_provenances)}): its source is not the one "
-                    f"of the deployed code."
-                ),
-                model=self.pipeline_name,
-            )
+        nix.add_metadata_warnings(self.project, self.purl, self.commit, self.metadata)
 
     def fetch_nix_source(self):
         """Fetch the source to ``from/``, with the nixpkgs patches applied."""
-        try:
-            patch_error = nix.fetch_source(
-                attribute_path=self.purl.name,
-                commit=self.commit,
-                destination=self.project.codebase_path / d2d.FROM,
-                cache_directory=self.project.tmp_path,
-            )
-        except nix.NixCommandError as error:
-            self.project.add_warning(
-                description=(
-                    "The source cannot be fetched, the binary is analyzed alone "
-                    "and the license check is skipped."
-                ),
-                model=self.pipeline_name,
-                details={"error": str(error)},
-            )
-            return
-
-        if patch_error:
-            self.project.add_warning(
-                description=(
-                    "The source with the nixpkgs patches cannot be built, the "
-                    "upstream source is used instead."
-                ),
-                model=self.pipeline_name,
-                details={"error": patch_error},
-            )
+        nix.fetch_codebase_source(self.project, self.purl.name, self.commit)
 
     def fetch_nix_binary(self):
         """Download the package outputs from the Nix binary cache to ``to/``."""
-        missing_outputs = []
-        for output, store_path in self.selected_outputs.items():
-            is_fetched = nix.fetch_binary(
-                store_path=store_path,
-                destination=self.project.codebase_path / d2d.TO / output,
-                download_directory=self.project.tmp_path,
-            )
-            if not is_fetched:
-                missing_outputs.append(output)
-
-        if missing_outputs:
-            self.project.add_warning(
-                description=(
-                    f"Outputs not available in the Nix binary cache: "
-                    f"{', '.join(missing_outputs)}"
-                ),
-                model=self.pipeline_name,
-            )
+        nix.fetch_codebase_binaries(self.project, self.selected_outputs)
 
     def scan_mapped_from_for_files(self):
         """
@@ -202,30 +139,8 @@ class ScanNixPackage(DeployToDevelop):
 
     def check_nix_package_license(self):
         """Store the licenses detected in the source but not declared in nixpkgs."""
-        has_source = self.project.codebaseresources.from_codebase().files().exists()
-        if not has_source:
-            return
-
-        declared_license = self.package.declared_license_expression
-        if not declared_license:
-            self.project.add_warning(
-                description="No declared license in nixpkgs, license check skipped.",
-                model=self.pipeline_name,
-            )
-            return
-
-        uncovered_licenses = nix.get_uncovered_license_keys(
-            self.project, declared_license
-        )
-        self.package.update_extra_data({"uncovered_licenses": uncovered_licenses})
+        nix.check_package_license(self.project, self.package)
 
     def collect_nix_garbage(self):
         """Delete the unused Nix files, such as the ones downloaded for this scan."""
-        try:
-            nix.collect_garbage()
-        except nix.NixCommandError as error:
-            self.project.add_warning(
-                description="The Nix store garbage collection failed.",
-                model=self.pipeline_name,
-                details={"error": str(error)},
-            )
+        nix.collect_garbage(self.project)
