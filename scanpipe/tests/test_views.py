@@ -64,7 +64,6 @@ from scanpipe.views import CodebaseResourceDetailsView
 from scanpipe.views import ProjectActionView
 from scanpipe.views import ProjectCodebasePanelView
 from scanpipe.views import ProjectDetailView
-from scanpipe.views import ProjectOriginSummaryView
 from scanpipe.views import has_no_origin
 
 scanpipe_app = apps.get_app_config("scanpipe")
@@ -1541,11 +1540,10 @@ class ScanPipeViewsTest(TestCase):
             purl="pkg:pypi/six@1.17.0",
         )
 
-        summary = ProjectOriginSummaryView.get_origin_status_summary(self.project1)
+        response = self.client.get(url)
+        summary = response.context["origin_status_summary"]
         self.assertEqual({"auto-confirmed": 1, "needs-review": 2}, summary)
         self.assertEqual(["auto-confirmed", "needs-review"], list(summary))
-
-        response = self.client.get(url)
         origins_url = reverse("project_origins", args=[self.project1.slug])
         self.assertContains(response, 'id="origin-panel"')
         self.assertContains(response, f'href="{origins_url}?status=needs-review"')
@@ -1582,7 +1580,7 @@ class ScanPipeViewsTest(TestCase):
         self.make_origin_determination(vendor_ms, OriginDetermination.Status.NO_ORIGIN)
 
         url = reverse("project_origins", args=[self.project1.slug])
-        with self.assertNumQueries(7):
+        with self.assertNumQueries(8):
             response = self.client.get(url)
 
         six_url = reverse("resource_detail", args=[self.project1.slug, "six.py"])

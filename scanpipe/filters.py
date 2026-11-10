@@ -992,7 +992,7 @@ class OriginDeterminationFilterSet(FilterSetUtilsMixin, django_filters.FilterSet
             "purl",
         ],
     )
-    status = django_filters.ChoiceFilter(choices=OriginDetermination.Status.choices)
+    status = ModelFieldValuesFilter()
     rule = ModelFieldValuesFilter(include_empty=True)
 
     class Meta:

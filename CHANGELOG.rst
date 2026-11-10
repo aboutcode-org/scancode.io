@@ -11,6 +11,7 @@ Unreleased
 * feat: expose the ``is_addon`` attribute in the pipelines REST API
 * feat: [code-genetics] determine the origin of files from combined origin matches #1929 by @tdruez
 * feat: [code-genetics] resolve conflicting origins to detect the ultimate origin of files #1930 by @tdruez
+* feat: [code-genetics] add a read-only origin review UI #1933 by @tdruez
 
 v38.2.0 (2026-10-22)
 --------------------

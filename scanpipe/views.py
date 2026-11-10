@@ -1129,19 +1129,10 @@ class ProjectOriginSummaryView(ConditionalLoginRequired, generic.DetailView):
     model = Project
     template_name = "scanpipe/panels/origin_summary.html"
 
-    @staticmethod
-    def get_origin_status_summary(project):
-        """Return the number of origin determinations by status, in status order."""
-        count_by_status = count_group_by(project.origindeterminations, "status")
-        return {
-            status: count_by_status[status]
-            for status in OriginDetermination.Status
-            if status in count_by_status
-        }
-
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        summary = self.get_origin_status_summary(project=self.object)
+        origin_determinations = self.object.origindeterminations
+        summary = count_group_by(origin_determinations, "status")
         context["origin_status_summary"] = summary
         context["project_origins_url"] = reverse(
             "project_origins", args=[self.object.slug]

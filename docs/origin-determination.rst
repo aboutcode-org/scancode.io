@@ -123,6 +123,18 @@ Similarity and release date
   such as a GitHub repository copying the file, when the original package is
   not among the candidates.
 
+Reviewing the origins
+---------------------
+
+The "Origins" panel of the project page counts the determinations by status and
+links to the list of determinations, filtered by status or rule. The "View
+pipeline results" link of the pipeline run opens the same list.
+
+The "Origin" tab of a file or directory shows its determination and its
+candidates, with each origin match. A file without a determination of its own
+shows the determination of the directory that covers it. In the file viewer, the
+"Origin Matches" button highlights the matched lines.
+
 Re-running the pipeline
 -----------------------
 

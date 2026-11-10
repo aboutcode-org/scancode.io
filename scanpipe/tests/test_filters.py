@@ -409,6 +409,19 @@ class ScanPipeFilterTest(TestCase):
         expected = [ini_determination, six_determination, user_determination]
         self.assertEqual(expected, list(filterset.qs))
 
+        status_choices = (
+            OriginDeterminationFilterSet(queryset=queryset)
+            .filters["status"]
+            .field.choices
+        )
+        expected_choices = [
+            ("", "All"),
+            ("auto-confirmed", "auto-confirmed"),
+            ("needs-review", "needs-review"),
+            ("no-origin", "no-origin"),
+        ]
+        self.assertEqual(expected_choices, list(status_choices))
+
         rule_choices = (
             OriginDeterminationFilterSet(queryset=queryset)
             .filters["rule"]

@@ -253,6 +253,10 @@ table.is-rounded-table {
   overflow: clip;
   box-shadow: 0 0 0 1px var(--bulma-border);
 }
+/* The clip rounds the row backgrounds, but would cut an open filter dropdown. */
+table.is-rounded-table:has(.dropdown:hover, .dropdown.is-active) {
+  overflow: visible;
+}
 table.is-rounded-table.is-bordered td,
 table.is-rounded-table.is-bordered th {
   border-width: 0 1px 1px 0;
