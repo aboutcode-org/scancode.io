@@ -42,6 +42,7 @@ from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredLicense
 from scanpipe.models import DiscoveredPackage
+from scanpipe.models import OriginDetermination
 from scanpipe.models import Project
 from scanpipe.models import ProjectMessage
 from scanpipe.models import Run
@@ -969,3 +970,36 @@ class RelationFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             qs = CodebaseResource.objects.filter(project=project)
             status_filter = self.filters["status"]
             status_filter.extra["choices"] = status_filter.get_status_choices(qs)
+
+
+class OriginDeterminationFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
+    dropdown_widget_fields = [
+        "status",
+        "rule",
+    ]
+
+    search = QuerySearchFilter(
+        label="Search",
+        search_fields=["resource__path", "purl"],
+        lookup_expr="icontains",
+    )
+    sort = django_filters.OrderingFilter(
+        label="Sort",
+        fields=[
+            ("resource__path", "path"),
+            "status",
+            "rule",
+            "purl",
+        ],
+    )
+    status = django_filters.ChoiceFilter(choices=OriginDetermination.Status.choices)
+    rule = ModelFieldValuesFilter(include_empty=True)
+
+    class Meta:
+        model = OriginDetermination
+        fields = [
+            "search",
+            "status",
+            "rule",
+            "purl",
+        ]

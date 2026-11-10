@@ -1487,3 +1487,53 @@ class ScanPipeOriginPipesTest(TestCase):
                     statuses = set(determinations.values_list("status", flat=True))
                     self.assertNotIn("auto-confirmed", statuses)
                     self.assertFalse(project.discoveredpackages.exists())
+
+    def test_scanpipe_pipes_origin_get_determined_origin(self):
+        six_origin = make_scanoss_six_origin()
+        inih_origin = make_origin("pkg:github/benhoyt/inih@r62")
+        origins = [inih_origin, six_origin]
+
+        determined_origin = origin.get_determined_origin("pkg:pypi/six@1.17.0", origins)
+        self.assertIs(six_origin, determined_origin)
+        determined_origin = origin.get_determined_origin(
+            "pkg:pypi/six@1.17.0?file_name=six.py", origins
+        )
+        self.assertIs(six_origin, determined_origin)
+        self.assertIsNone(origin.get_determined_origin("pkg:pypi/six@1.16.0", origins))
+        self.assertIsNone(origin.get_determined_origin("pkg:pypi/six@1.17.0", []))
+
+    def test_scanpipe_pipes_origin_get_ancestor_origin_determination(self):
+        vendor = make_resource_directory(self.project1, path="vendor")
+        vendor_ms = make_resource_directory(self.project1, path="vendor/ms")
+        index_js = make_resource_file(self.project1, path="vendor/ms/index.js")
+        other_js = make_resource_file(self.project1, path="vendor/other.js")
+        top_js = make_resource_file(self.project1, path="top.js")
+        vendor_determination = OriginDetermination.objects.create(
+            project=self.project1,
+            resource=vendor,
+            status=OriginDetermination.Status.NEEDS_REVIEW,
+        )
+        vendor_ms_determination = OriginDetermination.objects.create(
+            project=self.project1,
+            resource=vendor_ms,
+            purl="pkg:npm/ms@2.1.3",
+            status=OriginDetermination.Status.AUTO_CONFIRMED,
+        )
+        OriginDetermination.objects.create(
+            project=self.project1,
+            resource=index_js,
+            status=OriginDetermination.Status.NO_ORIGIN,
+        )
+
+        get_ancestor_origin_determination = origin.get_ancestor_origin_determination
+        self.assertEqual(
+            vendor_ms_determination, get_ancestor_origin_determination(index_js)
+        )
+        self.assertEqual(
+            vendor_determination, get_ancestor_origin_determination(other_js)
+        )
+        self.assertEqual(
+            vendor_determination, get_ancestor_origin_determination(vendor_ms)
+        )
+        self.assertIsNone(get_ancestor_origin_determination(top_js))
+        self.assertIsNone(get_ancestor_origin_determination(vendor))

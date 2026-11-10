@@ -27,6 +27,7 @@ from django.utils import timezone
 
 from scanpipe.filters import DependencyFilterSet
 from scanpipe.filters import FilterSetUtilsMixin
+from scanpipe.filters import OriginDeterminationFilterSet
 from scanpipe.filters import PackageFilterSet
 from scanpipe.filters import ProjectFilterSet
 from scanpipe.filters import ResourceFilterSet
@@ -34,6 +35,7 @@ from scanpipe.filters import parse_query_string_to_lookups
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
+from scanpipe.models import OriginDetermination
 from scanpipe.models import Project
 from scanpipe.models import Run
 from scanpipe.tests import dependency_data1
@@ -362,3 +364,60 @@ class ScanPipeFilterTest(TestCase):
         }
         self.assertEqual(expected_errors, filterset.errors)
         self.assertEqual(2, len(filterset.qs))
+
+    def test_scanpipe_filters_origin_determination_filterset(self):
+        six_determination = OriginDetermination.objects.create(
+            project=self.project1,
+            resource=make_resource_file(self.project1, "six.py"),
+            purl="pkg:pypi/six@1.17.0",
+            status=OriginDetermination.Status.AUTO_CONFIRMED,
+            rule="confirmed-by-two-tools",
+        )
+        ini_determination = OriginDetermination.objects.create(
+            project=self.project1,
+            resource=make_resource_file(self.project1, "src/ini.c"),
+            status=OriginDetermination.Status.NEEDS_REVIEW,
+            rule="conflicting-versions",
+        )
+        user_determination = OriginDetermination.objects.create(
+            project=self.project1,
+            resource=make_resource_file(self.project1, "app.py"),
+            status=OriginDetermination.Status.NO_ORIGIN,
+        )
+        queryset = self.project1.origindeterminations.all()
+
+        def filter_determinations(**data):
+            filterset = OriginDeterminationFilterSet(data=data, queryset=queryset)
+            return list(filterset.qs.order_by("resource__path"))
+
+        self.assertEqual(
+            [ini_determination], filter_determinations(status="needs-review")
+        )
+        self.assertEqual(
+            [six_determination], filter_determinations(rule="confirmed-by-two-tools")
+        )
+        self.assertEqual([user_determination], filter_determinations(rule="_EMPTY_"))
+        self.assertEqual(
+            [six_determination], filter_determinations(purl="pkg:pypi/six@1.17.0")
+        )
+        self.assertEqual([ini_determination], filter_determinations(search="ini"))
+        self.assertEqual([six_determination], filter_determinations(search="pypi"))
+
+        filterset = OriginDeterminationFilterSet(
+            data={"sort": "-path"}, queryset=queryset
+        )
+        expected = [ini_determination, six_determination, user_determination]
+        self.assertEqual(expected, list(filterset.qs))
+
+        rule_choices = (
+            OriginDeterminationFilterSet(queryset=queryset)
+            .filters["rule"]
+            .field.choices
+        )
+        expected_choices = [
+            ("", "All"),
+            ("_EMPTY_", "No rule"),
+            ("confirmed-by-two-tools", "confirmed-by-two-tools"),
+            ("conflicting-versions", "conflicting-versions"),
+        ]
+        self.assertEqual(expected_choices, list(rule_choices))

@@ -1,0 +1,19 @@
+{% load humanize %}
+{% if origin_status_summary %}
+  <div class="column is-half">
+    <nav id="origin-panel" class="panel is-dark">
+      <div class="panel-heading is-flex is-justify-content-space-between is-align-items-center">
+        <span>Origins</span>
+        <a href="{{ project_origins_url }}" class="ml-2 has-text-white has-text-decoration-none">
+          <i class="fa-solid fa-dna mr-1"></i>Review
+        </a>
+      </div>
+      {% for status, count in origin_status_summary.items %}
+        <a class="panel-block" href="{{ project_origins_url }}?status={{ status }}">
+          {% include "scanpipe/includes/origin_status_tag.html" with status=status only %}
+          <span class="ml-2">{{ count|intcomma }}</span>
+        </a>
+      {% endfor %}
+    </nav>
+  </div>
+{% endif %}

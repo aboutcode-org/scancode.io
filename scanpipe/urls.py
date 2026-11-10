@@ -91,6 +91,11 @@ urlpatterns = [
         name="project_relations",
     ),
     path(
+        "project/<slug:slug>/origins/",
+        views.OriginDeterminationListView.as_view(),
+        name="project_origins",
+    ),
+    path(
         "project/<slug:slug>/messages/",
         views.ProjectMessageListView.as_view(),
         name="project_messages",
@@ -249,6 +254,11 @@ urlpatterns = [
         "project/<slug:slug>/resource_status_summary/",
         views.ProjectResourceStatusSummaryView.as_view(),
         name="project_resource_status_summary",
+    ),
+    path(
+        "project/<slug:slug>/origin_summary/",
+        views.ProjectOriginSummaryView.as_view(),
+        name="project_origin_summary",
     ),
     path(
         "project/<slug:slug>/license_detection_summary/",

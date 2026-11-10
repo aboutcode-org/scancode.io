@@ -71,6 +71,7 @@ from scanpipe.api.serializers import DiscoveredDependencySerializer
 from scanpipe.filters import PAGE_VAR
 from scanpipe.filters import DependencyFilterSet
 from scanpipe.filters import LicenseFilterSet
+from scanpipe.filters import OriginDeterminationFilterSet
 from scanpipe.filters import PackageFilterSet
 from scanpipe.filters import ProjectFilterSet
 from scanpipe.filters import ProjectMessageFilterSet
@@ -95,6 +96,8 @@ from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredLicense
 from scanpipe.models import DiscoveredPackage
+from scanpipe.models import OriginDetermination
+from scanpipe.models import OriginMatch
 from scanpipe.models import Project
 from scanpipe.models import ProjectMessage
 from scanpipe.models import Run
@@ -103,6 +106,7 @@ from scanpipe.pipes import compliance
 from scanpipe.pipes import count_group_by
 from scanpipe.pipes import filename_now
 from scanpipe.pipes import matchcode
+from scanpipe.pipes import origin
 from scanpipe.pipes import output
 from scanpipe.pipes import purldb
 from scanpipe.settings import scanpipe_settings
@@ -239,6 +243,11 @@ DISPLAYABLE_IMAGE_MIME_TYPE = [
 def is_displayable_image_type(resource):
     """Return True if the ``resource`` file is supported by the HTML <img> tag."""
     return resource.mime_type and resource.mime_type in DISPLAYABLE_IMAGE_MIME_TYPE
+
+
+def has_no_origin(resource, fields_data):
+    has_origin_determination = hasattr(resource, "origin_determination")
+    return not resource.origin_matches.all() and not has_origin_determination
 
 
 class TabSetMixin:
@@ -1116,6 +1125,30 @@ class ProjectResourceStatusSummaryView(ConditionalLoginRequired, generic.DetailV
         return context
 
 
+class ProjectOriginSummaryView(ConditionalLoginRequired, generic.DetailView):
+    model = Project
+    template_name = "scanpipe/panels/origin_summary.html"
+
+    @staticmethod
+    def get_origin_status_summary(project):
+        """Return the number of origin determinations by status, in status order."""
+        count_by_status = count_group_by(project.origindeterminations, "status")
+        return {
+            status: count_by_status[status]
+            for status in OriginDetermination.Status
+            if status in count_by_status
+        }
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        summary = self.get_origin_status_summary(project=self.object)
+        context["origin_status_summary"] = summary
+        context["project_origins_url"] = reverse(
+            "project_origins", args=[self.object.slug]
+        )
+        return context
+
+
 class ProjectLicenseDetectionSummaryView(ConditionalLoginRequired, generic.DetailView):
     model = Project
     template_name = "scanpipe/panels/license_detections_summary.html"
@@ -1969,6 +2002,60 @@ class CodebaseRelationListView(
         return kwargs
 
 
+class OriginDeterminationListView(
+    ConditionalLoginRequired,
+    ProjectRelatedViewMixin,
+    TableColumnsMixin,
+    PaginatedFilterView,
+):
+    model = OriginDetermination
+    filterset_class = OriginDeterminationFilterSet
+    template_name = "scanpipe/origin_determination_list.html"
+    paginate_by = scanpipe_settings.PAGINATE_BY.get("origin", 100)
+    table_columns = [
+        "path",
+        {
+            "field_name": "status",
+            "filter_fieldname": "status",
+        },
+        {
+            "field_name": "rule",
+            "filter_fieldname": "rule",
+        },
+        {
+            "field_name": "purl",
+            "label": "Origin",
+        },
+        "candidates",
+    ]
+
+    def get_queryset(self):
+        return (
+            super()
+            .get_queryset()
+            .select_related("resource")
+            .prefetch_related(
+                Prefetch(
+                    "resource__origin_matches",
+                    queryset=OriginMatch.objects.only(
+                        "resource", "purl", "tool", "extra_data"
+                    ).order_by("purl", "tool"),
+                )
+            )
+            .only("purl", "status", "rule", "resource__path", "resource__type")
+            .order_by("resource__path")
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        for determination in context["object_list"]:
+            origin_matches = determination.resource.origin_matches.all()
+            determination.candidate_origins = origin.group_origin_matches(
+                origin_matches
+            )
+        return context
+
+
 class VulnerabilityListView(
     ConditionalLoginRequired,
     ProjectRelatedViewMixin,
@@ -2037,6 +2124,10 @@ class CodebaseResourceDetailsView(
         ),
         "related_from__from_resource__project",
         "related_to__to_resource__project",
+        Prefetch(
+            "origin_matches",
+            queryset=OriginMatch.objects.order_by("purl", "tool"),
+        ),
     ]
     tabset = {
         "essentials": {
@@ -2109,6 +2200,11 @@ class CodebaseResourceDetailsView(
             "icon_class": "fa-solid fa-layer-group",
             "template": "scanpipe/tabset/tab_packages.html",
         },
+        "origin": {
+            "icon_class": "fa-solid fa-dna",
+            "template": "scanpipe/tabset/tab_origin.html",
+            "disable_condition": has_no_origin,
+        },
         "relations": {
             "fields": ["related_from", "related_to"],
             "icon_class": "fa-solid fa-link",
@@ -2122,7 +2218,7 @@ class CodebaseResourceDetailsView(
     }
 
     def get_queryset(self):
-        return super().get_queryset().select_related("project")
+        return super().get_queryset().select_related("project", "origin_determination")
 
     @staticmethod
     def get_annotations(entries, value_key):
@@ -2186,6 +2282,62 @@ class CodebaseResourceDetailsView(
 
         return snippet_annotations
 
+    @staticmethod
+    def get_origin_match_annotation_text(origin_match, line_range):
+        origin_lines = line_range.get("origin_lines", [])
+        annotation_values = {
+            "purl": origin_match.purl,
+            "tool": origin_match.tool,
+            "match type": origin_match.match_type,
+            "similarity": origin_match.similarity,
+            "origin path": origin_match.origin_path,
+            "origin lines": "-".join(str(line) for line in origin_lines),
+        }
+        return "".join(
+            f"{label}: {value}\n"
+            for label, value in annotation_values.items()
+            if value not in (None, "")
+        )
+
+    def get_origin_match_annotations(self, origin_matches):
+        return [
+            {
+                "start_line": line_range["lines"][0],
+                "end_line": line_range["lines"][1],
+                "text": self.get_origin_match_annotation_text(origin_match, line_range),
+            }
+            for origin_match in origin_matches
+            for line_range in origin_match.line_ranges
+        ]
+
+    @staticmethod
+    def get_origin_context(resource):
+        """
+        Return the origin determination of the ``resource``, or of the directory
+        covering it, and its candidate origins.
+        """
+        candidate_origins = origin.group_origin_matches(resource.origin_matches.all())
+        origin_determination = getattr(resource, "origin_determination", None)
+
+        covering_origin_determination = None
+        if candidate_origins and not origin_determination:
+            covering_origin_determination = origin.get_ancestor_origin_determination(
+                resource
+            )
+
+        determined_origin = None
+        if origin_determination and origin_determination.purl:
+            determined_origin = origin.get_determined_origin(
+                origin_determination.purl, candidate_origins
+            )
+
+        return {
+            "origin_determination": origin_determination,
+            "covering_origin_determination": covering_origin_determination,
+            "candidate_origins": candidate_origins,
+            "determined_origin": determined_origin,
+        }
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         resource = self.object
@@ -2215,6 +2367,11 @@ class CodebaseResourceDetailsView(
 
         matched_snippet_annotations = self.get_matched_snippet_annotations(resource)
         context["detected_values"]["matched snippets"] = matched_snippet_annotations
+
+        origin_matches = resource.origin_matches.all()
+        origin_match_annotations = self.get_origin_match_annotations(origin_matches)
+        context["detected_values"]["origin matches"] = origin_match_annotations
+        context.update(self.get_origin_context(resource))
 
         # Compatibility with ProjectResourceTreeRightPaneView
         segments = resource.path.strip("/").split("/")

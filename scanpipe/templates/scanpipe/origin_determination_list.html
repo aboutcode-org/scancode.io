@@ -1,0 +1,65 @@
+{% extends "scanpipe/base.html" %}
+
+{% block title %}ScanCode.io: {{ project.name }} - Origins{% endblock %}
+
+{% block content %}
+  <div id="content-header" class="container is-max-widescreen mb-3">
+    <section class="mx-5">
+      <div class="is-flex is-justify-content-space-between">
+        {% include "scanpipe/includes/breadcrumb.html" with linked_project=True current="Origins" %}
+        {% include "scanpipe/includes/search_field.html" with extra_class="is-small" placeholder="Search paths and PURLs" %}
+      </div>
+      {% include "scanpipe/includes/pagination_header.html" %}
+      {% include "scanpipe/includes/filters_breadcrumb.html" with filterset=filter only %}
+    </section>
+  </div>
+
+  <div id="origin-determination-list" class="container is-fluid mb-3">
+    <table class="table is-bordered is-narrow is-hoverable is-fullwidth is-rounded-table">
+      {% include "scanpipe/includes/list_view_thead.html" %}
+      <tbody>
+        {% for determination in object_list %}
+          <tr>
+            <td class="break-all">
+              {% if determination.resource.is_dir %}
+                <i class="fa-solid fa-folder has-text-grey" title="Directory"></i>
+              {% endif %}
+              {# CAUTION: Avoid relying on get_absolute_url to prevent unnecessary query triggers #}
+              <a href="{% url 'resource_detail' project.slug determination.resource.path %}#origin">{{ determination.resource.path }}</a>
+            </td>
+            <td>
+              <a href="?status={{ determination.status }}">
+                {% include "scanpipe/includes/origin_status_tag.html" with status=determination.status only %}
+              </a>
+            </td>
+            <td>
+              {% if determination.rule %}
+                <a href="?rule={{ determination.rule }}" class="is-black-link">{{ determination.rule }}</a>
+              {% endif %}
+            </td>
+            <td class="break-word">
+              {% if determination.purl %}
+                <a href="?purl={{ determination.purl|urlencode }}" class="is-black-link">{{ determination.purl }}</a>
+              {% endif %}
+            </td>
+            <td class="break-all">
+              {% for candidate_origin in determination.candidate_origins %}
+                <div>{{ candidate_origin.purl }}</div>
+              {% endfor %}
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="5" class="has-text-centered p-3">
+              No origins found. <a href="?">Clear search and filters</a>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    {% if is_paginated %}
+      {% include "scanpipe/includes/pagination.html" with page_obj=page_obj %}
+    {% endif %}
+  </div>
+{% endblock %}

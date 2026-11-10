@@ -829,3 +829,30 @@ def determine_origins(project, batch_size=2000):
         package_count = assign_origin_packages(project)
 
     return determination_count, package_count
+
+
+def get_determined_origin(purl, origins):
+    """
+    Return the candidate among the ``origins`` that identifies the determined
+    ``purl`` package, None when no candidate reports it anymore.
+    """
+    package_purl = get_package_purl(purl)
+    for origin in origins:
+        if package_purl in origin.equivalent_purls:
+            return origin
+
+
+def get_ancestor_origin_determination(resource):
+    """
+    Return the origin determination of the closest ancestor directory of the
+    ``resource``, which covers the ``resource`` without a determination of its own.
+    """
+    # The ancestor paths are prefixes of each other: the longest is the closest.
+    return (
+        resource.project.origindeterminations.filter(
+            resource__path__in=get_ancestor_paths(resource.path)
+        )
+        .select_related("resource")
+        .order_by("-resource__path")
+        .first()
+    )
