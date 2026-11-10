@@ -22,6 +22,7 @@
 
 from scanpipe.pipelines.deploy_to_develop import DeployToDevelop
 from scanpipe.pipes import d2d
+from scanpipe.pipes import flag
 from scanpipe.pipes import nix
 
 
@@ -188,7 +189,14 @@ class ScanNixPackage(DeployToDevelop):
         including the files not deployed in the binary.
         """
         super().scan_mapped_from_for_files()
-        nix.scan_undeployed_from_files(self.project, progress_logger=self.log)
+        # The license check needs the whole source, including the legal files
+        # that are usually not deployed.
+        d2d.scan_files_keeping_status(
+            project=self.project,
+            resource_qs=self.project.codebaseresources.from_codebase(),
+            status=flag.NOT_DEPLOYED,
+            logger=self.log,
+        )
 
     def create_nix_package(self):
         """Create the Nix package and assign the codebase resources to it."""

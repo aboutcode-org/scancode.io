@@ -32,7 +32,6 @@ from django.test import TestCase
 import requests
 from packageurl import PackageURL
 
-from scanpipe.pipes import flag
 from scanpipe.pipes import nix
 from scanpipe.tests import make_project
 from scanpipe.tests import make_resource_file
@@ -618,36 +617,6 @@ class ScanPipeNixPipesTest(TestCase):
 
         nix.add_resources_to_package(package, resource_qs)
         self.assertEqual(2, package.codebase_resources.count())
-
-    @mock.patch("scanpipe.pipes.nix.scancode.scan_for_files")
-    def test_scanpipe_nix_scan_undeployed_from_files(self, mock_scan):
-        make_resource_file(self.project, "from/COPYING", status=flag.NOT_DEPLOYED)
-        make_resource_file(self.project, "from/hello.c", status=flag.SCANNED)
-        make_resource_file(self.project, "to/COPYING", status=flag.NOT_DEPLOYED)
-        scanned_paths = []
-
-        def scan_for_files(project, resource_qs, progress_logger=None):
-            scanned_paths.extend(resource.path for resource in resource_qs)
-            resource_qs.update(
-                status=flag.SCANNED, detected_license_expression="gpl-3.0-plus"
-            )
-
-        mock_scan.side_effect = scan_for_files
-
-        nix.scan_undeployed_from_files(self.project)
-        self.assertEqual(["from/COPYING"], scanned_paths)
-
-        resource_statuses = dict(
-            self.project.codebaseresources.values_list("path", "status")
-        )
-        expected_statuses = {
-            "from/COPYING": flag.NOT_DEPLOYED,
-            "from/hello.c": flag.SCANNED,
-            "to/COPYING": flag.NOT_DEPLOYED,
-        }
-        self.assertEqual(expected_statuses, resource_statuses)
-        copying = self.project.codebaseresources.get(path="from/COPYING")
-        self.assertEqual("gpl-3.0-plus", copying.detected_license_expression)
 
     def test_scanpipe_nix_get_uncovered_license_keys(self):
         resources = [

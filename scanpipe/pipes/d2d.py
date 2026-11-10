@@ -1667,16 +1667,12 @@ def flag_undeployed_resources(project):
     from_unmapped.update(status=flag.NOT_DEPLOYED)
 
 
-def scan_ignored_to_files(project, logger=None):
+def scan_files_keeping_status(project, resource_qs, status, logger=None):
     """
-    Scan status="ignored-from-config" ``to/`` files for copyrights, licenses,
-    emails, and urls.
+    Scan the ``resource_qs`` files with the ``status`` for copyrights, licenses,
+    emails, and urls, keeping their ``status`` instead of the "scanned" one.
     """
-    scan_files = (
-        project.codebaseresources.files()
-        .to_codebase()
-        .filter(status=flag.IGNORED_FROM_CONFIG)
-    )
+    scan_files = resource_qs.files().filter(status=status)
     scan_file_ids = list(scan_files.values_list("id", flat=True))
 
     if not scan_file_ids:
@@ -1684,8 +1680,17 @@ def scan_ignored_to_files(project, logger=None):
 
     scancode.scan_for_files(project, scan_files, progress_logger=logger)
     project.codebaseresources.filter(id__in=scan_file_ids, status=flag.SCANNED).update(
-        status=flag.IGNORED_FROM_CONFIG
+        status=status
     )
+
+
+def scan_ignored_to_files(project, logger=None):
+    """
+    Scan status="ignored-from-config" ``to/`` files for copyrights, licenses,
+    emails, and urls.
+    """
+    to_resources = project.codebaseresources.to_codebase()
+    scan_files_keeping_status(project, to_resources, flag.IGNORED_FROM_CONFIG, logger)
 
 
 def scan_unmapped_to_files(project, logger=None):
@@ -1693,20 +1698,8 @@ def scan_unmapped_to_files(project, logger=None):
     Scan unmapped/matched ``to/`` files for copyrights, licenses,
     emails, and urls and update the status to `requires-review`.
     """
-    scan_files = (
-        project.codebaseresources.files()
-        .to_codebase()
-        .filter(status=flag.REQUIRES_REVIEW)
-    )
-    scan_file_ids = list(scan_files.values_list("id", flat=True))
-
-    if not scan_file_ids:
-        return
-
-    scancode.scan_for_files(project, scan_files, progress_logger=logger)
-    project.codebaseresources.filter(id__in=scan_file_ids, status=flag.SCANNED).update(
-        status=flag.REQUIRES_REVIEW
-    )
+    to_resources = project.codebaseresources.to_codebase()
+    scan_files_keeping_status(project, to_resources, flag.REQUIRES_REVIEW, logger)
 
 
 def flag_deployed_from_resources_with_missing_license(project, doc_extensions=None):

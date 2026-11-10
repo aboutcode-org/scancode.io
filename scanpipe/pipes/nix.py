@@ -37,8 +37,6 @@ from packageurl import PackageURL
 
 from scanpipe import pipes
 from scanpipe.pipes import fetch
-from scanpipe.pipes import flag
-from scanpipe.pipes import scancode
 from scanpipe.pipes.resolve import convert_spdx_expression
 
 REQUIRED_COMMANDS = ["nix-build", "nix-instantiate", "nix-store", "xz", "zstd"]
@@ -668,25 +666,6 @@ def add_resources_to_package(package, resource_qs, batch_size=2000):
             ],
             ignore_conflicts=True,
         )
-
-
-def scan_undeployed_from_files(project, progress_logger=None):
-    """
-    Scan the ``from/`` files not deployed in the binary, keeping their
-    ``not-deployed`` status. The license check needs the whole source, including
-    the legal files that are usually not deployed.
-    """
-    undeployed_files = (
-        project.codebaseresources.files()
-        .from_codebase()
-        .filter(status=flag.NOT_DEPLOYED)
-    )
-    undeployed_file_ids = list(undeployed_files.values_list("id", flat=True))
-
-    scancode.scan_for_files(project, undeployed_files, progress_logger=progress_logger)
-    project.codebaseresources.filter(
-        id__in=undeployed_file_ids, status=flag.SCANNED
-    ).update(status=flag.NOT_DEPLOYED)
 
 
 def get_base_license_key(license_key):
