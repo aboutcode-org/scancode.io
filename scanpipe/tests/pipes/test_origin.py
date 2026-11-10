@@ -1537,3 +1537,56 @@ class ScanPipeOriginPipesTest(TestCase):
         )
         self.assertIsNone(get_ancestor_origin_determination(top_js))
         self.assertIsNone(get_ancestor_origin_determination(vendor))
+
+    def test_scanpipe_pipes_origin_origin_tool_names(self):
+        six_origin = make_scanoss_six_origin()
+        six_origin.merge(make_origin("pkg:pypi/six@1.17.0"))
+        self.assertEqual(["matchcode", "scanoss"], six_origin.tool_names)
+
+    def test_scanpipe_pipes_origin_get_origin_package(self):
+        six_package = make_package(self.project1, "pkg:pypi/six@1.17.0")
+        ms_package = make_package(self.project1, "pkg:npm/ms@2.1.3?file_name=ms.tgz")
+        packages = [six_package, ms_package]
+
+        self.assertEqual(
+            six_package, origin.get_origin_package("pkg:pypi/six@1.17.0", packages)
+        )
+        self.assertEqual(
+            ms_package, origin.get_origin_package("pkg:npm/ms@2.1.3", packages)
+        )
+        self.assertIsNone(origin.get_origin_package("pkg:pypi/six@1.16.0", packages))
+
+    def test_scanpipe_pipes_origin_get_candidate_summaries(self):
+        six_py = make_resource_file(self.project1, path="six.py")
+        vendor_six_py = make_resource_file(self.project1, path="vendor/six.py")
+        self.make_origin_match(six_py, "pkg:pypi/six@1.17.0")
+        self.make_origin_match(
+            six_py,
+            "pkg:github/benjaminp/six@1.17.0",
+            tool="scanoss",
+            extra_data={"purls": SCANOSS_SIX_PURLS},
+        )
+        self.make_origin_match(vendor_six_py, "pkg:pypi/six@1.17.0")
+        self.make_origin_match(vendor_six_py, "pkg:pypi/pip@24.0")
+        OriginDetermination.objects.create(
+            project=self.project1,
+            resource=six_py,
+            purl="pkg:pypi/six@1.17.0",
+            status=OriginDetermination.Status.AUTO_CONFIRMED,
+        )
+
+        summaries = origin.get_candidate_summaries(self.project1)
+        summary_values = [
+            (
+                summary.purl,
+                summary.tool_names,
+                summary.resource_count,
+                summary.determination_count,
+            )
+            for summary in summaries
+        ]
+        expected = [
+            ("pkg:pypi/six@1.17.0", ["matchcode", "scanoss"], 2, 1),
+            ("pkg:pypi/pip@24.0", ["matchcode"], 1, 0),
+        ]
+        self.assertEqual(expected, summary_values)

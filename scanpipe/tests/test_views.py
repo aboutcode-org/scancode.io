@@ -1571,6 +1571,8 @@ class ScanPipeViewsTest(TestCase):
             purl="pkg:pypi/six@1.17.0",
             rule="confirmed-by-two-tools",
         )
+        six_package = make_package(self.project1, "pkg:pypi/six@1.17.0")
+        six_py.discovered_packages.add(six_package)
         ini_c = make_resource_file(self.project1, "src/ini.c")
         self.make_origin_match(ini_c, "pkg:github/benhoyt/inih@r62")
         self.make_origin_match(ini_c, "pkg:github/benhoyt/inih@498f34b", tool="scanoss")
@@ -1583,8 +1585,20 @@ class ScanPipeViewsTest(TestCase):
         self.make_origin_determination(vendor_ms, OriginDetermination.Status.NO_ORIGIN)
 
         url = reverse("project_origins", args=[self.project1.slug])
-        with self.assertNumQueries(8):
+        with self.assertNumQueries(10):
             response = self.client.get(url)
+
+        paths = [
+            determination.resource.path
+            for determination in response.context["object_list"]
+        ]
+        self.assertEqual(["src/ini.c", "six.py", "vendor/ms"], paths)
+
+        self.assertContains(response, 'href="?status=needs-review"')
+        self.assertContains(response, "1 Needs Review")
+        self.assertContains(response, "1 Auto Confirmed")
+        candidates_url = reverse("project_origin_candidates", args=[self.project1.slug])
+        self.assertContains(response, f'href="{candidates_url}"')
 
         six_url = reverse("resource_detail", args=[self.project1.slug, "six.py"])
         self.assertContains(response, f'href="{six_url}#origin"')
@@ -1592,14 +1606,22 @@ class ScanPipeViewsTest(TestCase):
         rule_description = origin.RULE_DESCRIPTIONS["confirmed-by-two-tools"]
         self.assertContains(response, f'data-title="{rule_description}"')
         self.assertContains(response, "Auto Confirmed")
-        self.assertContains(response, 'href="?purl=pkg%3Apypi/six%401.17.0"')
-        self.assertContains(response, "<div>pkg:pypi/six@1.17.0</div>", html=True)
-        self.assertNotContains(response, "pkg:github/benjaminp/six@1.17.0")
+        six_package_url = reverse(
+            "package_detail", args=[self.project1.slug, six_package.uuid]
+        )
+        self.assertContains(response, f'href="{six_package_url}"')
         self.assertContains(
-            response, "<div>pkg:github/benhoyt/inih@r62</div>", html=True
+            response, '<span class="tag ml-1">scanoss</span>', html=True
+        )
+        self.assertNotContains(response, "?candidate=pkg%3Apypi/six")
+        self.assertNotContains(response, "pkg:github/benjaminp/six@1.17.0")
+
+        self.assertContains(response, "No proposal")
+        self.assertContains(
+            response, 'href="?candidate=pkg%3Agithub/benhoyt/inih%40r62"'
         )
         self.assertContains(
-            response, "<div>pkg:github/benhoyt/inih@498f34b</div>", html=True
+            response, 'href="?candidate=pkg%3Agithub/benhoyt/inih%40498f34b"'
         )
         self.assertContains(response, 'href="?type=directory"')
 
@@ -1607,6 +1629,43 @@ class ScanPipeViewsTest(TestCase):
         self.assertContains(response, "src/ini.c")
         self.assertNotContains(response, f'href="{six_url}#origin"')
         self.assertNotContains(response, "vendor/ms")
+
+        response = self.client.get(url, data={"sort": "-path"})
+        paths = [
+            determination.resource.path
+            for determination in response.context["object_list"]
+        ]
+        self.assertEqual(["vendor/ms", "src/ini.c", "six.py"], paths)
+
+    def test_scanpipe_views_origin_candidate_list_view(self):
+        six_py = make_resource_file(self.project1, "six.py")
+        self.make_origin_match(six_py, "pkg:pypi/six@1.17.0")
+        self.make_origin_match(six_py, "pkg:pypi/pip@24.0")
+        self.make_origin_determination(
+            six_py,
+            OriginDetermination.Status.NEEDS_REVIEW,
+            purl="pkg:pypi/six@1.17.0",
+            rule="containment",
+        )
+
+        url = reverse("project_origin_candidates", args=[self.project1.slug])
+        response = self.client.get(url)
+        candidate_purls = [
+            candidate_summary.purl
+            for candidate_summary in response.context["object_list"]
+        ]
+        self.assertEqual(["pkg:pypi/pip@24.0", "pkg:pypi/six@1.17.0"], candidate_purls)
+        self.assertContains(response, "2 candidates")
+        origins_url = reverse("project_origins", args=[self.project1.slug])
+        self.assertContains(
+            response, f'href="{origins_url}?candidate=pkg%3Apypi/pip%4024.0"'
+        )
+        self.assertContains(
+            response, f'href="{origins_url}?purl=pkg%3Apypi/six%401.17.0"'
+        )
+        self.assertNotContains(
+            response, f'href="{origins_url}?purl=pkg%3Apypi/pip%4024.0"'
+        )
 
     def test_scanpipe_views_find_origins_results_url(self):
         results_url = FindOrigins.results_url.format(slug=self.project1.slug)

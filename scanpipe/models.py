@@ -5165,6 +5165,25 @@ class OriginDeterminationQuerySet(ProjectRelatedQuerySet):
     def confirmed(self):
         return self.filter(status__in=self.model.CONFIRMED_STATUSES)
 
+    def review_order(self):
+        """Order the determinations that need a review first, then by path."""
+        review_rank = Case(
+            When(status=self.model.Status.NEEDS_REVIEW, then=0),
+            default=1,
+            output_field=IntegerField(),
+        )
+        return self.order_by(review_rank, "resource__path")
+
+    def count_by_status(self):
+        """Return the number of determinations of each status, by status value."""
+        status_counts = (
+            self.values("status").annotate(status_count=Count("pk")).order_by("status")
+        )
+        return {
+            self.model.Status(entry["status"]): entry["status_count"]
+            for entry in status_counts
+        }
+
 
 class OriginDetermination(UUIDPKModel, ProjectRelatedModel):
     """

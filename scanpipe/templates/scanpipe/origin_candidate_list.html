@@ -1,0 +1,56 @@
+{% extends "scanpipe/base.html" %}
+{% load humanize %}
+
+{% block title %}ScanCode.io: {{ project.name }} - Origin candidates{% endblock %}
+
+{% block content %}
+  <div id="content-header" class="container is-max-widescreen mb-3">
+    <section class="mx-5">
+      {% include 'scanpipe/includes/breadcrumb.html' with linked_project=True current="Origin candidates" %}
+      {% include 'scanpipe/includes/pagination_header_origin_candidates.html' %}
+    </section>
+  </div>
+
+  <div id="origin-candidate-list" class="container is-fluid mb-3">
+    <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth is-rounded-table">
+      <thead class="is-sticky">
+        <tr>
+          <th>Candidate</th>
+          <th>Tools</th>
+          <th>Resources</th>
+          <th>Origin of</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for candidate_summary in object_list %}
+          <tr class="break-word">
+            <td class="break-normal">
+              <a href="{% url 'project_origins' project.slug %}?candidate={{ candidate_summary.purl|urlencode }}">{{ candidate_summary.purl }}</a>
+            </td>
+            <td class="nowrap">
+              {% include "scanpipe/includes/origin_tool_tags.html" with tool_names=candidate_summary.tool_names only %}
+            </td>
+            <td>
+              <a href="{% url 'project_origins' project.slug %}?candidate={{ candidate_summary.purl|urlencode }}">{{ candidate_summary.resource_count|intcomma }}</a>
+            </td>
+            <td>
+              {% if candidate_summary.determination_count %}
+                <a href="{% url 'project_origins' project.slug %}?purl={{ candidate_summary.purl|urlencode }}">{{ candidate_summary.determination_count|intcomma }}</a>
+              {% endif %}
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="4" class="has-text-centered p-3">
+              No origin candidates found.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    {% if is_paginated %}
+      {% include 'scanpipe/includes/pagination.html' with page_obj=page_obj %}
+    {% endif %}
+  </div>
+{% endblock %}

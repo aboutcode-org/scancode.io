@@ -36,6 +36,7 @@ from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import OriginDetermination
+from scanpipe.models import OriginMatch
 from scanpipe.models import Project
 from scanpipe.models import Run
 from scanpipe.tests import dependency_data1
@@ -409,6 +410,25 @@ class ScanPipeFilterTest(TestCase):
             [six_determination, ini_determination], filter_determinations(type="file")
         )
         self.assertEqual([ini_determination], filter_determinations(search="ini"))
+
+        OriginMatch.objects.create(
+            project=self.project1,
+            resource=six_determination.resource,
+            purl="pkg:pypi/six@1.17.0?file_name=six.py",
+            match_type=OriginMatch.MatchType.FILE,
+            tool="matchcode",
+        )
+        OriginMatch.objects.create(
+            project=self.project1,
+            resource=six_determination.resource,
+            purl="pkg:pypi/six@1.17.0",
+            match_type=OriginMatch.MatchType.FILE,
+            tool="scanoss",
+        )
+        self.assertEqual(
+            [six_determination], filter_determinations(candidate="pkg:pypi/six@1.17.0")
+        )
+        self.assertEqual([], filter_determinations(candidate="pkg:pypi/six@1.1"))
         self.assertEqual([six_determination], filter_determinations(search="pypi"))
 
         filterset = OriginDeterminationFilterSet(

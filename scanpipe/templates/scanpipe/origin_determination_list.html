@@ -9,7 +9,7 @@
         {% include 'scanpipe/includes/breadcrumb.html' with linked_project=True current="Origins" %}
         {% include 'scanpipe/includes/search_field.html' with extra_class="is-small" placeholder="Search paths and PURLs" %}
       </div>
-      {% include 'scanpipe/includes/pagination_header.html' %}
+      {% include 'scanpipe/includes/pagination_header_origins.html' %}
       {% include 'scanpipe/includes/filters_breadcrumb.html' with filterset=filter only %}
     </section>
   </div>
@@ -41,13 +41,23 @@
               {% endif %}
             </td>
             <td class="break-normal">
-              {% if determination.purl %}
+              {% if determination.origin_package %}
+                <a href="{% url 'package_detail' project.slug determination.origin_package.uuid %}">{{ determination.purl }}</a>
+              {% elif determination.purl %}
                 <a href="?purl={{ determination.purl|urlencode }}" class="is-black-link">{{ determination.purl }}</a>
+              {% elif determination.status == "needs-review" %}
+                <span class="has-text-grey">No proposal</span>
+              {% endif %}
+              {% if determination.determined_origin %}
+                {% include "scanpipe/includes/origin_tool_tags.html" with tool_names=determination.determined_origin.tool_names only %}
               {% endif %}
             </td>
             <td class="break-normal">
-              {% for candidate_origin in determination.candidate_origins %}
-                <div>{{ candidate_origin.purl }}</div>
+              {% for candidate_origin in determination.other_candidate_origins %}
+                <div>
+                  <a href="?candidate={{ candidate_origin.purl|urlencode }}" class="is-black-link">{{ candidate_origin.purl }}</a>
+                  {% include "scanpipe/includes/origin_tool_tags.html" with tool_names=candidate_origin.tool_names only %}
+                </div>
               {% endfor %}
             </td>
           </tr>

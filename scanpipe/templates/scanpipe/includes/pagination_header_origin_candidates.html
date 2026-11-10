@@ -1,0 +1,12 @@
+{% extends "scanpipe/includes/pagination_header.html" %}
+{% load humanize %}
+
+{% block paginator_count %}
+  <span class="is-flex is-align-items-center">
+    <span class="mr-2">{{ paginator.count|intcomma }} candidates</span>
+    <a href="{% url 'project_origins' project.slug %}" class="button is-small is-info is-outlined">
+      <span class="icon"><i class="fa-solid fa-list"></i></span>
+      <span>View by resource</span>
+    </a>
+  </span>
+{% endblock %}

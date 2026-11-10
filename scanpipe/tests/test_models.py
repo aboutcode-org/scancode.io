@@ -3155,6 +3155,15 @@ class ScanPipeModelsTest(TestCase):
         self.assertQuerySetEqual(
             determinations.confirmed(), [ini_determination, six_determination]
         )
+        self.assertQuerySetEqual(
+            self.project1.origindeterminations.review_order(),
+            [urllib3_determination, ini_determination, six_determination],
+        )
+        expected = {"auto-confirmed": 1, "confirmed": 1, "needs-review": 1}
+        count_by_status = self.project1.origindeterminations.count_by_status()
+        self.assertEqual(expected, count_by_status)
+        self.assertEqual(list(expected), list(count_by_status))
+        self.assertIsInstance(list(count_by_status)[0], OriginDetermination.Status)
 
     def test_scanpipe_origin_determination_model_str(self):
         resource = make_resource_file(self.project1, path="six.py")

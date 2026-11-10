@@ -1131,12 +1131,8 @@ class ProjectOriginSummaryView(ConditionalLoginRequired, generic.DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        origin_determinations = self.object.origindeterminations
-        count_by_status = count_group_by(origin_determinations, "status")
-        context["origin_status_summary"] = {
-            OriginDetermination.Status(status): count
-            for status, count in count_by_status.items()
-        }
+        summary = self.object.origindeterminations.count_by_status()
+        context["origin_status_summary"] = summary
         context["project_origins_url"] = reverse(
             "project_origins", args=[self.object.slug]
         )
@@ -2024,7 +2020,10 @@ class OriginDeterminationListView(
             "field_name": "purl",
             "label": "Origin",
         },
-        "candidates",
+        {
+            "field_name": "other_candidates",
+            "label": "Other candidates",
+        },
     ]
 
     def get_queryset(self):
@@ -2038,23 +2037,67 @@ class OriginDeterminationListView(
                     queryset=OriginMatch.objects.only(
                         "resource", "purl", "tool", "extra_data"
                     ).order_by("purl", "tool"),
-                )
+                ),
+                Prefetch(
+                    "resource__discovered_packages",
+                    queryset=DiscoveredPackage.objects.only(
+                        "uuid", *PACKAGE_URL_FIELDS
+                    ),
+                ),
             )
             .only("purl", "status", "rule", "resource__path", "resource__type")
-            .order_by("resource__path")
+            .review_order()
+        )
+
+    @staticmethod
+    def add_review_data(determination):
+        """Add the candidate origins and the origin package to the ``determination``."""
+        resource = determination.resource
+        candidate_origins = origin.group_origin_matches(resource.origin_matches.all())
+
+        determined_origin = None
+        if determination.purl:
+            determined_origin = origin.get_determined_origin(
+                determination.purl, candidate_origins
+            )
+
+        origin_package = None
+        if determination.status in OriginDetermination.CONFIRMED_STATUSES:
+            origin_package = origin.get_origin_package(
+                determination.purl, resource.discovered_packages.all()
+            )
+
+        determination.determined_origin = determined_origin
+        determination.other_candidate_origins = [
+            candidate_origin
+            for candidate_origin in candidate_origins
+            if candidate_origin is not determined_origin
+        ]
+        determination.origin_package = origin_package
+        determination.rule_description = origin.RULE_DESCRIPTIONS.get(
+            determination.rule, ""
         )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         for determination in context["object_list"]:
-            origin_matches = determination.resource.origin_matches.all()
-            determination.candidate_origins = origin.group_origin_matches(
-                origin_matches
-            )
-            determination.rule_description = origin.RULE_DESCRIPTIONS.get(
-                determination.rule, ""
-            )
+            self.add_review_data(determination)
+
+        origin_determinations = self.get_project().origindeterminations
+        context["origin_status_summary"] = origin_determinations.count_by_status()
         return context
+
+
+class OriginCandidateListView(
+    ConditionalLoginRequired,
+    ProjectRelatedViewMixin,
+    generic.ListView,
+):
+    template_name = "scanpipe/origin_candidate_list.html"
+    paginate_by = scanpipe_settings.PAGINATE_BY.get("origin", 100)
+
+    def get_queryset(self):
+        return origin.get_candidate_summaries(self.get_project())
 
 
 class VulnerabilityListView(

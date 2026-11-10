@@ -27,6 +27,8 @@ from django.apps import apps
 from django.core.exceptions import FieldError
 from django.core.validators import EMPTY_VALUES
 from django.db import models
+from django.db.models import Exists
+from django.db.models import OuterRef
 from django.db.models import Q
 from django.db.models.fields import BLANK_CHOICE_DASH
 from django.utils.functional import cached_property
@@ -43,6 +45,7 @@ from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredLicense
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import OriginDetermination
+from scanpipe.models import OriginMatch
 from scanpipe.models import Project
 from scanpipe.models import ProjectMessage
 from scanpipe.models import Run
@@ -1000,6 +1003,7 @@ class OriginDeterminationFilterSet(FilterSetUtilsMixin, django_filters.FilterSet
     )
     status = ModelFieldValuesFilter()
     rule = ModelFieldValuesFilter(include_empty=True)
+    candidate = django_filters.CharFilter(label="Candidate", method="filter_candidate")
 
     class Meta:
         model = OriginDetermination
@@ -1009,4 +1013,21 @@ class OriginDeterminationFilterSet(FilterSetUtilsMixin, django_filters.FilterSet
             "status",
             "rule",
             "purl",
+            "candidate",
         ]
+
+    @staticmethod
+    def filter_candidate(queryset, name, value):
+        """
+        Filter the determinations of the resources with an origin match reporting
+        the ``value`` PURL, with or without qualifiers and subpath.
+        """
+        reported_purl = (
+            Q(purl=value)
+            | Q(purl__startswith=f"{value}?")
+            | Q(purl__startswith=f"{value}#")
+        )
+        origin_matches = OriginMatch.objects.filter(
+            reported_purl, resource=OuterRef("resource")
+        )
+        return queryset.filter(Exists(origin_matches))

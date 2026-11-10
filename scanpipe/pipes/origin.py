@@ -39,6 +39,7 @@ from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import OriginDetermination
 from scanpipe.models import OriginMatch
+from scanpipe.pipes import count_group_by
 from scanpipe.pipes.resolve import convert_spdx_expression
 
 CONTAINMENT_RULE = "containment"
@@ -229,6 +230,10 @@ class Origin:
     @property
     def tools(self):
         return {origin_match.tool for origin_match in self.origin_matches}
+
+    @property
+    def tool_names(self):
+        return sorted(self.tools)
 
     @property
     def has_exact_match(self):
@@ -874,3 +879,60 @@ def get_ancestor_origin_determination(resource):
         .order_by("-resource__path")
         .first()
     )
+
+
+def get_origin_package(purl, packages):
+    """
+    Return the package among the ``packages`` of a resource that is the origin
+    ``purl`` package, None when the resource is not assigned to it.
+    """
+    package_purl = get_package_purl(purl)
+    for package in packages:
+        if get_package_purl(package.package_url) == package_purl:
+            return package
+
+
+@dataclass
+class CandidateSummary:
+    """A candidate origin with the number of resources that report it."""
+
+    purl: str
+    tools: set
+    resource_count: int = 0
+    determination_count: int = 0
+
+    @property
+    def tool_names(self):
+        return sorted(self.tools)
+
+
+def get_candidate_summary_sort_key(candidate_summary):
+    return -candidate_summary.resource_count, candidate_summary.purl
+
+
+def get_candidate_summaries(project):
+    """
+    Return the candidate origins of the ``project`` resources, with the number of
+    resources reporting each candidate and the number of determinations selecting
+    it, the most reported first.
+    """
+    origin_matches = (
+        project.originmatchs.select_related("resource")
+        .only("purl", "tool", "extra_data", "resource__path")
+        .order_by("resource__path")
+        .iterator(chunk_size=2000)
+    )
+    summaries_by_purl = {}
+    for _resource, resource_origins in iter_resource_origins(origin_matches):
+        for resource_origin in resource_origins:
+            summary = summaries_by_purl.setdefault(
+                resource_origin.purl, CandidateSummary(resource_origin.purl, set())
+            )
+            summary.tools |= resource_origin.tools
+            summary.resource_count += 1
+
+    determination_count_by_purl = count_group_by(project.origindeterminations, "purl")
+    for purl, summary in summaries_by_purl.items():
+        summary.determination_count = determination_count_by_purl.get(purl, 0)
+
+    return sorted(summaries_by_purl.values(), key=get_candidate_summary_sort_key)

@@ -91,6 +91,11 @@ urlpatterns = [
         name="project_relations",
     ),
     path(
+        "project/<slug:slug>/origins/candidates/",
+        views.OriginCandidateListView.as_view(),
+        name="project_origin_candidates",
+    ),
+    path(
         "project/<slug:slug>/origins/",
         views.OriginDeterminationListView.as_view(),
         name="project_origins",
