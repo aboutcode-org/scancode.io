@@ -46,6 +46,7 @@ from scanpipe.models import DiscoveredPackage
 from scanpipe.models import OriginDetermination
 from scanpipe.models import OriginMatch
 from scanpipe.models import Project
+from scanpipe.pipelines.find_origins import FindOrigins
 from scanpipe.pipes import make_relation
 from scanpipe.pipes import update_or_create_dependency
 from scanpipe.pipes.input import copy_input
@@ -1602,6 +1603,12 @@ class ScanPipeViewsTest(TestCase):
         self.assertContains(response, "src/ini.c")
         self.assertNotContains(response, f'href="{six_url}#origin"')
         self.assertNotContains(response, "vendor/ms")
+
+    def test_scanpipe_views_find_origins_results_url(self):
+        results_url = FindOrigins.results_url.format(slug=self.project1.slug)
+        self.assertEqual(
+            reverse("project_origins", args=[self.project1.slug]), results_url
+        )
 
     def test_scanpipe_views_codebase_resource_details_view_tab_origin(self):
         six_py = make_resource_file(self.project1, "six.py")

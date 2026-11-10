@@ -50,6 +50,7 @@ class FindOrigins(Pipeline):
 
     download_inputs = False
     is_addon = True
+    results_url = "/project/{slug}/origins/"
 
     @classmethod
     def steps(cls):
