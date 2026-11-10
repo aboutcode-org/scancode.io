@@ -69,6 +69,9 @@ RULE_DESCRIPTIONS = {
     ),
 }
 
+# The suffix of the directories where ScanCode extracts an archive.
+EXTRACT_SUFFIX = "-extract"
+
 # Identifies the packages created from an origin determination, as opposed to
 # the packages detected by the codebase scan.
 ORIGIN_DATASOURCE_ID = "origin_determination"
@@ -212,6 +215,16 @@ def get_versionless_purl(purl):
     ).to_string()
 
 
+def get_web_url(url):
+    """
+    Return the ``url`` reported by an origin tool when it is a web URL, safe to
+    link to, or an empty string.
+    """
+    if url.startswith(("https://", "http://")):
+        return url
+    return ""
+
+
 @dataclass
 class Origin:
     """
@@ -234,6 +247,34 @@ class Origin:
     @property
     def tool_names(self):
         return sorted(self.tools)
+
+    @property
+    def other_equivalent_purls(self):
+        """Return the equivalent PURLs other than the candidate ``purl``."""
+        return sorted(self.equivalent_purls - {self.purl})
+
+    @property
+    def license_expression(self):
+        """
+        Return the declared license expression reported by MatchCode.io, or else
+        the component license names reported by SCANOSS, joined with AND.
+        """
+        license_expression = get_first_extra_data_value(
+            self.origin_matches, "declared_license_expression"
+        )
+        return license_expression or " AND ".join(
+            get_license_names(self.origin_matches)
+        )
+
+    @property
+    def homepage_url(self):
+        return get_web_url(get_first_extra_data_value(self.origin_matches, "url"))
+
+    @property
+    def download_url(self):
+        return get_web_url(
+            get_first_extra_data_value(self.origin_matches, "download_url")
+        )
 
     @property
     def has_exact_match(self):
@@ -936,3 +977,49 @@ def get_candidate_summaries(project):
         summary.determination_count = determination_count_by_purl.get(purl, 0)
 
     return sorted(summaries_by_purl.values(), key=get_candidate_summary_sort_key)
+
+
+def get_display_origin_path(origin_path):
+    """
+    Return the ``origin_path`` without the archive extraction directories added
+    by MatchCode.io, such as "inih-r62/ini.c" for
+    "inih-r62.tar.gz-extract/inih-r62/ini.c".
+    """
+    path_segments = origin_path.split("/")
+    return "/".join(
+        segment for segment in path_segments if not segment.endswith(EXTRACT_SUFFIX)
+    )
+
+
+def get_covered_resources(directory):
+    """
+    Return the resources under the ``directory`` covered by its determination:
+    without a determination of their own, and not under a determined
+    subdirectory.
+    """
+    project = directory.project
+    descendants_prefix = f"{directory.path}/"
+    subdirectory_paths = project.origindeterminations.filter(
+        resource__type=CodebaseResource.Type.DIRECTORY,
+        resource__path__startswith=descendants_prefix,
+    ).values_list("resource__path", flat=True)
+
+    return project.codebaseresources.filter(
+        path__startswith=descendants_prefix,
+        origin_determination__isnull=True,
+    ).exclude(get_descendants_filter(subdirectory_paths))
+
+
+def get_covered_origin_matches(covered_resources, limit):
+    """
+    Return the first ``limit`` origin matches of the ``covered_resources``, and
+    whether more origin matches exist.
+    """
+    origin_matches = (
+        OriginMatch.objects.filter(resource__in=covered_resources)
+        .select_related("resource")
+        .order_by("resource__path", "purl", "tool")
+    )
+    limited_origin_matches = list(origin_matches[: limit + 1])
+    has_more = len(limited_origin_matches) > limit
+    return limited_origin_matches[:limit], has_more

@@ -1,3 +1,4 @@
+{% load humanize %}
 {% if origin_determination %}
   <dl>
     <dt class="has-text-weight-semibold">Status</dt>
@@ -20,6 +21,16 @@
         {% endif %}
       </dd>
     {% endif %}
+    {% if object.is_dir %}
+      <dt class="has-text-weight-semibold">Covered resources</dt>
+      <dd class="mb-4">
+        <pre class="break-all wrap is-small">{{ covered_resource_count|intcomma }}</pre>
+        <p class="help">
+          The resources under this directory without a determination of their own.
+          <a href="{% url 'project_resource_tree' project.slug object.path %}">Browse the directory</a>
+        </p>
+      </dd>
+    {% endif %}
   </dl>
 {% elif covering_origin_determination %}
   <article class="message is-info">
@@ -38,6 +49,9 @@
       <thead>
         <tr>
           <th>Candidate</th>
+          {% if covered_origin_matches %}
+            <th>Resource</th>
+          {% endif %}
           <th>Tool</th>
           <th>Match type</th>
           <th>Similarity</th>
@@ -52,18 +66,45 @@
             <tr class="break-word">
               <td class="break-all">
                 {{ candidate_origin.purl }}
-                {% if forloop.first and candidate_origin is determined_origin %}
-                  {% if origin_determination.status == "needs-review" %}
-                    <span class="tag is-rounded is-warning ml-1">Proposed</span>
-                  {% else %}
-                    <span class="tag is-rounded is-success ml-1">Origin</span>
+                {% if forloop.first %}
+                  {% if candidate_origin.other_equivalent_purls %}
+                    <span class="icon is-small has-text-grey is-cursor-help has-tooltip is-relative" data-title="Also reported as {{ candidate_origin.other_equivalent_purls|join:', ' }}" data-tooltip-position="top right">
+                      <i class="fa-solid fa-circle-question"></i>
+                    </span>
+                  {% endif %}
+                  {% if candidate_origin is determined_origin %}
+                    {% if origin_determination.status == "needs-review" %}
+                      <span class="tag is-rounded is-warning ml-1">Proposed</span>
+                    {% else %}
+                      <span class="tag is-rounded is-success ml-1">Origin</span>
+                    {% endif %}
+                  {% endif %}
+                  {% if candidate_origin.license_expression or candidate_origin.homepage_url or candidate_origin.download_url %}
+                    <div class="is-size-7 has-text-grey">
+                      {% if candidate_origin.license_expression %}
+                        <span class="mr-2">{{ candidate_origin.license_expression }}</span>
+                      {% endif %}
+                      {% if candidate_origin.homepage_url %}
+                        <a href="{{ candidate_origin.homepage_url }}" target="_blank" rel="noopener noreferrer" class="mr-2">Homepage</a>
+                      {% endif %}
+                      {% if candidate_origin.download_url %}
+                        <a href="{{ candidate_origin.download_url }}" target="_blank" rel="noopener noreferrer">Download</a>
+                      {% endif %}
+                    </div>
                   {% endif %}
                 {% endif %}
               </td>
-              <td>{{ origin_match.tool }}</td>
-              <td>{{ origin_match.match_type }}</td>
+              {% if covered_origin_matches %}
+                <td class="break-all">
+                  {% if origin_match.covered_path %}
+                    <a href="{% url 'resource_detail' project.slug origin_match.resource.path %}#origin">{{ origin_match.covered_path }}</a>
+                  {% endif %}
+                </td>
+              {% endif %}
+              <td class="nowrap">{{ origin_match.tool }}</td>
+              <td class="nowrap">{{ origin_match.match_type }}</td>
               <td>{{ origin_match.similarity|default_if_none:"" }}</td>
-              <td class="break-all">{{ origin_match.origin_path }}</td>
+              <td class="break-all">{{ origin_match.display_origin_path }}</td>
               <td class="nowrap">
                 {% for line_range in origin_match.line_ranges %}
                   <div>{{ line_range.lines.0 }}-{{ line_range.lines.1 }}</div>
@@ -75,5 +116,8 @@
         {% endfor %}
       </tbody>
     </table>
+    {% if has_more_covered_origin_matches %}
+      <p class="help">Only the first {{ covered_origin_matches|length|intcomma }} origin matches of the covered resources are shown.</p>
+    {% endif %}
   </div>
 {% endif %}

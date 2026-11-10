@@ -245,6 +245,11 @@ def is_displayable_image_type(resource):
     return resource.mime_type and resource.mime_type in DISPLAYABLE_IMAGE_MIME_TYPE
 
 
+# The covered file matches shown with a directory determination, enough to see
+# the matches that confirm it without loading a whole vendored package.
+MAX_COVERED_ORIGIN_MATCHES = 100
+
+
 def has_no_origin(resource, fields_data):
     has_origin_determination = hasattr(resource, "origin_determination")
     return not resource.origin_matches.all() and not has_origin_determination
@@ -2355,13 +2360,61 @@ class CodebaseResourceDetailsView(
         ]
 
     @staticmethod
-    def get_origin_context(resource):
+    def get_directory_origin_context(directory):
+        """
+        Return the resources covered by the ``directory`` determination, and the
+        first origin matches of these resources, which count for the directory.
+        """
+        covered_resources = origin.get_covered_resources(directory)
+        covered_origin_matches, has_more = origin.get_covered_origin_matches(
+            covered_resources, limit=MAX_COVERED_ORIGIN_MATCHES
+        )
+        return {
+            "covered_resource_count": covered_resources.count(),
+            "covered_origin_matches": covered_origin_matches,
+            "has_more_covered_origin_matches": has_more,
+        }
+
+    @staticmethod
+    def get_candidate_origins(resource, origin_matches):
+        """
+        Return the candidate origins of the ``origin_matches``, with the matches of
+        the ``resource`` first, then the matches of the resources it covers, by
+        path relative to the ``resource``.
+        """
+        covered_path_prefix = f"{resource.path}/"
+        for origin_match in origin_matches:
+            origin_match.display_origin_path = origin.get_display_origin_path(
+                origin_match.origin_path
+            )
+            origin_match.covered_path = ""
+            if origin_match.resource_id != resource.id:
+                origin_match.covered_path = origin_match.resource.path.removeprefix(
+                    covered_path_prefix
+                )
+
+        candidate_origins = origin.group_origin_matches(origin_matches)
+        for candidate_origin in candidate_origins:
+            candidate_origin.origin_matches.sort(
+                key=operator.attrgetter("covered_path")
+            )
+        return candidate_origins
+
+    def get_origin_context(self, resource):
         """
         Return the origin determination of the ``resource``, or of the directory
-        covering it, and its candidate origins.
+        covering it, and its candidate origins. The candidates of a determined
+        directory include the origin matches of the files it covers.
         """
-        candidate_origins = origin.group_origin_matches(resource.origin_matches.all())
         origin_determination = getattr(resource, "origin_determination", None)
+        origin_matches = list(resource.origin_matches.all())
+
+        directory_context = {}
+        if origin_determination and resource.is_dir:
+            directory_context = self.get_directory_origin_context(resource)
+            origin_matches.extend(directory_context["covered_origin_matches"])
+
+        candidate_origins = self.get_candidate_origins(resource, origin_matches)
 
         covering_origin_determination = None
         if candidate_origins and not origin_determination:
@@ -2387,6 +2440,7 @@ class CodebaseResourceDetailsView(
             "covering_origin_determination": covering_origin_determination,
             "candidate_origins": candidate_origins,
             "determined_origin": determined_origin,
+            **directory_context,
         }
 
     def get_context_data(self, **kwargs):
@@ -2422,7 +2476,10 @@ class CodebaseResourceDetailsView(
         origin_matches = resource.origin_matches.all()
         origin_match_annotations = self.get_origin_match_annotations(origin_matches)
         context["detected_values"]["origin matches"] = origin_match_annotations
-        context.update(self.get_origin_context(resource))
+        origin_context = self.get_origin_context(resource)
+        context.update(origin_context)
+        if origin_tab := context["tabset_data"].get("origin"):
+            origin_tab["label_count"] = len(origin_context["candidate_origins"])
 
         # Compatibility with ProjectResourceTreeRightPaneView
         segments = resource.path.strip("/").split("/")

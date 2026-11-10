@@ -1590,3 +1590,87 @@ class ScanPipeOriginPipesTest(TestCase):
             ("pkg:pypi/pip@24.0", ["matchcode"], 1, 0),
         ]
         self.assertEqual(expected, summary_values)
+
+    def test_scanpipe_pipes_origin_origin_candidate_details(self):
+        six_origin = make_scanoss_six_origin()
+        self.assertEqual(
+            ["pkg:conda/six@1.17.0", "pkg:pypi/six@1.17.0"],
+            six_origin.other_equivalent_purls,
+        )
+        self.assertEqual("", six_origin.license_expression)
+        self.assertEqual("", six_origin.homepage_url)
+
+        six_origin.origin_matches[0].extra_data.update(
+            {
+                "url": "https://github.com/benjaminp/six",
+                "licenses": [{"name": "MIT", "source": "component_declared"}],
+            }
+        )
+        self.assertEqual("MIT", six_origin.license_expression)
+        self.assertEqual("https://github.com/benjaminp/six", six_origin.homepage_url)
+
+        matchcode_match = make_unsaved_origin_match("pkg:pypi/six@1.17.0")
+        matchcode_match.extra_data = {
+            "declared_license_expression": "mit",
+            "download_url": "javascript:alert(1)",
+        }
+        six_origin.merge(origin.Origin.from_origin_match(matchcode_match))
+        self.assertEqual("mit", six_origin.license_expression)
+        self.assertEqual("", six_origin.download_url)
+
+    def test_scanpipe_pipes_origin_get_web_url(self):
+        self.assertEqual("https://pypi.org", origin.get_web_url("https://pypi.org"))
+        self.assertEqual("http://pypi.org", origin.get_web_url("http://pypi.org"))
+        self.assertEqual("", origin.get_web_url("javascript:alert(1)"))
+        self.assertEqual("", origin.get_web_url(""))
+
+    def test_scanpipe_pipes_origin_get_display_origin_path(self):
+        get_display_origin_path = origin.get_display_origin_path
+        self.assertEqual(
+            "inih-r62/ini.c",
+            get_display_origin_path("inih-r62.tar.gz-extract/inih-r62/ini.c"),
+        )
+        self.assertEqual(
+            "package/lib/index.js",
+            get_display_origin_path("a.tgz-extract/package/b.zip-extract/lib/index.js"),
+        )
+        self.assertEqual("six.py", get_display_origin_path("six.py"))
+        self.assertEqual("", get_display_origin_path(""))
+
+    def test_scanpipe_pipes_origin_get_covered_resources(self):
+        vendor = make_resource_directory(self.project1, path="vendor")
+        vendor_ms = make_resource_directory(self.project1, path="vendor/ms")
+        index_js = make_resource_file(self.project1, path="vendor/ms/index.js")
+        other_js = make_resource_file(self.project1, path="vendor/other.js")
+        decided_js = make_resource_file(self.project1, path="vendor/decided.js")
+        make_resource_file(self.project1, path="vendored.js")
+        for resource in [vendor, vendor_ms, decided_js]:
+            OriginDetermination.objects.create(
+                project=self.project1,
+                resource=resource,
+                status=OriginDetermination.Status.NEEDS_REVIEW,
+            )
+
+        covered_resources = origin.get_covered_resources(vendor).order_by("path")
+        self.assertQuerySetEqual(covered_resources, [other_js])
+        covered_resources = origin.get_covered_resources(vendor_ms)
+        self.assertQuerySetEqual(covered_resources, [index_js])
+
+    def test_scanpipe_pipes_origin_get_covered_origin_matches(self):
+        index_js = make_resource_file(self.project1, path="vendor/ms/index.js")
+        readme = make_resource_file(self.project1, path="vendor/ms/readme.md")
+        index_match = self.make_origin_match(index_js, "pkg:npm/ms@2.1.3")
+        readme_match = self.make_origin_match(readme, "pkg:npm/ms@2.1.3")
+        covered_resources = self.project1.codebaseresources.all()
+
+        origin_matches, has_more = origin.get_covered_origin_matches(
+            covered_resources, limit=2
+        )
+        self.assertEqual([index_match, readme_match], origin_matches)
+        self.assertFalse(has_more)
+
+        origin_matches, has_more = origin.get_covered_origin_matches(
+            covered_resources, limit=1
+        )
+        self.assertEqual([index_match], origin_matches)
+        self.assertTrue(has_more)

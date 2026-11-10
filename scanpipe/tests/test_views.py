@@ -1706,6 +1706,8 @@ class ScanPipeViewsTest(TestCase):
         self.assertEqual(
             "pkg:pypi/six@1.16.0", response.context["determined_origin"].purl
         )
+        self.assertEqual(2, response.context["tabset_data"]["origin"]["label_count"])
+        self.assertNotContains(response, "Covered resources")
 
         determination.update(
             purl="pkg:pypi/six@1.15.0",
@@ -1733,6 +1735,33 @@ class ScanPipeViewsTest(TestCase):
         )
         self.assertContains(response, f'href="{vendor_ms_url}#origin"')
         self.assertIsNone(response.context["origin_determination"])
+
+        self.make_origin_match(
+            vendor_ms,
+            "pkg:npm/ms@2.1.3",
+            match_type="directory",
+            origin_path="ms-2.1.3.tgz-extract/package",
+            extra_data={
+                "declared_license_expression": "mit",
+                "download_url": "https://registry.npmjs.org/ms/-/ms-2.1.3.tgz",
+            },
+        )
+        make_resource_file(self.project1, "vendor/ms/readme.md")
+        response = self.client.get(vendor_ms.get_absolute_url())
+        self.assertEqual(1, response.context["tabset_data"]["origin"]["label_count"])
+        self.assertEqual(2, response.context["covered_resource_count"])
+        self.assertContains(response, "Covered resources")
+        index_js_url = reverse(
+            "resource_detail", args=[self.project1.slug, "vendor/ms/index.js"]
+        )
+        self.assertContains(response, f'href="{index_js_url}#origin"')
+        self.assertContains(response, "<th>Resource</th>", html=True)
+        self.assertContains(response, '<td class="nowrap">scanoss</td>', html=True)
+        self.assertContains(response, '<td class="break-all">package</td>', html=True)
+        self.assertContains(response, "mit")
+        self.assertContains(
+            response, 'href="https://registry.npmjs.org/ms/-/ms-2.1.3.tgz"'
+        )
 
     def test_scanpipe_views_codebase_resource_details_get_origin_match_annotations(
         self,

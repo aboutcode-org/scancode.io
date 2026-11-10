@@ -133,8 +133,10 @@ determinations that need a review are listed first. The "View by candidate" page
 lists each candidate with the number of resources that report it.
 
 The "Origin" tab of a file or directory shows its determination and its
-candidates, with each origin match. A file without a determination of its own
-shows the determination of the directory that covers it. In the file viewer, the
+candidates, with each origin match. A directory also shows the origin matches of
+the resources it covers, which count for its determination. A file without a
+determination of its own shows the determination of the directory that covers
+it. In the file viewer, the
 "Origin Matches" button highlights the matched lines.
 
 Re-running the pipeline
