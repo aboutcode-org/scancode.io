@@ -28,47 +28,24 @@ from scanpipe.pipes import nix
 
 class ScanNixPackage(DeployToDevelop):
     """
-    Scan a nixpkgs package and compare its binary with its source.
+    Scan a nixpkgs package and check its binary and license against its source.
 
-    This pipeline takes a single nixpkgs PURL as input, for example:
-    ``pkg:nix/nixpkgs/hello@2.12.3?system=x86_64-linux``.
-    The ``system`` qualifier is required. The nixpkgs commit is looked up from
-    the version, or can be provided with the ``commit`` qualifier.
+    Use this pipeline to review a package of nixpkgs, the Nix packages collection.
+    It maps the binary distributed by Nix to the source it is built from, and
+    checks that the license declared in nixpkgs covers the licenses found in the
+    source.
 
-    The source is fetched with the nixpkgs patches applied, and the binary is
-    downloaded from the Nix binary cache. A deployment to development analysis
-    runs between them, and the whole source is scanned to compare the detected
-    licenses with the license declared in nixpkgs.
+    Provide a single nixpkgs Package URL as input, with the target ``system``, for
+    example: ``pkg:nix/nixpkgs/hello@2.12.3?system=x86_64-linux``.
+    Add a ``commit`` qualifier to scan the package at a specific nixpkgs commit,
+    or an ``output`` qualifier to scan a single package output, such as ``man``.
 
-    The Nix package records its upstream origin from nixpkgs: the source download
-    URL, the Git repository and revision, and the link to the nixpkgs recipe at
-    the commit. A warning is added when nixpkgs repackages prebuilt binaries
-    instead of building them from the source.
+    The Nix package is created with the license declared in nixpkgs, its origin
+    (download URL, Git repository, and nixpkgs recipe), and the licenses found in
+    the source but not declared in nixpkgs.
 
-    The package outputs holding only headers and documentation, such as ``dev``,
-    ``doc``, or ``man``, are not downloaded. A single output can be selected with
-    the ``output`` qualifier.
-
-    When the source cannot be fetched, for a package without a ``src`` attribute,
-    the binary is analyzed alone and the license check is skipped.
-
-    The binaries mapping is always enabled: ELF for a Linux ``system``, and
-    Mach-O for a macOS ``system``. The ELF mapping relies on the DWARF debug
-    paths, available only for the packages that provide a ``debug`` output.
-
-    The source is evaluated for the Linux system running ScanCode.io: for a
-    macOS ``system``, the source does not include the macOS specific patches.
-
-    Add the ``match_to_matchcode`` addon pipeline to the project to match the
-    source with MatchCode.io and find the code borrowed from other packages.
-
-    The nixpkgs commit is checked with the GitHub API, limited to 60 requests
-    per hour without a token. Provide a token with the
-    ``SCANCODEIO_FETCH_HEADERS`` setting, for example:
-    ``api.github.com=Authorization=token <YOUR_TOKEN>``.
-
-    This pipeline requires the ``nix`` command, available in the full
-    ScanCode.io image.
+    Add the ``match_to_matchcode`` addon pipeline to the project to find the code
+    borrowed from other packages.
     """
 
     download_inputs = False
@@ -115,7 +92,7 @@ class ScanNixPackage(DeployToDevelop):
         self.log(f"nixpkgs commit: {self.commit}")
 
     def get_nix_package_metadata(self):
-        """Get the package metadata and binary store paths from nixpkgs."""
+        """Get the package metadata and binary outputs from nixpkgs."""
         self.metadata = nix.get_package_metadata(
             attribute_path=self.purl.name,
             commit=self.commit,
@@ -243,7 +220,7 @@ class ScanNixPackage(DeployToDevelop):
         self.package.update_extra_data({"uncovered_licenses": uncovered_licenses})
 
     def collect_nix_garbage(self):
-        """Delete the Nix store paths not in use, such as the ones of this scan."""
+        """Delete the unused Nix files, such as the ones downloaded for this scan."""
         try:
             nix.collect_garbage()
         except nix.NixCommandError as error:
