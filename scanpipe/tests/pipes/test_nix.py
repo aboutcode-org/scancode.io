@@ -101,6 +101,15 @@ class ScanPipeNixPipesTest(TestCase):
             ("pkg:npm/hello@1.0?system=x86_64-linux", "Only pkg:nix/nixpkgs/"),
             ("pkg:nix/other/hello@1.0?system=x86_64-linux", "Only pkg:nix/nixpkgs/"),
             ("pkg:nix/nixpkgs/.hello@1.0?system=x86_64-linux", "Invalid Nix package"),
+            (
+                "pkg:nix/nixpkgs/hello@1.0?system=x86_64-linux&outptu=out",
+                "Unsupported qualifiers: outptu. The supported qualifiers are: "
+                "commit, output, system",
+            ),
+            (
+                "pkg:nix/nixpkgs/hello@1.0?sytem=x86_64-linux&arch=x86",
+                "Unsupported qualifiers: arch, sytem.",
+            ),
             ("pkg:nix/nixpkgs/hello@1.0", "A valid 'system' qualifier"),
             ("pkg:nix/nixpkgs/hello@1.0?system=x86_64-linux%0A", "A valid 'system'"),
             (

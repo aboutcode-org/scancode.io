@@ -62,6 +62,9 @@ COMMIT_REGEX = re.compile(r"[0-9a-f]{40}")
 SYSTEM_REGEX = re.compile(r"[a-z0-9_]+-[a-z0-9_]+")
 OUTPUT_REGEX = re.compile(r"[a-z][a-z0-9]*")
 
+# A misspelled qualifier, such as "outptu", would be silently ignored.
+SUPPORTED_QUALIFIERS = {"commit", "output", "system"}
+
 # The nixpkgs licenses without SPDX id, such as "LicenseRef-nixos-unfree", are not
 # known by ScanCode: a single one would turn the whole expression into "unknown".
 NIXOS_LICENSE_REF_REGEX = re.compile(r"LicenseRef-nixos-[\w.+-]+")
@@ -181,6 +184,12 @@ def validate_nix_purl(purl):
         raise ValueError(f"Invalid Nix package name: {purl.name!r}")
 
     qualifiers = purl.qualifiers or {}
+    if unsupported_qualifiers := sorted(set(qualifiers) - SUPPORTED_QUALIFIERS):
+        raise ValueError(
+            f"Unsupported qualifiers: {', '.join(unsupported_qualifiers)}. "
+            f"The supported qualifiers are: {', '.join(sorted(SUPPORTED_QUALIFIERS))}"
+        )
+
     system = qualifiers.get("system", "")
     if not SYSTEM_REGEX.fullmatch(system):
         raise ValueError(
