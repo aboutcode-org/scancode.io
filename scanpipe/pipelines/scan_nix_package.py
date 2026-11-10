@@ -40,6 +40,11 @@ class ScanNixPackage(DeployToDevelop):
     runs between them, and the whole source is scanned to compare the detected
     licenses with the license declared in nixpkgs.
 
+    The Nix package records its upstream origin from nixpkgs: the source download
+    URL, the Git repository and revision, and the link to the nixpkgs recipe at
+    the commit. A warning is added when nixpkgs repackages prebuilt binaries
+    instead of building them from the source.
+
     The package outputs holding only headers and documentation, such as ``dev``,
     ``doc``, or ``man``, are not downloaded. A single output can be selected with
     the ``output`` qualifier.
@@ -128,6 +133,17 @@ class ScanNixPackage(DeployToDevelop):
                 description=(
                     f"The PURL version {self.purl.version} differs from the "
                     f"nixpkgs version {version} at commit {self.commit}."
+                ),
+                model=self.pipeline_name,
+            )
+
+        source_provenance = self.metadata["source_provenance"]
+        if binary_provenances := nix.get_binary_provenances(source_provenance):
+            self.project.add_warning(
+                description=(
+                    f"The nixpkgs package repackages prebuilt binaries "
+                    f"({', '.join(binary_provenances)}): its source is not the one "
+                    f"of the deployed code."
                 ),
                 model=self.pipeline_name,
             )

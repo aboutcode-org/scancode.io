@@ -43,6 +43,7 @@ REQUIRED_COMMANDS = ["nix-build", "nix-instantiate", "nix-store", "xz", "zstd"]
 NIX_CACHE_URL = "https://cache.nixos.org"
 DEVBOX_SEARCH_URL = "https://search.devbox.sh/v2/pkg"
 NIXPKGS_API_URL = "https://api.github.com/repos/NixOS/nixpkgs"
+NIXPKGS_REPOSITORY_URL = "https://github.com/NixOS/nixpkgs"
 
 NIX_EVAL_TIMEOUT = 600
 NIX_BUILD_TIMEOUT = 1800
@@ -126,6 +127,17 @@ let
     else null;
   licenseExpressions = map getLicenseExpression (pkgs.lib.toList (meta.license or [ ]));
   getOutputPath = output: { name = output; value = package.${output}.outPath; };
+  src = package.src or { };
+  # The "mirror://gnu/hello/hello-2.12.3.tar.gz" URLs use the first nixpkgs mirror.
+  mirrors = import (nixpkgs + "/pkgs/build-support/fetchurl/mirrors.nix");
+  resolveMirrorUrl = url:
+    let mirrorMatch = builtins.match "mirror://([^/]+)/(.*)" url;
+    in if mirrorMatch == null then url
+    else
+      let mirrorUrls = mirrors.${builtins.head mirrorMatch} or [ ];
+      in if mirrorUrls == [ ] then url
+      else builtins.head mirrorUrls + builtins.elemAt mirrorMatch 1;
+  getProvenanceName = provenance: provenance.shortName;
 in
 {
   version = package.version or "";
@@ -133,6 +145,11 @@ in
   homepage = meta.homepage or "";
   licenses = builtins.filter (expression: expression != null) licenseExpressions;
   outputs = builtins.listToAttrs (map getOutputPath (package.outputs or [ "out" ]));
+  source_urls = map resolveMirrorUrl (src.urls or [ ]);
+  git_repository = src.gitRepoUrl or "";
+  git_revision = src.rev or "";
+  recipe_position = pkgs.lib.removePrefix "${toString nixpkgs}/" (meta.position or "");
+  source_provenance = map getProvenanceName (meta.sourceProvenance or [ ]);
 }
 """
 )
@@ -618,10 +635,47 @@ def convert_nixpkgs_license_expression(license_expression_spdx):
     return convert_spdx_expression(known_license_expression_spdx)
 
 
+def get_vcs_url(git_repository, git_revision):
+    """
+    Return the SPDX VCS URL of the ``git_repository`` at the ``git_revision``, such
+    as "git+https://github.com/BurntSushi/ripgrep.git@15.2.0".
+    """
+    if not git_repository:
+        return ""
+
+    vcs_url = f"git+{git_repository}"
+    if git_revision:
+        vcs_url += f"@{git_revision.removeprefix('refs/tags/')}"
+    return vcs_url
+
+
+def get_recipe_url(recipe_position, commit):
+    """
+    Return the URL of the nixpkgs recipe of a package at the ``commit``, from its
+    "path:line" ``recipe_position``.
+    """
+    if not recipe_position:
+        return ""
+
+    recipe_path, line_number = recipe_position.rsplit(":", 1)
+    return f"{NIXPKGS_REPOSITORY_URL}/blob/{commit}/{recipe_path}#L{line_number}"
+
+
+def get_binary_provenances(source_provenance):
+    """
+    Return the ``source_provenance`` types of the prebuilt binaries repackaged by
+    nixpkgs, such as "binaryNativeCode", instead of built from the source.
+    """
+    return [
+        provenance for provenance in source_provenance if provenance != "fromSource"
+    ]
+
+
 def create_nix_package(project, purl, metadata, commit):
     """
     Create the Nix package of the ``project`` from the nixpkgs ``metadata``, with
-    the nixpkgs ``commit`` and the system it was evaluated for.
+    the upstream source origin, and the nixpkgs ``commit``, recipe, and system it
+    was evaluated for.
     """
     declared_license_spdx = combine_license_expressions(metadata["licenses"])
     declared_license = ""
@@ -632,6 +686,9 @@ def create_nix_package(project, purl, metadata, commit):
     if isinstance(homepage, list):
         homepage = homepage[0] if homepage else ""
 
+    source_urls = metadata["source_urls"]
+    download_url = source_urls[0] if source_urls else ""
+
     package_data = {
         "type": purl.type,
         "namespace": purl.namespace,
@@ -640,10 +697,13 @@ def create_nix_package(project, purl, metadata, commit):
         "declared_license_expression": declared_license,
         "declared_license_expression_spdx": declared_license_spdx,
         "homepage_url": homepage,
+        "download_url": download_url,
+        "vcs_url": get_vcs_url(metadata["git_repository"], metadata["git_revision"]),
         "description": metadata["description"],
         "datasource_id": "nixpkgs_meta",
         "extra_data": {
             "nixpkgs_commit": commit,
+            "nixpkgs_recipe_url": get_recipe_url(metadata["recipe_position"], commit),
             "system": purl.qualifiers["system"],
         },
     }

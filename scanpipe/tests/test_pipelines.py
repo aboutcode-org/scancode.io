@@ -231,7 +231,8 @@ class ScanPipePipelinesTest(TestCase):
         pipeline.commit = "55ba7f49ef2962b42cbd126522b7df5f95037679"
         outputs = {"out": "/nix/store/aaa-hello", "man": "/nix/store/bbb-man"}
 
-        mock_metadata.return_value = {"version": "2.12.3", "outputs": outputs}
+        metadata = {"version": "2.12.3", "outputs": outputs, "source_provenance": []}
+        mock_metadata.return_value = metadata
         pipeline.get_nix_package_metadata()
         self.assertEqual({"out": "/nix/store/aaa-hello"}, pipeline.selected_outputs)
         self.assertEqual(0, project1.projectmessages.count())
@@ -245,12 +246,26 @@ class ScanPipePipelinesTest(TestCase):
         pipeline.purl = PackageURL.from_string(
             "pkg:nix/nixpkgs/hello@2.12.3?system=x86_64-linux"
         )
-        mock_metadata.return_value = {"version": "2.12.2", "outputs": outputs}
+        mock_metadata.return_value = {**metadata, "version": "2.12.2"}
         pipeline.get_nix_package_metadata()
         message = project1.projectmessages.get()
         self.assertEqual(
             "The PURL version 2.12.3 differs from the nixpkgs version 2.12.2 at commit "
             "55ba7f49ef2962b42cbd126522b7df5f95037679.",
+            message.description,
+        )
+        message.delete()
+
+        source_provenance = ["fromSource", "binaryNativeCode"]
+        mock_metadata.return_value = {
+            **metadata,
+            "source_provenance": source_provenance,
+        }
+        pipeline.get_nix_package_metadata()
+        message = project1.projectmessages.get()
+        self.assertEqual(
+            "The nixpkgs package repackages prebuilt binaries (binaryNativeCode): its "
+            "source is not the one of the deployed code.",
             message.description,
         )
 
@@ -2644,6 +2659,11 @@ class PipelinesIntegrationTest(TestCase):
             "description": "Program that produces a familiar, friendly greeting",
             "homepage": "https://www.gnu.org/software/hello/manual/",
             "licenses": ["GPL-3.0-or-later"],
+            "source_urls": ["https://ftpmirror.gnu.org/hello/hello-2.12.3.tar.gz"],
+            "git_repository": "",
+            "git_revision": "",
+            "recipe_position": "pkgs/by-name/he/hello/package.nix:58",
+            "source_provenance": [],
             "outputs": {
                 "out": "/nix/store/5z2yp3ysx8476c8g5w25b0smlgkjvaq3-hello-2.12.3",
                 "man": "/nix/store/00000000000000000000000000000000-hello-man",
@@ -2717,8 +2737,16 @@ class PipelinesIntegrationTest(TestCase):
         package = project1.discoveredpackages.get()
         self.assertEqual("pkg:nix/nixpkgs/hello@2.12.3", package.purl)
         self.assertEqual("gpl-3.0-plus", package.declared_license_expression)
+        self.assertEqual(
+            "https://ftpmirror.gnu.org/hello/hello-2.12.3.tar.gz", package.download_url
+        )
         expected_extra_data = {
             "nixpkgs_commit": "55ba7f49ef2962b42cbd126522b7df5f95037679",
+            "nixpkgs_recipe_url": (
+                "https://github.com/NixOS/nixpkgs/blob/"
+                "55ba7f49ef2962b42cbd126522b7df5f95037679/"
+                "pkgs/by-name/he/hello/package.nix#L58"
+            ),
             "system": "x86_64-linux",
             "uncovered_licenses": ["mit"],
         }

@@ -562,6 +562,49 @@ class ScanPipeNixPipesTest(TestCase):
                     nix.convert_nixpkgs_license_expression(license_expression_spdx),
                 )
 
+    def test_scanpipe_nix_get_vcs_url(self):
+        cases = [
+            ("", "", ""),
+            (
+                "https://github.com/psf/requests.git",
+                "",
+                "git+https://github.com/psf/requests.git",
+            ),
+            (
+                "https://github.com/psf/requests.git",
+                "refs/tags/v2.34.2",
+                "git+https://github.com/psf/requests.git@v2.34.2",
+            ),
+            (
+                "https://github.com/psf/requests.git",
+                COMMIT,
+                f"git+https://github.com/psf/requests.git@{COMMIT}",
+            ),
+        ]
+        for git_repository, git_revision, expected in cases:
+            with self.subTest(git_revision=git_revision):
+                self.assertEqual(
+                    expected, nix.get_vcs_url(git_repository, git_revision)
+                )
+
+    def test_scanpipe_nix_get_recipe_url(self):
+        self.assertEqual("", nix.get_recipe_url("", COMMIT))
+        self.assertEqual(
+            f"https://github.com/NixOS/nixpkgs/blob/{COMMIT}/"
+            "pkgs/by-name/he/hello/package.nix#L58",
+            nix.get_recipe_url("pkgs/by-name/he/hello/package.nix:58", COMMIT),
+        )
+
+    def test_scanpipe_nix_get_binary_provenances(self):
+        self.assertEqual([], nix.get_binary_provenances([]))
+        self.assertEqual([], nix.get_binary_provenances(["fromSource"]))
+        self.assertEqual(
+            ["binaryNativeCode", "binaryFirmware"],
+            nix.get_binary_provenances(
+                ["fromSource", "binaryNativeCode", "binaryFirmware"]
+            ),
+        )
+
     def test_scanpipe_nix_create_nix_package(self):
         purl = PackageURL.from_string(
             "pkg:nix/nixpkgs/hello@2.12.3?system=x86_64-linux"
@@ -572,6 +615,13 @@ class ScanPipeNixPipesTest(TestCase):
             "homepage": ["https://www.gnu.org/software/hello/", "https://other"],
             "licenses": ["GPL-3.0-or-later", "Unlicense OR MIT"],
             "outputs": {},
+            "source_urls": [
+                "https://github.com/BurntSushi/ripgrep/archive/refs/tags/15.2.0.tar.gz"
+            ],
+            "git_repository": "https://github.com/BurntSushi/ripgrep.git",
+            "git_revision": "refs/tags/15.2.0",
+            "recipe_position": "pkgs/by-name/ri/ripgrep/package.nix:66",
+            "source_provenance": [],
         }
         package = nix.create_nix_package(self.project, purl, metadata, COMMIT)
         self.assertEqual("pkg:nix/nixpkgs/hello@2.12.3", package.purl)
@@ -585,16 +635,38 @@ class ScanPipeNixPipesTest(TestCase):
         self.assertEqual("https://www.gnu.org/software/hello/", package.homepage_url)
         self.assertEqual(metadata["description"], package.description)
         self.assertEqual(["nixpkgs_meta"], package.datasource_ids)
-        expected_extra_data = {"nixpkgs_commit": COMMIT, "system": "x86_64-linux"}
+        self.assertEqual(metadata["source_urls"][0], package.download_url)
+        self.assertEqual(
+            "git+https://github.com/BurntSushi/ripgrep.git@15.2.0", package.vcs_url
+        )
+        expected_extra_data = {
+            "nixpkgs_commit": COMMIT,
+            "nixpkgs_recipe_url": (
+                f"https://github.com/NixOS/nixpkgs/blob/{COMMIT}/"
+                "pkgs/by-name/ri/ripgrep/package.nix#L66"
+            ),
+            "system": "x86_64-linux",
+        }
         self.assertEqual(expected_extra_data, package.extra_data)
 
         purl = PackageURL.from_string(
             f"pkg:nix/nixpkgs/zlib?system=x86_64-linux&commit={COMMIT}"
         )
-        metadata.update(version="1.3.1", licenses=[], homepage="")
+        metadata.update(
+            version="1.3.1",
+            licenses=[],
+            homepage="",
+            source_urls=[],
+            git_repository="",
+            git_revision="",
+            recipe_position="",
+        )
         package = nix.create_nix_package(self.project, purl, metadata, COMMIT)
         self.assertEqual("1.3.1", package.version)
         self.assertEqual("", package.declared_license_expression)
+        self.assertEqual("", package.download_url)
+        self.assertEqual("", package.vcs_url)
+        self.assertEqual("", package.extra_data["nixpkgs_recipe_url"])
 
         # The nixpkgs version is the one of the scanned code.
         purl = PackageURL.from_string("pkg:nix/nixpkgs/curl@8.0?system=x86_64-linux")
@@ -606,7 +678,16 @@ class ScanPipeNixPipesTest(TestCase):
         purl = PackageURL.from_string(
             "pkg:nix/nixpkgs/hello@2.12.3?system=x86_64-linux"
         )
-        metadata = {"version": "", "description": "", "homepage": "", "licenses": []}
+        metadata = {
+            "version": "",
+            "description": "",
+            "homepage": "",
+            "licenses": [],
+            "source_urls": [],
+            "git_repository": "",
+            "git_revision": "",
+            "recipe_position": "",
+        }
         package = nix.create_nix_package(self.project, purl, metadata, COMMIT)
         make_resource_file(self.project, "from/hello.c")
         make_resource_file(self.project, "to/bin/hello")
