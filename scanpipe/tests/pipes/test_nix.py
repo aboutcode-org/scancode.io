@@ -206,6 +206,9 @@ class ScanPipeNixPipesTest(TestCase):
 
     def test_scanpipe_nix_check_github_response(self):
         nix.check_github_response(make_response())
+        last_allowed_response = make_response(headers={"x-ratelimit-remaining": "0"})
+        nix.check_github_response(last_allowed_response)
+        last_allowed_response.raise_for_status.assert_called_once()
 
         rate_limited_responses = [
             make_response(status_code=403, headers={"x-ratelimit-remaining": "0"}),
@@ -305,6 +308,11 @@ class ScanPipeNixPipesTest(TestCase):
             "homepage": "https://www.gnu.org/software/hello/manual/",
             "licenses": ["GPL-3.0-or-later"],
             "outputs": {"out": "/nix/store/5z2yp3ysx8476c8g5w25b0smlgkjvaq3-hello"},
+            "source_urls": ["https://ftpmirror.gnu.org/hello/hello-2.12.3.tar.gz"],
+            "git_repository": "",
+            "git_revision": "",
+            "recipe_position": "pkgs/by-name/he/hello/package.nix:58",
+            "source_provenance": [],
         }
         mock_run.return_value = json.dumps(metadata)
 

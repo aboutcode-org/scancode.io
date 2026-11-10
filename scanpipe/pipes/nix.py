@@ -319,9 +319,10 @@ def check_github_response(response):
     Raise an HTTPError for an error ``response`` of the GitHub API, with a hint
     to provide a token when the rate limit is reached.
     """
-    is_rate_limited = (
-        response.status_code == 429
-        or response.headers.get("x-ratelimit-remaining") == "0"
+    # The last allowed request succeeds with a remaining count of "0".
+    is_rate_limited = response.status_code == 429 or (
+        response.status_code == 403
+        and response.headers.get("x-ratelimit-remaining") == "0"
     )
     if is_rate_limited:
         raise requests.HTTPError(GITHUB_RATE_LIMIT_ERROR, response=response)
