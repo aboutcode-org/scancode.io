@@ -52,10 +52,12 @@ from scanpipe.pipelines import is_pipeline
 from scanpipe.pipelines import scan_single_package
 from scanpipe.pipelines.find_origins import FindOrigins
 from scanpipe.pipelines.find_vulnerabilities import FindVulnerabilities
+from scanpipe.pipelines.scan_nix_package import ScanNixPackage
 from scanpipe.pipes import d2d
 from scanpipe.pipes import flag
 from scanpipe.pipes import matchcode
 from scanpipe.pipes import maven
+from scanpipe.pipes import nix
 from scanpipe.pipes import output
 from scanpipe.pipes import scancode
 from scanpipe.pipes.input import copy_input
@@ -184,6 +186,68 @@ class ScanPipePipelinesTest(TestCase):
 
         mock_scanoss_is_configured.return_value = True
         self.assertIsNone(FindOrigins.get_availability())
+
+    @mock.patch("scanpipe.pipes.nix.get_missing_commands")
+    def test_scanpipe_scan_nix_package_get_availability(self, mock_missing_commands):
+        mock_missing_commands.return_value = ["nix-build", "zstd"]
+        self.assertEqual(
+            "Missing commands: nix-build, zstd. Use the full ScanCode.io image.",
+            ScanNixPackage.get_availability(),
+        )
+
+        mock_missing_commands.return_value = []
+        self.assertIsNone(ScanNixPackage.get_availability())
+
+    def test_scanpipe_scan_nix_package_selected_groups(self):
+        project1 = make_project()
+        run = project1.add_pipeline("scan_nix_package")
+        self.assertEqual(["Elf"], run.make_pipeline_instance().selected_groups)
+
+        run = project1.add_pipeline("scan_nix_package", selected_groups=["Python"])
+        pipeline = run.make_pipeline_instance()
+        self.assertEqual(["Python", "Elf"], pipeline.selected_groups)
+        self.assertEqual(["Python"], run.selected_groups)
+
+        steps = ScanNixPackage.get_steps(groups=pipeline.selected_groups)
+        self.assertIn(ScanNixPackage.map_elf, steps)
+
+        project2 = make_project()
+        project2.add_input_source(
+            download_url="pkg:nix/nixpkgs/hello@2.12.3?system=aarch64-darwin"
+        )
+        pipeline = project2.add_pipeline("scan_nix_package").make_pipeline_instance()
+        self.assertEqual(["MacOS"], pipeline.selected_groups)
+        steps = ScanNixPackage.get_steps(groups=pipeline.selected_groups)
+        self.assertIn(ScanNixPackage.map_macho, steps)
+        self.assertNotIn(ScanNixPackage.map_elf, steps)
+
+    @mock.patch("scanpipe.pipes.nix.add_metadata_warnings")
+    @mock.patch("scanpipe.pipes.nix.get_package_metadata")
+    def test_scanpipe_scan_nix_package_get_nix_package_metadata(
+        self, mock_metadata, mock_warnings
+    ):
+        project1 = make_project()
+        pipeline = project1.add_pipeline("scan_nix_package").make_pipeline_instance()
+        pipeline.purl = PackageURL.from_string(
+            "pkg:nix/nixpkgs/hello@2.12.3?system=x86_64-linux"
+        )
+        pipeline.commit = "55ba7f49ef2962b42cbd126522b7df5f95037679"
+        outputs = {"out": "/nix/store/aaa-hello", "man": "/nix/store/bbb-man"}
+        metadata = {"version": "2.12.3", "outputs": outputs, "source_provenance": []}
+        mock_metadata.return_value = metadata
+
+        pipeline.get_nix_package_metadata()
+        self.assertEqual(metadata, pipeline.metadata)
+        self.assertEqual({"out": "/nix/store/aaa-hello"}, pipeline.selected_outputs)
+        mock_warnings.assert_called_once_with(
+            project1, pipeline.purl, pipeline.commit, metadata
+        )
+
+        pipeline.purl = PackageURL.from_string(
+            "pkg:nix/nixpkgs/hello@2.12.3?system=x86_64-linux&output=debug"
+        )
+        with self.assertRaisesMessage(ValueError, "The output 'debug' does not"):
+            pipeline.get_nix_package_metadata()
 
     def test_scanpipe_pipeline_class_get_summary(self):
         expected = "Do nothing, in 2 steps."
@@ -2487,3 +2551,154 @@ class PipelinesIntegrationTest(TestCase):
         )
         expected_file = self.data / "benchmark" / "alpine-3.22.1-expected-benchmark.txt"
         self.assertEqual(expected_file.read_text(), result_file.read_text())
+
+    def run_scan_nix_package_pipeline(self, fetch_source_effect):
+        """
+        Run the ``scan_nix_package`` pipeline on the hello test data, with the Nix
+        commands mocked, and return the pipeline run.
+        """
+        nix_data = self.data / "nix"
+        metadata = {
+            "version": "2.12.3",
+            "description": "Program that produces a familiar, friendly greeting",
+            "homepage": "https://www.gnu.org/software/hello/manual/",
+            "licenses": ["GPL-3.0-or-later"],
+            "source_urls": ["https://ftpmirror.gnu.org/hello/hello-2.12.3.tar.gz"],
+            "git_repository": "",
+            "git_revision": "",
+            "recipe_position": "pkgs/by-name/he/hello/package.nix:58",
+            "source_provenance": [],
+            "outputs": {
+                "out": "/nix/store/5z2yp3ysx8476c8g5w25b0smlgkjvaq3-hello-2.12.3",
+                "man": "/nix/store/00000000000000000000000000000000-hello-man",
+                "debug": "/nix/store/11111111111111111111111111111111-hello-debug",
+            },
+        }
+
+        def fetch_binary(store_path, destination, download_directory):
+            if store_path.endswith("-debug"):
+                return False
+            shutil.copytree(nix_data / "binary", destination)
+            return True
+
+        project1 = make_project()
+        project1.add_input_source(
+            download_url="pkg:nix/nixpkgs/hello@2.12.3?system=x86_64-linux"
+        )
+        run = project1.add_pipeline("scan_nix_package")
+        pipeline = run.make_pipeline_instance()
+
+        with (
+            mock.patch(
+                "scanpipe.pipes.nix.get_nixpkgs_commit",
+                return_value="55ba7f49ef2962b42cbd126522b7df5f95037679",
+            ),
+            mock.patch(
+                "scanpipe.pipes.nix.get_package_metadata", return_value=metadata
+            ) as mock_get_metadata,
+            mock.patch(
+                "scanpipe.pipes.nix.fetch_source", side_effect=fetch_source_effect
+            ),
+            mock.patch(
+                "scanpipe.pipes.nix.fetch_binary", side_effect=fetch_binary
+            ) as mock_fetch_binary,
+            mock.patch("scanpipe.pipes.nix.collect_garbage") as mock_collect_garbage,
+        ):
+            exitcode, out = pipeline.execute()
+
+        self.assertEqual(0, exitcode, msg=out)
+        self.assertEqual("x86_64-linux", mock_get_metadata.call_args.kwargs["system"])
+        mock_collect_garbage.assert_called_once()
+
+        fetched_outputs = [
+            call.kwargs["destination"].name for call in mock_fetch_binary.call_args_list
+        ]
+        self.assertEqual(["out", "debug"], fetched_outputs)
+
+        return run
+
+    @skipIf(sys.platform == "darwin", "Not supported on macOS")
+    def test_scanpipe_scan_nix_package_pipeline_integration(self):
+        nix_data = self.data / "nix"
+
+        def fetch_source(attribute_path, commit, destination, cache_directory):
+            shutil.copytree(nix_data / "source", destination)
+            return "patch failed"
+
+        run = self.run_scan_nix_package_pipeline(fetch_source)
+        project1 = run.project
+        self.assertIn("Step [map_elf] completed", run.log)
+
+        relation = project1.codebaserelations.get()
+        self.assertEqual("sha1", relation.map_type)
+        self.assertEqual("from/src/hello.c", relation.from_resource.path)
+        self.assertEqual("to/out/doc/hello.c", relation.to_resource.path)
+
+        helper = project1.codebaseresources.get(path="from/src/helper.c")
+        self.assertEqual(flag.NOT_DEPLOYED, helper.status)
+        self.assertEqual("mit", helper.detected_license_expression)
+
+        package = project1.discoveredpackages.get()
+        self.assertEqual("pkg:nix/nixpkgs/hello@2.12.3", package.purl)
+        self.assertEqual("gpl-3.0-plus", package.declared_license_expression)
+        self.assertEqual(
+            "https://ftpmirror.gnu.org/hello/hello-2.12.3.tar.gz", package.download_url
+        )
+        expected_extra_data = {
+            "nixpkgs_commit": "55ba7f49ef2962b42cbd126522b7df5f95037679",
+            "nixpkgs_recipe_url": (
+                "https://github.com/NixOS/nixpkgs/blob/"
+                "55ba7f49ef2962b42cbd126522b7df5f95037679/"
+                "pkgs/by-name/he/hello/package.nix#L58"
+            ),
+            "system": "x86_64-linux",
+            "uncovered_licenses": ["mit"],
+        }
+        self.assertEqual(expected_extra_data, package.extra_data)
+        self.assertEqual(
+            project1.codebaseresources.files().count(),
+            package.codebase_resources.count(),
+        )
+
+        warnings = sorted(
+            project1.projectmessages.values_list("description", flat=True)
+        )
+        self.assertEqual(
+            [
+                "Outputs not available in the Nix binary cache: debug",
+                "The source with the nixpkgs patches cannot be built, the upstream "
+                "source is used instead.",
+            ],
+            warnings,
+        )
+        patch_warning = project1.projectmessages.get(details__has_key="error")
+        self.assertEqual({"error": "patch failed"}, patch_warning.details)
+
+    @skipIf(sys.platform == "darwin", "Not supported on macOS")
+    def test_scanpipe_scan_nix_package_pipeline_integration_without_source(self):
+        source_error = nix.NixCommandError("attribute 'src' missing")
+        project1 = self.run_scan_nix_package_pipeline(source_error).project
+
+        self.assertEqual(0, project1.codebaseresources.from_codebase().count())
+        self.assertEqual(0, project1.codebaserelations.count())
+        binary = project1.codebaseresources.get(path="to/out/hello")
+        self.assertEqual(flag.REQUIRES_REVIEW, binary.status)
+
+        package = project1.discoveredpackages.get()
+        self.assertNotIn("uncovered_licenses", package.extra_data)
+        self.assertEqual(
+            project1.codebaseresources.files().count(),
+            package.codebase_resources.count(),
+        )
+
+        warnings = sorted(
+            project1.projectmessages.values_list("description", flat=True)
+        )
+        self.assertEqual(
+            [
+                "Outputs not available in the Nix binary cache: debug",
+                "The source cannot be fetched, the binary is analyzed alone and the "
+                "license check is skipped.",
+            ],
+            warnings,
+        )

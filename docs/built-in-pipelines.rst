@@ -299,6 +299,25 @@ Scan Maven Package
     :members:
     :member-order: bysource
 
+.. _pipeline_scan_nix_package:
+
+Scan Nix Package
+----------------
+.. warning::
+    This pipeline requires the Nix commands, available in the ``full`` Docker image
+    of ScanCode.io. See :ref:`run_with_docker`.
+
+.. note::
+    The nixpkgs commit of the package is checked with the GitHub API, limited to 60
+    requests per hour without authentication. Provide a GitHub token with the
+    :ref:`scancodeio_settings_fetch_headers` setting::
+
+        SCANCODEIO_FETCH_HEADERS="api.github.com=Authorization=token <YOUR_TOKEN>"
+
+.. autoclass:: scanpipe.pipelines.scan_nix_package.ScanNixPackage()
+    :members:
+    :member-order: bysource
+
 Fetch Scores (addon)
 --------------------
 .. warning::

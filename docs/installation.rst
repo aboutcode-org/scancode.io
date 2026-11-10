@@ -50,7 +50,8 @@ Go to http://localhost/ on a web browser to **access the web UI**.
 
 .. note::
     ``docker-compose.yml`` uses the ``full`` image of the ScanCode.io release, which
-    includes OpenJDK, jadx, and android-inspector for the Android analysis pipeline.
+    includes OpenJDK, jadx, and android-inspector for the Android analysis pipeline,
+    and Nix for the Nix package pipeline.
 
 An overview of the web application usage is available at :ref:`user_interface`.
 
@@ -305,8 +306,9 @@ Restart the worker to apply them to pipeline runs::
 .. note::
     ``make run`` is a shortcut for
     ``docker compose -f docker-compose.yml -f docker-compose.dev.yml up``.
-    The development image is the ``core`` image: the VM image extraction and the
-    Android analysis features of the ``full`` image are not available.
+    The development image is the ``core`` image: the VM image extraction, the
+    Android analysis, and the Nix package features of the ``full`` image are not
+    available.
 
 Rebuild the development image after a dependency change with::
 

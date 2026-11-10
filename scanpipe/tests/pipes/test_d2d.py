@@ -1515,6 +1515,40 @@ class ScanPipeD2DPipesTest(TestCase):
 
         self.assertEqual(1, expected)
 
+    @mock.patch("scanpipe.pipes.d2d.scancode.scan_for_files")
+    def test_scanpipe_pipes_d2d_scan_files_keeping_status(self, mock_scan):
+        from_resources = self.project1.codebaseresources.from_codebase()
+        d2d.scan_files_keeping_status(self.project1, from_resources, flag.NOT_DEPLOYED)
+        mock_scan.assert_not_called()
+
+        make_resource_file(self.project1, "from/COPYING", status=flag.NOT_DEPLOYED)
+        make_resource_file(self.project1, "from/hello.c", status=flag.SCANNED)
+        make_resource_file(self.project1, "to/COPYING", status=flag.NOT_DEPLOYED)
+        scanned_paths = []
+
+        def scan_for_files(project, resource_qs, progress_logger=None):
+            scanned_paths.extend(resource.path for resource in resource_qs)
+            resource_qs.update(
+                status=flag.SCANNED, detected_license_expression="gpl-3.0-plus"
+            )
+
+        mock_scan.side_effect = scan_for_files
+
+        d2d.scan_files_keeping_status(self.project1, from_resources, flag.NOT_DEPLOYED)
+        self.assertEqual(["from/COPYING"], scanned_paths)
+
+        resource_statuses = dict(
+            self.project1.codebaseresources.values_list("path", "status")
+        )
+        expected_statuses = {
+            "from/COPYING": flag.NOT_DEPLOYED,
+            "from/hello.c": flag.SCANNED,
+            "to/COPYING": flag.NOT_DEPLOYED,
+        }
+        self.assertEqual(expected_statuses, resource_statuses)
+        copying = self.project1.codebaseresources.get(path="from/COPYING")
+        self.assertEqual("gpl-3.0-plus", copying.detected_license_expression)
+
     def test_scanpipe_pipes_d2d_scan_ignored_to_files(self):
         to_dir = (
             self.project1.codebase_path / "to/project.tar.zst-extract/META-INF/foo-bar"
