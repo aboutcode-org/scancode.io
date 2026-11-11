@@ -3165,6 +3165,34 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(list(expected), list(count_by_status))
         self.assertIsInstance(list(count_by_status)[0], OriginDetermination.Status)
 
+    def test_scanpipe_codebase_resource_queryset_origin_coverage(self):
+        vendor = make_resource_directory(self.project1, path="vendor")
+        vendor_ms = make_resource_directory(self.project1, path="vendor/ms")
+        index_js = make_resource_file(self.project1, path="vendor/ms/index.js")
+        decided_js = make_resource_file(self.project1, path="vendor/decided.js")
+        vendored_js = make_resource_file(self.project1, path="vendored.js")
+        for resource in [vendor_ms, decided_js]:
+            OriginDetermination.objects.create(
+                project=self.project1,
+                resource=resource,
+                status=OriginDetermination.Status.NEEDS_REVIEW,
+            )
+
+        resources = self.project1.codebaseresources.order_by("path")
+        self.assertQuerySetEqual(resources.origin_covered(), [index_js])
+        self.assertQuerySetEqual(resources.without_origin(), [vendor, vendored_js])
+        coverage = dict(
+            resources.with_origin_coverage().values_list("path", "is_origin_covered")
+        )
+        expected = {
+            "vendor": False,
+            "vendor/decided.js": False,
+            "vendor/ms": False,
+            "vendor/ms/index.js": True,
+            "vendored.js": False,
+        }
+        self.assertEqual(expected, coverage)
+
     def test_scanpipe_origin_determination_model_str(self):
         resource = make_resource_file(self.project1, path="six.py")
         determination = OriginDetermination(

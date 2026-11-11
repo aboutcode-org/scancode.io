@@ -85,6 +85,25 @@
                 </a>
               {% endif %}
             </td>
+            {% if has_origin_determinations %}
+              <td>
+                {% if resource.origin_determination %}
+                  {% with status=resource.origin_determination.status %}
+                    <a href="{% url 'resource_detail' project.slug resource.path %}#origin" class="is-black-link is-flex">
+                      <span class="icon is-small mr-1 mt-1 {% if status == 'needs-review' %}has-text-warning{% elif status == 'no-origin' %}has-text-grey{% else %}has-text-success{% endif %}">
+                        <i class="fa-solid {% if status == 'needs-review' %}fa-circle-exclamation{% elif status == 'no-origin' %}fa-circle-minus{% else %}fa-circle-check{% endif %}"></i>
+                      </span>
+                      <span>{{ resource.origin_determination.get_status_display }}</span>
+                    </a>
+                  {% endwith %}
+                {% elif resource.is_origin_covered %}
+                  <a href="?origin_status=covered" class="is-black-link is-flex">
+                    <span class="icon is-small mr-1 mt-1 has-text-grey"><i class="fa-solid fa-folder"></i></span>
+                    <span>Covered</span>
+                  </a>
+                {% endif %}
+              </td>
+            {% endif %}
           </tr>
         {% empty %}
           <tr>

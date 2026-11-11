@@ -366,6 +366,33 @@ class ScanPipeFilterTest(TestCase):
         self.assertEqual(expected_errors, filterset.errors)
         self.assertEqual(2, len(filterset.qs))
 
+    def test_scanpipe_filters_resource_filterset_origin_status(self):
+        vendor_ms = CodebaseResource.objects.create(
+            project=self.project1,
+            path="vendor/ms",
+            type=CodebaseResource.Type.DIRECTORY,
+        )
+        index_js = make_resource_file(self.project1, "vendor/ms/index.js")
+        other_js = make_resource_file(self.project1, "other.js")
+        OriginDetermination.objects.create(
+            project=self.project1,
+            resource=vendor_ms,
+            purl="pkg:npm/ms@2.1.3",
+            status=OriginDetermination.Status.AUTO_CONFIRMED,
+        )
+
+        def filter_resources(origin_status):
+            data = {"origin_status": origin_status}
+            filterset = ResourceFilterSet(data=data)
+            return list(filterset.qs.order_by("path"))
+
+        self.assertEqual([vendor_ms], filter_resources("auto-confirmed"))
+        self.assertEqual([], filter_resources("needs-review"))
+        self.assertEqual([index_js], filter_resources("covered"))
+        self.assertEqual([other_js], filter_resources("none"))
+        all_resources = [other_js, vendor_ms, index_js]
+        self.assertEqual(all_resources, filter_resources(""))
+
     def test_scanpipe_filters_origin_determination_filterset(self):
         six_determination = OriginDetermination.objects.create(
             project=self.project1,

@@ -528,6 +528,28 @@ class RelationMapTypeFilter(django_filters.ChoiceFilter):
         return super().filter(qs, value)
 
 
+class OriginStatusFilter(django_filters.ChoiceFilter):
+    COVERED = "covered"
+    NO_DETERMINATION = "none"
+
+    def __init__(self, *args, **kwargs):
+        kwargs["choices"] = (
+            *OriginDetermination.Status.choices,
+            (self.COVERED, "Covered by a directory"),
+            (self.NO_DETERMINATION, "No determination"),
+        )
+        super().__init__(*args, **kwargs)
+
+    def filter(self, qs, value):
+        if value == self.COVERED:
+            return qs.origin_covered()
+        if value == self.NO_DETERMINATION:
+            return qs.without_origin()
+        if value:
+            return qs.filter(origin_determination__status=value)
+        return qs
+
+
 class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     dropdown_widget_fields = [
         "status",
@@ -536,6 +558,7 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
         "compliance_alert",
         "in_package",
         "relation_map_type",
+        "origin_status",
     ]
 
     search = QuerySearchFilter(
@@ -572,6 +595,7 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
         label="Relation map type",
         field_name="related_from__map_type",
     )
+    origin_status = OriginStatusFilter(label="Origin status")
     extra_data = django_filters.CharFilter(lookup_expr="icontains")
 
     class Meta:
@@ -607,6 +631,7 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "urls",
             "in_package",
             "relation_map_type",
+            "origin_status",
             "is_binary",
             "is_text",
             "is_archive",

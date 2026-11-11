@@ -50,6 +50,7 @@ from django.template.defaultfilters import filesizeformat
 from django.urls import reverse
 from django.urls import reverse_lazy
 from django.utils.decorators import method_decorator
+from django.utils.functional import cached_property
 from django.utils.text import capfirst
 from django.views import generic
 from django.views.decorators.http import require_POST
@@ -244,6 +245,10 @@ def is_displayable_image_type(resource):
     """Return True if the ``resource`` file is supported by the HTML <img> tag."""
     return resource.mime_type and resource.mime_type in DISPLAYABLE_IMAGE_MIME_TYPE
 
+
+# The number of marker colors of the origin candidates in the file viewer, from
+# "origin-candidate-0" to "origin-candidate-3" in main.css.
+ORIGIN_CANDIDATE_MARKER_COUNT = 4
 
 # The covered file matches shown with a directory determination, enough to see
 # the matches that confirm it without loading a whole vendored package.
@@ -1729,27 +1734,56 @@ class CodebaseResourceListView(
             "filter_fieldname": "in_package",
             "filter_is_right": True,
         },
+        {
+            "field_name": "origin",
+            "filter_fieldname": "origin_status",
+            "filter_is_right": True,
+        },
     ]
 
+    @cached_property
+    def has_origin_determinations(self):
+        return self.get_project().origindeterminations.exists()
+
     def get_queryset(self):
-        return (
-            super()
-            .get_queryset()
-            .only(
-                "path",
-                "status",
-                "type",
-                "size",
-                "name",
-                "extension",
-                "programming_language",
-                "mime_type",
-                "tag",
-                "detected_license_expression",
-                "compliance_alert",
-            )
-            .order_by("path")
-        )
+        only_fields = [
+            "path",
+            "status",
+            "type",
+            "size",
+            "name",
+            "extension",
+            "programming_language",
+            "mime_type",
+            "tag",
+            "detected_license_expression",
+            "compliance_alert",
+        ]
+        queryset = super().get_queryset()
+
+        if self.has_origin_determinations:
+            only_fields.append("origin_determination__status")
+            queryset = queryset.select_related(
+                "origin_determination"
+            ).with_origin_coverage()
+
+        return queryset.only(*only_fields).order_by("path")
+
+    def get_columns_data(self):
+        """Return the columns data, without the origin column when not relevant."""
+        columns_data = super().get_columns_data()
+        if self.has_origin_determinations:
+            return columns_data
+        return [
+            column_data
+            for column_data in columns_data
+            if column_data["field_name"] != "origin"
+        ]
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["has_origin_determinations"] = self.has_origin_determinations
+        return context
 
 
 class DiscoveredPackageListView(
@@ -2349,15 +2383,29 @@ class CodebaseResourceDetailsView(
         )
 
     def get_origin_match_annotations(self, origin_matches):
-        return [
-            {
-                "start_line": line_range["lines"][0],
-                "end_line": line_range["lines"][1],
-                "text": self.get_origin_match_annotation_text(origin_match, line_range),
-            }
-            for origin_match in origin_matches
-            for line_range in origin_match.line_ranges
-        ]
+        """
+        Return the annotations of the ``origin_matches`` line ranges, ordered by
+        line, with one marker color per candidate origin.
+        """
+        annotations = []
+        candidate_origins = origin.group_origin_matches(origin_matches)
+        for candidate_index, candidate_origin in enumerate(candidate_origins):
+            color_index = candidate_index % ORIGIN_CANDIDATE_MARKER_COUNT
+            marker_class_name = f"ace-marker origin-candidate-{color_index}"
+            for origin_match in candidate_origin.origin_matches:
+                for line_range in origin_match.line_ranges:
+                    text = self.get_origin_match_annotation_text(
+                        origin_match, line_range
+                    )
+                    annotations.append(
+                        {
+                            "start_line": line_range["lines"][0],
+                            "end_line": line_range["lines"][1],
+                            "text": text,
+                            "markerClassName": marker_class_name,
+                        }
+                    )
+        return sorted(annotations, key=operator.itemgetter("start_line"))
 
     @staticmethod
     def get_directory_origin_context(directory):
@@ -2470,12 +2518,14 @@ class CodebaseResourceDetailsView(
             annotations = self.get_annotations(getattr(resource, field_name), value_key)
             context["detected_values"][field_name] = annotations
 
-        matched_snippet_annotations = self.get_matched_snippet_annotations(resource)
-        context["detected_values"]["matched snippets"] = matched_snippet_annotations
+        # The origin matches include the MatchCode.io matched snippets, filtered.
+        if origin_matches := resource.origin_matches.all():
+            origin_match_annotations = self.get_origin_match_annotations(origin_matches)
+            context["detected_values"]["origin matches"] = origin_match_annotations
+        else:
+            snippet_annotations = self.get_matched_snippet_annotations(resource)
+            context["detected_values"]["matched snippets"] = snippet_annotations
 
-        origin_matches = resource.origin_matches.all()
-        origin_match_annotations = self.get_origin_match_annotations(origin_matches)
-        context["detected_values"]["origin matches"] = origin_match_annotations
         origin_context = self.get_origin_context(resource)
         context.update(origin_context)
         if origin_tab := context["tabset_data"].get("origin"):

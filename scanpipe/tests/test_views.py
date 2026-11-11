@@ -1228,7 +1228,7 @@ class ScanPipeViewsTest(TestCase):
         package1.add_resources([resource1, resource2])
 
         url = reverse("project_resources", args=[self.project1.slug])
-        with self.assertNumQueries(8):
+        with self.assertNumQueries(9):
             self.client.get(url)
 
         with self.assertNumQueries(9):
@@ -1667,6 +1667,27 @@ class ScanPipeViewsTest(TestCase):
             response, f'href="{origins_url}?purl=pkg%3Apypi/pip%4024.0"'
         )
 
+    def test_scanpipe_views_codebase_resource_list_view_origin_column(self):
+        url = reverse("project_resources", args=[self.project1.slug])
+        vendor_ms = make_resource_directory(self.project1, "vendor/ms")
+        make_resource_file(self.project1, "vendor/ms/index.js")
+        response = self.client.get(url)
+        self.assertNotContains(response, 'id="column-origin"')
+
+        self.make_origin_determination(
+            vendor_ms,
+            OriginDetermination.Status.AUTO_CONFIRMED,
+            purl="pkg:npm/ms@2.1.3",
+        )
+        response = self.client.get(url)
+        self.assertContains(response, 'id="column-origin"')
+        self.assertContains(response, "<span>Auto Confirmed</span>", html=True)
+        self.assertContains(response, 'href="?origin_status=covered"')
+
+        response = self.client.get(url, data={"origin_status": "covered"})
+        paths = [resource.path for resource in response.context["object_list"]]
+        self.assertEqual(["vendor/ms/index.js"], paths)
+
     def test_scanpipe_views_find_origins_results_url(self):
         results_url = FindOrigins.results_url.format(slug=self.project1.slug)
         self.assertEqual(
@@ -1781,9 +1802,18 @@ class ScanPipeViewsTest(TestCase):
         file_match = self.make_origin_match(
             resource, "pkg:npm/lodash@4.17.21", tool="scanoss"
         )
+        underscore_match = self.make_origin_match(
+            resource,
+            "pkg:npm/underscore@1.13.6",
+            match_type="snippet",
+            similarity=30,
+            line_ranges=[{"lines": [100, 145]}],
+        )
 
         view = CodebaseResourceDetailsView()
-        annotations = view.get_origin_match_annotations([snippet_match, file_match])
+        annotations = view.get_origin_match_annotations(
+            [snippet_match, file_match, underscore_match]
+        )
         expected = [
             {
                 "start_line": 26,
@@ -1796,6 +1826,18 @@ class ScanPipeViewsTest(TestCase):
                     "origin path: debounce.js\n"
                     "origin lines: 22-136\n"
                 ),
+                "markerClassName": "ace-marker origin-candidate-0",
+            },
+            {
+                "start_line": 100,
+                "end_line": 145,
+                "text": (
+                    "purl: pkg:npm/underscore@1.13.6\n"
+                    "tool: matchcode\n"
+                    "match type: snippet\n"
+                    "similarity: 30\n"
+                ),
+                "markerClassName": "ace-marker origin-candidate-1",
             },
             {
                 "start_line": 150,
@@ -1807,14 +1849,21 @@ class ScanPipeViewsTest(TestCase):
                     "similarity: 75\n"
                     "origin path: debounce.js\n"
                 ),
+                "markerClassName": "ace-marker origin-candidate-0",
             },
         ]
         self.assertEqual(expected, annotations)
 
         response = self.client.get(resource.get_absolute_url())
-        self.assertEqual(
-            expected, response.context["detected_values"]["origin matches"]
-        )
+        detected_values = response.context["detected_values"]
+        self.assertEqual(expected, detected_values["origin matches"])
+        self.assertNotIn("matched snippets", detected_values)
+
+        resource_without_match = make_resource_file(self.project1, "other.js")
+        response = self.client.get(resource_without_match.get_absolute_url())
+        detected_values = response.context["detected_values"]
+        self.assertEqual([], detected_values["matched snippets"])
+        self.assertNotIn("origin matches", detected_values)
 
     def test_project_packages_export_json(self):
         make_package(self.project1, package_url="pkg:type/a")

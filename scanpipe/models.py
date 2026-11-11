@@ -47,14 +47,17 @@ from django.db import transaction
 from django.db.models import Case
 from django.db.models import Count
 from django.db.models import Exists
+from django.db.models import F
 from django.db.models import IntegerField
 from django.db.models import OuterRef
 from django.db.models import Prefetch
 from django.db.models import Q
 from django.db.models import Subquery
 from django.db.models import TextField
+from django.db.models import Value
 from django.db.models import When
 from django.db.models.functions import Cast
+from django.db.models.functions import Concat
 from django.db.models.functions import Lower
 from django.forms import model_to_dict
 from django.urls import NoReverseMatch
@@ -2461,6 +2464,41 @@ class CodebaseResourceQuerySet(ComplianceAlertQuerySetMixin, ProjectRelatedQuery
     def without_file_fingerprints(self):
         """Resources that do not have the `halo1` file fingerprint in `extra_data`."""
         return self.exclude(extra_data__has_key="halo1")
+
+    def with_origin_coverage(self):
+        """
+        Annotate the resources with ``is_origin_covered``: True when the resource
+        is under a directory that has an origin determination.
+        """
+        ancestor_directory_determinations = (
+            OriginDetermination.objects.filter(
+                project_id=OuterRef("project_id"),
+                resource__type=self.model.Type.DIRECTORY,
+            )
+            .annotate(
+                descendant_path_prefix=Concat("resource__path", Value("/")),
+                resource_path=Cast(OuterRef("path"), TextField()),
+            )
+            .filter(resource_path__startswith=F("descendant_path_prefix"))
+        )
+        return self.annotate(
+            is_origin_covered=Exists(ancestor_directory_determinations)
+        )
+
+    def origin_covered(self):
+        """
+        Resources without an origin determination of their own, covered by the
+        determination of a directory above them.
+        """
+        return self.with_origin_coverage().filter(
+            origin_determination__isnull=True, is_origin_covered=True
+        )
+
+    def without_origin(self):
+        """Resources without an origin determination, of their own or covered."""
+        return self.with_origin_coverage().filter(
+            origin_determination__isnull=True, is_origin_covered=False
+        )
 
     def elfs(self):
         """

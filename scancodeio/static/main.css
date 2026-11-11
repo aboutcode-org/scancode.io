@@ -303,6 +303,18 @@ a[target="_blank"] .fa-up-right-from-square {
   z-index: 3;
   background: #ffe9b3;
 }
+.ace-marker.origin-candidate-0 {
+  background: rgba(var(--bulma-warning-rgb), 0.3);
+}
+.ace-marker.origin-candidate-1 {
+  background: rgba(var(--bulma-info-rgb), 0.3);
+}
+.ace-marker.origin-candidate-2 {
+  background: rgba(var(--bulma-success-rgb), 0.3);
+}
+.ace-marker.origin-candidate-3 {
+  background: rgba(var(--bulma-danger-rgb), 0.3);
+}
 .break-all {
   word-break: break-all !important;
 }
