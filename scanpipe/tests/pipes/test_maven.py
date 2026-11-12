@@ -1005,14 +1005,15 @@ class ScanPipeMavenPipesTest(TestCase):
             {"org/example/Foo.class", "org/example/Bar$Inner.class"},
         )
 
+    @mock.patch("scanpipe.pipes.maven.shutil.rmtree")
     @mock.patch("scanpipe.pipes.maven.get_jar_class_paths")
     @mock.patch("scanpipe.pipes.maven.fetch.fetch_url")
     def test_scanpipe_maven_download_dependency_jar_class_index(
-        self, mock_fetch_url, mock_get_jar_class_paths
+        self, mock_fetch_url, mock_get_jar_class_paths, mock_rmtree
     ):
         mock_fetch_url.return_value = mock.Mock(
             path="/mock/dependency.jar",
-            directory=None,
+            directory="/mock/tmp",
         )
         mock_get_jar_class_paths.return_value = {"org/example/Foo.class"}
 
@@ -1022,6 +1023,7 @@ class ScanPipeMavenPipesTest(TestCase):
         self.assertEqual(result, {"org/example/Foo.class"})
         mock_fetch_url.assert_called_once_with(purl)
         mock_get_jar_class_paths.assert_called_once_with("/mock/dependency.jar")
+        mock_rmtree.assert_called_once_with("/mock/tmp", ignore_errors=True)
 
     def test_scanpipe_maven_get_jar_verification_candidates(self):
         commons = make_package(
@@ -1039,10 +1041,7 @@ class ScanPipeMavenPipesTest(TestCase):
         )
 
         self.assertEqual(len(candidates), 1)
-        _score, signals, matched_package = candidates[0]
-        self.assertEqual(matched_package, jackson)
-        self.assertIn("group", signals)
-        self.assertIn("artifact", signals)
+        self.assertEqual([(6, {"artifact", "group"}, jackson)], candidates)
 
     def test_scanpipe_maven_get_jar_verification_candidates_ordered_and_limited(self):
         jackson = make_package(
@@ -1153,12 +1152,18 @@ class ScanPipeMavenPipesTest(TestCase):
 
         test_class.refresh_from_db()
         self.assertEqual(test_class.status, flag.SHADED_CLASS)
-        self.assertIn(jackson, test_class.discovered_packages.all())
+        self.assertEqual([jackson], list(test_class.discovered_packages.all()))
         self.assertEqual(
-            test_class.extra_data.get("shaded_from_package"),
-            "pkg:maven/com.fasterxml.jackson.core/jackson-annotations@2.4.0",
+            {
+                "shaded_from_package": (
+                    "pkg:maven/com.fasterxml.jackson.core/jackson-annotations@2.4.0"
+                ),
+                "original_fqn": "com.fasterxml.jackson.core.SomeClass",
+                "match_score": 6,
+                "match_signals": ["artifact", "group", "jar_verified"],
+            },
+            test_class.extra_data,
         )
-        self.assertIn("jar_verified", test_class.extra_data.get("match_signals", []))
 
     @mock.patch("scanpipe.pipes.maven._fetch_dependency_jar_class_index")
     def test_scanpipe_maven_map_shaded_classes_jar_verification_no_match(
@@ -1248,10 +1253,11 @@ class ScanPipeMavenPipesTest(TestCase):
             ).exists()
         )
 
+    @mock.patch("scanpipe.pipes.maven.shutil.rmtree")
     @mock.patch("scanpipe.pipes.maven.get_jar_class_paths")
     @mock.patch("scanpipe.pipes.maven.fetch.fetch_url")
     def test_scanpipe_maven_map_shaded_classes_bad_jar_requires_review(
-        self, mock_fetch_url, mock_get_jar_class_paths
+        self, mock_fetch_url, mock_get_jar_class_paths, mock_rmtree
     ):
         project, main_purl, _, _ = self._setup_project_with_shaded_classes()
         test_class = make_resource_file(
@@ -1261,7 +1267,7 @@ class ScanPipeMavenPipesTest(TestCase):
         )
         mock_fetch_url.return_value = mock.Mock(
             path="/mock/dependency.jar",
-            directory=None,
+            directory="/mock/tmp",
         )
         mock_get_jar_class_paths.side_effect = zipfile.BadZipFile("not a zip file")
 
@@ -1275,30 +1281,7 @@ class ScanPipeMavenPipesTest(TestCase):
                 description__contains="Failed to read JAR contents",
             ).exists()
         )
-
-    def test_scanpipe_maven_map_shaded_classes_class_not_under_relocation(
-        self,
-    ):
-        project = self.project
-        main_purl = PackageURL.from_string(
-            "pkg:maven/org.apache.htrace/htrace-core@4.0.0-incubating"
-        )
-        make_package(project, package_url=str(main_purl))
-        self._add_pom_resource(
-            project,
-            "to/META-INF/maven/org.apache.htrace/htrace-core/pom.xml",
-            "shaded-pom.xml",
-        )
-        test_class = make_resource_file(
-            project,
-            "to/com/example/Foo.class",
-            status=flag.APPLICATION_PACKAGE,
-        )
-
-        maven.map_shaded_classes_to_maven_packages(project, purl=main_purl)
-
-        test_class.refresh_from_db()
-        self.assertEqual(test_class.status, flag.REQUIRES_REVIEW)
+        mock_rmtree.assert_called_once_with("/mock/tmp", ignore_errors=True)
 
     def test_scanpipe_maven_map_shaded_classes_attributions(self):
         project, main_purl, commons, jackson = self._setup_project_with_shaded_classes()
@@ -1570,59 +1553,6 @@ class ScanPipeMavenPipesTest(TestCase):
             shaded_class.extra_data.get("shaded_from_namespace"),
             "org.apache.commons.logging.impl",
         )
-        self.assertEqual(shaded_class.discovered_packages.count(), 0)
-
-    def test_scanpipe_maven_map_shaded_classes_no_main_pom(self):
-        main_purl = PackageURL.from_string(
-            "pkg:maven/org.apache.htrace/htrace-core@4.0.0-incubating"
-        )
-        make_package(
-            self.project,
-            package_url="pkg:maven/org.apache.htrace/htrace-core@4.0.0-incubating",
-        )
-        shaded_class = make_resource_file(
-            self.project,
-            "to/org/apache/htrace/commons/logging/impl/AvalonLogger.class",
-            status=flag.APPLICATION_PACKAGE,
-        )
-
-        maven.map_shaded_classes_to_maven_packages(self.project, purl=main_purl)
-
-        shaded_class.refresh_from_db()
-        # The main POM is missing, so the class has no relation to the
-        # development codebase and cannot be mapped to a dependency. It is
-        # either a shaded class or an orphan whose source is missing. The
-        # status should be set to REQUIRES_REVIEW.
-        self.assertEqual(shaded_class.status, flag.REQUIRES_REVIEW)
-        self.assertEqual(shaded_class.discovered_packages.count(), 0)
-
-    def test_scanpipe_maven_map_shaded_classes_pom_without_relocation(self):
-        main_purl = PackageURL.from_string(
-            "pkg:maven/org.apache.htrace/htrace-core@4.0.0-incubating"
-        )
-        make_package(
-            self.project,
-            package_url="pkg:maven/org.apache.htrace/htrace-core@4.0.0-incubating",
-        )
-        self._add_pom_resource(
-            self.project,
-            "to/META-INF/maven/org.apache.htrace/htrace-core/pom.xml",
-            "no-relocations-pom.xml",
-        )
-        shaded_class = make_resource_file(
-            self.project,
-            "to/org/apache/htrace/commons/logging/impl/AvalonLogger.class",
-            status=flag.APPLICATION_PACKAGE,
-        )
-
-        maven.map_shaded_classes_to_maven_packages(self.project, purl=main_purl)
-
-        shaded_class.refresh_from_db()
-        # No relocations are declared in the main POM, so the class cannot
-        # be un-shaded or mapped to a dependency. It should be flagged as
-        # REQUIRES_REVIEW whether it is actually a shaded class or an
-        # orphan whose source is missing.
-        self.assertEqual(shaded_class.status, flag.REQUIRES_REVIEW)
         self.assertEqual(shaded_class.discovered_packages.count(), 0)
 
     def test_scanpipe_maven_map_shaded_classes_reuses_dependency_package(self):

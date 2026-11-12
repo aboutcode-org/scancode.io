@@ -704,6 +704,20 @@ def match_shaded_class_to_package(java_package, packages, min_score=MIN_MATCH_SC
     return package, score, signals
 
 
+def _log_and_warn(project, description, exception, logger=None):
+    """
+    Log ``description`` through ``logger`` when provided, and record it as a
+    project warning.
+    """
+    if logger:
+        logger(description)
+    project.add_warning(
+        description=description,
+        model="map_shaded_classes_to_maven_packages",
+        exception=exception,
+    )
+
+
 def get_jar_class_paths(jar_path):
     """
     Return the set of normalized ``.class`` paths contained in a JAR file.
@@ -729,46 +743,39 @@ def get_jar_class_paths(jar_path):
 def _download_dependency_jar_class_index(purl, project, logger=None):
     """
     Download the JAR for ``purl`` and return its set of ``.class`` paths, or
-    None on failure.
+    an empty set on failure.
     """
     try:
         downloaded = fetch.fetch_url(purl)
     except (ValueError, requests.RequestException, OSError) as exception:
-        description = f"Failed to fetch dependency JAR for {purl}"
-        if logger:
-            logger(description)
-        project.add_warning(
-            description=description,
-            model="map_shaded_classes_to_maven_packages",
-            exception=exception,
+        _log_and_warn(
+            project,
+            f"Failed to fetch dependency JAR for {purl}",
+            exception,
+            logger=logger,
         )
-        return None
+        return set()
 
     try:
         return get_jar_class_paths(downloaded.path)
     except (zipfile.BadZipFile, OSError) as exception:
-        description = f"Failed to read JAR contents for {purl}"
-        if logger:
-            logger(description)
-        project.add_warning(
-            description=description,
-            model="map_shaded_classes_to_maven_packages",
-            exception=exception,
+        _log_and_warn(
+            project,
+            f"Failed to read JAR contents for {purl}",
+            exception,
+            logger=logger,
         )
-        return None
+        return set()
     finally:
-        if downloaded.directory:
-            shutil.rmtree(downloaded.directory, ignore_errors=True)
+        shutil.rmtree(downloaded.directory, ignore_errors=True)
 
 
-def _fetch_dependency_jar_class_index(
-    dependency, jar_index_cache, project, logger=None
-):
+def _fetch_dependency_jar_class_index(package, jar_index_cache, project, logger=None):
     """
-    Fetch the JAR and return the set of ``.class`` paths it contains, or
-    None when the JAR cannot be fetched or read.
+    Fetch the JAR for ``package`` and return the set of ``.class`` paths it
+    contains, or an empty set when the JAR cannot be fetched or read.
     """
-    purl = dependency.package_url
+    purl = package.package_url
 
     if purl in jar_index_cache:
         return jar_index_cache[purl]
@@ -809,10 +816,8 @@ def _get_jar_verification_candidates(
 
 def _verify_against_jar_contents(
     original_fqn,
-    original_java_package,
-    dependency_packages,
+    candidates,
     jar_index_cache,
-    jar_verification_candidates_cache,
     project,
     logger=None,
 ):
@@ -820,23 +825,14 @@ def _verify_against_jar_contents(
     Try to confirm a shaded class match by checking that the class exists
     in one of the candidate dependency JARs.
 
-    The candidates are the dependencies whose group or artifact signals match
-    the original (un-shaded) Java package.
+    The ``candidates`` is the ordered list of ``(score, signals, package)``
+    produced by ``_get_jar_verification_candidates`` for the original
+    (un-shaded) Java package.
 
     Return a ``(package, score, signals)`` tuple when exactly one candidate
     JAR contains the class, or None when no unique match could be
     confirmed (no candidates, none contains the class, or several do).
     """
-    if original_java_package not in jar_verification_candidates_cache:
-        jar_verification_candidates_cache[original_java_package] = (
-            _get_jar_verification_candidates(
-                original_java_package,
-                dependency_packages,
-                limit=JAR_VERIFICATION_MAX_CANDIDATES,
-            )
-        )
-    candidates = jar_verification_candidates_cache[original_java_package]
-
     if not candidates:
         return
 
@@ -847,8 +843,6 @@ def _verify_against_jar_contents(
         class_index = _fetch_dependency_jar_class_index(
             package, jar_index_cache, project, logger=logger
         )
-        if class_index is None:
-            continue
         if class_path in class_index:
             matches.append((score, signals, package))
 
@@ -857,7 +851,7 @@ def _verify_against_jar_contents(
         return
 
     score, signals, package = matches[0]
-    signals = set(signals) | {"jar_verified"}
+    signals = signals | {"jar_verified"}
     return package, score, signals
 
 
@@ -867,7 +861,6 @@ def _map_shaded_class_resource(
     dependency_packages,
     match_cache,
     jar_index_cache,
-    jar_verification_candidates_cache,
     project,
     logger=None,
 ):
@@ -903,26 +896,24 @@ def _map_shaded_class_resource(
                 match_shaded_class_to_package(
                     original_java_package, dependency_packages
                 ),
+                _get_jar_verification_candidates(
+                    original_java_package, dependency_packages
+                ),
             )
 
     cached = match_cache[java_package]
     if cached is None:
-        # No relocation applied. Flag for review because the class is
-        # either an orphan or missing source.
-        resource.update(status=flag.REQUIRES_REVIEW)
         return
 
-    original_java_package, match = cached
+    original_java_package, match, candidates = cached
     original_fqn = apply_shade_relocations(fqn, relocations)
 
     if match is None:
         # Name-based heuristic failed; verify against JAR contents.
         match = _verify_against_jar_contents(
             original_fqn=original_fqn,
-            original_java_package=original_java_package,
-            dependency_packages=dependency_packages,
+            candidates=candidates,
             jar_index_cache=jar_index_cache,
-            jar_verification_candidates_cache=jar_verification_candidates_cache,
             project=project,
             logger=logger,
         )
@@ -959,7 +950,6 @@ def _map_shaded_class_resource(
             "match_signals": sorted(match_signals),
         },
     )
-    return
 
 
 def get_or_create_dependency_package(dependency):
@@ -1001,8 +991,7 @@ def map_shaded_classes_to_maven_packages(project, purl, logger=None):
         .has_no_relation()
     )
 
-    to_classes_count = to_classes.count()
-    if not to_classes_count:
+    if not to_classes.exists():
         if logger:
             logger("No unmapped .class resources to process.")
         return
@@ -1010,23 +999,9 @@ def map_shaded_classes_to_maven_packages(project, purl, logger=None):
     main_pom = get_main_maven_pom(project, purl)
     relocations = get_maven_shade_relocations(project, main_pom)
 
-    if not main_pom or not relocations:
-        # The to_classes are all the resources that don't have a relation to
-        # the development codebase. If no main POM, or no relocations, we
-        # cannot map any shaded classes to Maven packages, and these files
-        # should be flagged for review.
+    if not relocations:
         if logger:
-            reason = (
-                "No main POM found."
-                if not main_pom
-                else "No Maven relocations found in the main POM."
-            )
-            logger(
-                f"{reason} Flagging {to_classes_count:,d} unmapped .class "
-                f"resources for review."
-            )
-        # Flag the whole queryset in one update instead of iterating.
-        to_classes.update(status=flag.REQUIRES_REVIEW)
+            logger("No Maven relocations found in the main POM.")
         return
 
     relocations = resolve_relocation_placeholders(project, relocations, main_pom)
@@ -1037,7 +1012,6 @@ def map_shaded_classes_to_maven_packages(project, purl, logger=None):
     review_count = 0
     match_cache = {}
     jar_index_cache = {}
-    jar_verification_candidates_cache = {}
 
     for resource in to_classes.iterator(chunk_size=2000):
         _map_shaded_class_resource(
@@ -1046,7 +1020,6 @@ def map_shaded_classes_to_maven_packages(project, purl, logger=None):
             dependency_packages,
             match_cache,
             jar_index_cache,
-            jar_verification_candidates_cache,
             project=project,
             logger=logger,
         )
