@@ -32,7 +32,7 @@ UV_DOCKER=docker run --rm \
 	--env UV_CACHE_DIR=/tmp/uv-cache \
 	--volume "$(CURDIR)":/opt/scancodeio \
 	--workdir /opt/scancodeio \
-	ghcr.io/astral-sh/uv:0.13.4-python3.14-trixie-slim
+	ghcr.io/astral-sh/uv:0.13.7-python3.14-trixie-slim
 # Do not depend on Python to generate the SECRET_KEY
 GET_SECRET_KEY=`head -c50 /dev/urandom | base64 | head -c50`
 # Customize with `$ make envfile ENV_FILE=/etc/scancodeio/.env`
