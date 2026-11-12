@@ -579,6 +579,60 @@ class ScanPipePipelinesTest(TestCase):
         }
         self.assertEqual(expected, pipeline.env)
 
+    def test_scanpipe_pipeline_class_config_archive_layouts(self):
+        for pipeline_name in ("scan_codebase", "scan_single_package"):
+            for prefix in ("", "my-app/", "my-app/vendor/"):
+                with self.subTest(pipeline=pipeline_name, prefix=prefix):
+                    project = make_project()
+                    archive = project.input_path / "source.zip"
+                    with zipfile.ZipFile(archive, "w") as zipped:
+                        zipped.writestr(prefix + "package.json", '{"name": "example"}')
+                        zipped.writestr(
+                            prefix + scanpipe_settings.CONFIG_FILE,
+                            "product_name: Archive",
+                        )
+                    pipeline = project.add_pipeline(
+                        pipeline_name
+                    ).make_pipeline_instance()
+                    self.assertEqual({}, pipeline.env)
+                    if pipeline_name == "scan_codebase":
+                        pipeline.copy_inputs_to_codebase_directory()
+                    else:
+                        pipeline.get_package_input()
+                        pipeline.extract_input_to_codebase_directory()
+                    pipeline.extract_archives()
+                    expected = (
+                        {}
+                        if prefix == "my-app/vendor/"
+                        else {"product_name": "Archive"}
+                    )
+                    self.assertEqual(expected, pipeline.env)
+
+    def test_scanpipe_pipeline_class_config_archive_conflict(self):
+        for pipeline_name in ("scan_codebase", "scan_single_package"):
+            with self.subTest(pipeline=pipeline_name):
+                project = make_project()
+                with zipfile.ZipFile(project.input_path / "source.zip", "w") as zipped:
+                    for prefix in ("", "my-app/"):
+                        zipped.writestr(
+                            prefix + scanpipe_settings.CONFIG_FILE,
+                            "product_name: Archive",
+                        )
+                pipeline = project.add_pipeline(pipeline_name).make_pipeline_instance()
+                if pipeline_name == "scan_codebase":
+                    pipeline.copy_inputs_to_codebase_directory()
+                else:
+                    pipeline.get_package_input()
+                    pipeline.extract_input_to_codebase_directory()
+                pipeline.extract_archives()
+                self.assertEqual({}, pipeline.env)
+                self.assertTrue(
+                    project.projectmessages.filter(
+                        severity="warning",
+                        description__contains="More than one scancode-config.yml found",
+                    ).exists()
+                )
+
     def test_scanpipe_pipeline_class_flag_ignored_resources(self):
         project1 = make_project()
         run = project1.add_pipeline("do_nothing")

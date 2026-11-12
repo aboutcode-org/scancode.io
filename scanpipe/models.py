@@ -878,13 +878,12 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
     def get_file_from_work_directory(self, filename):
         """
         Return the ``filename`` file from the input/ directory
-        or from the codebase/ immediate subdirectories.
+        or from the codebase/ directory.
 
         Priority order:
         1. If a ``filename`` file exists directly in the input/ directory, return it.
-        2. If exactly one ``filename`` file exists in a codebase/ immediate
-        subdirectory, return it.
-        3. If multiple ``filename`` files are found in subdirectories, report an error.
+        2. If exactly one ``filename`` file is found in codebase/, return it.
+        3. If multiple ``filename`` files are found, report an error.
         """
         # Check for the ``filename`` file in the root of the input/ directory.
         root_file = self.input_path / filename
@@ -894,7 +893,33 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         # Search for files in immediate codebase/ subdirectories.
         subdir_files = list(self.codebase_path.glob(f"*/{filename}"))
 
-        # If exactly one file is found in codebase/ subdirectories, return it.
+        if filename == scanpipe_settings.CONFIG_FILE:
+            codebase_file = self.codebase_path / filename
+            if codebase_file.is_file() and not codebase_file.is_symlink():
+                subdir_files.append(codebase_file)
+
+            for input_path in self.inputs("*"):
+                extracted = self.codebase_path / f"{input_path.name}{EXTRACT_SUFFIX}"
+                if (
+                    not input_path.is_file()
+                    or not extracted.is_dir()
+                    or extracted.is_symlink()
+                ):
+                    continue
+                children = [
+                    path for path in extracted.iterdir() if path.name != filename
+                ]
+                if (
+                    len(children) != 1
+                    or not children[0].is_dir()
+                    or children[0].is_symlink()
+                ):
+                    continue
+                config_file = children[0] / filename
+                if config_file.is_file() and not config_file.is_symlink():
+                    subdir_files.append(config_file)
+
+        # If exactly one file is found, return it.
         if len(subdir_files) == 1:
             return subdir_files[0]
 
@@ -914,7 +939,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
     def get_input_config_file(self):
         """
         Return the ``scancode-config.yml`` file from the input/ directory
-        or from the codebase/ immediate subdirectories.
+        or from the codebase/ directory.
         """
         config_filename = scanpipe_settings.CONFIG_FILE
         return self.get_file_from_work_directory(config_filename)
