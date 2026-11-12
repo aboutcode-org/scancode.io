@@ -63,7 +63,7 @@ dependencies = [
   "extractcode[full]==31.1.0",
   "commoncode==33.0.0",
   "beautifulsoup4[chardet]==4.15.0",
-  "click==8.5.1",
+  "click==8.4.2",
   "packageurl-python==0.17.6",
   # FetchCode
   "fetchcode==0.8.5",
