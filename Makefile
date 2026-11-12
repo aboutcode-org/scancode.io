@@ -164,6 +164,8 @@ check:
 	@$(MAKE) doc8
 	@echo "-> Run ABOUT files validation"
 	uvx --from aboutcode-toolkit --with setuptools about check --exclude .venv/ --exclude scanpipe/tests/ .
+	@echo "-> Run uv.lock validation"
+	uv lock --check
 
 docs:
 	rm -rf docs/_build/
