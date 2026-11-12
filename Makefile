@@ -103,8 +103,8 @@ regen-fixtures:
 outdated:
 	@echo "-> Check for outdated packages (with 3 days cooldown)"
 	uv tree --outdated --exclude-newer "3 days"
-	# Run `make start` first following any pyproject.toml changes
-	${COMPOSE} exec web uv pip list --outdated --exclude-newer "3 days"
+	# Run `make build` first following any pyproject.toml changes
+	${COMPOSE} run --rm --no-deps web uv pip list --outdated --exclude-newer "3 days"
 	@echo "-> Audit the project's dependencies for known vulnerabilities"
 	uv audit
 
