@@ -877,11 +877,8 @@ def _map_shaded_class_resource(
        the un-shaded class path exists in one of the candidate dependency
        JARs.
 
-    As the resource is filtered to only include ".class" files that have no
-    relation to the development codebase, the resource is either a shaded
-    class or a class that is potentially missing source. As a result,
-    resources in this function should be flagged for review when no match
-    is found, or shaded when a match is found.
+    Return True when a relocation applies (whether or not a package was
+    matched), False when no relocation applies.
     """
     fqn = get_java_fqn_from_class_path(resource.path)
     java_package = fqn.rpartition(".")[0]
@@ -903,7 +900,7 @@ def _map_shaded_class_resource(
 
     cached = match_cache[java_package]
     if cached is None:
-        return
+        return False
 
     original_java_package, match, candidates = cached
     original_fqn = apply_shade_relocations(fqn, relocations)
@@ -928,7 +925,7 @@ def _map_shaded_class_resource(
                 "original_fqn": original_fqn,
             },
         )
-        return
+        return True
 
     matched_package, match_score, match_signals = match
 
@@ -950,6 +947,7 @@ def _map_shaded_class_resource(
             "match_signals": sorted(match_signals),
         },
     )
+    return True
 
 
 def get_or_create_dependency_package(dependency):
@@ -998,7 +996,6 @@ def map_shaded_classes_to_maven_packages(project, purl, logger=None):
 
     main_pom = get_main_maven_pom(project, purl)
     relocations = get_maven_shade_relocations(project, main_pom)
-
     if not relocations:
         if logger:
             logger("No Maven relocations found in the main POM.")
@@ -1010,11 +1007,12 @@ def map_shaded_classes_to_maven_packages(project, purl, logger=None):
 
     mapped_count = 0
     review_count = 0
+    not_shaded_count = 0
     match_cache = {}
     jar_index_cache = {}
 
     for resource in to_classes.iterator(chunk_size=2000):
-        _map_shaded_class_resource(
+        if not _map_shaded_class_resource(
             resource,
             relocations,
             dependency_packages,
@@ -1022,8 +1020,9 @@ def map_shaded_classes_to_maven_packages(project, purl, logger=None):
             jar_index_cache,
             project=project,
             logger=logger,
-        )
-        if resource.status == flag.SHADED_CLASS:
+        ):
+            not_shaded_count += 1
+        elif resource.status == flag.SHADED_CLASS:
             mapped_count += 1
         else:
             review_count += 1
@@ -1031,6 +1030,7 @@ def map_shaded_classes_to_maven_packages(project, purl, logger=None):
     if logger:
         logger(
             f"Attributed {mapped_count:,d} shaded .class resources to Maven "
-            f"packages. {review_count:,d} resources could not be "
-            f"attributed and are flagged for review."
+            f"packages. {review_count:,d} shaded resources could not be "
+            f"attributed and are flagged for review. {not_shaded_count:,d} "
+            f".class resources are not under any relocation."
         )

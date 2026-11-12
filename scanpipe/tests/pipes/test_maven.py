@@ -1555,6 +1555,51 @@ class ScanPipeMavenPipesTest(TestCase):
         )
         self.assertEqual(shaded_class.discovered_packages.count(), 0)
 
+    def test_scanpipe_maven_map_shaded_classes_no_main_pom(self):
+        main_purl = PackageURL.from_string(
+            "pkg:maven/org.apache.htrace/htrace-core@4.0.0-incubating"
+        )
+        make_package(
+            self.project,
+            package_url="pkg:maven/org.apache.htrace/htrace-core@4.0.0-incubating",
+        )
+        shaded_class = make_resource_file(
+            self.project,
+            "to/org/apache/htrace/commons/logging/impl/AvalonLogger.class",
+            status=flag.APPLICATION_PACKAGE,
+        )
+
+        maven.map_shaded_classes_to_maven_packages(self.project, purl=main_purl)
+
+        shaded_class.refresh_from_db()
+        self.assertEqual(shaded_class.status, flag.APPLICATION_PACKAGE)
+        self.assertEqual(shaded_class.discovered_packages.count(), 0)
+
+    def test_scanpipe_maven_map_shaded_classes_pom_without_relocation(self):
+        main_purl = PackageURL.from_string(
+            "pkg:maven/org.apache.htrace/htrace-core@4.0.0-incubating"
+        )
+        make_package(
+            self.project,
+            package_url="pkg:maven/org.apache.htrace/htrace-core@4.0.0-incubating",
+        )
+        self._add_pom_resource(
+            self.project,
+            "to/META-INF/maven/org.apache.htrace/htrace-core/pom.xml",
+            "no-relocations-pom.xml",
+        )
+        shaded_class = make_resource_file(
+            self.project,
+            "to/org/apache/htrace/commons/logging/impl/AvalonLogger.class",
+            status=flag.APPLICATION_PACKAGE,
+        )
+
+        maven.map_shaded_classes_to_maven_packages(self.project, purl=main_purl)
+
+        shaded_class.refresh_from_db()
+        self.assertEqual(shaded_class.status, flag.APPLICATION_PACKAGE)
+        self.assertEqual(shaded_class.discovered_packages.count(), 0)
+
     def test_scanpipe_maven_map_shaded_classes_reuses_dependency_package(self):
         project = self.project
         main_purl = PackageURL.from_string(
