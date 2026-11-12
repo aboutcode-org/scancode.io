@@ -713,6 +713,9 @@ def _map_shaded_class_resource(resource, relocations, dependency_packages, match
 
     cached = match_cache[java_package]
     if cached is None:
+        # No relocation applied. Flag for review because the class is
+        # either an orphan or missing source.
+        resource.update(status=flag.REQUIRES_REVIEW)
         return False
 
     original_java_package, match = cached
@@ -799,9 +802,22 @@ def map_shaded_classes_to_maven_packages(project, purl, logger=None):
 
     main_pom = get_main_maven_pom(project, purl)
     relocations = get_maven_shade_relocations(project, main_pom)
-    if not relocations:
+    if not main_pom or not relocations:
+        # The to_classes are all the resources that don't have a relation to
+        # the development codebase. If no main POM, or no relocations, we
+        # cannot map any shaded classes to Maven packages, and these files
+        # should be flagged for review.
+        reason = (
+            "No main POM found."
+            if not main_pom
+            else "No Maven relocations found in the main POM."
+        )
+        updated_count = to_classes.update(status=flag.REQUIRES_REVIEW)
         if logger:
-            logger("No Maven relocations found in the main POM.")
+            logger(
+                f"{reason} Flagged {updated_count:,d} unmapped .class "
+                f"resources for review."
+            )
         return
 
     relocations = resolve_relocation_placeholders(project, relocations, main_pom)
