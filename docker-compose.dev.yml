@@ -30,7 +30,6 @@ services:
 
   # Volume mount keeps code in sync. Restart manually with: make restart-worker
   worker:
-    build: *dev-build
     image: scancodeio:dev
     env_file:
       - .env
