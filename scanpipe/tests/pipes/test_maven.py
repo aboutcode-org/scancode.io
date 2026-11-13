@@ -1164,9 +1164,7 @@ class ScanPipeMavenPipesTest(TestCase):
             ).exists()
         )
 
-    def test_scanpipe_maven_map_shaded_classes_class_not_under_relocation(
-        self,
-    ):
+    def test_scanpipe_maven_map_shaded_classes_class_not_under_relocation(self):
         project = self.project
         main_purl = PackageURL.from_string(
             "pkg:maven/org.apache.htrace/htrace-core@4.0.0-incubating"
@@ -1296,10 +1294,6 @@ class ScanPipeMavenPipesTest(TestCase):
         maven.map_shaded_classes_to_maven_packages(self.project, purl=main_purl)
 
         shaded_class.refresh_from_db()
-        # The main POM is missing, so the class has no relation to the
-        # development codebase and cannot be mapped to a dependency. It is
-        # either a shaded class or an orphan whose source is missing. The
-        # status should be set to REQUIRES_REVIEW.
         self.assertEqual(shaded_class.status, flag.REQUIRES_REVIEW)
         self.assertEqual(shaded_class.discovered_packages.count(), 0)
 
@@ -1325,10 +1319,6 @@ class ScanPipeMavenPipesTest(TestCase):
         maven.map_shaded_classes_to_maven_packages(self.project, purl=main_purl)
 
         shaded_class.refresh_from_db()
-        # No relocations are declared in the main POM, so the class cannot
-        # be un-shaded or mapped to a dependency. It should be flagged as
-        # REQUIRES_REVIEW whether it is actually a shaded class or an
-        # orphan whose source is missing.
         self.assertEqual(shaded_class.status, flag.REQUIRES_REVIEW)
         self.assertEqual(shaded_class.discovered_packages.count(), 0)
 
