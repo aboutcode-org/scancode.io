@@ -1066,6 +1066,7 @@ class PipelinesIntegrationTest(TestCase):
                 "org/apache/htrace/fasterxml/jackson/annotation/JsonTypeId.class",
                 b"bbbbbbb",
             )
+            jar_file.writestr("org/apache/htrace/core/Span.class", b"ccccccc")
             jar_file.writestr(
                 "META-INF/maven/org.apache.htrace/htrace-core/pom.xml",
                 (self.data / "maven" / "shaded-pom.xml").read_bytes(),
@@ -1079,6 +1080,11 @@ class PipelinesIntegrationTest(TestCase):
             pipeline.d2d_enabled,
             "D2D is enabled for a package with both source and binary",
         )
+
+        not_shaded_class = project1.codebaseresources.get(
+            path__endswith="org/apache/htrace/core/Span.class"
+        )
+        self.assertEqual(flag.REQUIRES_REVIEW, not_shaded_class.status)
 
         for name, version in [
             ("commons-logging", "1.1.1"),

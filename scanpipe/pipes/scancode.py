@@ -1107,10 +1107,12 @@ def check_license_detection_for_issues(discovered_license):
 def set_codebase_resource_for_package(codebase_resource, discovered_package):
     """
     Assign the `discovered_package` to the `codebase_resource` and set its
-    status to "application-package".
+    status to "application-package", unless an earlier step, such as the
+    deploy-to-develop mapping, already set a status.
     """
     codebase_resource.add_package(discovered_package)
-    codebase_resource.update(status=flag.APPLICATION_PACKAGE)
+    if not codebase_resource.status:
+        codebase_resource.update(status=flag.APPLICATION_PACKAGE)
 
 
 def get_detection_data(detection_entry):

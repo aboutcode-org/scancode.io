@@ -969,11 +969,8 @@ def map_shaded_classes_to_maven_packages(project, purl, logger=None):
     if logger:
         logger("Mapping shaded .class resources to Maven dependency packages.")
 
-    # scan_maven_package runs ``load_inventory_from_toolkit_scan`` before
-    # this step, which sets every ``.class`` in a JAR that ships its own
-    # pom.xml to ``application-package``; without adding
-    # "flag.APPLICATION_PACKAGE" status in the filter, no shaded class is
-    # ever mapped.
+    # When PurlDB knows the JAR, its shaded classes are matched to the JAR
+    # itself rather than to their original dependency.
     to_classes = (
         project.codebaseresources.files()
         .to_codebase()
@@ -983,7 +980,9 @@ def map_shaded_classes_to_maven_packages(project, purl, logger=None):
                 flag.NO_STATUS,
                 flag.NO_JAVA_SOURCE,
                 flag.REQUIRES_REVIEW,
-                flag.APPLICATION_PACKAGE,
+                flag.MATCHED_TO_PURLDB_PACKAGE,
+                flag.MATCHED_TO_PURLDB_RESOURCE,
+                flag.MATCHED_TO_PURLDB_DIRECTORY,
             ]
         )
         .has_no_relation()
