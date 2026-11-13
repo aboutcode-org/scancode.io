@@ -27,6 +27,8 @@ from django.apps import apps
 from django.core.exceptions import FieldError
 from django.core.validators import EMPTY_VALUES
 from django.db import models
+from django.db.models import Exists
+from django.db.models import OuterRef
 from django.db.models import Q
 from django.db.models.fields import BLANK_CHOICE_DASH
 from django.utils.functional import cached_property
@@ -42,6 +44,8 @@ from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredLicense
 from scanpipe.models import DiscoveredPackage
+from scanpipe.models import OriginDetermination
+from scanpipe.models import OriginMatch
 from scanpipe.models import Project
 from scanpipe.models import ProjectMessage
 from scanpipe.models import Run
@@ -524,6 +528,28 @@ class RelationMapTypeFilter(django_filters.ChoiceFilter):
         return super().filter(qs, value)
 
 
+class OriginStatusFilter(django_filters.ChoiceFilter):
+    COVERED = "covered"
+    NO_DETERMINATION = "none"
+
+    def __init__(self, *args, **kwargs):
+        kwargs["choices"] = (
+            *OriginDetermination.Status.choices,
+            (self.COVERED, "Covered by a directory"),
+            (self.NO_DETERMINATION, "No determination"),
+        )
+        super().__init__(*args, **kwargs)
+
+    def filter(self, qs, value):
+        if value == self.COVERED:
+            return qs.origin_covered()
+        if value == self.NO_DETERMINATION:
+            return qs.without_origin()
+        if value:
+            return qs.filter(origin_determination__status=value)
+        return qs
+
+
 class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     dropdown_widget_fields = [
         "status",
@@ -532,6 +558,7 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
         "compliance_alert",
         "in_package",
         "relation_map_type",
+        "origin_status",
     ]
 
     search = QuerySearchFilter(
@@ -568,6 +595,7 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
         label="Relation map type",
         field_name="related_from__map_type",
     )
+    origin_status = OriginStatusFilter(label="Origin status")
     extra_data = django_filters.CharFilter(lookup_expr="icontains")
 
     class Meta:
@@ -603,6 +631,7 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "urls",
             "in_package",
             "relation_map_type",
+            "origin_status",
             "is_binary",
             "is_text",
             "is_archive",
@@ -969,3 +998,61 @@ class RelationFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             qs = CodebaseResource.objects.filter(project=project)
             status_filter = self.filters["status"]
             status_filter.extra["choices"] = status_filter.get_status_choices(qs)
+
+
+class OriginDeterminationFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
+    dropdown_widget_fields = [
+        "type",
+        "status",
+        "rule",
+    ]
+
+    search = QuerySearchFilter(
+        label="Search",
+        search_fields=["resource__path", "purl"],
+        lookup_expr="icontains",
+    )
+    sort = django_filters.OrderingFilter(
+        label="Sort",
+        fields=[
+            ("resource__path", "path"),
+            ("resource__type", "type"),
+            "status",
+            "rule",
+            "purl",
+        ],
+    )
+    type = django_filters.ChoiceFilter(
+        field_name="resource__type",
+        choices=CodebaseResource.Type.choices,
+    )
+    status = ModelFieldValuesFilter()
+    rule = ModelFieldValuesFilter(include_empty=True)
+    candidate = django_filters.CharFilter(label="Candidate", method="filter_candidate")
+
+    class Meta:
+        model = OriginDetermination
+        fields = [
+            "search",
+            "type",
+            "status",
+            "rule",
+            "purl",
+            "candidate",
+        ]
+
+    @staticmethod
+    def filter_candidate(queryset, name, value):
+        """
+        Filter the determinations of the resources with an origin match reporting
+        the ``value`` PURL, with or without qualifiers and subpath.
+        """
+        reported_purl = (
+            Q(purl=value)
+            | Q(purl__startswith=f"{value}?")
+            | Q(purl__startswith=f"{value}#")
+        )
+        origin_matches = OriginMatch.objects.filter(
+            reported_purl, resource=OuterRef("resource")
+        )
+        return queryset.filter(Exists(origin_matches))

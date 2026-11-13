@@ -39,6 +39,7 @@ from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import OriginDetermination
 from scanpipe.models import OriginMatch
+from scanpipe.pipes import count_group_by
 from scanpipe.pipes.resolve import convert_spdx_expression
 
 CONTAINMENT_RULE = "containment"
@@ -49,6 +50,27 @@ CONFLICTING_CANDIDATES_RULE = "conflicting-candidates"
 NO_EXACT_MATCH_RULE = "no-exact-match"
 SINGLE_TOOL_RULE = "single-tool"
 CONFIRMED_BY_TWO_TOOLS_RULE = "confirmed-by-two-tools"
+
+RULE_DESCRIPTIONS = {
+    CONTAINMENT_RULE: "The other candidates carry a copy of the proposed one.",
+    PREFERRED_VERSION_RULE: (
+        "Versions of one package: the proposed one is the most similar, the only "
+        "release, or the earliest release."
+    ),
+    CONFLICTING_VERSIONS_RULE: "Versions of one package, none preferred.",
+    HIGHEST_SIMILARITY_RULE: (
+        "Different packages: the proposed one is at least 20 points more similar."
+    ),
+    CONFLICTING_CANDIDATES_RULE: "Different packages, none preferred.",
+    NO_EXACT_MATCH_RULE: "One candidate, with partial matches only.",
+    SINGLE_TOOL_RULE: "One candidate with an exact match, reported by one tool.",
+    CONFIRMED_BY_TWO_TOOLS_RULE: (
+        "One candidate with an exact match, reported by two tools."
+    ),
+}
+
+# The suffix of the directories where ScanCode extracts an archive.
+EXTRACT_SUFFIX = "-extract"
 
 # Identifies the packages created from an origin determination, as opposed to
 # the packages detected by the codebase scan.
@@ -193,6 +215,16 @@ def get_versionless_purl(purl):
     ).to_string()
 
 
+def get_web_url(url):
+    """
+    Return the ``url`` reported by an origin tool when it is a web URL, safe to
+    link to, or an empty string.
+    """
+    if url.startswith(("https://", "http://")):
+        return url
+    return ""
+
+
 @dataclass
 class Origin:
     """
@@ -211,6 +243,38 @@ class Origin:
     @property
     def tools(self):
         return {origin_match.tool for origin_match in self.origin_matches}
+
+    @property
+    def tool_names(self):
+        return sorted(self.tools)
+
+    @property
+    def other_equivalent_purls(self):
+        """Return the equivalent PURLs other than the candidate ``purl``."""
+        return sorted(self.equivalent_purls - {self.purl})
+
+    @property
+    def license_expression(self):
+        """
+        Return the declared license expression reported by MatchCode.io, or else
+        the component license names reported by SCANOSS, joined with AND.
+        """
+        license_expression = get_first_extra_data_value(
+            self.origin_matches, "declared_license_expression"
+        )
+        return license_expression or " AND ".join(
+            get_license_names(self.origin_matches)
+        )
+
+    @property
+    def homepage_url(self):
+        return get_web_url(get_first_extra_data_value(self.origin_matches, "url"))
+
+    @property
+    def download_url(self):
+        return get_web_url(
+            get_first_extra_data_value(self.origin_matches, "download_url")
+        )
 
     @property
     def has_exact_match(self):
@@ -829,3 +893,133 @@ def determine_origins(project, batch_size=2000):
         package_count = assign_origin_packages(project)
 
     return determination_count, package_count
+
+
+def get_determined_origin(purl, origins):
+    """
+    Return the candidate among the ``origins`` that identifies the determined
+    ``purl`` package, None when no candidate reports it anymore.
+    """
+    package_purl = get_package_purl(purl)
+    for origin in origins:
+        if package_purl in origin.equivalent_purls:
+            return origin
+
+
+def get_ancestor_origin_determination(resource):
+    """
+    Return the origin determination of the closest ancestor directory of the
+    ``resource``, which covers the ``resource`` without a determination of its own.
+    """
+    # The ancestor paths are prefixes of each other: the longest is the closest.
+    return (
+        resource.project.origindeterminations.filter(
+            resource__path__in=get_ancestor_paths(resource.path)
+        )
+        .select_related("resource")
+        .order_by("-resource__path")
+        .first()
+    )
+
+
+def get_origin_package(purl, packages):
+    """
+    Return the package among the ``packages`` of a resource that is the origin
+    ``purl`` package, None when the resource is not assigned to it.
+    """
+    package_purl = get_package_purl(purl)
+    for package in packages:
+        if get_package_purl(package.package_url) == package_purl:
+            return package
+
+
+@dataclass
+class CandidateSummary:
+    """A candidate origin with the number of resources that report it."""
+
+    purl: str
+    tools: set
+    resource_count: int = 0
+    determination_count: int = 0
+
+    @property
+    def tool_names(self):
+        return sorted(self.tools)
+
+
+def get_candidate_summary_sort_key(candidate_summary):
+    return -candidate_summary.resource_count, candidate_summary.purl
+
+
+def get_candidate_summaries(project):
+    """
+    Return the candidate origins of the ``project`` resources, with the number of
+    resources reporting each candidate and the number of determinations selecting
+    it, the most reported first.
+    """
+    origin_matches = (
+        project.originmatchs.select_related("resource")
+        .only("purl", "tool", "extra_data", "resource__path")
+        .order_by("resource__path")
+        .iterator(chunk_size=2000)
+    )
+    summaries_by_purl = {}
+    for _resource, resource_origins in iter_resource_origins(origin_matches):
+        for resource_origin in resource_origins:
+            summary = summaries_by_purl.setdefault(
+                resource_origin.purl, CandidateSummary(resource_origin.purl, set())
+            )
+            summary.tools |= resource_origin.tools
+            summary.resource_count += 1
+
+    determination_count_by_purl = count_group_by(project.origindeterminations, "purl")
+    for purl, summary in summaries_by_purl.items():
+        summary.determination_count = determination_count_by_purl.get(purl, 0)
+
+    return sorted(summaries_by_purl.values(), key=get_candidate_summary_sort_key)
+
+
+def get_display_origin_path(origin_path):
+    """
+    Return the ``origin_path`` without the archive extraction directories added
+    by MatchCode.io, such as "inih-r62/ini.c" for
+    "inih-r62.tar.gz-extract/inih-r62/ini.c".
+    """
+    path_segments = origin_path.split("/")
+    return "/".join(
+        segment for segment in path_segments if not segment.endswith(EXTRACT_SUFFIX)
+    )
+
+
+def get_covered_resources(directory):
+    """
+    Return the resources under the ``directory`` covered by its determination:
+    without a determination of their own, and not under a determined
+    subdirectory.
+    """
+    project = directory.project
+    descendants_prefix = f"{directory.path}/"
+    subdirectory_paths = project.origindeterminations.filter(
+        resource__type=CodebaseResource.Type.DIRECTORY,
+        resource__path__startswith=descendants_prefix,
+    ).values_list("resource__path", flat=True)
+
+    return project.codebaseresources.filter(
+        path__startswith=descendants_prefix,
+        origin_determination__isnull=True,
+    ).exclude(get_descendants_filter(subdirectory_paths))
+
+
+def get_covered_origin_matches(covered_resources, limit):
+    """
+    Return the first ``limit`` origin matches of the ``covered_resources``, and
+    whether more origin matches exist.
+    """
+    origin_matches = (
+        OriginMatch.objects.filter(resource__in=covered_resources)
+        .select_related("resource")
+        .order_by("resource__path", "purl", "tool")
+    )
+    limited_origin_matches = list(origin_matches[: limit + 1])
+    has_more = len(limited_origin_matches) > limit
+    return limited_origin_matches[:limit], has_more

@@ -1,0 +1,78 @@
+{% extends "scanpipe/base.html" %}
+
+{% block title %}ScanCode.io: {{ project.name }} - Origins{% endblock %}
+
+{% block content %}
+  <div id="content-header" class="container is-max-widescreen mb-3">
+    <section class="mx-5">
+      <div class="is-flex is-justify-content-space-between">
+        {% include 'scanpipe/includes/breadcrumb.html' with linked_project=True current="Origins" %}
+        {% include 'scanpipe/includes/search_field.html' with extra_class="is-small" placeholder="Search paths and PURLs" %}
+      </div>
+      {% include 'scanpipe/includes/pagination_header_origins.html' %}
+      {% include 'scanpipe/includes/filters_breadcrumb.html' with filterset=filter only %}
+    </section>
+  </div>
+
+  <div id="origin-determination-list" class="container is-fluid mb-3">
+    <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth is-rounded-table">
+      {% include 'scanpipe/includes/list_view_thead.html' %}
+      <tbody>
+        {% for determination in object_list %}
+          <tr class="break-word">
+            <td class="break-all">
+              {# CAUTION: Avoid relying on get_absolute_url to prevent unnecessary query triggers #}
+              <a href="{% url 'resource_detail' project.slug determination.resource.path %}#origin">{{ determination.resource.path }}</a>
+            </td>
+            <td class="nowrap">
+              <a href="?type={{ determination.resource.type }}" class="is-black-link">{{ determination.resource.type }}</a>
+            </td>
+            <td class="nowrap">
+              <a href="?status={{ determination.status }}">
+                {% include 'scanpipe/includes/origin_status_tag.html' with status=determination.status label=determination.get_status_display only %}
+              </a>
+            </td>
+            <td class="nowrap">
+              {% if determination.rule %}
+                <a href="?rule={{ determination.rule }}" class="is-black-link">{{ determination.rule }}</a>
+                <span class="icon is-small has-text-grey is-cursor-help has-tooltip is-relative ml-1" data-title="{{ determination.rule_description }}" data-tooltip-position="top center">
+                  <i class="fa-solid fa-circle-question"></i>
+                </span>
+              {% endif %}
+            </td>
+            <td class="break-normal">
+              {% if determination.origin_package %}
+                <a href="{% url 'package_detail' project.slug determination.origin_package.uuid %}">{{ determination.purl }}</a>
+              {% elif determination.purl %}
+                <a href="?purl={{ determination.purl|urlencode }}" class="is-black-link">{{ determination.purl }}</a>
+              {% elif determination.status == "needs-review" %}
+                <span class="has-text-grey">No proposal</span>
+              {% endif %}
+              {% if determination.determined_origin %}
+                {% include "scanpipe/includes/origin_tool_tags.html" with tool_names=determination.determined_origin.tool_names only %}
+              {% endif %}
+            </td>
+            <td class="break-normal">
+              {% for candidate_origin in determination.other_candidate_origins %}
+                <div>
+                  <a href="?candidate={{ candidate_origin.purl|urlencode }}" class="is-black-link">{{ candidate_origin.purl }}</a>
+                  {% include "scanpipe/includes/origin_tool_tags.html" with tool_names=candidate_origin.tool_names only %}
+                </div>
+              {% endfor %}
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="42" class="has-text-centered p-3">
+              No origins found. <a href="?">Clear search and filters</a>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    {% if is_paginated %}
+      {% include 'scanpipe/includes/pagination.html' with page_obj=page_obj %}
+    {% endif %}
+  </div>
+{% endblock %}

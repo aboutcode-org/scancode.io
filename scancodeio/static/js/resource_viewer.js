@@ -76,7 +76,8 @@ function initResourceViewer(editorId) {
       let end_column = 10000;
 
       let range = new Range(start_row, start_column, end_row, end_column);
-      editor.session.addMarker(range, 'ace-marker', 'line'); // "fullLine" also available
+      const markerClassName = $el.markerClassName ?? 'ace-marker';
+      editor.session.addMarker(range, markerClassName, 'line'); // "fullLine" also available
 
       annotations.push({
         row: start_row,

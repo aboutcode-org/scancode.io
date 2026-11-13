@@ -27,6 +27,7 @@ from django.utils import timezone
 
 from scanpipe.filters import DependencyFilterSet
 from scanpipe.filters import FilterSetUtilsMixin
+from scanpipe.filters import OriginDeterminationFilterSet
 from scanpipe.filters import PackageFilterSet
 from scanpipe.filters import ProjectFilterSet
 from scanpipe.filters import ResourceFilterSet
@@ -34,6 +35,8 @@ from scanpipe.filters import parse_query_string_to_lookups
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
+from scanpipe.models import OriginDetermination
+from scanpipe.models import OriginMatch
 from scanpipe.models import Project
 from scanpipe.models import Run
 from scanpipe.tests import dependency_data1
@@ -362,3 +365,127 @@ class ScanPipeFilterTest(TestCase):
         }
         self.assertEqual(expected_errors, filterset.errors)
         self.assertEqual(2, len(filterset.qs))
+
+    def test_scanpipe_filters_resource_filterset_origin_status(self):
+        vendor_ms = CodebaseResource.objects.create(
+            project=self.project1,
+            path="vendor/ms",
+            type=CodebaseResource.Type.DIRECTORY,
+        )
+        index_js = make_resource_file(self.project1, "vendor/ms/index.js")
+        other_js = make_resource_file(self.project1, "other.js")
+        OriginDetermination.objects.create(
+            project=self.project1,
+            resource=vendor_ms,
+            purl="pkg:npm/ms@2.1.3",
+            status=OriginDetermination.Status.AUTO_CONFIRMED,
+        )
+
+        def filter_resources(origin_status):
+            data = {"origin_status": origin_status}
+            filterset = ResourceFilterSet(data=data)
+            return list(filterset.qs.order_by("path"))
+
+        self.assertEqual([vendor_ms], filter_resources("auto-confirmed"))
+        self.assertEqual([], filter_resources("needs-review"))
+        self.assertEqual([index_js], filter_resources("covered"))
+        self.assertEqual([other_js], filter_resources("none"))
+        all_resources = [other_js, vendor_ms, index_js]
+        self.assertEqual(all_resources, filter_resources(""))
+
+    def test_scanpipe_filters_origin_determination_filterset(self):
+        six_determination = OriginDetermination.objects.create(
+            project=self.project1,
+            resource=make_resource_file(self.project1, "six.py"),
+            purl="pkg:pypi/six@1.17.0",
+            status=OriginDetermination.Status.AUTO_CONFIRMED,
+            rule="confirmed-by-two-tools",
+        )
+        ini_determination = OriginDetermination.objects.create(
+            project=self.project1,
+            resource=make_resource_file(self.project1, "src/ini.c"),
+            status=OriginDetermination.Status.NEEDS_REVIEW,
+            rule="conflicting-versions",
+        )
+        user_determination = OriginDetermination.objects.create(
+            project=self.project1,
+            resource=CodebaseResource.objects.create(
+                project=self.project1,
+                path="vendor",
+                type=CodebaseResource.Type.DIRECTORY,
+            ),
+            status=OriginDetermination.Status.NO_ORIGIN,
+        )
+        queryset = self.project1.origindeterminations.all()
+
+        def filter_determinations(**data):
+            filterset = OriginDeterminationFilterSet(data=data, queryset=queryset)
+            return list(filterset.qs.order_by("resource__path"))
+
+        self.assertEqual(
+            [ini_determination], filter_determinations(status="needs-review")
+        )
+        self.assertEqual(
+            [six_determination], filter_determinations(rule="confirmed-by-two-tools")
+        )
+        self.assertEqual([user_determination], filter_determinations(rule="_EMPTY_"))
+        self.assertEqual(
+            [six_determination], filter_determinations(purl="pkg:pypi/six@1.17.0")
+        )
+        self.assertEqual([user_determination], filter_determinations(type="directory"))
+        self.assertEqual(
+            [six_determination, ini_determination], filter_determinations(type="file")
+        )
+        self.assertEqual([ini_determination], filter_determinations(search="ini"))
+
+        OriginMatch.objects.create(
+            project=self.project1,
+            resource=six_determination.resource,
+            purl="pkg:pypi/six@1.17.0?file_name=six.py",
+            match_type=OriginMatch.MatchType.FILE,
+            tool="matchcode",
+        )
+        OriginMatch.objects.create(
+            project=self.project1,
+            resource=six_determination.resource,
+            purl="pkg:pypi/six@1.17.0",
+            match_type=OriginMatch.MatchType.FILE,
+            tool="scanoss",
+        )
+        self.assertEqual(
+            [six_determination], filter_determinations(candidate="pkg:pypi/six@1.17.0")
+        )
+        self.assertEqual([], filter_determinations(candidate="pkg:pypi/six@1.1"))
+        self.assertEqual([six_determination], filter_determinations(search="pypi"))
+
+        filterset = OriginDeterminationFilterSet(
+            data={"sort": "-path"}, queryset=queryset
+        )
+        expected = [user_determination, ini_determination, six_determination]
+        self.assertEqual(expected, list(filterset.qs))
+
+        status_choices = (
+            OriginDeterminationFilterSet(queryset=queryset)
+            .filters["status"]
+            .field.choices
+        )
+        expected_choices = [
+            ("", "All"),
+            ("auto-confirmed", "auto-confirmed"),
+            ("needs-review", "needs-review"),
+            ("no-origin", "no-origin"),
+        ]
+        self.assertEqual(expected_choices, list(status_choices))
+
+        rule_choices = (
+            OriginDeterminationFilterSet(queryset=queryset)
+            .filters["rule"]
+            .field.choices
+        )
+        expected_choices = [
+            ("", "All"),
+            ("_EMPTY_", "No rule"),
+            ("confirmed-by-two-tools", "confirmed-by-two-tools"),
+            ("conflicting-versions", "conflicting-versions"),
+        ]
+        self.assertEqual(expected_choices, list(rule_choices))

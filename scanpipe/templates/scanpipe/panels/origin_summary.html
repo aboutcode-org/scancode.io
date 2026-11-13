@@ -1,0 +1,19 @@
+{% if origin_status_summary %}
+  <div class="column is-half">
+    <nav id="origin-panel" class="panel is-dark">
+      <div class="panel-heading is-flex is-justify-content-space-between is-align-items-center">
+        <span>Origins</span>
+        <a href="{{ project_origins_url }}" class="ml-2 has-text-white has-text-decoration-none">
+          <i class="fa-solid fa-dna mr-1"></i>Review
+        </a>
+      </div>
+      <div class="panel-block is-flex-wrap-wrap">
+        {% for status, count in origin_status_summary.items %}
+          <a href="{{ project_origins_url }}?status={{ status }}" class="mr-1">
+            {% include "scanpipe/includes/origin_status_tag.html" with status=status label=status.label count=count only %}
+          </a>
+        {% endfor %}
+      </div>
+    </nav>
+  </div>
+{% endif %}

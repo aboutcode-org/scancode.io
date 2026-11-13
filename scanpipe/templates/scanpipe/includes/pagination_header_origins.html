@@ -1,0 +1,17 @@
+{% extends "scanpipe/includes/pagination_header.html" %}
+{% load humanize %}
+
+{% block paginator_count %}
+  <span class="is-flex is-align-items-center is-flex-wrap-wrap">
+    <span class="mr-2">{{ paginator.count|intcomma }} results</span>
+    {% for status, count in origin_status_summary.items %}
+      <a href="?status={{ status }}" class="mr-1">
+        {% include "scanpipe/includes/origin_status_tag.html" with status=status label=status.label count=count only %}
+      </a>
+    {% endfor %}
+    <a href="{% url 'project_origin_candidates' project.slug %}" class="button is-small is-info is-outlined ml-2">
+      <span class="icon"><i class="fa-solid fa-layer-group"></i></span>
+      <span>View by candidate</span>
+    </a>
+  </span>
+{% endblock %}

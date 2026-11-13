@@ -43,8 +43,12 @@ from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
+from scanpipe.models import OriginDetermination
+from scanpipe.models import OriginMatch
 from scanpipe.models import Project
+from scanpipe.pipelines.find_origins import FindOrigins
 from scanpipe.pipes import make_relation
+from scanpipe.pipes import origin
 from scanpipe.pipes import update_or_create_dependency
 from scanpipe.pipes.input import copy_input
 from scanpipe.pipes.input import copy_inputs
@@ -61,6 +65,7 @@ from scanpipe.views import CodebaseResourceDetailsView
 from scanpipe.views import ProjectActionView
 from scanpipe.views import ProjectCodebasePanelView
 from scanpipe.views import ProjectDetailView
+from scanpipe.views import has_no_origin
 
 scanpipe_app = apps.get_app_config("scanpipe")
 
@@ -71,6 +76,27 @@ class ScanPipeViewsTest(TestCase):
 
     def setUp(self):
         self.project1 = Project.objects.create(name="Analysis")
+
+    def make_origin_match(
+        self, resource, purl, tool="matchcode", match_type="file", **origin_match_data
+    ):
+        return OriginMatch.objects.create(
+            project=self.project1,
+            resource=resource,
+            purl=purl,
+            tool=tool,
+            match_type=match_type,
+            **origin_match_data,
+        )
+
+    def make_origin_determination(self, resource, status, purl="", rule=""):
+        return OriginDetermination.objects.create(
+            project=self.project1,
+            resource=resource,
+            purl=purl,
+            status=status,
+            rule=rule,
+        )
 
     def test_scanpipe_views_project_list_is_archived(self):
         project2 = Project.objects.create(name="project2", is_archived=True)
@@ -1202,10 +1228,10 @@ class ScanPipeViewsTest(TestCase):
         package1.add_resources([resource1, resource2])
 
         url = reverse("project_resources", args=[self.project1.slug])
-        with self.assertNumQueries(8):
+        with self.assertNumQueries(9):
             self.client.get(url)
 
-        with self.assertNumQueries(8):
+        with self.assertNumQueries(9):
             self.client.get(resource1.get_absolute_url())
 
     def test_scanpipe_views_discovered_package_views(self):
@@ -1496,6 +1522,348 @@ class ScanPipeViewsTest(TestCase):
             }
         ]
         self.assertEqual(expected_results, results)
+
+    def test_scanpipe_views_project_origin_summary_view(self):
+        url = reverse("project_origin_summary", args=[self.project1.slug])
+        response = self.client.get(url)
+        self.assertNotContains(response, 'id="origin-panel"')
+
+        needs_review = OriginDetermination.Status.NEEDS_REVIEW
+        self.make_origin_determination(
+            make_resource_file(self.project1, "a.py"), needs_review
+        )
+        self.make_origin_determination(
+            make_resource_file(self.project1, "b.py"), needs_review
+        )
+        self.make_origin_determination(
+            make_resource_file(self.project1, "six.py"),
+            OriginDetermination.Status.AUTO_CONFIRMED,
+            purl="pkg:pypi/six@1.17.0",
+        )
+
+        response = self.client.get(url)
+        summary = response.context["origin_status_summary"]
+        self.assertEqual({"auto-confirmed": 1, "needs-review": 2}, summary)
+        self.assertEqual(["auto-confirmed", "needs-review"], list(summary))
+        origins_url = reverse("project_origins", args=[self.project1.slug])
+        self.assertContains(response, 'id="origin-panel"')
+        self.assertContains(response, f'href="{origins_url}?status=needs-review"')
+        self.assertContains(response, f'href="{origins_url}?status=auto-confirmed"')
+        self.assertContains(response, "2 Needs Review")
+        self.assertContains(response, "1 Auto Confirmed")
+
+        project_url = self.project1.get_absolute_url()
+        response = self.client.get(project_url)
+        self.assertContains(response, url)
+
+    def test_scanpipe_views_origin_determination_list_view(self):
+        six_py = make_resource_file(self.project1, "six.py")
+        self.make_origin_match(six_py, "pkg:pypi/six@1.17.0")
+        self.make_origin_match(
+            six_py,
+            "pkg:github/benjaminp/six@1.17.0",
+            tool="scanoss",
+            extra_data={"purls": ["pkg:pypi/six"]},
+        )
+        self.make_origin_determination(
+            six_py,
+            OriginDetermination.Status.AUTO_CONFIRMED,
+            purl="pkg:pypi/six@1.17.0",
+            rule="confirmed-by-two-tools",
+        )
+        six_package = make_package(self.project1, "pkg:pypi/six@1.17.0")
+        six_py.discovered_packages.add(six_package)
+        ini_c = make_resource_file(self.project1, "src/ini.c")
+        self.make_origin_match(ini_c, "pkg:github/benhoyt/inih@r62")
+        self.make_origin_match(ini_c, "pkg:github/benhoyt/inih@498f34b", tool="scanoss")
+        self.make_origin_determination(
+            ini_c,
+            OriginDetermination.Status.NEEDS_REVIEW,
+            rule="conflicting-versions",
+        )
+        vendor_ms = make_resource_directory(self.project1, "vendor/ms")
+        self.make_origin_determination(vendor_ms, OriginDetermination.Status.NO_ORIGIN)
+
+        url = reverse("project_origins", args=[self.project1.slug])
+        with self.assertNumQueries(10):
+            response = self.client.get(url)
+
+        paths = [
+            determination.resource.path
+            for determination in response.context["object_list"]
+        ]
+        self.assertEqual(["src/ini.c", "six.py", "vendor/ms"], paths)
+
+        self.assertContains(response, 'href="?status=needs-review"')
+        self.assertContains(response, "1 Needs Review")
+        self.assertContains(response, "1 Auto Confirmed")
+        candidates_url = reverse("project_origin_candidates", args=[self.project1.slug])
+        self.assertContains(response, f'href="{candidates_url}"')
+
+        six_url = reverse("resource_detail", args=[self.project1.slug, "six.py"])
+        self.assertContains(response, f'href="{six_url}#origin"')
+        self.assertContains(response, 'href="?rule=confirmed-by-two-tools"')
+        rule_description = origin.RULE_DESCRIPTIONS["confirmed-by-two-tools"]
+        self.assertContains(response, f'data-title="{rule_description}"')
+        self.assertContains(response, "Auto Confirmed")
+        six_package_url = reverse(
+            "package_detail", args=[self.project1.slug, six_package.uuid]
+        )
+        self.assertContains(response, f'href="{six_package_url}"')
+        self.assertContains(
+            response, '<span class="tag ml-1">scanoss</span>', html=True
+        )
+        self.assertNotContains(response, "?candidate=pkg%3Apypi/six")
+        self.assertNotContains(response, "pkg:github/benjaminp/six@1.17.0")
+
+        self.assertContains(response, "No proposal")
+        self.assertContains(
+            response, 'href="?candidate=pkg%3Agithub/benhoyt/inih%40r62"'
+        )
+        self.assertContains(
+            response, 'href="?candidate=pkg%3Agithub/benhoyt/inih%40498f34b"'
+        )
+        self.assertContains(response, 'href="?type=directory"')
+
+        response = self.client.get(url, data={"status": "needs-review"})
+        self.assertContains(response, "src/ini.c")
+        self.assertNotContains(response, f'href="{six_url}#origin"')
+        self.assertNotContains(response, "vendor/ms")
+
+        response = self.client.get(url, data={"sort": "-path"})
+        paths = [
+            determination.resource.path
+            for determination in response.context["object_list"]
+        ]
+        self.assertEqual(["vendor/ms", "src/ini.c", "six.py"], paths)
+
+    def test_scanpipe_views_origin_candidate_list_view(self):
+        six_py = make_resource_file(self.project1, "six.py")
+        self.make_origin_match(six_py, "pkg:pypi/six@1.17.0")
+        self.make_origin_match(six_py, "pkg:pypi/pip@24.0")
+        self.make_origin_determination(
+            six_py,
+            OriginDetermination.Status.NEEDS_REVIEW,
+            purl="pkg:pypi/six@1.17.0",
+            rule="containment",
+        )
+
+        url = reverse("project_origin_candidates", args=[self.project1.slug])
+        response = self.client.get(url)
+        candidate_purls = [
+            candidate_summary.purl
+            for candidate_summary in response.context["object_list"]
+        ]
+        self.assertEqual(["pkg:pypi/pip@24.0", "pkg:pypi/six@1.17.0"], candidate_purls)
+        self.assertContains(response, "2 candidates")
+        origins_url = reverse("project_origins", args=[self.project1.slug])
+        self.assertContains(
+            response, f'href="{origins_url}?candidate=pkg%3Apypi/pip%4024.0"'
+        )
+        self.assertContains(
+            response, f'href="{origins_url}?purl=pkg%3Apypi/six%401.17.0"'
+        )
+        self.assertNotContains(
+            response, f'href="{origins_url}?purl=pkg%3Apypi/pip%4024.0"'
+        )
+
+    def test_scanpipe_views_codebase_resource_list_view_origin_column(self):
+        url = reverse("project_resources", args=[self.project1.slug])
+        vendor_ms = make_resource_directory(self.project1, "vendor/ms")
+        make_resource_file(self.project1, "vendor/ms/index.js")
+        response = self.client.get(url)
+        self.assertNotContains(response, 'id="column-origin"')
+
+        self.make_origin_determination(
+            vendor_ms,
+            OriginDetermination.Status.AUTO_CONFIRMED,
+            purl="pkg:npm/ms@2.1.3",
+        )
+        response = self.client.get(url)
+        self.assertContains(response, 'id="column-origin"')
+        self.assertContains(response, "<span>Auto Confirmed</span>", html=True)
+        self.assertContains(response, 'href="?origin_status=covered"')
+
+        response = self.client.get(url, data={"origin_status": "covered"})
+        paths = [resource.path for resource in response.context["object_list"]]
+        self.assertEqual(["vendor/ms/index.js"], paths)
+
+    def test_scanpipe_views_find_origins_results_url(self):
+        results_url = FindOrigins.results_url.format(slug=self.project1.slug)
+        self.assertEqual(
+            reverse("project_origins", args=[self.project1.slug]), results_url
+        )
+
+    def test_scanpipe_views_codebase_resource_details_view_tab_origin(self):
+        six_py = make_resource_file(self.project1, "six.py")
+        self.assertTrue(has_no_origin(six_py, {}))
+        response = self.client.get(six_py.get_absolute_url())
+        self.assertNotContains(response, 'id="tab-origin"')
+
+        self.make_origin_match(six_py, "pkg:pypi/six@1.16.0", similarity=100)
+        self.make_origin_match(six_py, "pkg:pypi/six@1.17.0", tool="scanoss")
+        self.assertFalse(has_no_origin(six_py, {}))
+        determination = self.make_origin_determination(
+            six_py,
+            OriginDetermination.Status.NEEDS_REVIEW,
+            purl="pkg:pypi/six@1.16.0",
+            rule="preferred-version",
+        )
+        response = self.client.get(six_py.get_absolute_url())
+        self.assertContains(response, 'data-target="tab-origin"')
+        self.assertContains(response, 'id="tab-origin"')
+        self.assertContains(response, "preferred-version")
+        self.assertContains(response, origin.RULE_DESCRIPTIONS["preferred-version"])
+        self.assertContains(response, "Needs Review")
+        self.assertContains(response, "Proposed")
+        self.assertNotContains(response, "Not reported by the origin tools")
+        candidate_purls = [
+            candidate_origin.purl
+            for candidate_origin in response.context["candidate_origins"]
+        ]
+        self.assertEqual(
+            ["pkg:pypi/six@1.16.0", "pkg:pypi/six@1.17.0"], candidate_purls
+        )
+        self.assertEqual(
+            "pkg:pypi/six@1.16.0", response.context["determined_origin"].purl
+        )
+        self.assertEqual(2, response.context["tabset_data"]["origin"]["label_count"])
+        self.assertNotContains(response, "Covered resources")
+
+        determination.update(
+            purl="pkg:pypi/six@1.15.0",
+            status=OriginDetermination.Status.CONFIRMED,
+            rule="",
+        )
+        response = self.client.get(six_py.get_absolute_url())
+        self.assertContains(response, "Not reported by the origin tools")
+        self.assertNotContains(response, "Proposed")
+        self.assertIsNone(response.context["determined_origin"])
+
+        vendor_ms = make_resource_directory(self.project1, "vendor/ms")
+        index_js = make_resource_file(self.project1, "vendor/ms/index.js")
+        self.make_origin_match(index_js, "pkg:npm/ms@2.1.3", tool="scanoss")
+        self.make_origin_determination(
+            vendor_ms,
+            OriginDetermination.Status.AUTO_CONFIRMED,
+            purl="pkg:npm/ms@2.1.3",
+            rule="confirmed-by-two-tools",
+        )
+        response = self.client.get(index_js.get_absolute_url())
+        self.assertContains(response, "Determined with the directory")
+        vendor_ms_url = reverse(
+            "resource_detail", args=[self.project1.slug, "vendor/ms"]
+        )
+        self.assertContains(response, f'href="{vendor_ms_url}#origin"')
+        self.assertIsNone(response.context["origin_determination"])
+
+        self.make_origin_match(
+            vendor_ms,
+            "pkg:npm/ms@2.1.3",
+            match_type="directory",
+            origin_path="ms-2.1.3.tgz-extract/package",
+            extra_data={
+                "declared_license_expression": "mit",
+                "download_url": "https://registry.npmjs.org/ms/-/ms-2.1.3.tgz",
+            },
+        )
+        make_resource_file(self.project1, "vendor/ms/readme.md")
+        response = self.client.get(vendor_ms.get_absolute_url())
+        self.assertEqual(1, response.context["tabset_data"]["origin"]["label_count"])
+        self.assertEqual(2, response.context["covered_resource_count"])
+        self.assertContains(response, "Covered resources")
+        index_js_url = reverse(
+            "resource_detail", args=[self.project1.slug, "vendor/ms/index.js"]
+        )
+        self.assertContains(response, f'href="{index_js_url}#origin"')
+        self.assertContains(response, "<th>Resource</th>", html=True)
+        self.assertContains(response, '<td class="nowrap">scanoss</td>', html=True)
+        self.assertContains(response, '<td class="break-all">package</td>', html=True)
+        self.assertContains(response, "mit")
+        self.assertContains(
+            response, 'href="https://registry.npmjs.org/ms/-/ms-2.1.3.tgz"'
+        )
+
+    def test_scanpipe_views_codebase_resource_details_get_origin_match_annotations(
+        self,
+    ):
+        resource = make_resource_file(self.project1, "debounce.js")
+        snippet_match = self.make_origin_match(
+            resource,
+            "pkg:npm/lodash@4.17.21",
+            match_type="snippet",
+            similarity=75,
+            origin_path="debounce.js",
+            line_ranges=[
+                {"lines": [26, 140], "origin_lines": [22, 136]},
+                {"lines": [150, 160]},
+            ],
+        )
+        file_match = self.make_origin_match(
+            resource, "pkg:npm/lodash@4.17.21", tool="scanoss"
+        )
+        underscore_match = self.make_origin_match(
+            resource,
+            "pkg:npm/underscore@1.13.6",
+            match_type="snippet",
+            similarity=30,
+            line_ranges=[{"lines": [100, 145]}],
+        )
+
+        view = CodebaseResourceDetailsView()
+        annotations = view.get_origin_match_annotations(
+            [snippet_match, file_match, underscore_match]
+        )
+        expected = [
+            {
+                "start_line": 26,
+                "end_line": 140,
+                "text": (
+                    "purl: pkg:npm/lodash@4.17.21\n"
+                    "tool: matchcode\n"
+                    "match type: snippet\n"
+                    "similarity: 75\n"
+                    "origin path: debounce.js\n"
+                    "origin lines: 22-136\n"
+                ),
+                "markerClassName": "ace-marker origin-candidate-0",
+            },
+            {
+                "start_line": 100,
+                "end_line": 145,
+                "text": (
+                    "purl: pkg:npm/underscore@1.13.6\n"
+                    "tool: matchcode\n"
+                    "match type: snippet\n"
+                    "similarity: 30\n"
+                ),
+                "markerClassName": "ace-marker origin-candidate-1",
+            },
+            {
+                "start_line": 150,
+                "end_line": 160,
+                "text": (
+                    "purl: pkg:npm/lodash@4.17.21\n"
+                    "tool: matchcode\n"
+                    "match type: snippet\n"
+                    "similarity: 75\n"
+                    "origin path: debounce.js\n"
+                ),
+                "markerClassName": "ace-marker origin-candidate-0",
+            },
+        ]
+        self.assertEqual(expected, annotations)
+
+        response = self.client.get(resource.get_absolute_url())
+        detected_values = response.context["detected_values"]
+        self.assertEqual(expected, detected_values["origin matches"])
+        self.assertNotIn("matched snippets", detected_values)
+
+        resource_without_match = make_resource_file(self.project1, "other.js")
+        response = self.client.get(resource_without_match.get_absolute_url())
+        detected_values = response.context["detected_values"]
+        self.assertEqual([], detected_values["matched snippets"])
+        self.assertNotIn("origin matches", detected_values)
 
     def test_project_packages_export_json(self):
         make_package(self.project1, package_url="pkg:type/a")

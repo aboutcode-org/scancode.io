@@ -1,0 +1,9 @@
+{% load humanize %}
+<span class="tag is-rounded
+{% if status == "needs-review" %}is-warning
+{% elif status == "auto-confirmed" or status == "confirmed" %}is-success
+{% elif status == "no-origin" %}is-dark
+{% endif %}
+">
+  {% if count %}{{ count|intcomma }} {% endif %}{{ label }}
+</span>
