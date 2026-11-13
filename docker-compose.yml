@@ -33,6 +33,7 @@ services:
 
   web:
     image: ghcr.io/aboutcode-org/scancode.io:v38.2.0-full
+    platform: linux/amd64
     command: sh -c "
         ./manage.py migrate &&
         ./manage.py collectstatic --no-input --verbosity 0 --clear &&
@@ -57,6 +58,7 @@ services:
 
   worker:
     image: ghcr.io/aboutcode-org/scancode.io:v38.2.0-full
+    platform: linux/amd64
     # Ensure that potential db migrations run first by waiting until "web" is up
     command: wait-for-it --strict --timeout=600 web:8000 -- sh -c "
         ./manage.py rqworker --worker-class scancodeio.worker.ScanCodeIOWorker
@@ -93,7 +95,7 @@ services:
     restart: always
 
   clamav:
-    image: docker.io/clamav/clamav:1.5.4_base
+    image: docker.io/clamav/clamav:1.5.4_base-debian13-slim
     volumes:
       - clamav_data:/var/lib/clamav
       - workspace:/var/scancodeio/workspace/
@@ -103,6 +105,7 @@ services:
     profiles:
       - healthycode
     image: ghcr.io/aboutcode-org/healthycode:0.2.0
+    platform: linux/amd64
     volumes:
       - healthycode_venv:/opt/healthycode
     restart: "no"

@@ -20,11 +20,11 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
-# ===================================================================
-# Stage 1: Build stage
-# ===================================================================
+# ======================================================================================
+# Stage app-core: app code and Python dependencies
+# ======================================================================================
 
-FROM ghcr.io/astral-sh/uv:0.13.7-python3.14-trixie-slim AS builder
+FROM ghcr.io/astral-sh/uv:0.13.7-python3.14-trixie-slim AS app-core
 
 # Compile bytecode for faster startup
 ENV UV_COMPILE_BYTECODE=1
@@ -52,20 +52,35 @@ COPY . $APP_DIR
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen
 
-# ===================================================================
-# Stage 1.5: Build stage for full image
-# ===================================================================
+# ======================================================================================
+# Stage app-full: app-core with the android_analysis extra
+# ======================================================================================
 
-FROM builder AS builder-full
+FROM app-core AS app-full
 
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --extra android_analysis
 
-# ===================================================================
-# Stage 2: Production stage (core)
-# ===================================================================
+# ======================================================================================
+# Stage jadx: jadx, independent of the app code to stay cached
+# ======================================================================================
 
-FROM python:3.14-slim-trixie AS core
+FROM python:3.14-slim-trixie AS jadx
+
+ARG JADX_VERSION=1.5.6
+ARG JADX_SHA256=545ea2be9c242511bc145755cf4bda2485ade42966e096f8b4d3da2a230e8974
+ADD --checksum=sha256:${JADX_SHA256} \
+    https://github.com/skylot/jadx/releases/download/v${JADX_VERSION}/jadx-${JADX_VERSION}.zip \
+    /tmp/jadx.zip
+# zipfile does not keep the executable permission
+RUN python3 -m zipfile --extract /tmp/jadx.zip /opt/jadx \
+ && chmod +x /opt/jadx/bin/jadx
+
+# ======================================================================================
+# Stage base: runtime system packages and app user, shared by core and full
+# ======================================================================================
+
+FROM python:3.14-slim-trixie AS base
 
 LABEL org.opencontainers.image.source="https://github.com/aboutcode-org/scancode.io"
 LABEL org.opencontainers.image.description="ScanCode.io"
@@ -122,9 +137,6 @@ RUN groupadd --gid $APP_GID --system $APP_USER \
  && mkdir -p /var/$APP_NAME \
  && chown $APP_USER:$APP_USER /var/$APP_NAME
 
-# Copy the application from the builder
-COPY --from=builder --chown=$APP_USER:$APP_USER $APP_DIR $APP_DIR
-
 # Place executables in the environment at the front of the path
 ENV PATH="$APP_DIR/.venv/bin:$PATH"
 
@@ -135,13 +147,20 @@ USER $APP_USER
 # Create static/ and workspace/ directories
 RUN mkdir -p /var/$APP_NAME/static/ /var/$APP_NAME/workspace/
 
-# ===================================================================
-# Stage 3: Full image (with VM inspection and Android inspector)
-# ===================================================================
+# ======================================================================================
+# Stage core: runtime image
+# ======================================================================================
 
-FROM core AS full
+FROM base AS core
 
-COPY --from=builder-full --chown=$APP_USER:$APP_USER $APP_DIR $APP_DIR
+# Copy the application from app-core
+COPY --from=app-core --chown=$APP_USER:$APP_USER $APP_DIR $APP_DIR
+
+# ======================================================================================
+# Stage full: core with VM inspection, Nix, and Android analysis tools
+# ======================================================================================
+
+FROM base AS full
 
 USER root
 RUN apt-get update \
@@ -162,14 +181,10 @@ RUN mkdir --parents /nix/store /nix/var/nix /etc/nix \
 
 # jadx (runs on the OpenJDK above) decompiles the Android .dex files into Java
 # sources for the "android_d2d" pipeline provided by android-inspector.
-ARG JADX_VERSION=1.5.6
-ARG JADX_SHA256=545ea2be9c242511bc145755cf4bda2485ade42966e096f8b4d3da2a230e8974
-RUN python3 -c "import hashlib, io, sys, urllib.request, zipfile; \
-    archive = urllib.request.urlopen( \
-    'https://github.com/skylot/jadx/releases/download/v${JADX_VERSION}/jadx-${JADX_VERSION}.zip' \
-    ).read(); \
-    hashlib.sha256(archive).hexdigest() == '${JADX_SHA256}' or sys.exit('jadx checksum mismatch'); \
-    zipfile.ZipFile(io.BytesIO(archive)).extractall('/usr/')" \
- && chmod +x /usr/bin/jadx
+COPY --from=jadx /opt/jadx/ /usr/
 
 USER $APP_USER
+
+# Copied last, so a code change does not invalidate the system packages layers above.
+# Starting from base instead of core keeps a single copy of the application.
+COPY --from=app-full --chown=$APP_USER:$APP_USER $APP_DIR $APP_DIR

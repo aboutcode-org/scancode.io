@@ -8,5 +8,4 @@ services:
     image: scancodeio:full
 
   worker:
-    build: .
     image: scancodeio:full
