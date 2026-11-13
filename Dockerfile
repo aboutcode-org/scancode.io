@@ -20,9 +20,9 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
-# ===================================================================
+# ======================================================================================
 # Stage app-core: app code and Python dependencies
-# ===================================================================
+# ======================================================================================
 
 FROM ghcr.io/astral-sh/uv:0.13.7-python3.14-trixie-slim AS app-core
 
@@ -52,18 +52,18 @@ COPY . $APP_DIR
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen
 
-# ===================================================================
+# ======================================================================================
 # Stage app-full: app-core with the android_analysis extra
-# ===================================================================
+# ======================================================================================
 
 FROM app-core AS app-full
 
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --extra android_analysis
 
-# ===================================================================
+# ======================================================================================
 # Stage jadx: jadx, independent of the app code to stay cached
-# ===================================================================
+# ======================================================================================
 
 FROM python:3.14-slim-trixie AS jadx
 
@@ -76,11 +76,11 @@ ADD --checksum=sha256:${JADX_SHA256} \
 RUN python3 -m zipfile --extract /tmp/jadx.zip /opt/jadx \
  && chmod +x /opt/jadx/bin/jadx
 
-# ===================================================================
-# Stage core: runtime image
-# ===================================================================
+# ======================================================================================
+# Stage base: runtime system packages and app user, shared by core and full
+# ======================================================================================
 
-FROM python:3.14-slim-trixie AS core
+FROM python:3.14-slim-trixie AS base
 
 LABEL org.opencontainers.image.source="https://github.com/aboutcode-org/scancode.io"
 LABEL org.opencontainers.image.description="ScanCode.io"
@@ -137,9 +137,6 @@ RUN groupadd --gid $APP_GID --system $APP_USER \
  && mkdir -p /var/$APP_NAME \
  && chown $APP_USER:$APP_USER /var/$APP_NAME
 
-# Copy the application from app-core
-COPY --from=app-core --chown=$APP_USER:$APP_USER $APP_DIR $APP_DIR
-
 # Place executables in the environment at the front of the path
 ENV PATH="$APP_DIR/.venv/bin:$PATH"
 
@@ -150,13 +147,20 @@ USER $APP_USER
 # Create static/ and workspace/ directories
 RUN mkdir -p /var/$APP_NAME/static/ /var/$APP_NAME/workspace/
 
-# ===================================================================
+# ======================================================================================
+# Stage core: runtime image
+# ======================================================================================
+
+FROM base AS core
+
+# Copy the application from app-core
+COPY --from=app-core --chown=$APP_USER:$APP_USER $APP_DIR $APP_DIR
+
+# ======================================================================================
 # Stage full: core with VM inspection, Nix, and Android analysis tools
-# ===================================================================
+# ======================================================================================
 
-FROM core AS full
-
-COPY --from=app-full --chown=$APP_USER:$APP_USER $APP_DIR $APP_DIR
+FROM base AS full
 
 USER root
 RUN apt-get update \
@@ -180,3 +184,7 @@ RUN mkdir --parents /nix/store /nix/var/nix /etc/nix \
 COPY --from=jadx /opt/jadx/ /usr/
 
 USER $APP_USER
+
+# Copied last, so a code change does not invalidate the system packages layers above.
+# Starting from base instead of core keeps a single copy of the application.
+COPY --from=app-full --chown=$APP_USER:$APP_USER $APP_DIR $APP_DIR
