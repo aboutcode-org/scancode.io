@@ -842,6 +842,7 @@ def map_shaded_classes_to_maven_packages(project, purl, logger=None):
         logger(
             f"Attributed {mapped_count:,d} shaded .class resources to Maven "
             f"packages. {review_count:,d} shaded resources could not be "
-            f"attributed and are flagged for review. {not_shaded_count:,d} "
-            f".class resources are not under any relocation."
+            f"attributed and are flagged for review. Flagged "
+            f"{not_shaded_count:,d} .class resources not under any "
+            f"relocation for review."
         )
