@@ -25,6 +25,13 @@ Please **read the following guidelines carefully before submitting a pull reques
 
 **Any PR that violates these rules will be closed.**
 
+## Pull request title
+
+Pull requests are squash merged: the PR title becomes the commit message on `main`.
+It must follow the [Conventional Commits](https://www.conventionalcommits.org/)
+format, `<type>(<optional scope>): <description>`.
+For example: `feat: add the scan_package pipeline`.
+
 ## Pull request tips
 
 To maximize your chances of a successful contribution:
@@ -41,5 +48,5 @@ To maximize your chances of a successful contribution:
 
 ## Ways to Contribute
 
-See https://scancodeio.readthedocs.io/en/latest/contributing.html for more ways to 
+See https://scancodeio.readthedocs.io/en/latest/contributing.html for more ways to
 contribute.
