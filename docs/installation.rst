@@ -54,7 +54,7 @@ Go to http://localhost/ on a web browser to **access the web UI**.
     and Nix for the Nix package pipeline.
 
 .. note::
-    On **Apple Silicon** (arm64) machines, the ScanCode.io and ClamAV images run
+    On **Apple Silicon** (arm64) machines, the ScanCode.io images run
     under ``linux/amd64`` emulation. Enable "Use Rosetta for x86_64/amd64 emulation
     on Apple Silicon" in the Docker Desktop settings for better performance.
 

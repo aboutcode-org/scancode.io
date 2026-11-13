@@ -95,8 +95,7 @@ services:
     restart: always
 
   clamav:
-    image: docker.io/clamav/clamav:1.5.4_base
-    platform: linux/amd64
+    image: docker.io/clamav/clamav:1.5.4_base-debian13-slim
     volumes:
       - clamav_data:/var/lib/clamav
       - workspace:/var/scancodeio/workspace/
