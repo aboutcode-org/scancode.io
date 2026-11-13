@@ -47,6 +47,8 @@ from scanpipe.pipes import input
 from scanpipe.pipes import scancode
 from scanpipe.pipes.input import copy_input
 from scanpipe.tests import FIXTURES_REGEN
+from scanpipe.tests import make_package
+from scanpipe.tests import make_resource_file
 
 scanpipe_app = apps.get_app_config("scanpipe")
 from_docker_image = os.environ.get("FROM_DOCKER_IMAGE")
@@ -404,6 +406,25 @@ class ScanPipeScancodePipesTest(TestCase):
         self.assertEqual(18, CodebaseResource.objects.count())
         self.assertEqual(1, DiscoveredPackage.objects.count())
         self.assertEqual(1, DiscoveredDependency.objects.count())
+
+    def test_scanpipe_pipes_scancode_set_codebase_resource_for_package(self):
+        project = Project.objects.create(name="Analysis")
+        package = make_package(project, package_url="pkg:maven/org.example/foo@1.0")
+        new_resource = make_resource_file(project, "to/org/example/Foo.class")
+        mapped_resource = make_resource_file(
+            project, "to/org/example/Bar.class", status=flag.REQUIRES_REVIEW
+        )
+
+        scancode.set_codebase_resource_for_package(new_resource, package)
+        scancode.set_codebase_resource_for_package(mapped_resource, package)
+
+        new_resource.refresh_from_db()
+        self.assertEqual(flag.APPLICATION_PACKAGE, new_resource.status)
+        self.assertEqual([package], list(new_resource.discovered_packages.all()))
+
+        mapped_resource.refresh_from_db()
+        self.assertEqual(flag.REQUIRES_REVIEW, mapped_resource.status)
+        self.assertEqual([package], list(mapped_resource.discovered_packages.all()))
 
     def test_scanpipe_pipes_scancode_get_packages_with_purl_from_resources(self):
         project = Project.objects.create(name="Analysis")

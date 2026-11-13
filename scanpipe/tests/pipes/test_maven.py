@@ -1144,7 +1144,7 @@ class ScanPipeMavenPipesTest(TestCase):
         test_class = make_resource_file(
             project,
             "to/org/apache/htrace/fasterxml/jackson/core/SomeClass.class",
-            status=flag.APPLICATION_PACKAGE,
+            status=flag.REQUIRES_REVIEW,
         )
         mock_fetch_index.return_value = {"com/fasterxml/jackson/core/SomeClass.class"}
 
@@ -1173,7 +1173,7 @@ class ScanPipeMavenPipesTest(TestCase):
         test_class = make_resource_file(
             project,
             "to/org/apache/htrace/fasterxml/jackson/core/SomeClass.class",
-            status=flag.APPLICATION_PACKAGE,
+            status=flag.REQUIRES_REVIEW,
         )
         # The dependency JAR exists but does not contain the class.
         mock_fetch_index.return_value = {"com/fasterxml/jackson/core/OtherClass.class"}
@@ -1197,7 +1197,7 @@ class ScanPipeMavenPipesTest(TestCase):
         test_class = make_resource_file(
             project,
             "to/org/apache/htrace/fasterxml/jackson/core/SomeClass.class",
-            status=flag.APPLICATION_PACKAGE,
+            status=flag.REQUIRES_REVIEW,
         )
         # Both jackson-annotations and jackson-databind are candidates for the
         # un-shaded package "com.fasterxml.jackson.core", and the mock reports
@@ -1219,7 +1219,7 @@ class ScanPipeMavenPipesTest(TestCase):
         test_class = make_resource_file(
             project,
             "to/org/apache/htrace/commons/logging/impl/AvalonLogger.class",
-            status=flag.APPLICATION_PACKAGE,
+            status=flag.REQUIRES_REVIEW,
         )
 
         maven.map_shaded_classes_to_maven_packages(project, purl=main_purl)
@@ -1238,7 +1238,7 @@ class ScanPipeMavenPipesTest(TestCase):
         test_class = make_resource_file(
             project,
             "to/org/apache/htrace/fasterxml/jackson/core/SomeClass.class",
-            status=flag.APPLICATION_PACKAGE,
+            status=flag.REQUIRES_REVIEW,
         )
         mock_fetch_url.side_effect = requests.RequestException("network error")
 
@@ -1263,7 +1263,7 @@ class ScanPipeMavenPipesTest(TestCase):
         test_class = make_resource_file(
             project,
             "to/org/apache/htrace/fasterxml/jackson/core/SomeClass.class",
-            status=flag.APPLICATION_PACKAGE,
+            status=flag.REQUIRES_REVIEW,
         )
         mock_fetch_url.return_value = mock.Mock(
             path="/mock/dependency.jar",
@@ -1339,6 +1339,29 @@ class ScanPipeMavenPipesTest(TestCase):
         self.assertEqual(unrelated_class.status, flag.REQUIRES_REVIEW)
         self.assertEqual(unrelated_class.discovered_packages.count(), 0)
 
+    def test_scanpipe_maven_map_shaded_classes_purldb_matched(self):
+        project, main_purl, commons, _ = self._setup_project_with_shaded_classes()
+
+        commons_class = make_resource_file(
+            project,
+            "to/org/apache/htrace/commons/logging/impl/AvalonLogger.class",
+            status=flag.MATCHED_TO_PURLDB_PACKAGE,
+        )
+        unrelated_class = make_resource_file(
+            project,
+            "to/com/example/Unrelated.class",
+            status=flag.MATCHED_TO_PURLDB_PACKAGE,
+        )
+
+        maven.map_shaded_classes_to_maven_packages(project, purl=main_purl)
+
+        commons_class.refresh_from_db()
+        self.assertEqual(flag.SHADED_CLASS, commons_class.status)
+        self.assertEqual([commons], list(commons_class.discovered_packages.all()))
+
+        unrelated_class.refresh_from_db()
+        self.assertEqual(flag.MATCHED_TO_PURLDB_PACKAGE, unrelated_class.status)
+
     def test_scanpipe_maven_map_shaded_classes_shaded_but_no_package_match(self):
         project = self.project
         main_purl = PackageURL.from_string(
@@ -1360,7 +1383,7 @@ class ScanPipeMavenPipesTest(TestCase):
         shaded_class = make_resource_file(
             project,
             "to/org/apache/htrace/unknown/Foo.class",
-            status=flag.APPLICATION_PACKAGE,
+            status=flag.REQUIRES_REVIEW,
         )
 
         shaded_class.discovered_packages.add(main_package)
@@ -1542,7 +1565,7 @@ class ScanPipeMavenPipesTest(TestCase):
         shaded_class = make_resource_file(
             project,
             "to/org/apache/htrace/commons/logging/impl/AvalonLogger.class",
-            status=flag.APPLICATION_PACKAGE,
+            status=flag.REQUIRES_REVIEW,
         )
 
         maven.map_shaded_classes_to_maven_packages(project, purl=main_purl)
@@ -1566,13 +1589,13 @@ class ScanPipeMavenPipesTest(TestCase):
         shaded_class = make_resource_file(
             self.project,
             "to/org/apache/htrace/commons/logging/impl/AvalonLogger.class",
-            status=flag.APPLICATION_PACKAGE,
+            status=flag.REQUIRES_REVIEW,
         )
 
         maven.map_shaded_classes_to_maven_packages(self.project, purl=main_purl)
 
         shaded_class.refresh_from_db()
-        self.assertEqual(shaded_class.status, flag.APPLICATION_PACKAGE)
+        self.assertEqual(shaded_class.status, flag.REQUIRES_REVIEW)
         self.assertEqual(shaded_class.discovered_packages.count(), 0)
 
     def test_scanpipe_maven_map_shaded_classes_pom_without_relocation(self):
@@ -1591,13 +1614,13 @@ class ScanPipeMavenPipesTest(TestCase):
         shaded_class = make_resource_file(
             self.project,
             "to/org/apache/htrace/commons/logging/impl/AvalonLogger.class",
-            status=flag.APPLICATION_PACKAGE,
+            status=flag.REQUIRES_REVIEW,
         )
 
         maven.map_shaded_classes_to_maven_packages(self.project, purl=main_purl)
 
         shaded_class.refresh_from_db()
-        self.assertEqual(shaded_class.status, flag.APPLICATION_PACKAGE)
+        self.assertEqual(shaded_class.status, flag.REQUIRES_REVIEW)
         self.assertEqual(shaded_class.discovered_packages.count(), 0)
 
     def test_scanpipe_maven_map_shaded_classes_reuses_dependency_package(self):
@@ -1644,7 +1667,7 @@ class ScanPipeMavenPipesTest(TestCase):
         fourth_class = make_resource_file(
             project,
             "to/org/apache/htrace/commons/logging/impl/AvalonLogger4.class",
-            status=flag.APPLICATION_PACKAGE,
+            status=flag.REQUIRES_REVIEW,
         )
 
         maven.map_shaded_classes_to_maven_packages(project, purl=main_purl)
@@ -1682,7 +1705,7 @@ class ScanPipeMavenPipesTest(TestCase):
         commons_class = make_resource_file(
             project,
             "to/org/apache/htrace/commons/logging/impl/AvalonLogger.class",
-            status=flag.APPLICATION_PACKAGE,
+            status=flag.REQUIRES_REVIEW,
         )
         # Simulate load_inventory_from_toolkit_scan's coarse attribution.
         commons_class.discovered_packages.add(htrace_core)
@@ -1737,12 +1760,12 @@ class ScanPipeMavenPipesTest(TestCase):
         thrift_class = make_resource_file(
             project,
             "to/org/apache/kyuubi/shaded/thrift/TBase.class",
-            status=flag.APPLICATION_PACKAGE,
+            status=flag.REQUIRES_REVIEW,
         )
         fb303_class = make_resource_file(
             project,
             "to/org/apache/kyuubi/shaded/fb303/FacebookService.class",
-            status=flag.APPLICATION_PACKAGE,
+            status=flag.REQUIRES_REVIEW,
         )
 
         maven.map_shaded_classes_to_maven_packages(project, purl=main_purl)
