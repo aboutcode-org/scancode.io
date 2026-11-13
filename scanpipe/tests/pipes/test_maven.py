@@ -20,11 +20,15 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import shutil
+import tempfile
+import zipfile
 from pathlib import Path
 from unittest import mock
 
 from django.test import TestCase
 
+import requests
 from packageurl import PackageURL
 
 from scanpipe.models import DiscoveredDependency
@@ -981,6 +985,303 @@ class ScanPipeMavenPipesTest(TestCase):
             packages,
         )
         self.assertIsNone(result)
+
+    def test_scanpipe_maven_get_jar_class_paths(self):
+        jar_dir = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, jar_dir, True)
+        jar_path = jar_dir / "test.jar"
+        with zipfile.ZipFile(jar_path, "w") as jar_file:
+            jar_file.writestr("org/example/Foo.class", b"123")
+            jar_file.writestr("org/example/Bar$Inner.class", b"123")
+            # Multi-release entry: should normalize to org/example/Foo.class.
+            jar_file.writestr("META-INF/versions/9/org/example/Foo.class", b"123")
+            jar_file.writestr("META-INF/MANIFEST.MF", b"Manifest-Version: 1.0\n")
+            jar_file.writestr("org/example/resource.txt", b"not a class")
+
+        result = maven.get_jar_class_paths(jar_path)
+
+        self.assertEqual(
+            result,
+            {"org/example/Foo.class", "org/example/Bar$Inner.class"},
+        )
+
+    @mock.patch("scanpipe.pipes.maven.shutil.rmtree")
+    @mock.patch("scanpipe.pipes.maven.get_jar_class_paths")
+    @mock.patch("scanpipe.pipes.maven.fetch.fetch_url")
+    def test_scanpipe_maven_download_dependency_jar_class_index(
+        self, mock_fetch_url, mock_get_jar_class_paths, mock_rmtree
+    ):
+        mock_fetch_url.return_value = mock.Mock(
+            path="/mock/dependency.jar",
+            directory="/mock/tmp",
+        )
+        mock_get_jar_class_paths.return_value = {"org/example/Foo.class"}
+
+        purl = "pkg:maven/commons-logging/commons-logging@1.1.1"
+        result = maven._download_dependency_jar_class_index(purl, self.project)
+
+        self.assertEqual(result, {"org/example/Foo.class"})
+        mock_fetch_url.assert_called_once_with(purl)
+        mock_get_jar_class_paths.assert_called_once_with("/mock/dependency.jar")
+        mock_rmtree.assert_called_once_with("/mock/tmp", ignore_errors=True)
+
+    def test_scanpipe_maven_get_jar_verification_candidates(self):
+        commons = make_package(
+            self.project,
+            package_url="pkg:maven/commons-logging/commons-logging@1.1.1",
+        )
+        jackson = make_package(
+            self.project,
+            package_url="pkg:maven/com.fasterxml.jackson.core/jackson-annotations@2.4.0",
+        )
+
+        candidates = maven._get_jar_verification_candidates(
+            "com.fasterxml.jackson.core",
+            [commons, jackson],
+        )
+
+        self.assertEqual(len(candidates), 1)
+        self.assertEqual([(6, {"artifact", "group"}, jackson)], candidates)
+
+    def test_scanpipe_maven_get_jar_verification_candidates_ordered_and_limited(self):
+        jackson = make_package(
+            self.project,
+            package_url="pkg:maven/com.fasterxml.jackson.core/jackson-annotations@2.4.0",
+        )
+        htrace = make_package(
+            self.project,
+            package_url="pkg:maven/org.apache.htrace/htrace-core@4.0.0-incubating",
+        )
+
+        # Both packages match "com.fasterxml.jackson.core": jackson-annotations
+        # matches the group and artifact segments; htrace-core matches only the
+        # "core" artifact segment but gets a fuzzy bonus because its last
+        # segment equals the last package segment. jackson-annotations scores
+        # higher, so it comes first.
+        candidates = maven._get_jar_verification_candidates(
+            "com.fasterxml.jackson.core",
+            [htrace, jackson],
+        )
+
+        self.assertEqual(len(candidates), 2)
+        self.assertEqual(candidates[0][2], jackson)
+        self.assertGreater(candidates[0][0], candidates[1][0])
+
+        # The limit keeps only the top-scoring candidate.
+        limited = maven._get_jar_verification_candidates(
+            "com.fasterxml.jackson.core",
+            [htrace, jackson],
+            limit=1,
+        )
+
+        self.assertEqual(len(limited), 1)
+        self.assertEqual(limited[0][2], jackson)
+
+    def test_scanpipe_maven_get_jar_verification_candidates_skips_unversioned(self):
+        versioned = make_package(
+            self.project,
+            package_url="pkg:maven/commons-logging/commons-logging@1.1.1",
+        )
+        main_package = make_package(
+            self.project,
+            package_url="pkg:maven/org.apache.htrace/htrace-core@4.0.0-incubating",
+        )
+        unversioned = make_dependency(
+            project=self.project,
+            for_package=main_package,
+            dependency_uid="pkg:maven/commons-logging/commons-logging",
+            type="maven",
+            namespace="commons-logging",
+            name="commons-logging",
+            version="",
+        )
+
+        candidates = maven._get_jar_verification_candidates(
+            "org.apache.commons.logging.impl",
+            [unversioned, versioned],
+        )
+
+        self.assertEqual(len(candidates), 1)
+        _score, _signals, package = candidates[0]
+        self.assertEqual(package, versioned)
+
+    @mock.patch("scanpipe.pipes.maven._download_dependency_jar_class_index")
+    def test_scanpipe_maven_fetch_dependency_jar_class_index_caches(
+        self, mock_download
+    ):
+        mock_download.return_value = {"org/example/Foo.class"}
+        purl = "pkg:maven/org.apache.htrace/htrace-core@4.0.0-incubating"
+        main_package = make_package(self.project, package_url=purl)
+        dependency = make_dependency(
+            project=self.project,
+            for_package=main_package,
+            dependency_uid="pkg:maven/commons-logging/commons-logging@1.1.1",
+            type="maven",
+            namespace="commons-logging",
+            name="commons-logging",
+            version="1.1.1",
+        )
+        jar_index_cache = {}
+
+        first = maven._fetch_dependency_jar_class_index(
+            dependency, jar_index_cache, self.project
+        )
+        second = maven._fetch_dependency_jar_class_index(
+            dependency, jar_index_cache, self.project
+        )
+
+        self.assertEqual(first, {"org/example/Foo.class"})
+        self.assertEqual(second, {"org/example/Foo.class"})
+        # The second call for the same purl must return the cached class
+        # index without triggering another download.
+        mock_download.assert_called_once()
+
+    @mock.patch("scanpipe.pipes.maven._fetch_dependency_jar_class_index")
+    def test_scanpipe_maven_map_shaded_classes_jar_verification_match(
+        self, mock_fetch_index
+    ):
+        project, main_purl, _, jackson = self._setup_project_with_shaded_classes()
+        test_class = make_resource_file(
+            project,
+            "to/org/apache/htrace/fasterxml/jackson/core/SomeClass.class",
+            status=flag.APPLICATION_PACKAGE,
+        )
+        mock_fetch_index.return_value = {"com/fasterxml/jackson/core/SomeClass.class"}
+
+        maven.map_shaded_classes_to_maven_packages(project, purl=main_purl)
+
+        test_class.refresh_from_db()
+        self.assertEqual(test_class.status, flag.SHADED_CLASS)
+        self.assertEqual([jackson], list(test_class.discovered_packages.all()))
+        self.assertEqual(
+            {
+                "shaded_from_package": (
+                    "pkg:maven/com.fasterxml.jackson.core/jackson-annotations@2.4.0"
+                ),
+                "original_fqn": "com.fasterxml.jackson.core.SomeClass",
+                "match_score": 6,
+                "match_signals": ["artifact", "group", "jar_verified"],
+            },
+            test_class.extra_data,
+        )
+
+    @mock.patch("scanpipe.pipes.maven._fetch_dependency_jar_class_index")
+    def test_scanpipe_maven_map_shaded_classes_jar_verification_no_match(
+        self, mock_fetch_index
+    ):
+        project, main_purl, _, _ = self._setup_project_with_shaded_classes()
+        test_class = make_resource_file(
+            project,
+            "to/org/apache/htrace/fasterxml/jackson/core/SomeClass.class",
+            status=flag.APPLICATION_PACKAGE,
+        )
+        # The dependency JAR exists but does not contain the class.
+        mock_fetch_index.return_value = {"com/fasterxml/jackson/core/OtherClass.class"}
+
+        maven.map_shaded_classes_to_maven_packages(project, purl=main_purl)
+
+        test_class.refresh_from_db()
+        self.assertEqual(test_class.status, flag.REQUIRES_REVIEW)
+        self.assertNotIn("shaded_from_package", test_class.extra_data)
+        self.assertEqual(test_class.discovered_packages.count(), 0)
+
+    @mock.patch("scanpipe.pipes.maven._fetch_dependency_jar_class_index")
+    def test_scanpipe_maven_map_shaded_classes_jar_verification_ambiguous(
+        self, mock_fetch_index
+    ):
+        project, main_purl, _, _ = self._setup_project_with_shaded_classes()
+        make_package(
+            project,
+            package_url="pkg:maven/com.fasterxml.jackson.core/jackson-databind@2.4.0",
+        )
+        test_class = make_resource_file(
+            project,
+            "to/org/apache/htrace/fasterxml/jackson/core/SomeClass.class",
+            status=flag.APPLICATION_PACKAGE,
+        )
+        # Both jackson-annotations and jackson-databind are candidates for the
+        # un-shaded package "com.fasterxml.jackson.core", and the mock reports
+        # the class exists in each of their JARs. With more than one matching
+        # JAR, the attribution is ambiguous, so the class is left for review.
+        mock_fetch_index.return_value = {"com/fasterxml/jackson/core/SomeClass.class"}
+
+        maven.map_shaded_classes_to_maven_packages(project, purl=main_purl)
+
+        test_class.refresh_from_db()
+        self.assertEqual(test_class.status, flag.REQUIRES_REVIEW)
+        self.assertNotIn("shaded_from_package", test_class.extra_data)
+
+    @mock.patch("scanpipe.pipes.maven.fetch.fetch_url")
+    def test_scanpipe_maven_map_shaded_classes_skips_jar_on_name_match(
+        self, mock_fetch_url
+    ):
+        project, main_purl, commons, _ = self._setup_project_with_shaded_classes()
+        test_class = make_resource_file(
+            project,
+            "to/org/apache/htrace/commons/logging/impl/AvalonLogger.class",
+            status=flag.APPLICATION_PACKAGE,
+        )
+
+        maven.map_shaded_classes_to_maven_packages(project, purl=main_purl)
+
+        test_class.refresh_from_db()
+        self.assertEqual(test_class.status, flag.SHADED_CLASS)
+        self.assertIn(commons, test_class.discovered_packages.all())
+        # The name-based matching succeeded, so no JAR was fetched.
+        mock_fetch_url.assert_not_called()
+
+    @mock.patch("scanpipe.pipes.maven.fetch.fetch_url")
+    def test_scanpipe_maven_map_shaded_classes_jar_fetch_failure_requires_review(
+        self, mock_fetch_url
+    ):
+        project, main_purl, _, _ = self._setup_project_with_shaded_classes()
+        test_class = make_resource_file(
+            project,
+            "to/org/apache/htrace/fasterxml/jackson/core/SomeClass.class",
+            status=flag.APPLICATION_PACKAGE,
+        )
+        mock_fetch_url.side_effect = requests.RequestException("network error")
+
+        maven.map_shaded_classes_to_maven_packages(project, purl=main_purl)
+
+        test_class.refresh_from_db()
+        self.assertEqual(test_class.status, flag.REQUIRES_REVIEW)
+        self.assertTrue(
+            project.projectmessages.filter(
+                severity="warning",
+                description__contains="Failed to fetch dependency JAR",
+            ).exists()
+        )
+
+    @mock.patch("scanpipe.pipes.maven.shutil.rmtree")
+    @mock.patch("scanpipe.pipes.maven.get_jar_class_paths")
+    @mock.patch("scanpipe.pipes.maven.fetch.fetch_url")
+    def test_scanpipe_maven_map_shaded_classes_bad_jar_requires_review(
+        self, mock_fetch_url, mock_get_jar_class_paths, mock_rmtree
+    ):
+        project, main_purl, _, _ = self._setup_project_with_shaded_classes()
+        test_class = make_resource_file(
+            project,
+            "to/org/apache/htrace/fasterxml/jackson/core/SomeClass.class",
+            status=flag.APPLICATION_PACKAGE,
+        )
+        mock_fetch_url.return_value = mock.Mock(
+            path="/mock/dependency.jar",
+            directory="/mock/tmp",
+        )
+        mock_get_jar_class_paths.side_effect = zipfile.BadZipFile("not a zip file")
+
+        maven.map_shaded_classes_to_maven_packages(project, purl=main_purl)
+
+        test_class.refresh_from_db()
+        self.assertEqual(test_class.status, flag.REQUIRES_REVIEW)
+        self.assertTrue(
+            project.projectmessages.filter(
+                severity="warning",
+                description__contains="Failed to read JAR contents",
+            ).exists()
+        )
+        mock_rmtree.assert_called_once_with("/mock/tmp", ignore_errors=True)
 
     def test_scanpipe_maven_map_shaded_classes_attributions(self):
         project, main_purl, commons, jackson = self._setup_project_with_shaded_classes()

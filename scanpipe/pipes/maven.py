@@ -25,6 +25,9 @@ import itertools
 import json
 import logging
 import re
+import shutil
+import zipfile
+from operator import itemgetter
 from pathlib import PurePosixPath
 from urllib.parse import urlparse
 
@@ -549,6 +552,18 @@ REQUIRED_MATCH_SIGNALS = {"group", "artifact", "artifact_tail"}
 # should be revisited with a larger sample if false positives are observed.
 MIN_MATCH_SCORE = 6
 
+# Maximum number of candidates inspected against their JAR contents
+# per un-shaded Java package, ordered by name-based score.
+# The name-based score is only a guess: the top candidate may not be the
+# one that actually contains the class, so we check a few rather than just
+# the top one.
+JAR_VERIFICATION_MAX_CANDIDATES = 5
+
+# Pattern used to normalize multi-release JAR entries such as
+# "META-INF/versions/9/foo/Bar.class" to "foo/Bar.class", so a class is
+# found regardless of the versioned location it is stored at.
+MULTI_RELEASE_CLASS_PREFIX_RE = re.compile(r"^META-INF/versions/[^/]+/(?P<path>.+)$")
+
 
 def _score_group_segments(group_id, package_segments):
     """
@@ -689,9 +704,178 @@ def match_shaded_class_to_package(java_package, packages, min_score=MIN_MATCH_SC
     return package, score, signals
 
 
-def _map_shaded_class_resource(resource, relocations, dependency_packages, match_cache):
+def _log_and_warn(project, description, exception, logger=None):
+    """
+    Log ``description`` through ``logger`` when provided, and record it as a
+    project warning.
+    """
+    if logger:
+        logger(description)
+    project.add_warning(
+        description=description,
+        model="map_shaded_classes_to_maven_packages",
+        exception=exception,
+    )
+
+
+def get_jar_class_paths(jar_path):
+    """
+    Return the set of normalized ``.class`` paths contained in a JAR file.
+
+    Multi-release entries such as
+    ``META-INF/versions/9/foo/Bar.class`` are normalized to
+    ``foo/Bar.class`` so a class is found regardless of the versioned
+    location it is stored at.
+    """
+    class_paths = set()
+    with zipfile.ZipFile(jar_path) as jar_file:
+        for zip_info in jar_file.infolist():
+            name = zip_info.filename
+            if not name.endswith(".class"):
+                continue
+            multi_release_match = MULTI_RELEASE_CLASS_PREFIX_RE.match(name)
+            if multi_release_match:
+                name = multi_release_match.group("path")
+            class_paths.add(name)
+    return class_paths
+
+
+def _download_dependency_jar_class_index(purl, project, logger=None):
+    """
+    Download the JAR for ``purl`` and return its set of ``.class`` paths, or
+    an empty set on failure.
+    """
+    try:
+        downloaded = fetch.fetch_url(purl)
+    except (ValueError, requests.RequestException, OSError) as exception:
+        _log_and_warn(
+            project,
+            f"Failed to fetch dependency JAR for {purl}",
+            exception,
+            logger=logger,
+        )
+        return set()
+
+    try:
+        return get_jar_class_paths(downloaded.path)
+    except (zipfile.BadZipFile, OSError) as exception:
+        _log_and_warn(
+            project,
+            f"Failed to read JAR contents for {purl}",
+            exception,
+            logger=logger,
+        )
+        return set()
+    finally:
+        shutil.rmtree(downloaded.directory, ignore_errors=True)
+
+
+def _fetch_dependency_jar_class_index(package, jar_index_cache, project, logger=None):
+    """
+    Fetch the JAR for ``package`` and return the set of ``.class`` paths it
+    contains, or an empty set when the JAR cannot be fetched or read.
+    """
+    purl = package.package_url
+
+    if purl in jar_index_cache:
+        return jar_index_cache[purl]
+
+    jar_index_cache[purl] = _download_dependency_jar_class_index(
+        purl, project, logger=logger
+    )
+
+    return jar_index_cache[purl]
+
+
+def _get_jar_verification_candidates(
+    java_package, packages, limit=JAR_VERIFICATION_MAX_CANDIDATES
+):
+    """
+    Return a list of ``(score, signals, package)`` candidates for JAR
+    verification, ordered by score descending.
+
+    Unlike the strict name-based matching, JAR verification does not require
+    the ``artifact_tail`` signal, because the actual JAR contents are used to
+    confirm the match. Candidates must still have at least one of the
+    ``group`` or ``artifact`` signals, and must carry a version: a Maven
+    artifact cannot be downloaded without one, so a versionless dependency
+    would consume one of the ``JAR_VERIFICATION_MAX_CANDIDATES`` slots
+    without contributing to the match.
+    """
+    candidates = []
+    for package in packages:
+        if not package.version:
+            continue
+        score, signals = score_dependency(java_package, package)
+        if signals.isdisjoint({"group", "artifact"}):
+            continue
+        candidates.append((score, signals, package))
+    candidates.sort(key=itemgetter(0), reverse=True)
+    return candidates[:limit]
+
+
+def _verify_against_jar_contents(
+    original_fqn,
+    candidates,
+    jar_index_cache,
+    project,
+    logger=None,
+):
+    """
+    Try to confirm a shaded class match by checking that the class exists
+    in one of the candidate dependency JARs.
+
+    The ``candidates`` is the ordered list of ``(score, signals, package)``
+    produced by ``_get_jar_verification_candidates`` for the original
+    (un-shaded) Java package.
+
+    Return a ``(package, score, signals)`` tuple when exactly one candidate
+    JAR contains the class, or None when no unique match could be
+    confirmed (no candidates, none contains the class, or several do).
+    """
+    if not candidates:
+        return
+
+    class_path = original_fqn.replace(".", "/") + ".class"
+
+    matches = []
+    for score, signals, package in candidates:
+        class_index = _fetch_dependency_jar_class_index(
+            package, jar_index_cache, project, logger=logger
+        )
+        if class_path in class_index:
+            matches.append((score, signals, package))
+
+    if len(matches) != 1:
+        # Either no match or more than 1 match. Leave the class for review.
+        return
+
+    score, signals, package = matches[0]
+    signals = signals | {"jar_verified"}
+    return package, score, signals
+
+
+def _map_shaded_class_resource(
+    resource,
+    relocations,
+    dependency_packages,
+    match_cache,
+    jar_index_cache,
+    project,
+    logger=None,
+):
     """
     Try to map a single ".class" resource to a Maven dependency package.
+
+    The mapping is done in two stages on the **un-shaded** (original) form
+    of the class, obtained by reversing the shade relocations:
+
+    1. A fast name-based heuristic on the original Java package.
+
+    2. When the name-based heuristic fails (most often because the
+       "artifact_tail" signal is missing), verify the match by checking that
+       the un-shaded class path exists in one of the candidate dependency
+       JARs.
 
     Return True when a relocation applies (whether or not a package was
     matched), False when no relocation applies.
@@ -709,14 +893,27 @@ def _map_shaded_class_resource(resource, relocations, dependency_packages, match
                 match_shaded_class_to_package(
                     original_java_package, dependency_packages
                 ),
+                _get_jar_verification_candidates(
+                    original_java_package, dependency_packages
+                ),
             )
 
     cached = match_cache[java_package]
     if cached is None:
         return False
 
-    original_java_package, match = cached
+    original_java_package, match, candidates = cached
     original_fqn = apply_shade_relocations(fqn, relocations)
+
+    if match is None:
+        # Name-based heuristic failed; verify against JAR contents.
+        match = _verify_against_jar_contents(
+            original_fqn=original_fqn,
+            candidates=candidates,
+            jar_index_cache=jar_index_cache,
+            project=project,
+            logger=logger,
+        )
 
     if match is None:
         # Relocation applies but no package could be attributed.
@@ -812,10 +1009,17 @@ def map_shaded_classes_to_maven_packages(project, purl, logger=None):
     review_count = 0
     not_shaded_count = 0
     match_cache = {}
+    jar_index_cache = {}
 
     for resource in to_classes.iterator(chunk_size=2000):
         if not _map_shaded_class_resource(
-            resource, relocations, dependency_packages, match_cache
+            resource,
+            relocations,
+            dependency_packages,
+            match_cache,
+            jar_index_cache,
+            project=project,
+            logger=logger,
         ):
             not_shaded_count += 1
         elif resource.status == flag.SHADED_CLASS:
