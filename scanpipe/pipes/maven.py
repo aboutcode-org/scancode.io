@@ -713,9 +713,6 @@ def _map_shaded_class_resource(resource, relocations, dependency_packages, match
 
     cached = match_cache[java_package]
     if cached is None:
-        # No relocation applied. Flag for review because the class is
-        # either an orphan or missing source.
-        resource.update(status=flag.REQUIRES_REVIEW)
         return False
 
     original_java_package, match = cached
@@ -838,6 +835,8 @@ def map_shaded_classes_to_maven_packages(project, purl, logger=None):
             mapped_count += 1
         else:
             review_count += 1
+    # Flag all remaining resources (no relocation applied) for review.
+    to_classes.update(status=flag.REQUIRES_REVIEW)
 
     if logger:
         logger(
