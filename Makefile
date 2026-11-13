@@ -87,14 +87,17 @@ restart-worker:
 build:
 	# Build the scancodeio:dev image used by the dev stack (make run, make test)
 	${COMPOSE} build --pull
+	docker image prune --force
 
 build-core:
 	# Build the scancodeio production core image, used by make shell
 	docker build --pull --platform linux/amd64 --target core -t $(IMAGE_NAME) .
+	docker image prune --force
 
 build-full:
 	# Build the scancodeio:full production image, used by docker-compose.build.yml
 	docker build --pull --platform linux/amd64 --target full -t $(IMAGE_NAME):full .
+	docker image prune --force
 
 regen-fixtures:
 	@echo "-> Regenerate test fixtures from the running Docker stack"
