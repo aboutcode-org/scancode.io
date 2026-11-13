@@ -14,10 +14,10 @@
 
       {% include 'scanpipe/forms/form_errors.html' %}
 
-      <div class="columns">
-        <div class="column is-7 pr-5 pb-0">
+      <div class="columns" id="project-form-columns">
+        <div class="column is-7 pr-5 pb-0 is-flex is-flex-direction-column">
 
-          <form method="post" action="{% url 'project_add' %}" enctype="multipart/form-data">{% csrf_token %}
+          <form method="post" action="{% url 'project_add' %}" enctype="multipart/form-data" class="project-create-form is-flex is-flex-direction-column is-flex-grow-1">{% csrf_token %}
             <div class="field">
               <label class="label" for="{{ form.name.id_for_label }}">{{ form.name.label }}</label>
               <div class="control">
@@ -55,33 +55,35 @@
               </div>
             </div>
 
-            <div class="field">
-              <div class="is-flex is-justify-content-space-between">
-                <label class="label" for="{{ form.pipeline.id_for_label }}">
-                  {{ form.pipeline.label }}
-                </label>
-                <label class="checkbox" for="{{ form.execute_now.id_for_label }}">
-                  {{ form.execute_now }}
-                  {{ form.execute_now.label }}
-                </label>
+            <div class="project-form-sticky-actions">
+              <div class="field">
+                <div class="is-flex is-justify-content-space-between mb-1">
+                  <label class="label mb-0" for="{{ form.pipeline.id_for_label }}">
+                    {{ form.pipeline.label }}
+                  </label>
+                  <label class="checkbox" for="{{ form.execute_now.id_for_label }}">
+                    {{ form.execute_now }}
+                    {{ form.execute_now.label }}
+                  </label>
+                </div>
+                <div class="control">
+                  <span class="select is-fullwidth">
+                    {{ form.pipeline }}
+                  </span>
+                </div>
               </div>
-              <div class="control">
-                <span class="select">
-                  {{ form.pipeline }}
-                </span>
-              </div>
-            </div>
 
-            <div class="field">
-              {{ form.selected_groups }}
-            </div>
-
-            <div class="columns mt-3 is-variable is-1">
-              <div class="column is-one-third">
-                <a href="{% url 'project_list' %}" class="button is-fullwidth">Cancel</a>
+              <div class="field">
+                {{ form.selected_groups }}
               </div>
-              <div class="column">
-                <input type="submit" class="button is-fullwidth is-link" value="Create">
+
+              <div class="columns mt-3 is-variable is-1">
+                <div class="column is-one-third">
+                  <a href="{% url 'project_list' %}" class="button is-fullwidth">Cancel</a>
+                </div>
+                <div class="column">
+                  <input type="submit" class="button is-fullwidth is-link" value="Create">
+                </div>
               </div>
             </div>
           </form>
