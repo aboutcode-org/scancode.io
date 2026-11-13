@@ -21,10 +21,10 @@
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 # ===================================================================
-# Stage 1: Build stage
+# Stage app-core: app code and Python dependencies
 # ===================================================================
 
-FROM ghcr.io/astral-sh/uv:0.13.7-python3.14-trixie-slim AS builder
+FROM ghcr.io/astral-sh/uv:0.13.7-python3.14-trixie-slim AS app-core
 
 # Compile bytecode for faster startup
 ENV UV_COMPILE_BYTECODE=1
@@ -53,16 +53,16 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen
 
 # ===================================================================
-# Stage 1.5: Build stage for full image
+# Stage app-full: app-core with the android_analysis extra
 # ===================================================================
 
-FROM builder AS builder-full
+FROM app-core AS app-full
 
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --extra android_analysis
 
 # ===================================================================
-# Stage 1.6: jadx download, independent of the app code to stay cached
+# Stage jadx: jadx, independent of the app code to stay cached
 # ===================================================================
 
 FROM python:3.14-slim-trixie AS jadx
@@ -77,7 +77,7 @@ RUN python3 -m zipfile --extract /tmp/jadx.zip /opt/jadx \
  && chmod +x /opt/jadx/bin/jadx
 
 # ===================================================================
-# Stage 2: Production stage (core)
+# Stage core: runtime image
 # ===================================================================
 
 FROM python:3.14-slim-trixie AS core
@@ -137,8 +137,8 @@ RUN groupadd --gid $APP_GID --system $APP_USER \
  && mkdir -p /var/$APP_NAME \
  && chown $APP_USER:$APP_USER /var/$APP_NAME
 
-# Copy the application from the builder
-COPY --from=builder --chown=$APP_USER:$APP_USER $APP_DIR $APP_DIR
+# Copy the application from app-core
+COPY --from=app-core --chown=$APP_USER:$APP_USER $APP_DIR $APP_DIR
 
 # Place executables in the environment at the front of the path
 ENV PATH="$APP_DIR/.venv/bin:$PATH"
@@ -151,12 +151,12 @@ USER $APP_USER
 RUN mkdir -p /var/$APP_NAME/static/ /var/$APP_NAME/workspace/
 
 # ===================================================================
-# Stage 3: Full image (with VM inspection and Android inspector)
+# Stage full: core with VM inspection, Nix, and Android analysis tools
 # ===================================================================
 
 FROM core AS full
 
-COPY --from=builder-full --chown=$APP_USER:$APP_USER $APP_DIR $APP_DIR
+COPY --from=app-full --chown=$APP_USER:$APP_USER $APP_DIR $APP_DIR
 
 USER root
 RUN apt-get update \
