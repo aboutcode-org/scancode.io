@@ -1,0 +1,28 @@
+name: Check PR title
+
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize]
+
+permissions: {}
+
+jobs:
+  check-pr-title:
+    runs-on: ubuntu-slim
+    steps:
+      - name: Validate Conventional Commits format
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          pattern='^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\([a-z0-9-]+\))?!?: [^ ]'
+          if printf '%s' "$PR_TITLE" | grep --extended-regexp --quiet "$pattern"; then
+            exit 0
+          fi
+
+          echo "::error title=Invalid PR title::The PR title must follow Conventional Commits: <type>(<optional scope>): <description>"
+          echo "Allowed types: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert"
+          echo "Examples:"
+          echo "  feat: add the scan_package pipeline"
+          echo "  fix(scope): resolve conflicting origins"
+          echo "See https://github.com/aboutcode-org/scancode.io/blob/main/CONTRIBUTING.md#pull-request-title"
+          exit 1
