@@ -835,6 +835,7 @@ def map_shaded_classes_to_maven_packages(project, purl, logger=None):
             mapped_count += 1
         else:
             review_count += 1
+
     # Flag all remaining resources (no relocation applied) for review.
     to_classes.update(status=flag.REQUIRES_REVIEW)
 
