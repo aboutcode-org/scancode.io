@@ -83,6 +83,7 @@ def get_queryset(project, model_name):
                 "namespace",
                 "name",
                 "version",
+                "id",
             )
         ),
         "discovereddependency": (
@@ -92,6 +93,7 @@ def get_queryset(project, model_name):
                 "name",
                 "version",
                 "datasource_id",
+                "id",
             )
         ),
         "codebaseresource": (
