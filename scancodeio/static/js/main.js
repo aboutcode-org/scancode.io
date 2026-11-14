@@ -283,6 +283,28 @@ function setupSelectCheckbox() {
     });
   });
 
+  document.querySelectorAll(".batch-action-form").forEach((form) => {
+    form.addEventListener("submit", function () {
+      const input = document.createElement("input");
+      input.type = "hidden";
+      input.name = "selected_ids";
+      input.value = getSelectedCheckboxes().map((checkbox) => checkbox.value).join(",");
+      form.appendChild(input);
+    });
+  });
+
+  document.querySelectorAll(".selected-export").forEach((link) => {
+    link.addEventListener("click", function (event) {
+      event.preventDefault();
+      const url = new URL(link.href, window.location.href);
+      url.searchParams.set(
+        "selected_ids",
+        getSelectedCheckboxes().map((checkbox) => checkbox.value).join(","),
+      );
+      window.location.assign(url);
+    });
+  });
+
 }
 
 // Function to return currently selected checkboxes

@@ -1,0 +1,39 @@
+<div id="list-actions-dropdown" class="dropdown is-right is-hoverable is-disabled">
+  <div class="dropdown-trigger" data-title="Select rows first to apply an action">
+    <button class="button is-smaller" aria-haspopup="true" disabled>
+      <span class="icon has-text-grey"><i class="fa-solid fa-wrench"></i></span>
+      <span>Actions</span>
+      <span class="icon is-small"><i class="fa-solid fa-angle-down" aria-hidden="true"></i></span>
+    </button>
+  </div>
+  <div class="dropdown-menu" role="menu">
+    <div class="dropdown-content">
+      {% if finding_type == "resource" %}
+        <form method="post" action="{% url 'project_batch_action' project.slug finding_type %}" hx-post="{% url 'project_batch_action' project.slug finding_type %}" hx-swap="none" class="batch-action-form">{% csrf_token %}
+          <input type="hidden" name="action" value="reviewed">
+          <button class="dropdown-item" type="submit"><i class="fa-solid fa-check mr-2"></i>Mark reviewed</button>
+        </form>
+        <form method="post" action="{% url 'project_batch_action' project.slug finding_type %}" hx-post="{% url 'project_batch_action' project.slug finding_type %}" hx-swap="none" class="batch-action-form">{% csrf_token %}
+          <input type="hidden" name="action" value="ignored-not-in-package">
+          <button class="dropdown-item" type="submit"><i class="fa-solid fa-eye-slash mr-2"></i>Mark ignored-not-in-package</button>
+        </form>
+      {% elif finding_type == "package" %}
+        <form method="post" action="{% url 'project_batch_action' project.slug finding_type %}" hx-post="{% url 'project_batch_action' project.slug finding_type %}" hx-swap="none" class="batch-action-form">{% csrf_token %}
+          <input type="hidden" name="action" value="tag">
+          <input class="input is-small m-2" name="value" placeholder="Tag" required>
+          <button class="dropdown-item" type="submit"><i class="fa-solid fa-tag mr-2"></i>Apply tag</button>
+        </form>
+      {% else %}
+        <form method="post" action="{% url 'project_batch_action' project.slug finding_type %}" hx-post="{% url 'project_batch_action' project.slug finding_type %}" hx-swap="none" class="batch-action-form">{% csrf_token %}
+          <input type="hidden" name="action" value="reviewed">
+          <button class="dropdown-item" type="submit"><i class="fa-solid fa-check mr-2"></i>Mark reviewed</button>
+        </form>
+      {% endif %}
+      <hr class="dropdown-divider">
+      <a href="?{{ export_xlsx_url_query }}" class="dropdown-item selected-export"> <i class="fa-solid fa-file-excel mr-2"></i>Export selected as XLSX</a>
+      {% if export_json_url_query %}
+        <a href="?{{ export_json_url_query }}" class="dropdown-item selected-export"><i class="fa-solid fa-file-code mr-2"></i>Export selected as JSON</a>
+      {% endif %}
+    </div>
+  </div>
+</div>
