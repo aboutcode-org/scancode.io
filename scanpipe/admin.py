@@ -24,12 +24,17 @@ from django.contrib import admin
 from django.urls import reverse
 from django.utils.html import format_html
 
+from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
+from scanpipe.models import DiscoveredLicense
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import OriginDetermination
 from scanpipe.models import OriginMatch
 from scanpipe.models import Project
+from scanpipe.models import ProjectMessage
+from scanpipe.models import Run
+from scanpipe.models import WebhookSubscription
 
 
 class ScanPipeBaseAdmin(admin.ModelAdmin):
@@ -42,6 +47,11 @@ class ScanPipeBaseAdmin(admin.ModelAdmin):
     def has_add_permission(self, request):
         return False
 
+    def lookup_allowed(self, lookup, value, *args, **kwargs):
+        if lookup.startswith("project__"):
+            return True
+        return super().lookup_allowed(lookup, value, *args, **kwargs)
+
 
 class ProjectAdmin(ScanPipeBaseAdmin):
     list_display = [
@@ -50,6 +60,10 @@ class ProjectAdmin(ScanPipeBaseAdmin):
         "packages_link",
         "dependencies_link",
         "resources_link",
+        "licenses_link",
+        "messages_link",
+        "relations_link",
+        "runs_link",
         "is_archived",
     ]
     search_fields = ["uuid", "name"]
@@ -57,9 +71,31 @@ class ProjectAdmin(ScanPipeBaseAdmin):
     ordering = ["-created_date"]
     fieldsets = [
         ("", {"fields": ("name", "slug", "notes", "extra_data", "settings", "uuid")}),
-        ("Links", {"fields": ("packages_link", "dependencies_link", "resources_link")}),
+        (
+            "Links",
+            {
+                "fields": (
+                    "packages_link",
+                    "dependencies_link",
+                    "resources_link",
+                    "licenses_link",
+                    "messages_link",
+                    "relations_link",
+                    "runs_link",
+                )
+            },
+        ),
     ]
-    readonly_fields = ["packages_link", "dependencies_link", "resources_link", "uuid"]
+    readonly_fields = [
+        "packages_link",
+        "dependencies_link",
+        "resources_link",
+        "licenses_link",
+        "messages_link",
+        "relations_link",
+        "runs_link",
+        "uuid",
+    ]
 
     @admin.display(description="Labels")
     def label_list(self, obj):
@@ -87,6 +123,26 @@ class ProjectAdmin(ScanPipeBaseAdmin):
     def resources_link(self, obj):
         count = obj.resource_count
         return self.make_filtered_link(obj, count, "codebaseresource")
+
+    @admin.display(description="Licenses")
+    def licenses_link(self, obj):
+        count = obj.discoveredlicenses.count()
+        return self.make_filtered_link(obj, count, "discoveredlicense")
+
+    @admin.display(description="Messages", ordering="message_count")
+    def messages_link(self, obj):
+        count = obj.message_count
+        return self.make_filtered_link(obj, count, "projectmessage")
+
+    @admin.display(description="Relations", ordering="relation_count")
+    def relations_link(self, obj):
+        count = obj.relation_count
+        return self.make_filtered_link(obj, count, "codebaserelation")
+
+    @admin.display(description="Runs")
+    def runs_link(self, obj):
+        count = obj.runs.count()
+        return self.make_filtered_link(obj, count, "run")
 
 
 class CodebaseResourceAdmin(ScanPipeBaseAdmin):
@@ -217,6 +273,86 @@ class OriginDeterminationAdmin(ScanPipeBaseAdmin):
         return False
 
 
+class DiscoveredLicenseAdmin(ScanPipeBaseAdmin):
+    list_display = [
+        "identifier",
+        "license_expression",
+        "detection_count",
+        "compliance_alert",
+        "project",
+    ]
+    list_filter = ["compliance_alert", "is_license_clue", "needs_review"]
+    search_fields = ["identifier", "license_expression"]
+
+
+class ProjectMessageAdmin(ScanPipeBaseAdmin):
+    list_display = [
+        "severity",
+        "model",
+        "description",
+        "created_date",
+        "project",
+    ]
+    list_filter = ["severity", "model"]
+    search_fields = ["description", "traceback"]
+
+
+class CodebaseRelationAdmin(ScanPipeBaseAdmin):
+    list_display = [
+        "from_resource",
+        "to_resource",
+        "map_type",
+        "project",
+    ]
+    list_filter = ["map_type"]
+
+
+class RunStatusFilter(admin.SimpleListFilter):
+    title = "status"
+    parameter_name = "status"
+
+    def lookups(self, request, model_admin):
+        return Run.Status.choices
+
+    def queryset(self, request, queryset):
+        value = self.value()
+        if value == Run.Status.SUCCESS:
+            return queryset.succeed()
+        elif value == Run.Status.FAILURE:
+            return queryset.failed().exclude(task_exitcode__in=[88, 99])
+        elif value == Run.Status.STOPPED:
+            return queryset.filter(task_exitcode=99)
+        elif value == Run.Status.STALE:
+            return queryset.filter(task_exitcode=88)
+        elif value == Run.Status.RUNNING:
+            return queryset.running()
+        elif value == Run.Status.QUEUED:
+            return queryset.queued()
+        elif value == Run.Status.NOT_STARTED:
+            return queryset.not_started()
+        return queryset
+
+
+class RunAdmin(ScanPipeBaseAdmin):
+    list_display = [
+        "pipeline_name",
+        "status",
+        "task_start_date",
+        "task_end_date",
+        "project",
+    ]
+    list_filter = [RunStatusFilter, "pipeline_name"]
+
+
+class WebhookSubscriptionAdmin(ScanPipeBaseAdmin):
+    list_display = [
+        "target_url",
+        "is_active",
+        "trigger_on_each_run",
+        "project",
+    ]
+
+
 class ScanCodeIOAdminSite(admin.AdminSite):
     site_header = "ScanCode.io administration"
     site_title = "ScanCode.io administration"
@@ -229,3 +365,8 @@ admin_site.register(DiscoveredPackage, DiscoveredPackageAdmin)
 admin_site.register(DiscoveredDependency, DiscoveredDependencyAdmin)
 admin_site.register(OriginMatch, OriginMatchAdmin)
 admin_site.register(OriginDetermination, OriginDeterminationAdmin)
+admin_site.register(DiscoveredLicense, DiscoveredLicenseAdmin)
+admin_site.register(ProjectMessage, ProjectMessageAdmin)
+admin_site.register(CodebaseRelation, CodebaseRelationAdmin)
+admin_site.register(Run, RunAdmin)
+admin_site.register(WebhookSubscription, WebhookSubscriptionAdmin)
