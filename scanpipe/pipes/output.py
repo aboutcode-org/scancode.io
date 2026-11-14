@@ -83,6 +83,7 @@ def get_queryset(project, model_name):
                 "namespace",
                 "name",
                 "version",
+                "id",
             )
         ),
         "discovereddependency": (
@@ -92,6 +93,7 @@ def get_queryset(project, model_name):
                 "name",
                 "version",
                 "datasource_id",
+                "id",
             )
         ),
         "codebaseresource": (
@@ -261,7 +263,7 @@ class JSONResultsGenerator:
         other_tools = [f"pkg:pypi/scancode-toolkit@{scancode_toolkit_version}"]
 
         headers = {
-            "tool_name": "scanpipe",
+            "tool_name": "ScanCode.io",
             "tool_version": scancodeio_version,
             "other_tools": other_tools,
             "notice": SCAN_NOTICE,

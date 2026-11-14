@@ -196,7 +196,7 @@ class ScanPipeOutputPipesTest(TestCase):
         self.assertEqual(4, len(results["dependencies"]))
         self.assertEqual(2, len(results["headers"][0]["messages"]))
 
-        self.assertEqual("scanpipe", results["headers"][0]["tool_name"])
+        self.assertEqual("ScanCode.io", results["headers"][0]["tool_name"])
         expected = [f"pkg:pypi/scancode-toolkit@{scancode_toolkit_version}"]
         self.assertEqual(expected, results["headers"][0]["other_tools"])
 
