@@ -45,6 +45,12 @@ class ScanPipeFetchPipesTest(TestCase):
         git_http_url = "https://github.com/aboutcode-org/scancode.io.git"
         self.assertEqual(fetch.fetch_git_repo, fetch.get_fetcher(git_http_url))
         self.assertEqual(fetch.fetch_git_repo, fetch.get_fetcher(git_http_url + "/"))
+        github_repo_url = "https://github.com/aboutcode-org/scancode.io"
+        self.assertEqual(fetch.fetch_git_repo, fetch.get_fetcher(github_repo_url))
+        gitlab_repo_url = "https://gitlab.com/libeigen/eigen"
+        self.assertEqual(fetch.fetch_git_repo, fetch.get_fetcher(gitlab_repo_url))
+        github_archive_url = "https://github.com/nexB/scancode.io/archive/v1.0.zip"
+        self.assertEqual(fetch.fetch_http, fetch.get_fetcher(github_archive_url))
         self.assertEqual(fetch.fetch_package_url, fetch.get_fetcher("pkg:npm/d3@5.8.0"))
         self.assertEqual(fetch.fetch_package_url, fetch.get_fetcher("pkg:pypi/django"))
 
@@ -261,6 +267,36 @@ class ScanPipeFetchPipesTest(TestCase):
         with override_settings(SCANPIPE={"FETCH_HEADERS": headers}):
             session = fetch.get_request_session(url)
             self.assertEqual("token TOKEN", session.headers.get("Authorization"))
+
+    def test_scanpipe_pipes_fetch_is_git_repository_url(self):
+        repository_urls = [
+            "https://github.com/aboutcode-org/scancode.io.git",
+            "https://github.com/aboutcode-org/scancode.io",
+            "https://github.com/aboutcode-org/scancode.io/",
+            "https://www.github.com/aboutcode-org/scancode.io",
+            "http://github.com/aboutcode-org/scancode.io",
+            "https://gitlab.com/libeigen/eigen",
+            "https://GitLab.com/libeigen/eigen",
+            "https://gitlab.com/gitlab-org/security-products/analyzers/semgrep",
+            "https://example.com/some/repo.git",
+        ]
+        for url in repository_urls:
+            self.assertTrue(fetch.is_git_repository_url(url), msg=url)
+
+        other_urls = [
+            "https://github.com/aboutcode-org",
+            "https://github.com/aboutcode-org/scancode.io/archive/v1.0.zip",
+            "https://github.com/aboutcode-org/scancode.io/tree/main/docs",
+            "https://github.com/aboutcode-org/scancode.io?tab=readme",
+            "https://gitlab.com/libeigen",
+            "https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.gz",
+            "https://gitlab.com/libeigen/eigen/-/tree/master",
+            "https://example.com/libeigen/eigen",
+            "ftp://github.com/aboutcode-org/scancode.io",
+            "pkg:github/aboutcode-org/scancode.io",
+        ]
+        for url in other_urls:
+            self.assertFalse(fetch.is_git_repository_url(url), msg=url)
 
     @mock.patch("git.repo.base.Repo.clone_from")
     def test_scanpipe_pipes_fetch_git_repo(self, mock_clone_from):

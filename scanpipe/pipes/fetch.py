@@ -357,6 +357,36 @@ def fetch_package_url(url):
     raise ValueError(f"Could not resolve a download URL for {url}.")
 
 
+def is_git_repository_url(url):
+    """
+    Return True if the provided `url` should be cloned as a git repository.
+
+    This is a URL ending with ``.git``, or the home URL of a GitHub or GitLab
+    repository, such as https://gitlab.com/libeigen/eigen
+    Archive, file, and other page URLs on these hosts are not repository URLs.
+    """
+    url = url.rstrip("/")
+    if url.endswith(".git"):
+        return True
+
+    parsed = urlparse(url)
+    if parsed.scheme not in ("http", "https") or parsed.query or parsed.fragment:
+        return False
+
+    segments = [segment for segment in parsed.path.split("/") if segment]
+    host = parsed.netloc.lower()
+
+    if host in ("github.com", "www.github.com"):
+        return len(segments) == 2
+
+    # GitLab projects can be nested in subgroups, and all other project pages
+    # are under a "-" path segment, such as /group/project/-/archive/...
+    if host == "gitlab.com":
+        return len(segments) >= 2 and "-" not in segments
+
+    return False
+
+
 SCHEME_TO_FETCHER_MAPPING = {
     "http": fetch_http,
     "https": fetch_http,
@@ -369,7 +399,7 @@ def get_fetcher(url):
     if url.startswith("git@"):
         raise ValueError("SSH 'git@' URLs are not supported. Use https:// instead.")
 
-    if url.rstrip("/").endswith(".git"):
+    if is_git_repository_url(url):
         return fetch_git_repo
 
     if url.startswith("pkg:"):
