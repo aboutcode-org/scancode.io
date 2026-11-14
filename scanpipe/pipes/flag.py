@@ -79,6 +79,8 @@ DEFAULT_IGNORED_PATTERNS = [
     "policies.yml",  # when located in the root dir
     "*/policies.yml",
     "*/__MACOSX*",  # macOS metadata folder
+    ".DS_Store",  # macOS Finder metadata, when located in the root dir
+    "*/.DS_Store",
 ]
 
 
