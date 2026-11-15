@@ -780,8 +780,17 @@ def _match_purldb_resources(
             to_resource.path.endswith(".map")
             and "json" in to_resource.file_type.lower()
         ):
-            for js_sha1 in js.source_content_sha1_list(to_resource):
-                resources_by_sha1[js_sha1].append(to_resource)
+            try:
+                js_sha1_list = js.source_content_sha1_list(to_resource)
+            except UnicodeDecodeError as exception:
+                project.add_error(
+                    model="match_purldb_resources",
+                    exception=exception,
+                    object_instance=to_resource,
+                )
+            else:
+                for js_sha1 in js_sha1_list:
+                    resources_by_sha1[js_sha1].append(to_resource)
         processed_resources_count += 1
 
         if processed_resources_count % chunk_size == 0:
@@ -877,9 +886,16 @@ def map_javascript(project, logger=None):
     progress = LoopProgress(to_resources_dot_map_count, logger)
 
     for to_dot_map in progress.iter(resource_iterator):
-        _map_javascript_resource(
-            to_dot_map, to_resources_minified, from_resources_index, from_resources
-        )
+        try:
+            _map_javascript_resource(
+                to_dot_map, to_resources_minified, from_resources_index, from_resources
+            )
+        except UnicodeDecodeError as exception:
+            project.add_error(
+                model="map_javascript",
+                exception=exception,
+                object_instance=to_dot_map,
+            )
 
 
 def _map_javascript_resource(
@@ -1384,7 +1400,17 @@ def _map_javascript_colocation_resource(
 
     from_neighboring_resources = from_resources.filter(path__startswith=common_parent)
 
-    if sources := js.get_map_sources(to_resource):
+    try:
+        sources = js.get_map_sources(to_resource)
+    except UnicodeDecodeError as exception:
+        sources = []
+        project.add_error(
+            model="map_javascript_colocation",
+            exception=exception,
+            object_instance=to_resource,
+        )
+
+    if sources:
         with suppress(MultipleObjectsReturned, ObjectDoesNotExist):
             from_resource = from_neighboring_resources.get(path__endswith=sources[0])
             return js.map_related_files(

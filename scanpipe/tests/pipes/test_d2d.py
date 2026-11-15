@@ -1049,6 +1049,38 @@ class ScanPipeD2DPipesTest(TestCase):
         self.assertEqual(from_resource, relation[0].from_resource)
         self.assertEqual(from_resource, relation[1].from_resource)
 
+    def test_scanpipe_pipes_d2d_map_javascript_undecodable_map_file(self):
+        to_dir = self.project1.codebase_path / "to/project.jar-extract/js"
+        to_dir.mkdir(parents=True)
+        resource_files = [
+            self.data / "d2d-javascript" / "to" / "main.js.map",
+            self.data / "d2d-javascript" / "to" / "main.js",
+        ]
+        copy_inputs(resource_files, to_dir)
+        # A binary file that is not a JavaScript map despite its extension.
+        (to_dir / "game.map").write_bytes(b"map \n\x00\x00\x00\x80\x00\x00\x00")
+
+        from_input_location = self.data / "d2d-javascript" / "from" / "main.js"
+        from_dir = (
+            self.project1.codebase_path
+            / "from/project/src/main/resources/META-INF/adaptive_media/js"
+        )
+        from_dir.mkdir(parents=True)
+        copy_input(from_input_location, from_dir)
+
+        pipes.collect_and_create_codebase_resources(self.project1)
+
+        d2d.map_javascript(self.project1)
+
+        message = self.project1.projectmessages.get()
+        self.assertEqual("error", message.severity)
+        self.assertEqual("map_javascript", message.model)
+        self.assertIn("can't decode byte 0x80 in position 8", message.description)
+        expected = {"resource_path": "to/project.jar-extract/js/game.map"}
+        self.assertEqual(expected, message.details)
+        # The map file sorted after the undecodable one is mapped.
+        self.assertEqual(2, self.project1.codebaserelations.count())
+
     @mock.patch("scanpipe.pipes.purldb.match_resources")
     @mock.patch("scanpipe.pipes.purldb.request_get")
     def test_scanpipe_pipes_d2d_match_js_purldb(self, mock_match_resource, mock_get):
@@ -1101,6 +1133,40 @@ class ScanPipeD2DPipesTest(TestCase):
         package = self.project1.discoveredpackages.get()
         self.assertEqual(package_data["name"], package.name)
         self.assertNotEqual(package_data["uuid"], package.uuid)
+
+    @mock.patch("scanpipe.pipes.purldb.match_resources")
+    def test_scanpipe_pipes_d2d_match_purldb_resources_undecodable_map_file(
+        self, mock_match_resources
+    ):
+        to_map = make_resource_file(
+            self.project1, "to/main.js.map", sha1="abcdef", file_type="JSON data"
+        )
+        to_map.location_path.parent.mkdir(parents=True)
+        # A JSON map file that is not UTF-8 encoded.
+        to_map.location_path.write_bytes(b'{"sourcesContent": ["caf\xe9"]}')
+
+        mock_match_resources.return_value = []
+
+        buffer = io.StringIO()
+        d2d.match_purldb_resources(
+            self.project1,
+            extensions=[".map"],
+            matcher_func=d2d.match_purldb_resource,
+            logger=buffer.write,
+        )
+        expected = (
+            "Matching 1 .map resources in PurlDB, using SHA1"
+            "0 resources matched in PurlDB using 1 SHA1s"
+        )
+        self.assertEqual(expected, buffer.getvalue())
+        # The map file is still matched using its own SHA1.
+        mock_match_resources.assert_called_once_with(sha1_list=["abcdef"])
+
+        message = self.project1.projectmessages.get()
+        self.assertEqual("error", message.severity)
+        self.assertEqual("match_purldb_resources", message.model)
+        self.assertIn("can't decode byte 0xe9", message.description)
+        self.assertEqual({"resource_path": "to/main.js.map"}, message.details)
 
     def test_scanpipe_pipes_d2d_map_javascript_post_purldb_match(self):
         to_map = self.data / "d2d-javascript" / "to" / "main.js.map"
@@ -1315,6 +1381,36 @@ class ScanPipeD2DPipesTest(TestCase):
 
         self.assertIn(expected, buffer.getvalue())
         self.assertEqual(from_expected, relation[0].from_resource)
+
+    def test_scanpipe_pipes_d2d_map_javascript_colocation_undecodable_map_file(self):
+        from_resource = make_resource_file(self.project1, "from/project/src/js/main.js")
+        to_resource = make_resource_file(
+            self.project1, "to/project.jar-extract/js/main.js", status=flag.MAPPED
+        )
+        pipes.make_relation(
+            from_resource=from_resource,
+            to_resource=to_resource,
+            map_type="js_compiled",
+        )
+        # A JSON map file that is not UTF-8 encoded.
+        to_map = make_resource_file(
+            self.project1, "to/project.jar-extract/js/main.js.map"
+        )
+        to_map.location_path.parent.mkdir(parents=True)
+        to_map.location_path.write_bytes(b'{"sources": ["src/js/caf\xe9.js"]}')
+
+        d2d.map_javascript_colocation(self.project1)
+
+        message = self.project1.projectmessages.get()
+        self.assertEqual("error", message.severity)
+        self.assertEqual("map_javascript_colocation", message.model)
+        self.assertIn("can't decode byte 0xe9", message.description)
+        expected = {"resource_path": "to/project.jar-extract/js/main.js.map"}
+        self.assertEqual(expected, message.details)
+        # The map file is still mapped using its path.
+        relation = self.project1.codebaserelations.get(map_type="js_colocation")
+        self.assertEqual(from_resource, relation.from_resource)
+        self.assertEqual(to_map, relation.to_resource)
 
     def test_map_thirdparty_npm_packages(self):
         to_dir = (
