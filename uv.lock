@@ -6,6 +6,11 @@ requires-python = ">=3.12, <3.15"
 exclude-newer = "0001-01-01T00:00:00Z" # This has no effect and is included for backwards compatibility when using relative exclude-newer values.
 exclude-newer-span = "P3D"
 
+[options.exclude-newer-package]
+aboutcode-api-auth = false
+aboutcode-hashid = false
+aboutcode-pipeline = false
+
 [[package]]
 name = "aboutcode-api-auth"
 version = "0.2.0"
@@ -44,11 +49,11 @@ wheels = [
 
 [[package]]
 name = "aboutcode-pipeline"
-version = "0.2.1"
+version = "0.3.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/3e/fc/1e5aef90a9d722efac8c7e3d208cc6d4195d7c0d847603ce778229248933/aboutcode_pipeline-0.2.1.tar.gz", hash = "sha256:4b1a3e52aab321319d6c4c56070c74f2974fdf24bb5cef5dad4d24a7bbedd7ca", size = 8868, upload-time = "2025-02-25T03:01:28.292Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/74/ca/43afafadbec2f48b67e1618482ae7f5d7078738eb99bf6e7122cca19b12b/aboutcode_pipeline-0.3.0.tar.gz", hash = "sha256:331ff47ff7af908ade01ddf09e747b3beff1289308a1a67c99f3de63b8329aac", size = 9723, upload-time = "2026-11-16T06:14:11.545Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/2f/8d/550094f0bcebfb429f7db36e67cf542097c69cae409ec3daaf66a4ac9b2e/aboutcode_pipeline-0.2.1-py3-none-any.whl", hash = "sha256:477ed53ea0065095d6b9512e07db351b9a7c85a722a6ceb57062b72ed6288d3b", size = 11485, upload-time = "2025-02-25T03:01:27.285Z" },
+    { url = "https://files.pythonhosted.org/packages/a2/db/693c577406ac6951d10b337ac5a6dbf9c19d5380342b6e9be852b73757d0/aboutcode_pipeline-0.3.0-py3-none-any.whl", hash = "sha256:eb9ea49cf294b0a6e078e5ed88d5531954127a5513d28ac83ad80f861b6da69a", size = 12340, upload-time = "2026-11-16T06:14:10.369Z" },
 ]
 
 [[package]]
@@ -3075,7 +3080,7 @@ mining = [
 requires-dist = [
     { name = "aboutcode-api-auth", specifier = "==0.2.0" },
     { name = "aboutcode-hashid", specifier = "==0.2.0" },
-    { name = "aboutcode-pipeline", specifier = "==0.2.1" },
+    { name = "aboutcode-pipeline", specifier = "==0.3.0" },
     { name = "aboutcode-toolkit", specifier = "==11.1.1" },
     { name = "aiohttp", specifier = "==3.14.5" },
     { name = "android-inspector", marker = "extra == 'android-analysis'", specifier = "==0.2.0" },

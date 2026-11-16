@@ -189,6 +189,7 @@ class ProjectPipeline(CommonStepsMixin, BasePipeline):
         """Add the ``download_inputs`` step as an initial step if enabled."""
         if cls.download_inputs:
             return (cls.download_missing_inputs,)
+        return ()
 
     @classmethod
     def get_availability(cls):

@@ -82,8 +82,11 @@ class ScanNixPackage(DeployToDevelop):
             *d2d_steps,
             cls.create_nix_package,
             cls.check_nix_package_license,
-            cls.collect_nix_garbage,
         )
+
+    @classmethod
+    def get_post_steps(cls):
+        return (cls.collect_nix_garbage,)
 
     def get_nix_package(self):
         """Validate the input Nix PURL and get its nixpkgs commit."""
