@@ -22,6 +22,7 @@ services:
       ./manage.py migrate --check || ./manage.py migrate;
       ./manage.py runserver --skip-checks 0.0.0.0:8001"
     volumes:
+      - ./aboutcode:/opt/scancodeio/aboutcode
       - ./scancodeio:/opt/scancodeio/scancodeio
       - ./scanpipe:/opt/scancodeio/scanpipe
     ports:
@@ -38,6 +39,7 @@ services:
       --queue-class scancodeio.worker.ScanCodeIOQueue
       --verbosity 1"
     volumes:
+      - ./aboutcode:/opt/scancodeio/aboutcode
       - ./scancodeio:/opt/scancodeio/scancodeio
       - ./scanpipe:/opt/scancodeio/scanpipe
 
