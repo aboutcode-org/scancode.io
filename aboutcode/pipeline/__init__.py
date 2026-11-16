@@ -22,7 +22,6 @@
 
 import logging
 import traceback
-import warnings
 from datetime import datetime
 from datetime import timezone
 from pydoc import getdoc
@@ -58,20 +57,13 @@ class PipelineDefinition:
         if not callable(cls.steps):
             raise TypeError("Use a ``steps(cls)`` classmethod to declare the steps.")
 
-        steps = cls.steps()
-
-        if initial_steps := cls.get_initial_steps():
-            steps = (*initial_steps, *steps)
-
-        if post_steps := cls.get_post_steps():
-            steps = (*steps, *post_steps)
-
-        return steps
+        return (*cls.get_initial_steps(), *cls.steps(), *cls.get_post_steps())
 
     @classmethod
     def get_steps(cls, groups=None):
         """
-        Return the list of steps defined in the ``steps`` class method.
+        Return the tuple of steps to run: the initial steps, the steps defined in the
+        ``steps`` class method, and the post steps.
 
         By default, all steps decorated with ``optional_step`` are not included.
         A list of optional steps can be included using the ``groups`` parameter.
@@ -93,7 +85,7 @@ class PipelineDefinition:
         Return a tuple of extra initial steps to be run at the start of the pipeline
         execution.
         """
-        return
+        return ()
 
     @classmethod
     def get_post_steps(cls):
@@ -101,7 +93,7 @@ class PipelineDefinition:
         Return a tuple of extra steps to be run at the end of the pipeline
         execution, even when a previous step failed.
         """
-        return
+        return ()
 
     @classmethod
     def get_doc(cls):
@@ -204,7 +196,7 @@ class PipelineRun:
         self.log(f"Pipeline [{self.pipeline_name}] starting")
 
         steps = self.pipeline_class.get_steps(groups=self.selected_groups)
-        post_steps = self.pipeline_class.get_post_steps() or ()
+        post_steps = self.pipeline_class.get_post_steps()
         steps_count = len(steps)
         pipeline_start_time = timer()
         failure_output = ""
@@ -267,17 +259,6 @@ def optional_step(*groups):
     return decorator
 
 
-def group(*groups):
-    """Backward compatibility."""
-    warnings.warn(
-        "The `group` decorator is deprecated and will be "
-        "removed in a future release. Use `optional_step` instead.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    return optional_step(*groups)
-
-
 def humanize_time(seconds):
     """Convert the provided ``seconds`` number into human-readable time."""
     message = f"{seconds:.0f} seconds"
@@ -317,10 +298,6 @@ class LoopProgress:
         self.start_time = timer()
         self.last_logged_progress = 0
         self.current_iteration = 0
-
-    def get_eta(self, current_progress):
-        run_time = timer() - self.start_time
-        return round(run_time / current_progress * (100 - current_progress))
 
     @property
     def current_progress(self):
