@@ -1122,6 +1122,64 @@ class ScanPipeManagementCommandTest(TestCase):
         expected = ["a.txt", "b.txt", "c.txt"]
         self.assertEqual(expected, sorted(codebase_files))
 
+    @mock.patch("scanpipe.management.commands.run.call_command")
+    def test_scanpipe_management_command_run_package_url(self, mock_call_command):
+        out = StringIO()
+        with redirect_stdout(out):
+            call_command("run", "scan_single_package", "pkg:npm/foo@1.0.0")
+
+        self.assertEqual(3, mock_call_command.call_count)
+        migrate_call, create_project_call, output_call = (
+            mock_call_command.call_args_list
+        )
+        self.assertEqual("migrate", migrate_call[0][0])
+        self.assertEqual("create-project", create_project_call[0][0])
+        self.assertEqual(["pkg:npm/foo@1.0.0"], create_project_call[1]["input_urls"])
+        self.assertEqual(["scan_single_package"], create_project_call[1]["pipeline"])
+        self.assertEqual("output", output_call[0][0])
+
+    @mock.patch("scanpipe.management.commands.run.call_command")
+    def test_scanpipe_management_command_run_package_url_with_comma_qualifiers(
+        self, mock_call_command
+    ):
+        out = StringIO()
+        purl = "pkg:deb/debian/curl@7.50.3?arch=i386,distro=jessie"
+        with redirect_stdout(out):
+            call_command("run", "scan_single_package", purl)
+
+        self.assertEqual(3, mock_call_command.call_count)
+        create_project_call = mock_call_command.call_args_list[1]
+        self.assertEqual("create-project", create_project_call[0][0])
+        self.assertEqual([purl], create_project_call[1]["input_urls"])
+
+    def test_scanpipe_management_command_run_get_input_options(self):
+        from scanpipe.management.commands.run import Command as RunCommand
+
+        input_location = "pkg:npm/foo@1.0.0"
+        options = RunCommand.get_input_options(input_location)
+        self.assertEqual(["pkg:npm/foo@1.0.0"], options["input_urls"])
+
+        purl_with_comma = "pkg:deb/debian/curl@7.50.3?arch=i386,distro=jessie"
+        options = RunCommand.get_input_options(purl_with_comma)
+        self.assertEqual([purl_with_comma], options["input_urls"])
+
+        multiple = f"{purl_with_comma},https://example.com/archive.zip"
+        options = RunCommand.get_input_options(multiple)
+        self.assertEqual(
+            [purl_with_comma, "https://example.com/archive.zip"], options["input_urls"]
+        )
+
+        file_location = str(self.data / "codebase" / "a.txt")
+        multiple_with_file = f"{purl_with_comma},{file_location}"
+        options = RunCommand.get_input_options(multiple_with_file)
+        self.assertEqual([purl_with_comma], options["input_urls"])
+        self.assertEqual([file_location], options["input_files"])
+
+        ssh_git_url = "git@github.com:user/repo.git"
+        with self.assertRaises(CommandError) as cm:
+            RunCommand.get_input_options(ssh_git_url)
+        self.assertEqual(f"{ssh_git_url} not found.", str(cm.exception))
+
     @mock.patch("scanpipe.models.Project.get_latest_output")
     @mock.patch("requests.post")
     @mock.patch("requests.sessions.Session.get")
