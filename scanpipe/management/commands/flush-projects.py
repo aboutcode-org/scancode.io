@@ -28,6 +28,7 @@ from django.template.defaultfilters import pluralize
 from django.utils import timezone
 
 from scanpipe.models import Project
+from scanpipe.models import RunInProgressError
 
 
 class Command(BaseCommand):
@@ -82,6 +83,11 @@ class Command(BaseCommand):
                 "Do not delete any projects; just print the ones that would be flushed."
             ),
         )
+        parser.add_argument(
+            "--skip-running",
+            action="store_true",
+            help="Skip projects that have active pipeline runs in progress.",
+        )
 
     def handle(self, *inputs, **options):
         verbosity = options["verbosity"]
@@ -89,6 +95,7 @@ class Command(BaseCommand):
         labels = options["labels"]
         pipelines = options["pipelines"]
         dry_run = options["dry_run"]
+        skip_running = options["skip_running"]
         projects = Project.objects.order_by("-created_date").distinct()
 
         if retain_days:
@@ -128,7 +135,18 @@ class Command(BaseCommand):
 
         deletion_count = 0
         for project in projects:
-            project.delete()
+            if skip_running:
+                try:
+                    project.delete()
+                except RunInProgressError:
+                    if verbosity > 0:
+                        msg = self.style.WARNING(
+                            f"Skipping {project}: pipeline run in progress"
+                        )
+                        self.stdout.write(msg)
+                    continue
+            else:
+                project.delete()
             deletion_count += 1
 
         if verbosity > 0:
