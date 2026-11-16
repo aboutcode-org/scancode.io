@@ -50,18 +50,15 @@ class PipelineDefinition:
         raise NotImplementedError
 
     @classmethod
-    def get_steps(cls, groups=None):
+    def get_all_steps(cls):
         """
-        Return the list of steps defined in the ``steps`` class method.
-
-        By default, all steps decorated with ``optional_step`` are not included.
-        A list of optional steps can be included using the ``groups`` parameter.
+        Return the initial steps, the steps defined in the ``steps`` class method,
+        and the post steps, including the steps decorated with ``optional_step``.
         """
         if not callable(cls.steps):
             raise TypeError("Use a ``steps(cls)`` classmethod to declare the steps.")
 
         steps = cls.steps()
-        groups = groups or []
 
         if initial_steps := cls.get_initial_steps():
             steps = (*initial_steps, *steps)
@@ -69,9 +66,21 @@ class PipelineDefinition:
         if post_steps := cls.get_post_steps():
             steps = (*steps, *post_steps)
 
+        return steps
+
+    @classmethod
+    def get_steps(cls, groups=None):
+        """
+        Return the list of steps defined in the ``steps`` class method.
+
+        By default, all steps decorated with ``optional_step`` are not included.
+        A list of optional steps can be included using the ``groups`` parameter.
+        """
+        groups = groups or []
+
         steps = tuple(
             step
-            for step in steps
+            for step in cls.get_all_steps()
             if not getattr(step, "groups", [])
             or set(getattr(step, "groups")).intersection(groups)
         )
@@ -134,7 +143,7 @@ class PipelineDefinition:
         return sorted(
             set(
                 group_name
-                for step in cls.steps()
+                for step in cls.get_all_steps()
                 for group_name in getattr(step, "groups", [])
             )
         )
@@ -275,7 +284,7 @@ def humanize_time(seconds):
 
     if seconds > 86400:
         message += f" ({seconds / 86400:.1f} days)"
-    if seconds > 3600:
+    elif seconds > 3600:
         message += f" ({seconds / 3600:.1f} hours)"
     elif seconds > 60:
         message += f" ({seconds / 60:.1f} minutes)"
