@@ -12,7 +12,6 @@ Unreleased
 * feat: [code-genetics] determine the origin of files from combined origin matches #1929 by @tdruez
 * feat: [code-genetics] resolve conflicting origins to detect the ultimate origin of files #1930 by @tdruez
 * feat: add post steps that always run at the end of a pipeline, even when it fails #2310 by @tdruez
-* fix: delete the FederatedCode working directory in a post step, the cleanup step always failed #2310 by @tdruez
 
 v38.2.0 (2026-10-22)
 --------------------
