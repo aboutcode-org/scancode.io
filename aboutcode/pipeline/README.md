@@ -58,7 +58,8 @@ exitcode, error = run.execute()
 ### Post steps
 
 Post steps run at the end of the pipeline, even when a previous step failed.
-Use them for cleanup.
+Use them for cleanup. A post step must not rely on the state set by the other steps,
+as they may have failed before setting it.
 
 ```python
 from aboutcode.pipeline import BasePipeline

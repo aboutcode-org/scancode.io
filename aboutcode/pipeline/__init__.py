@@ -67,8 +67,8 @@ class PipelineDefinition:
     @classmethod
     def get_steps(cls, groups=None):
         """
-        Return the tuple of steps to run: the initial steps, the steps defined in the
-        ``steps`` class method, and the post steps.
+        Return the tuple of the initial steps, the steps defined in the ``steps``
+        class method, and the post steps.
 
         By default, all steps decorated with ``optional_step`` are not included.
         A list of optional steps can be included using the ``groups`` parameter.
