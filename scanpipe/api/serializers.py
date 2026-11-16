@@ -130,7 +130,13 @@ class RunSerializer(SerializerExcludeFieldsMixin, serializers.ModelSerializer):
             "task_exitcode",
             "task_output",
             "log",
+            "current_step",
             "execution_time",
+            "can_start",
+        ]
+        read_only_fields = [
+            "current_step",
+            "can_start",
         ]
 
 
