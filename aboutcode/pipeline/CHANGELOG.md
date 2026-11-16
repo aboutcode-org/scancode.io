@@ -1,5 +1,11 @@
 # Changelog
 
+## Release 0.3.0 (unreleased)
+
+* Add the ``get_post_steps()`` class method to declare steps that always run at the
+  end of a pipeline, even when a previous step failed.
+  [Issue #2310](https://github.com/aboutcode-org/scancode.io/issues/2310)
+
 ## Release 0.2.1 (February 24, 2025)
 
 * Include the ``optional_step`` steps in the ``get_graph()`` list.

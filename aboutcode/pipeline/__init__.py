@@ -31,7 +31,7 @@ from timeit import default_timer as timer
 
 module_logger = logging.getLogger(__name__)
 
-__version__ = "0.2.1"
+__version__ = "0.3.0"
 
 
 class PipelineDefinition:
@@ -66,6 +66,9 @@ class PipelineDefinition:
         if initial_steps := cls.get_initial_steps():
             steps = (*initial_steps, *steps)
 
+        if post_steps := cls.get_post_steps():
+            steps = (*steps, *post_steps)
+
         steps = tuple(
             step
             for step in steps
@@ -80,6 +83,14 @@ class PipelineDefinition:
         """
         Return a tuple of extra initial steps to be run at the start of the pipeline
         execution.
+        """
+        return
+
+    @classmethod
+    def get_post_steps(cls):
+        """
+        Return a tuple of extra steps to be run at the end of the pipeline
+        execution, even when a previous step failed.
         """
         return
 
@@ -177,15 +188,23 @@ class PipelineRun:
         return output
 
     def execute(self):
-        """Execute each steps in the order defined on this pipeline class."""
+        """
+        Execute each steps in the order defined on this pipeline class.
+        After a failure, only the post steps are executed.
+        """
         self.log(f"Pipeline [{self.pipeline_name}] starting")
 
         steps = self.pipeline_class.get_steps(groups=self.selected_groups)
+        post_steps = self.pipeline_class.get_post_steps() or ()
         steps_count = len(steps)
         pipeline_start_time = timer()
+        failure_output = ""
 
         for current_index, step in enumerate(steps, start=1):
             step_name = step.__name__
+
+            if failure_output and step not in post_steps:
+                continue
 
             if self.selected_steps and step_name not in self.selected_steps:
                 self.log(f"Step [{step_name}] skipped")
@@ -198,11 +217,18 @@ class PipelineRun:
             try:
                 step(self)
             except Exception as exception:
-                self.log("Pipeline failed")
-                return 1, self.output_from_exception(exception)
+                self.log(f"Step [{step_name}] failed")
+                # Keep the first failure, the root cause, as the pipeline output.
+                if not failure_output:
+                    failure_output = self.output_from_exception(exception)
+                continue
 
             step_run_time = timer() - step_start_time
             self.log(f"Step [{step_name}] completed in {humanize_time(step_run_time)}")
+
+        if failure_output:
+            self.log("Pipeline failed")
+            return 1, failure_output
 
         # Reset the `current_step` field on completion
         self.set_current_step("")
