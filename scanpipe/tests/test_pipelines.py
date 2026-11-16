@@ -40,6 +40,7 @@ from packageurl import PackageURL
 from scancode.cli_test_utils import purl_with_fake_uuid
 from scorecode.models import PackageScore
 
+from aboutcode.pipeline import humanize_time
 from scanpipe import pipes
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
@@ -73,6 +74,7 @@ from scanpipe.tests.pipelines.download_inputs import DownloadInput
 from scanpipe.tests.pipelines.profile_step import ProfileStep
 from scanpipe.tests.pipelines.steps_as_attribute import StepsAsAttribute
 from scanpipe.tests.pipelines.with_groups import WithGroups
+from scanpipe.tests.pipelines.with_post_steps import WithPostSteps
 
 from_docker_image = os.environ.get("FROM_DOCKER_IMAGE")
 
@@ -221,6 +223,20 @@ class ScanPipePipelinesTest(TestCase):
         self.assertIn(ScanNixPackage.map_macho, steps)
         self.assertNotIn(ScanNixPackage.map_elf, steps)
 
+    @mock.patch("scanpipe.pipes.nix.collect_garbage")
+    @mock.patch("scanpipe.pipes.nix.get_nix_purl")
+    def test_scanpipe_scan_nix_package_collect_garbage_after_failure(
+        self, mock_get_nix_purl, mock_collect_garbage
+    ):
+        mock_get_nix_purl.side_effect = ValueError("Invalid Nix PURL")
+        project1 = make_project()
+        pipeline = project1.add_pipeline("scan_nix_package").make_pipeline_instance()
+
+        exitcode, out = pipeline.execute()
+        self.assertEqual(1, exitcode)
+        self.assertTrue(out.startswith("Invalid Nix PURL"))
+        mock_collect_garbage.assert_called_once_with(project1)
+
     @mock.patch("scanpipe.pipes.nix.add_metadata_warnings")
     @mock.patch("scanpipe.pipes.nix.get_package_metadata")
     def test_scanpipe_scan_nix_package_get_nix_package_metadata(
@@ -311,6 +327,40 @@ class ScanPipePipelinesTest(TestCase):
         self.assertIn("Step [raise_exception_step] starting", run.log)
         self.assertIn("Pipeline failed", run.log)
 
+    def test_scanpipe_pipeline_class_execute_with_post_steps(self):
+        project1 = make_project()
+        run = project1.add_pipeline("with_post_steps")
+        pipeline = run.make_pipeline_instance()
+
+        exitcode, out = pipeline.execute()
+        self.assertEqual(1, exitcode)
+        self.assertTrue(out.startswith("Error in step1"))
+        self.assertNotIn("Error in post_step1", out)
+
+        run.refresh_from_db()
+        self.assertIn("Step [step1] failed", run.log)
+        self.assertNotIn("Step [step2] starting", run.log)
+        self.assertIn("Step [post_step1] failed", run.log)
+        self.assertIn("Step [post_step2] completed", run.log)
+        self.assertIn("Pipeline failed", run.log)
+
+    @mock.patch.object(WithPostSteps, "step1", autospec=True)
+    def test_scanpipe_pipeline_class_execute_with_failing_post_step(self, mock_step1):
+        project1 = make_project()
+        run = project1.add_pipeline("with_post_steps")
+        pipeline = run.make_pipeline_instance()
+
+        exitcode, out = pipeline.execute()
+        self.assertEqual(1, exitcode)
+        self.assertTrue(out.startswith("Error in post_step1"))
+        mock_step1.assert_called_once_with(pipeline)
+
+        run.refresh_from_db()
+        self.assertIn("Step [step2] completed", run.log)
+        self.assertIn("Step [post_step1] failed", run.log)
+        self.assertIn("Step [post_step2] completed", run.log)
+        self.assertIn("Pipeline failed", run.log)
+
     @mock.patch("scanpipe.tests.pipelines.do_nothing.DoNothing.step1")
     @mock.patch("scanpipe.tests.pipelines.do_nothing.DoNothing.step2")
     def test_scanpipe_pipeline_class_execute_with_selected_steps(self, step2, step1):
@@ -345,6 +395,7 @@ class ScanPipePipelinesTest(TestCase):
         self.assertTrue(pipeline.download_inputs)
         expected = (CommonStepsMixin.download_missing_inputs,)
         self.assertEqual(expected, pipeline.get_initial_steps())
+        self.assertEqual((), DoNothing.get_initial_steps())
         expected = (CommonStepsMixin.download_missing_inputs, DownloadInput.step1)
         self.assertEqual(expected, pipeline.get_steps())
         pipeline.execute()
@@ -539,9 +590,74 @@ class ScanPipePipelinesTest(TestCase):
         )
         self.assertEqual(expected, WithGroups.get_steps(groups=["foo"]))
 
+    @mock.patch.object(DoNothing, "get_post_steps", return_value=None)
+    @mock.patch.object(DoNothing, "get_initial_steps", return_value=None)
+    def test_scanpipe_pipeline_class_get_steps_with_step_hooks_returning_none(
+        self, mock_initial_steps, mock_post_steps
+    ):
+        expected = (DoNothing.step1, DoNothing.step2)
+        self.assertEqual(expected, DoNothing.get_steps())
+
+    @mock.patch(
+        "scanpipe.tests.pipelines.raise_exception.RaiseException.get_post_steps",
+        return_value=None,
+    )
+    def test_scanpipe_pipeline_class_execute_with_post_steps_returning_none(
+        self, mock_post_steps
+    ):
+        project1 = make_project()
+        run = project1.add_pipeline("raise_exception")
+        pipeline = run.make_pipeline_instance()
+
+        exitcode, out = pipeline.execute()
+        self.assertEqual(1, exitcode)
+        self.assertTrue(out.startswith("Error message"))
+
+    def test_scanpipe_pipeline_class_get_steps_with_post_steps(self):
+        self.assertEqual((), DoNothing.get_post_steps())
+
+        expected = (
+            WithPostSteps.post_step1,
+            WithPostSteps.post_step2,
+            WithPostSteps.optional_post_step,
+        )
+        self.assertEqual(expected, WithPostSteps.get_post_steps())
+
+        expected = (
+            WithPostSteps.step1,
+            WithPostSteps.step2,
+            WithPostSteps.post_step1,
+            WithPostSteps.post_step2,
+        )
+        self.assertEqual(expected, WithPostSteps.get_steps())
+
+        expected = (*expected, WithPostSteps.optional_post_step)
+        self.assertEqual(expected, WithPostSteps.get_steps(groups=["cleanup"]))
+
     def test_scanpipe_pipeline_class_get_available_groups(self):
         self.assertEqual(["bar", "excluded", "foo"], WithGroups.get_available_groups())
         self.assertEqual([], DoNothing.get_available_groups())
+        self.assertEqual(["cleanup"], WithPostSteps.get_available_groups())
+
+    def test_scanpipe_pipeline_class_get_all_steps(self):
+        expected = (
+            WithPostSteps.step1,
+            WithPostSteps.step2,
+            WithPostSteps.post_step1,
+            WithPostSteps.post_step2,
+            WithPostSteps.optional_post_step,
+        )
+        self.assertEqual(expected, WithPostSteps.get_all_steps())
+
+    def test_scanpipe_pipeline_class_get_graph_with_optional_post_step(self):
+        step_names = [step["name"] for step in WithPostSteps.get_graph()]
+        self.assertIn("optional_post_step", step_names)
+
+    def test_scanpipe_pipeline_humanize_time(self):
+        self.assertEqual("30 seconds", humanize_time(30))
+        self.assertEqual("90 seconds (1.5 minutes)", humanize_time(90))
+        self.assertEqual("5400 seconds (1.5 hours)", humanize_time(5400))
+        self.assertEqual("129600 seconds (1.5 days)", humanize_time(129600))
 
     def test_scanpipe_pipeline_class_env_loaded_from_config_file(self):
         project1 = make_project()

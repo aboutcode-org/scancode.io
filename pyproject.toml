@@ -104,7 +104,7 @@ dependencies = [
   # FederatedCode
   "aboutcode.hashid==0.2.0",
   # AboutCode pipeline
-  "aboutcode.pipeline==0.2.1",
+  "aboutcode.pipeline==0.3.0",
   "aboutcode.api-auth==0.2.0",
   # ScoreCode
   "scorecode==0.0.4",
@@ -190,6 +190,13 @@ where = ["."]
 link-mode = "copy"
 # Ignore package versions published in the last 3 days for safety
 exclude-newer = "3 days"
+
+# Our own packages are exempt, to use a new release right after publishing it.
+# Wildcards are not supported: list each package.
+[tool.uv.exclude-newer-package]
+"aboutcode.api-auth" = false
+"aboutcode.hashid" = false
+"aboutcode.pipeline" = false
 
 [tool.ruff]
 line-length = 88

@@ -38,6 +38,7 @@ from scanpipe.tests.pipelines.do_nothing import DoNothing
 from scanpipe.tests.pipelines.download_inputs import DownloadInput
 from scanpipe.tests.pipelines.profile_step import ProfileStep
 from scanpipe.tests.pipelines.raise_exception import RaiseException
+from scanpipe.tests.pipelines.with_post_steps import WithPostSteps
 
 scanpipe_app = apps.get_app_config("scanpipe")
 
@@ -45,6 +46,7 @@ scanpipe_app.register_pipeline("do_nothing", DoNothing)
 scanpipe_app.register_pipeline("download_inputs", DownloadInput)
 scanpipe_app.register_pipeline("profile_step", ProfileStep)
 scanpipe_app.register_pipeline("raise_exception", RaiseException)
+scanpipe_app.register_pipeline("with_post_steps", WithPostSteps)
 
 FIXTURES_REGEN = os.environ.get("SCANCODEIO_TEST_FIXTURES_REGEN", False)
 mocked_now = mock.Mock(now=lambda: datetime(2010, 10, 10, 10, 10, 10))
