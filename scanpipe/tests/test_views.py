@@ -720,6 +720,22 @@ class ScanPipeViewsTest(TestCase):
         self.assertContains(response, "scan_codebase")
         self.assertNotContains(response, "find_vulnerabilities")
 
+    @mock.patch("scanpipe.pipes.nix.get_missing_commands")
+    def test_scanpipe_views_project_create_view_unavailable_pipeline(
+        self, mock_missing_commands
+    ):
+        url = reverse("project_add")
+
+        mock_missing_commands.return_value = ["nix-build"]
+        response = self.client.get(url)
+        self.assertNotIn("scan_nix_package", response.context["pipelines"])
+        self.assertNotContains(response, "scan_nix_package")
+
+        mock_missing_commands.return_value = []
+        response = self.client.get(url)
+        self.assertIn("scan_nix_package", response.context["pipelines"])
+        self.assertContains(response, "scan_nix_package")
+
     def test_scanpipe_views_project_codebase_view(self):
         url = reverse("project_codebase", args=[self.project1.slug])
 

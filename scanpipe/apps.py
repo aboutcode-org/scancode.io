@@ -165,13 +165,20 @@ class ScanPipeConfig(AppConfig):
     def pipelines(self):
         return dict(self._pipelines)
 
-    def get_pipeline_choices(self, include_blank=True, include_addon=True):
+    def get_pipelines(self, include_addon=True, include_unavailable=True):
+        """Return the pipelines, optionally excluding add-on and unavailable ones."""
+        return {
+            name: pipeline_class
+            for name, pipeline_class in self.pipelines.items()
+            if (include_addon or not pipeline_class.is_addon)
+            and (include_unavailable or pipeline_class.get_availability() is None)
+        }
+
+    def get_pipeline_choices(
+        self, include_blank=True, include_addon=True, include_unavailable=True
+    ):
         """Return a `choices` list of tuple suitable for a Django ChoiceField."""
-        pipeline_names = (
-            name
-            for name, cls in self.pipelines.items()
-            if include_addon or not cls.is_addon
-        )
+        pipeline_names = self.get_pipelines(include_addon, include_unavailable)
         choices = list(BLANK_CHOICE_DASH) if include_blank else []
         choices.extend([(name, name) for name in pipeline_names])
         return choices

@@ -107,6 +107,28 @@ class ScanPipeFormsTest(TestCase):
         self.assertIn(main_pipeline, choices)
         self.assertNotIn(addon_pipeline, choices)
 
+    @mock.patch("scanpipe.pipes.nix.get_missing_commands")
+    def test_scanpipe_forms_project_form_unavailable_pipeline(
+        self, mock_missing_commands
+    ):
+        data = {"name": "Name", "pipeline": "scan_nix_package"}
+        nix_pipeline = ("scan_nix_package", "scan_nix_package")
+
+        mock_missing_commands.return_value = ["nix-build"]
+        form = ProjectForm(data=data)
+        self.assertNotIn(nix_pipeline, form.fields["pipeline"].choices)
+        self.assertFalse(form.is_valid())
+        expected = [
+            "Select a valid choice. "
+            "scan_nix_package is not one of the available choices."
+        ]
+        self.assertEqual(expected, form.errors["pipeline"])
+
+        mock_missing_commands.return_value = []
+        form = ProjectForm(data=data)
+        self.assertIn(nix_pipeline, form.fields["pipeline"].choices)
+        self.assertTrue(form.is_valid())
+
     def test_scanpipe_forms_project_settings_form_update_name_and_notes(self):
         data = {
             "name": "new name",

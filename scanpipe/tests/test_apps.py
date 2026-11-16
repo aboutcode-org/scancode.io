@@ -123,6 +123,37 @@ class ScanPipeAppsTest(TestCase):
         self.assertIn(main_pipeline, choices)
         self.assertNotIn(addon_pipeline, choices)
 
+        unavailable_pipeline = ("scan_nix_package", "scan_nix_package")
+        missing_commands = ["nix-build"]
+        with mock.patch(
+            "scanpipe.pipes.nix.get_missing_commands", return_value=missing_commands
+        ):
+            choices = scanpipe_app.get_pipeline_choices(include_unavailable=False)
+        self.assertIn(main_pipeline, choices)
+        self.assertNotIn(unavailable_pipeline, choices)
+
+    @mock.patch("scanpipe.pipes.nix.get_missing_commands")
+    def test_scanpipe_apps_get_pipelines(self, mock_missing_commands):
+        mock_missing_commands.return_value = ["nix-build"]
+        scan_codebase = scanpipe_app.pipelines["scan_codebase"]
+        scan_nix_package = scanpipe_app.pipelines["scan_nix_package"]
+
+        pipelines = scanpipe_app.get_pipelines()
+        self.assertEqual(scanpipe_app.pipelines, pipelines)
+
+        pipelines = scanpipe_app.get_pipelines(include_addon=False)
+        self.assertIs(scan_codebase, pipelines["scan_codebase"])
+        self.assertIs(scan_nix_package, pipelines["scan_nix_package"])
+        self.assertNotIn("find_vulnerabilities", pipelines)
+
+        pipelines = scanpipe_app.get_pipelines(include_unavailable=False)
+        self.assertIs(scan_codebase, pipelines["scan_codebase"])
+        self.assertNotIn("scan_nix_package", pipelines)
+
+        mock_missing_commands.return_value = []
+        pipelines = scanpipe_app.get_pipelines(include_unavailable=False)
+        self.assertIs(scan_nix_package, pipelines["scan_nix_package"])
+
     @filter_warnings("ignore", category=DeprecationWarning, module="scanpipe")
     def test_scanpipe_apps_get_new_pipeline_name(self):
         self.assertEqual(
