@@ -680,7 +680,7 @@ Displays the results as JSON content compatible with ScanCode data format.
     {
         "headers": [
             {
-                "tool_name": "scanpipe",
+                "tool_name": "ScanCode.io",
                 "tool_version": "21.8.2",
                 "[...]": "[...]"
             }
