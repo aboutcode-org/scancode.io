@@ -93,6 +93,46 @@ ones, or remove any of them.
         def extra_step2(self):
             pass
 
+Post Steps
+----------
+
+When a step fails, the remaining steps are skipped. Steps returned by the
+``get_post_steps`` classmethod run at the end of the pipeline, even when a previous
+step failed. Use them for cleanup, such as deleting temporary files.
+
+.. code-block:: python
+
+    from scanpipe.pipelines import Pipeline
+
+    class MyPipeline(Pipeline):
+
+        @classmethod
+        def steps(cls):
+            return (
+                cls.step1,
+                cls.step2,
+            )
+
+        @classmethod
+        def get_post_steps(cls):
+            return (cls.cleanup,)
+
+        def step1(self):
+            pass
+
+        def step2(self):
+            pass
+
+        def cleanup(self):
+            pass
+
+A failing post step fails the pipeline run. The other post steps still run.
+A post step must not rely on the state set by the other steps, as they may have
+failed before setting it.
+
+.. note::
+    Post steps do not run when the pipeline run is stopped or its worker is killed.
+
 .. _custom_pipeline_example:
 
 Custom Pipeline Example
