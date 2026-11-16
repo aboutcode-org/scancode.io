@@ -1013,7 +1013,8 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual(0, project1.discoveredpackages.count())
 
     @skipIf(sys.platform == "darwin", "Not supported on macOS")
-    def test_scanpipe_scan_maven_package_single_file(self):
+    @mock.patch("scanpipe.pipelines.scan_maven_package.fetch_inputs")
+    def test_scanpipe_scan_maven_package_single_file(self, mock_fetch_inputs):
         pipeline_name = "scan_maven_package"
         project1 = make_project()
 
@@ -1023,8 +1024,15 @@ class PipelinesIntegrationTest(TestCase):
         download_url = "pkg:maven/args4j/args4j-tools@2.0.16"
         project1.add_input_source(download_url=download_url)
 
+        jvm_data = self.data / "jvm"
+        mock_fetch_inputs.return_value = (
+            jvm_data / "args4j-tools-2.0.16-sources.jar",
+            jvm_data / "args4j-tools-2.0.16.jar",
+        )
+
         exitcode, out = pipeline.execute()
         self.assertEqual(0, exitcode, msg=out)
+        mock_fetch_inputs.assert_called_once_with(pipeline.purl)
 
         self.assertEqual(41, project1.codebaseresources.count())
         self.assertEqual(1, project1.discoveredpackages.count())
