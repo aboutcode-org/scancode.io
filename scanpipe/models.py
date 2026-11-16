@@ -93,7 +93,7 @@ from scorecode.contrib.django.models import PackageScoreMixin
 from scorecode.contrib.django.models import ScorecardChecksMixin
 
 import scancodeio
-from scanpipe import humanize_time
+from aboutcode.pipeline import humanize_time
 from scanpipe import policies
 from scanpipe import tasks
 from scanpipe.settings import scanpipe_settings
