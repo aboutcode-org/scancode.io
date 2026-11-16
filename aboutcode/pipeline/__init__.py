@@ -57,7 +57,12 @@ class PipelineDefinition:
         if not callable(cls.steps):
             raise TypeError("Use a ``steps(cls)`` classmethod to declare the steps.")
 
-        return (*cls.get_initial_steps(), *cls.steps(), *cls.get_post_steps())
+        # Overrides may return None when there is no step to add, as the default did
+        # before 0.3.0. Keep supporting it: a TypeError here would break the listing
+        # of every pipeline in ScanCode.io, not only the one returning None.
+        initial_steps = cls.get_initial_steps() or ()
+        post_steps = cls.get_post_steps() or ()
+        return (*initial_steps, *cls.steps(), *post_steps)
 
     @classmethod
     def get_steps(cls, groups=None):
@@ -196,7 +201,7 @@ class PipelineRun:
         self.log(f"Pipeline [{self.pipeline_name}] starting")
 
         steps = self.pipeline_class.get_steps(groups=self.selected_groups)
-        post_steps = self.pipeline_class.get_post_steps()
+        post_steps = self.pipeline_class.get_post_steps() or ()
         steps_count = len(steps)
         pipeline_start_time = timer()
         failure_output = ""

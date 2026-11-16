@@ -7,8 +7,8 @@
   [Issue #2310](https://github.com/aboutcode-org/scancode.io/issues/2310)
 * Include the groups of the initial and post steps in ``get_available_groups()``.
 * Fix ``humanize_time()`` returning both days and hours above one day.
-* Breaking: ``get_initial_steps()`` and ``get_post_steps()`` return an empty tuple
-  by default. Migration: return an empty tuple instead of ``None`` in overrides.
+* ``get_initial_steps()`` and ``get_post_steps()`` return an empty tuple by default.
+  Overrides returning ``None`` are still supported.
 * Breaking: Remove the deprecated ``group`` decorator.
   Migration: Use the ``optional_step`` decorator.
 * Remove the unused ``LoopProgress.get_eta()`` method.
