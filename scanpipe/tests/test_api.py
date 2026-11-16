@@ -1216,6 +1216,25 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual("", response.data["task_output"])
         self.assertIsNone(response.data["execution_time"])
         self.assertEqual(Run.Status.NOT_STARTED, response.data["status"])
+        self.assertEqual("", response.data["current_step"])
+        self.assertTrue(response.data["can_start"])
+
+        run1.set_task_started(run1.pk)
+        run1.set_current_step("extract_archives")
+        response = self.csrf_client.get(url)
+        self.assertEqual(Run.Status.RUNNING, response.data["status"])
+        self.assertEqual("extract_archives", response.data["current_step"])
+        self.assertFalse(response.data["can_start"])
+
+        run2 = self.project1.add_pipeline("analyze_docker_image")
+        url2 = reverse("run-detail", args=[run2.uuid])
+        response2 = self.csrf_client.get(url2)
+        self.assertEqual(Run.Status.NOT_STARTED, response2.data["status"])
+        self.assertFalse(response2.data["can_start"])
+
+        run1.set_task_ended(exitcode=0)
+        response2 = self.csrf_client.get(url2)
+        self.assertTrue(response2.data["can_start"])
 
     @mock.patch("scanpipe.models.Run.execute_task_async")
     def test_scanpipe_api_run_action_start_pipeline(self, mock_execute_task):

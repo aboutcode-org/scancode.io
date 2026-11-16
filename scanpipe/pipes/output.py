@@ -253,7 +253,11 @@ class JSONResultsGenerator:
         from scanpipe.api.serializers import RunSerializer
 
         runs = project.runs.all()
-        runs = RunSerializer(runs, many=True, exclude_fields=("url", "project"))
+        runs = RunSerializer(
+            runs,
+            many=True,
+            exclude_fields=("url", "project", "can_start", "current_step"),
+        )
 
         messages = project.projectmessages.all()
         messages = ProjectMessageSerializer(messages, many=True)

@@ -2499,7 +2499,9 @@ class ScanPipeModelsTest(TestCase):
                 "task_exitcode": None,
                 "task_output": "",
                 "log": "",
+                "current_step": "",
                 "execution_time": None,
+                "can_start": True,
             },
         }
 
