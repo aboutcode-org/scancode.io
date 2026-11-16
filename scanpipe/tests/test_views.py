@@ -456,6 +456,52 @@ class ScanPipeViewsTest(TestCase):
         )
         self.assertContains(response, expected, html=True)
 
+    def test_scanpipe_views_project_details_project_inputs_panel(self):
+        input1 = self.project1.add_input_source(
+            filename="archive.zip",
+            is_uploaded=True,
+            tag="v1.0",
+        )
+        input2 = self.project1.add_input_source(
+            download_url="https://example.com/package.tar.gz",
+        )
+        url = self.project1.get_absolute_url()
+        response = self.client.get(url)
+
+        self.assertContains(
+            response,
+            'aria-controls="dropdown-input-archivezip"',
+        )
+        self.assertContains(
+            response,
+            'id="dropdown-input-archivezip"',
+        )
+        self.assertContains(
+            response,
+            '<span class="tag is-info is-light">v1.0</span>',
+        )
+        self.assertContains(
+            response,
+            f'data-label="{input1.filename}"',
+        )
+
+        input2_uuid = str(input2.uuid)
+        self.assertContains(
+            response,
+            f'aria-controls="dropdown-input-{input2_uuid}"',
+        )
+        self.assertContains(
+            response,
+            f'id="dropdown-input-{input2_uuid}"',
+        )
+        self.assertContains(
+            response,
+            f'data-label="{input2.download_url}"',
+        )
+
+        self.assertNotContains(response, 'aria-controls="dropdown-input-"')
+        self.assertNotContains(response, 'id="dropdown-input-"')
+
     def test_scanpipe_views_project_details_add_pipelines(self):
         url = self.project1.get_absolute_url()
         data = {
@@ -539,6 +585,10 @@ class ScanPipeViewsTest(TestCase):
         }
         response = self.client.post(url, data, follow=True)
         self.assertContains(response, "Tag updated.")
+        self.assertContains(
+            response,
+            '<span class="tag is-info is-light">new value</span>',
+        )
         input_source.refresh_from_db()
         self.assertEqual(data["tag"], input_source.tag)
 
