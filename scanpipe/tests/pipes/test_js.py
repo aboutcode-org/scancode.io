@@ -141,6 +141,10 @@ class ScanPipeJsTest(TestCase):
         result = js.get_map_sources_content(to_resource)
         self.assertEqual([expected], result)
 
+    def test_scanpipe_pipes_js_load_json_from_file_binary(self):
+        binary_location = self.data / "d2d-javascript" / "to" / "binary.map"
+        self.assertIsNone(js.load_json_from_file(binary_location))
+
     def test_scanpipe_pipes_js_get_minified_resource(self):
         to_dir = (
             self.project1.codebase_path / "to/project.tar.zst-extract/osgi/marketplace/"

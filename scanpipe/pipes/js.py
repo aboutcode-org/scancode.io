@@ -92,7 +92,7 @@ def load_json_from_file(location):
     with open(location) as f:
         try:
             return json.load(f)
-        except json.JSONDecodeError:
+        except (json.JSONDecodeError, UnicodeDecodeError):
             return
 
 
