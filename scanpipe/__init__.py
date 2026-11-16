@@ -27,7 +27,7 @@ def humanize_time(seconds):
 
     if seconds > 86400:
         message += f" ({seconds / 86400:.1f} days)"
-    if seconds > 3600:
+    elif seconds > 3600:
         message += f" ({seconds / 3600:.1f} hours)"
     elif seconds > 60:
         message += f" ({seconds / 60:.1f} minutes)"

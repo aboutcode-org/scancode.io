@@ -1209,6 +1209,10 @@ class ScanPipeModelsTest(TestCase):
         run1.save()
         self.assertEqual("3745 seconds (1.0 hours)", run1.execution_time_for_display)
 
+        run1.task_end_date = datetime(1984, 10, 11, 22, 10, 10, tzinfo=tz.utc)
+        run1.save()
+        self.assertEqual("129600 seconds (1.5 days)", run1.execution_time_for_display)
+
     def test_scanpipe_run_model_reset_task_values_method(self):
         run1 = self.create_run(
             task_id=uuid.uuid4(),
