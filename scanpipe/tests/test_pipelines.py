@@ -53,6 +53,7 @@ from scanpipe.pipelines import is_pipeline
 from scanpipe.pipelines import scan_single_package
 from scanpipe.pipelines.find_origins import FindOrigins
 from scanpipe.pipelines.find_vulnerabilities import FindVulnerabilities
+from scanpipe.pipelines.publish_to_federatedcode import PublishToFederatedCode
 from scanpipe.pipelines.scan_nix_package import ScanNixPackage
 from scanpipe.pipes import d2d
 from scanpipe.pipes import flag
@@ -236,6 +237,20 @@ class ScanPipePipelinesTest(TestCase):
         self.assertEqual(1, exitcode)
         self.assertTrue(out.startswith("Invalid Nix PURL"))
         mock_collect_garbage.assert_called_once_with(project1)
+
+    def test_scanpipe_publish_to_federatedcode_delete_working_dir(self):
+        expected = (PublishToFederatedCode.delete_working_dir,)
+        self.assertEqual(expected, PublishToFederatedCode.get_post_steps())
+
+        project1 = make_project()
+        run = project1.add_pipeline("publish_to_federatedcode")
+        pipeline = run.make_pipeline_instance()
+        # No working dir when a step failed before its creation.
+        pipeline.delete_working_dir()
+
+        pipeline.working_path = Path(tempfile.mkdtemp())
+        pipeline.delete_working_dir()
+        self.assertFalse(pipeline.working_path.exists())
 
     @mock.patch("scanpipe.pipes.nix.add_metadata_warnings")
     @mock.patch("scanpipe.pipes.nix.get_package_metadata")

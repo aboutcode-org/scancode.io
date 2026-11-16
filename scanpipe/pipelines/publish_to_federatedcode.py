@@ -48,8 +48,11 @@ class PublishToFederatedCode(Pipeline):
             cls.clone_repository,
             cls.add_scan_result,
             cls.commit_and_push_changes,
-            cls.delete_working_dir,
         )
+
+    @classmethod
+    def get_post_steps(cls):
+        return (cls.delete_working_dir,)
 
     @classmethod
     def get_availability(cls):
@@ -105,4 +108,6 @@ class PublishToFederatedCode(Pipeline):
 
     def delete_working_dir(self):
         """Remove temporary working dir."""
-        shutil.rmtree(self.working_dir)
+        # Not set when a step failed before the working dir creation.
+        if working_path := getattr(self, "working_path", None):
+            shutil.rmtree(working_path)
