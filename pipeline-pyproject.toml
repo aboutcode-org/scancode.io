@@ -4,11 +4,11 @@ build-backend = "flot.buildapi"
 
 [project]
 name = "aboutcode.pipeline"
-version = "0.2.1"
+version = "0.3.0"
 description = "AboutCode Pipeline library. Execute code in steps."
 license = { text = "Apache-2.0" }
 readme = "aboutcode/pipeline/README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 authors = [ { name = "nexB. Inc. and others", email = "info@aboutcode.org" } ]
 keywords = [
     "open source",
@@ -20,10 +20,11 @@ classifiers = [
     "Intended Audience :: Developers",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
     "Topic :: Software Development",
     "Topic :: Utilities",
 ]

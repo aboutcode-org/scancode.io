@@ -22,7 +22,6 @@
 
 import logging
 import traceback
-import warnings
 from datetime import datetime
 from datetime import timezone
 from pydoc import getdoc
@@ -31,7 +30,7 @@ from timeit import default_timer as timer
 
 module_logger = logging.getLogger(__name__)
 
-__version__ = "0.2.1"
+__version__ = "0.3.0"
 
 
 class PipelineDefinition:
@@ -50,25 +49,35 @@ class PipelineDefinition:
         raise NotImplementedError
 
     @classmethod
-    def get_steps(cls, groups=None):
+    def get_all_steps(cls):
         """
-        Return the list of steps defined in the ``steps`` class method.
-
-        By default, all steps decorated with ``optional_step`` are not included.
-        A list of optional steps can be included using the ``groups`` parameter.
+        Return the initial steps, the steps defined in the ``steps`` class method,
+        and the post steps, including the steps decorated with ``optional_step``.
         """
         if not callable(cls.steps):
             raise TypeError("Use a ``steps(cls)`` classmethod to declare the steps.")
 
-        steps = cls.steps()
-        groups = groups or []
+        # Overrides may return None when there is no step to add, as the default did
+        # before 0.3.0. Keep supporting it: a TypeError here would break the listing
+        # of every pipeline in ScanCode.io, not only the one returning None.
+        initial_steps = cls.get_initial_steps() or ()
+        post_steps = cls.get_post_steps() or ()
+        return (*initial_steps, *cls.steps(), *post_steps)
 
-        if initial_steps := cls.get_initial_steps():
-            steps = (*initial_steps, *steps)
+    @classmethod
+    def get_steps(cls, groups=None):
+        """
+        Return the tuple of the initial steps, the steps defined in the ``steps``
+        class method, and the post steps.
+
+        By default, all steps decorated with ``optional_step`` are not included.
+        A list of optional steps can be included using the ``groups`` parameter.
+        """
+        groups = groups or []
 
         steps = tuple(
             step
-            for step in steps
+            for step in cls.get_all_steps()
             if not getattr(step, "groups", [])
             or set(getattr(step, "groups")).intersection(groups)
         )
@@ -81,7 +90,15 @@ class PipelineDefinition:
         Return a tuple of extra initial steps to be run at the start of the pipeline
         execution.
         """
-        return
+        return ()
+
+    @classmethod
+    def get_post_steps(cls):
+        """
+        Return a tuple of extra steps to be run at the end of the pipeline
+        execution, even when a previous step failed.
+        """
+        return ()
 
     @classmethod
     def get_doc(cls):
@@ -123,7 +140,7 @@ class PipelineDefinition:
         return sorted(
             set(
                 group_name
-                for step in cls.steps()
+                for step in cls.get_all_steps()
                 for group_name in getattr(step, "groups", [])
             )
         )
@@ -177,15 +194,23 @@ class PipelineRun:
         return output
 
     def execute(self):
-        """Execute each steps in the order defined on this pipeline class."""
+        """
+        Execute each steps in the order defined on this pipeline class.
+        After a failure, only the post steps are executed.
+        """
         self.log(f"Pipeline [{self.pipeline_name}] starting")
 
         steps = self.pipeline_class.get_steps(groups=self.selected_groups)
+        post_steps = self.pipeline_class.get_post_steps() or ()
         steps_count = len(steps)
         pipeline_start_time = timer()
+        failure_output = ""
 
         for current_index, step in enumerate(steps, start=1):
             step_name = step.__name__
+
+            if failure_output and step not in post_steps:
+                continue
 
             if self.selected_steps and step_name not in self.selected_steps:
                 self.log(f"Step [{step_name}] skipped")
@@ -198,11 +223,18 @@ class PipelineRun:
             try:
                 step(self)
             except Exception as exception:
-                self.log("Pipeline failed")
-                return 1, self.output_from_exception(exception)
+                self.log(f"Step [{step_name}] failed")
+                # Keep the first failure, the root cause, as the pipeline output.
+                if not failure_output:
+                    failure_output = self.output_from_exception(exception)
+                continue
 
             step_run_time = timer() - step_start_time
             self.log(f"Step [{step_name}] completed in {humanize_time(step_run_time)}")
+
+        if failure_output:
+            self.log("Pipeline failed")
+            return 1, failure_output
 
         # Reset the `current_step` field on completion
         self.set_current_step("")
@@ -232,24 +264,13 @@ def optional_step(*groups):
     return decorator
 
 
-def group(*groups):
-    """Backward compatibility."""
-    warnings.warn(
-        "The `group` decorator is deprecated and will be "
-        "removed in a future release. Use `optional_step` instead.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    return optional_step(*groups)
-
-
 def humanize_time(seconds):
     """Convert the provided ``seconds`` number into human-readable time."""
     message = f"{seconds:.0f} seconds"
 
     if seconds > 86400:
         message += f" ({seconds / 86400:.1f} days)"
-    if seconds > 3600:
+    elif seconds > 3600:
         message += f" ({seconds / 3600:.1f} hours)"
     elif seconds > 60:
         message += f" ({seconds / 60:.1f} minutes)"
@@ -282,10 +303,6 @@ class LoopProgress:
         self.start_time = timer()
         self.last_logged_progress = 0
         self.current_iteration = 0
-
-    def get_eta(self, current_progress):
-        run_time = timer() - self.start_time
-        return round(run_time / current_progress * (100 - current_progress))
 
     @property
     def current_progress(self):

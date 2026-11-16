@@ -1,5 +1,19 @@
 # Changelog
 
+## Release 0.3.0 (November 16, 2026)
+
+* Add the ``get_post_steps()`` class method to declare steps that always run at the
+  end of a pipeline, even when a previous step failed.
+  [Issue #2310](https://github.com/aboutcode-org/scancode.io/issues/2310)
+* Include the groups of the initial and post steps in ``get_available_groups()``.
+* Fix ``humanize_time()`` returning both days and hours above one day.
+* ``get_initial_steps()`` and ``get_post_steps()`` return an empty tuple by default.
+  Overrides returning ``None`` are still supported.
+* Breaking: Remove the deprecated ``group`` decorator.
+  Migration: Use the ``optional_step`` decorator.
+* Remove the unused ``LoopProgress.get_eta()`` method.
+* Require Python 3.11 or later, and support Python 3.11 to 3.15.
+
 ## Release 0.2.1 (February 24, 2025)
 
 * Include the ``optional_step`` steps in the ``get_graph()`` list.

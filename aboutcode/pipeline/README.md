@@ -54,3 +54,29 @@ exitcode, error = run.execute()
 run = PrintMessages(selected_steps=["step1"])
 exitcode, error = run.execute()
 ```
+
+### Post steps
+
+Post steps run at the end of the pipeline, even when a previous step failed.
+Use them for cleanup. A post step must not rely on the state set by the other steps,
+as they may have failed before setting it.
+
+```python
+from aboutcode.pipeline import BasePipeline
+
+
+class PrintMessages(BasePipeline):
+    @classmethod
+    def steps(cls):
+        return (cls.step1,)
+
+    @classmethod
+    def get_post_steps(cls):
+        return (cls.cleanup,)
+
+    def step1(self):
+        raise ValueError("Failure in step1")
+
+    def cleanup(self):
+        print("Cleanup runs after the step1 failure")
+```
