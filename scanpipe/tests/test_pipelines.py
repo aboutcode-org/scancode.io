@@ -1148,7 +1148,7 @@ class PipelinesIntegrationTest(TestCase):
 
         exitcode, out = pipeline.execute()
         self.assertEqual(0, exitcode, msg=out)
-        mock_fetch_inputs.assert_called_once_with(pipeline.purl)
+        mock_fetch_inputs.assert_called_once_with(pipeline.purl, project1.tmp_path)
 
         self.assertEqual(41, project1.codebaseresources.count())
         self.assertEqual(1, project1.discoveredpackages.count())

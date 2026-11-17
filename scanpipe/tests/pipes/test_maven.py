@@ -103,8 +103,9 @@ class ScanPipeMavenPipesTest(TestCase):
             "pom_url": "https://repo1.maven.org/maven2/example/example1.pom",
         }
 
-        result = maven.download_pom_file(pom_url)
+        result = maven.download_pom_file(pom_url, "/safe")
         self.assertEqual(result, expected)
+        mock_fetch_http.assert_called_once_with(pom_url, to="/safe")
 
     @mock.patch("scanpipe.pipes.maven.scancode.run_scan")
     @mock.patch("builtins.open", new_callable=mock.mock_open)
@@ -236,9 +237,10 @@ class ScanPipeMavenPipesTest(TestCase):
 
         mock_fetch_path.side_effect = ["/path/to/binary.jar", "/path/to/source.jar"]
 
-        src_path, bin_path = maven.fetch_inputs(purl)
+        src_path, bin_path = maven.fetch_inputs(purl, "/downloads")
         self.assertEqual(bin_path, "/path/to/binary.jar")
         self.assertEqual(src_path, "/path/to/source.jar")
+        mock_fetch_path.assert_any_call("pkg:maven/a/test@1.0", "binary", "/downloads")
 
     @mock.patch("scanpipe.pipes.maven.fetch.fetch_url")
     def test_scanpipe_maven_fetch_path(self, mock_fetch_url):
@@ -248,8 +250,9 @@ class ScanPipeMavenPipesTest(TestCase):
         mock_response.path = "/downloaded/package.jar"
         mock_fetch_url.return_value = mock_response
 
-        result = maven.fetch_path(url, "binary")
+        result = maven.fetch_path(url, "binary", "/downloads")
         self.assertEqual(result, "/downloaded/package.jar")
+        mock_fetch_url.assert_called_once_with(url=url, to="/downloads")
 
     @mock.patch("builtins.open", new_callable=mock.mock_open)
     @mock.patch("json.load")
@@ -260,7 +263,7 @@ class ScanPipeMavenPipesTest(TestCase):
             "files": [{"path": "src/main/pom.xml"}, {"path": "src/main/Main.java"}]
         }
         result = maven.fetch_and_scan_remote_pom(
-            "pkg:maven/org/test@1.0", "/path/to/output.json"
+            "pkg:maven/org/test@1.0", "/path/to/output.json", "/path/to/downloads"
         )
         self.assertEqual(result, [])
 
@@ -274,7 +277,7 @@ class ScanPipeMavenPipesTest(TestCase):
         mock_get_pom_url.return_value = None
 
         result = maven.fetch_and_scan_remote_pom(
-            "pkg:maven/org/test@1.0", "/path/to/output.json"
+            "pkg:maven/org/test@1.0", "/path/to/output.json", "/path/to/downloads"
         )
         self.assertEqual(
             result, [{"pkg:maven/org/test@1.0": ["Failed to resolve POM URL."]}]
@@ -292,11 +295,14 @@ class ScanPipeMavenPipesTest(TestCase):
         mock_download_pom_file.return_value = {}
 
         result = maven.fetch_and_scan_remote_pom(
-            "pkg:maven/org/test@1.0", "/path/to/output.json"
+            "pkg:maven/org/test@1.0", "/path/to/output.json", "/path/to/downloads"
         )
         self.assertEqual(
             result,
             [{"https://example.com/test.pom": ["Failed to download the POM file."]}],
+        )
+        mock_download_pom_file.assert_called_once_with(
+            "https://example.com/test.pom", "/path/to/downloads"
         )
 
     def test_update_scan_data(self):
@@ -546,7 +552,9 @@ class ScanPipeMavenPipesTest(TestCase):
             result,
             {"property1": "1", "property2": "2", "shading.prefix": "org.shaded"},
         )
-        mock_download_pom_file.assert_called_once_with(parent_pom_url)
+        mock_download_pom_file.assert_called_once_with(
+            parent_pom_url, self.project.tmp_path
+        )
 
     @mock.patch("scanpipe.pipes.maven.download_pom_file")
     def test_scanpipe_maven_resolve_shading_properties_main_pom_wins(
@@ -576,7 +584,9 @@ class ScanPipeMavenPipesTest(TestCase):
         )
 
         self.assertEqual(result, {"shading.prefix": "org.main", "property2": "2"})
-        mock_download_pom_file.assert_called_once_with(parent_pom_url)
+        mock_download_pom_file.assert_called_once_with(
+            parent_pom_url, self.project.tmp_path
+        )
 
     def test_scanpipe_maven_resolve_relocation_placeholders(self):
         main_pom = self._add_pom_resource(
@@ -1770,7 +1780,9 @@ class ScanPipeMavenPipesTest(TestCase):
 
         maven.map_shaded_classes_to_maven_packages(project, purl=main_purl)
 
-        mock_download_pom_file.assert_called_once_with(parent_pom_url)
+        mock_download_pom_file.assert_called_once_with(
+            parent_pom_url, self.project.tmp_path
+        )
 
         thrift_class.refresh_from_db()
         self.assertEqual(thrift_class.status, flag.REQUIRES_REVIEW)

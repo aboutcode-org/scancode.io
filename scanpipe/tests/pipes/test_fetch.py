@@ -115,6 +115,16 @@ class ScanPipeFetchPipesTest(TestCase):
         self.assertTrue(Path(downloaded_file.directory, "filename.zip").exists())
 
     @mock.patch("scanpipe.pipes.fetch.is_safe_url", return_value=True)
+    @mock.patch("requests.sessions.Session.get")
+    def test_scanpipe_pipes_fetch_url_to_directory(self, mock_get, mock_is_safe_url):
+        project = Project.objects.create(name="Analysis")
+        mock_get.return_value = make_mock_response(url="https://exa.com/filename.zip")
+
+        downloaded_file = fetch.fetch_url("pkg:npm/d3@5.8.0", to=project.tmp_path)
+        self.assertEqual(project.tmp_path, downloaded_file.directory)
+        self.assertTrue(Path(project.tmp_path, "filename.zip").exists())
+
+    @mock.patch("scanpipe.pipes.fetch.is_safe_url", return_value=True)
     @mock.patch("fetchcode.pypi.fetch_json_response")
     @mock.patch("requests.sessions.Session.get")
     def test_scanpipe_pipes_fetch_pypi_package_url(

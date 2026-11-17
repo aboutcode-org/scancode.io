@@ -339,20 +339,20 @@ def fetch_git_repo(url, to=None):
     )
 
 
-def fetch_package_url(url):
+def fetch_package_url(url, to=None):
     """Fetch a package from the provided `url` and return a `Download` object."""
     # Ensure the provided Package URL is valid, or raise a ValueError.
     purl = PackageURL.from_string(url)
 
     # Resolve a Download URL using purl2url.
     if download_url := purl2url.get_download_url(url):
-        return fetch_http(download_url)
+        return fetch_http(download_url, to=to)
 
     # PyPI is not supported by purl2url.
     # It requires an API call to resolve download URLs.
     if purl.type == "pypi":
         if download_url := PyPIFetcher.get_download_url(url, preferred_type="sdist"):
-            return fetch_http(download_url)
+            return fetch_http(download_url, to=to)
 
     raise ValueError(f"Could not resolve a download URL for {url}.")
 
@@ -387,11 +387,11 @@ def get_fetcher(url):
     raise ValueError(error_msg)
 
 
-def fetch_url(url):
+def fetch_url(url, to=None):
     """Fetch provided `url` and return the result as a `Download` object."""
     fetcher = get_fetcher(url)
     logger.info(f'Fetching "{url}" using {fetcher.__name__}')
-    downloaded = fetcher(url)
+    downloaded = fetcher(url, to=to)
     return downloaded
 
 
