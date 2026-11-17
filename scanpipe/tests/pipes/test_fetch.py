@@ -96,6 +96,34 @@ class ScanPipeFetchPipesTest(TestCase):
 
     @mock.patch("scanpipe.pipes.fetch.is_safe_url", return_value=True)
     @mock.patch("requests.sessions.Session.get")
+    def test_scanpipe_pipes_fetch_http_keeps_download_in_directory(
+        self, mock_get, mock_is_safe_url
+    ):
+        project = Project.objects.create(name="Analysis")
+        url = "https://example.com/filename.zip"
+
+        for filename in ("../escape.zip", "/var/escape.zip"):
+            headers = {"content-disposition": f'attachment; filename="{filename}"'}
+            mock_get.return_value = make_mock_response(url=url, headers=headers)
+            downloaded_file = fetch.fetch_http(url, to=project.tmp_path)
+            self.assertEqual(project.tmp_path / "escape.zip", downloaded_file.path)
+
+        encoded_url = "https://example.com/..%2F..%2Fescape.zip"
+        mock_get.return_value = make_mock_response(url=encoded_url)
+        downloaded_file = fetch.fetch_http(encoded_url, to=project.tmp_path)
+        self.assertEqual(project.tmp_path / "escape.zip", downloaded_file.path)
+
+    def test_scanpipe_pipes_fetch_get_safe_filename(self):
+        self.assertEqual("file.zip", fetch.get_safe_filename("file.zip"))
+        self.assertEqual("file.zip", fetch.get_safe_filename("../../file.zip"))
+        self.assertEqual("file.zip", fetch.get_safe_filename("/etc/file.zip"))
+
+        for filename in ("", ".", "..", "../.."):
+            with self.assertRaisesMessage(ValueError, "Invalid download filename"):
+                fetch.get_safe_filename(filename)
+
+    @mock.patch("scanpipe.pipes.fetch.is_safe_url", return_value=True)
+    @mock.patch("requests.sessions.Session.get")
     def test_scanpipe_pipes_fetch_package_url(self, mock_get, mock_is_safe_url):
         package_url = "pkg:not_a_valid_purl"
         with self.assertRaises(ValueError) as cm:

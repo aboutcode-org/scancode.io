@@ -96,6 +96,17 @@ def get_request_session(uri):
     return session
 
 
+def get_safe_filename(filename):
+    """
+    Return the base name of the ``filename`` provided by the server, so a
+    download cannot be written outside of its download directory.
+    """
+    safe_filename = Path(filename).name
+    if safe_filename in ("", ".", ".."):
+        raise ValueError(f"Invalid download filename: {filename}")
+    return safe_filename
+
+
 def fetch_http(uri, to=None):
     """
     Download a given `uri` in a temporary directory and return the directory's
@@ -115,7 +126,7 @@ def fetch_http(uri, to=None):
         filename = unquote(Path(urlparse(response.url).path).name)
 
     download_directory = to or tempfile.mkdtemp()
-    output_file = Path(download_directory, filename)
+    output_file = Path(download_directory, get_safe_filename(filename))
 
     file_content = response.content
     with open(output_file, "wb") as f:
