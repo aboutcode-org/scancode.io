@@ -48,6 +48,7 @@ from packageurl.contrib import url2purl
 from plugincode.location_provider import get_location
 from requests import auth as request_auth
 
+from scanpipe.pipes import mask_credentials
 from scanpipe.pipes import run_command_safely
 from scanpipe.settings import scanpipe_settings
 
@@ -224,7 +225,7 @@ def get_docker_image_platform(docker_url):
         docker_url,
     )
 
-    logger.info(f"Fetching image os/arch data: {cmd_args}")
+    logger.info(f"Fetching image os/arch data: {mask_credentials(cmd_args)}")
     output = run_command_safely(cmd_args)
     logger.info(output)
 
@@ -311,7 +312,7 @@ def fetch_docker_image(docker_url, to=None):
         docker_url,
         target,
     )
-    logger.info(f"Fetching image with: {cmd_args}")
+    logger.info(f"Fetching image with: {mask_credentials(cmd_args)}")
     output = run_command_safely(cmd_args)
     logger.info(output)
 

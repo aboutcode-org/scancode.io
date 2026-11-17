@@ -579,6 +579,25 @@ def poll_until_success(check, sleep=10, **kwargs):
         time.sleep(sleep)
 
 
+# Command options that take a credential as value, such as the skopeo
+# "--creds=username:password" option.
+CREDENTIAL_OPTIONS = ("--creds=", "--src-creds=")
+
+
+def mask_credential(command_arg):
+    """Return the ``command_arg`` with its value masked if it is a credential."""
+    if not command_arg.startswith(CREDENTIAL_OPTIONS):
+        return command_arg
+
+    option = command_arg.split("=", maxsplit=1)[0]
+    return f"{option}=********"
+
+
+def mask_credentials(command_args):
+    """Return the ``command_args`` list with the credential values masked."""
+    return [mask_credential(str(command_arg)) for command_arg in command_args]
+
+
 def run_command_safely(command_args, env=None):
     """
     Execute the external commands following security best practices.
@@ -611,7 +630,7 @@ def run_command_safely(command_args, env=None):
 
     if completed_process.returncode:
         error_msg = (
-            f'Error while executing cmd="{completed_process.args}": '
+            f'Error while executing cmd="{mask_credentials(completed_process.args)}": '
             f'"{completed_process.stderr.strip()}"'
         )
         raise subprocess.SubprocessError(error_msg)
