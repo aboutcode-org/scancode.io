@@ -22,6 +22,7 @@
 
 import logging
 import posixpath
+import tarfile
 from collections import namedtuple
 from pathlib import Path
 
@@ -34,6 +35,18 @@ from scanpipe.pipes import flag
 from scanpipe.pipes import rootfs
 
 logger = logging.getLogger(__name__)
+
+
+def tar_filter_with_safe_hardlinks(member, dest_path):
+    """
+    Apply the ``tar`` extraction filter, and refuse a hard link to a file outside
+    of the ``dest_path`` extraction directory: the ``tar`` filter does not check
+    the hard link targets, so an image could link any file of the server.
+    """
+    member = tarfile.tar_filter(member, dest_path)
+    if member.islnk():
+        return tarfile.data_filter(member, dest_path)
+    return member
 
 
 def get_tarballs_from_inputs(project):
@@ -82,7 +95,7 @@ def extract_image_from_tarball(input_tarball, extract_target, verify=False):
         target_dir=extract_target,
         skip_symlinks=False,
         as_events=False,
-        tar_filter="tar",
+        tar_filter=tar_filter_with_safe_hardlinks,
     )
     images = Image.get_images_from_dir(
         extracted_location=str(extract_target),
@@ -127,7 +140,7 @@ def extract_layers_from_images_to_base_path(base_path, images):
                 target_dir=extract_target,
                 skip_symlinks=False,
                 as_events=False,
-                tar_filter="tar",
+                tar_filter=tar_filter_with_safe_hardlinks,
             )
             errors.extend(extract_errors)
             layer.extracted_location = str(extract_target)
