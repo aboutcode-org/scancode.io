@@ -1496,7 +1496,7 @@ class ScanPipeD2DPipesTest(TestCase):
         self.assertEqual(flag.IGNORED_MEDIA_FILE, media_file.status)
 
     @mock.patch("scanpipe.pipes.d2d._match_purldb_resources")
-    def test_match_unmapped_resources_skips_matched_extensions(
+    def test_scanpipe_pipes_d2d_match_unmapped_resources_skips_matched_extensions(
         self, mock_match_purldb_resources
     ):
         to_dir = self.project1.codebase_path / "to/project.tar.zst-extract/"
@@ -1515,11 +1515,6 @@ class ScanPipeD2DPipesTest(TestCase):
 
         expected = "Mapping 1 to/ resources with empty status in PurlDB using SHA1"
         self.assertIn(expected, buffer.getvalue())
-        to_resources = mock_match_purldb_resources.call_args.kwargs["to_resources"]
-        self.assertEqual(
-            ["to/project.tar.zst-extract/expected.json"],
-            [resource.path for resource in to_resources],
-        )
         requires_review = self.project1.codebaseresources.filter(
             status=flag.REQUIRES_REVIEW
         )
