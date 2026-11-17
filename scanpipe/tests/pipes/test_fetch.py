@@ -140,6 +140,11 @@ class ScanPipeFetchPipesTest(TestCase):
         self.assertEqual(download_url, mock_get.call_args[0][0])
         self.assertTrue(Path(downloaded_file.directory, "Django-5.2.tar.gz").exists())
 
+        project = Project.objects.create(name="Analysis")
+        downloaded_file = fetch.fetch_package_url(package_url, to=project.tmp_path)
+        self.assertEqual(project.tmp_path, downloaded_file.directory)
+        self.assertTrue(Path(project.tmp_path, "Django-5.2.tar.gz").exists())
+
     @mock.patch("scanpipe.pipes.fetch.get_docker_image_platform")
     @mock.patch("scanpipe.pipes.fetch._get_skopeo_location")
     @mock.patch("scanpipe.pipes.fetch.run_command_safely")

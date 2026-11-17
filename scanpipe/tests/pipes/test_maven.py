@@ -240,7 +240,13 @@ class ScanPipeMavenPipesTest(TestCase):
         src_path, bin_path = maven.fetch_inputs(purl, "/downloads")
         self.assertEqual(bin_path, "/path/to/binary.jar")
         self.assertEqual(src_path, "/path/to/source.jar")
-        mock_fetch_path.assert_any_call("pkg:maven/a/test@1.0", "binary", "/downloads")
+        expected_calls = [
+            mock.call("pkg:maven/a/test@1.0", "binary", "/downloads"),
+            mock.call(
+                "pkg:maven/a/test@1.0?classifier=sources", "source", "/downloads"
+            ),
+        ]
+        self.assertEqual(expected_calls, mock_fetch_path.call_args_list)
 
     @mock.patch("scanpipe.pipes.maven.fetch.fetch_url")
     def test_scanpipe_maven_fetch_path(self, mock_fetch_url):
