@@ -29,6 +29,8 @@ import re
 from pathlib import Path
 from re import Pattern
 
+from pytecode.classfile import ClassReader
+
 from scanpipe.pipes import scancode
 
 
@@ -285,3 +287,63 @@ def get_fully_qualified_path(jvm_package, filename):
     """
     jvm_package = jvm_package.replace(".", "/")
     return f"{jvm_package}/{filename}"
+
+
+def read_class_file_source_file(location):
+    """
+    Return the value of the JVM ``SourceFile`` class-level attribute for the
+    ``.class`` file at ``location``, or None if the attribute is absent or
+    the file cannot be parsed as a valid class file.
+
+    The ``SourceFile`` attribute records the source filename the compiler used
+    when producing this class file.
+    """
+    try:
+        # The ClassReader.from_file() accepts str or pathlib.Path
+        # Ref https://smithtrenton.github.io/pytecode/pytecode/classfile.html#ClassReader.from_file
+        class_file = ClassReader.from_file(location).class_info
+
+        # ``SourceFile`` is represented by a typed attribute with a
+        # ``sourcefile_index`` pointing to a CONSTANT_Utf8 entry in the pool.
+        source_file_attribute = None
+        for attribute in class_file.attributes:
+            if hasattr(attribute, "sourcefile_index"):
+                source_file_attribute = attribute
+                break
+
+        if source_file_attribute is None:
+            return None
+
+        source_file_index = source_file_attribute.sourcefile_index
+        constant_pool = class_file.constant_pool
+
+        source_file_entry = constant_pool[source_file_index]
+
+        # ``str_bytes`` is the pytecode internal name for a CONSTANT_Utf8 payload;
+        # a missing attribute is caught by the broad handler below.
+        source_file_bytes = source_file_entry.str_bytes
+
+        # JVM uses modified UTF-8 for constant-pool strings. Source filenames
+        # usually use standard UTF-8, so decode them with replacement to avoid
+        # errors with unusual filenames.
+        source_file = source_file_bytes.decode("utf-8", errors="replace")
+    except Exception:
+        # A broad catch is intentional here: malformed or truncated class
+        # files must not interrupt the pipeline. ``pytecode`` raises its own
+        # exception types (e.g. ``MalformedClassException``) in addition to
+        # standard ones, so enumerating them all would be fragile.
+        return None
+
+    # The JVM attribute should contain a bare filename, not a path (e.g.
+    # "ClusterShardingQuery.scala"). Reject path traversal, separators, and
+    # control characters that could corrupt logs or reports downstream.
+    if (
+        not source_file
+        or source_file in (".", "..")
+        or any(
+            char in source_file for char in ("/", "\\", "\x00", "\n", "\r", "\t")
+        )
+    ):
+        return None
+
+    return source_file

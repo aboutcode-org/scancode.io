@@ -740,6 +740,147 @@ class ScanPipeD2DPipesTest(TestCase):
         self.assertEqual(from2, relation.from_resource)
         self.assertEqual(to_jar, relation.to_resource)
 
+    @mock.patch("scanpipe.pipes.jvm.read_class_file_source_file")
+    def test_scanpipe_pipes_d2d_map_jvm_to_class_scala_multi_declarations(
+        self, mock_read_source_file
+    ):
+        # Sample case from
+        # https://github.com/aboutcode-org/scancode.io/issues/1875
+        mock_read_source_file.return_value = "ClusterShardingQuery.scala"
+        from1 = make_resource_file(
+            self.project1,
+            path="from/org/apache/pekko/cluster/sharding/typed/"
+            "ClusterShardingQuery.scala",
+            extra_data={"scala_package": "org.apache.pekko.cluster.sharding.typed"},
+        )
+        to1 = make_resource_file(
+            self.project1,
+            path="to/org/apache/pekko/cluster/sharding/typed/"
+            "ClusterShardingQuery.class",
+        )
+        to2 = make_resource_file(
+            self.project1,
+            path="to/org/apache/pekko/cluster/sharding/typed/GetShardRegionState.class",
+        )
+        to3 = make_resource_file(
+            self.project1,
+            path="to/org/apache/pekko/cluster/sharding/typed/"
+            "GetClusterShardingStats.class",
+        )
+
+        buffer = io.StringIO()
+        d2d.map_jvm_to_class(
+            self.project1, logger=buffer.write, jvm_lang=jvm.ScalaLanguage
+        )
+
+        expected = (
+            "Mapping 3 .class (or other deployed file) resources to 1 ('.scala',)"
+        )
+        self.assertIn(expected, buffer.getvalue())
+        self.assertEqual(3, self.project1.codebaserelations.count())
+
+        r1 = self.project1.codebaserelations.get(to_resource=to1, from_resource=from1)
+        self.assertEqual("scala_to_class", r1.map_type)
+        expected = {"from_source_root": "from/"}
+        self.assertEqual(expected, r1.extra_data)
+
+        r2 = self.project1.codebaserelations.get(to_resource=to2, from_resource=from1)
+        self.assertEqual("scala_to_class", r2.map_type)
+        expected = {"from_source_root": "from/"}
+        self.assertEqual(expected, r2.extra_data)
+
+        r3 = self.project1.codebaserelations.get(to_resource=to3, from_resource=from1)
+        self.assertEqual("scala_to_class", r3.map_type)
+        expected = {"from_source_root": "from/"}
+        self.assertEqual(expected, r3.extra_data)
+
+        # The SourceFile reader was invoked only for the two classes whose
+        # basenames differ from the source filename.
+        self.assertEqual(2, mock_read_source_file.call_count)
+
+    @mock.patch("scanpipe.pipes.jvm.read_class_file_source_file")
+    def test_scanpipe_pipes_d2d_map_jvm_to_class_not_read_tasty_files(
+        self, mock_read_source_file
+    ):
+        mock_read_source_file.return_value = "Bar.scala"
+        from1 = make_resource_file(
+            self.project1,
+            path="from/foo/Bar.scala",
+            extra_data={"scala_package": "foo"},
+        )
+        to1 = make_resource_file(self.project1, path="to/foo/Generated.class")
+        to2 = make_resource_file(self.project1, path="to/foo/Generated.tasty")
+
+        buffer = io.StringIO()
+        d2d.map_jvm_to_class(
+            self.project1, logger=buffer.write, jvm_lang=jvm.ScalaLanguage
+        )
+
+        # Only the .class file gets mapped; the .tasty is skipped because it
+        # is not a JVM class file and cannot be parsed by pytecode.
+        self.assertEqual(1, self.project1.codebaserelations.count())
+
+        r1 = self.project1.codebaserelations.get(to_resource=to1, from_resource=from1)
+        self.assertEqual("scala_to_class", r1.map_type)
+        expected = {"from_source_root": "from/"}
+        self.assertEqual(expected, r1.extra_data)
+
+        self.assertFalse(
+            self.project1.codebaserelations.filter(to_resource=to2).exists()
+        )
+
+    @mock.patch("scanpipe.pipes.jvm.read_class_file_source_file")
+    def test_scanpipe_pipes_d2d_map_jvm_to_class_source_file_attribute(
+        self, mock_read_source_file
+    ):
+        mock_read_source_file.return_value = "DelombokTask.java"
+
+        from1 = make_resource_file(
+            self.project1,
+            path="from/lombok/delombok/ant/DelombokTask.java",
+            extra_data={"java_package": "lombok.delombok.ant"},
+        )
+        to1 = make_resource_file(
+            self.project1,
+            path="to/lombok/delombok/ant/Tasks.class",
+        )
+
+        buffer = io.StringIO()
+        d2d.map_jvm_to_class(
+            self.project1, logger=buffer.write, jvm_lang=jvm.JavaLanguage
+        )
+
+        mock_read_source_file.assert_called_once()
+        self.assertEqual(1, self.project1.codebaserelations.count())
+        relation = self.project1.codebaserelations.get(to_resource=to1)
+        self.assertEqual(from1, relation.from_resource)
+        self.assertEqual("java_to_class", relation.map_type)
+
+    @mock.patch("scanpipe.pipes.jvm.read_class_file_source_file")
+    def test_scanpipe_pipes_d2d_map_jvm_to_class_filename_match_wins(
+        self, mock_read_source_file
+    ):
+        from1 = make_resource_file(
+            self.project1,
+            path="from/org/example/Foo.java",
+            extra_data={"java_package": "org.example"},
+        )
+        to1 = make_resource_file(
+            self.project1,
+            path="to/org/example/Foo.class",
+        )
+
+        buffer = io.StringIO()
+        d2d.map_jvm_to_class(
+            self.project1, logger=buffer.write, jvm_lang=jvm.JavaLanguage
+        )
+
+        mock_read_source_file.assert_not_called()
+        self.assertEqual(1, self.project1.codebaserelations.count())
+        self.assertEqual(
+            from1, self.project1.codebaserelations.get(to_resource=to1).from_resource
+        )
+
     def test_scanpipe_pipes_d2d_scala_ignore_pattern(self):
         make_resource_file(self.project1, path="to/META-INF/MANIFEST.MF")
         make_resource_file(self.project1, path="to/test.class")

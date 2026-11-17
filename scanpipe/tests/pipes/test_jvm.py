@@ -20,8 +20,10 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import tempfile
 from pathlib import Path
 from unittest import TestCase
+from unittest import mock
 
 from scanpipe.pipes import jvm
 
@@ -208,3 +210,62 @@ class ScanPipeJvmKotlinTest(TestCase):
     def test_scanpipe_pipes_jvm_get_fully_qualified_kotlin_path(self):
         fqjp = jvm.get_fully_qualified_path("org.common", "Bar.kt")
         self.assertEqual("org/common/Bar.kt", fqjp)
+
+
+class ScanPipeJvmSourceFileAttributeTest(TestCase):
+    data = Path(__file__).parent.parent / "data"
+
+    def test_scanpipe_pipes_jvm_read_class_file_source_file_returns_value(self):
+        input_location = self.data / "jvm" / "ClusterShardingQuery.class"
+        self.assertEqual(
+            "ClusterShardingQuery.scala",
+            jvm.read_class_file_source_file(input_location),
+        )
+
+    def test_scanpipe_pipes_jvm_read_class_file_source_file_non_class_file(
+        self,
+    ):
+        input_location = self.data / "jvm" / "common.java"
+        self.assertIsNone(jvm.read_class_file_source_file(input_location))
+
+    @mock.patch("scanpipe.pipes.jvm.ClassReader.from_file")
+    def test_scanpipe_pipes_jvm_read_class_file_source_file_exception(
+        self, mock_from_file
+    ):
+        mock_from_file.side_effect = ValueError("exception caught")
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / "bad.class"
+            path.write_bytes(b"unused")
+            self.assertIsNone(jvm.read_class_file_source_file(path))
+
+    @mock.patch("scanpipe.pipes.jvm.ClassReader.from_file")
+    def test_scanpipe_pipes_jvm_read_class_file_source_file_rejects_path_separator(
+        self, mock_from_file
+    ):
+        for invalid in ("../../etc/passwd", "a/b.scala", "a\\b.scala", ".", ".."):
+            with self.subTest(invalid=invalid):
+                source_file_entry = mock.Mock(str_bytes=invalid.encode("utf-8"))
+                source_file_attribute = mock.Mock(sourcefile_index=1)
+                mock_from_file.return_value.class_info = mock.Mock(
+                    attributes=[source_file_attribute],
+                    constant_pool=[None, source_file_entry],
+                )
+                with tempfile.TemporaryDirectory() as tmpdir:
+                    path = Path(tmpdir) / "invalid.class"
+                    path.write_bytes(b"unused")
+                    self.assertIsNone(
+                        jvm.read_class_file_source_file(path), msg=invalid
+                    )
+
+    @mock.patch("scanpipe.pipes.jvm.ClassReader.from_file")
+    def test_scanpipe_pipes_jvm_read_class_file_source_file_no_attribute(
+        self, mock_from_file
+    ):
+        mock_from_file.return_value.class_info = mock.Mock(
+            attributes=[],
+            constant_pool=[],
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / "NoAttr.class"
+            path.write_bytes(b"unused")
+            self.assertIsNone(jvm.read_class_file_source_file(path))

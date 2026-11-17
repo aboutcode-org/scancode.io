@@ -2534,6 +2534,20 @@ wheels = [
 ]
 
 [[package]]
+name = "pytecode"
+version = "0.1.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/3f/1b/79fd63cd530ff047caca468fa6140fcf51d3719aed0fa5c2e797db1b9ec8/pytecode-0.1.0.tar.gz", hash = "sha256:2f7f1a6009685ad748a9624d25bdd14f3214cf79c9e94fde03461dbb91cd4e33", size = 7949680, upload-time = "2026-04-13T03:36:04.281Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/f2/40/059944bb2d093dd097863fdbe58a24e68e90840fdca55cc9735643a6f906/pytecode-0.1.0-cp312-abi3-macosx_10_12_x86_64.whl", hash = "sha256:b1949e5a9ba685f253b065690013d7cfd7e4c04fdc1cfda87871b434455928e1", size = 1839291, upload-time = "2026-04-13T03:35:52.231Z" },
+    { url = "https://files.pythonhosted.org/packages/d6/8a/08f2d62d4ccfdbdff36bf36cbbdb7d8fa7f440503c8ebe367cc2c07c9650/pytecode-0.1.0-cp312-abi3-macosx_11_0_arm64.whl", hash = "sha256:761319f6bd74f74101d63bb3a187f447595a571e1e5a03f7609550d7ac71f5a2", size = 1722748, upload-time = "2026-04-13T03:35:54.307Z" },
+    { url = "https://files.pythonhosted.org/packages/47/14/567900c7c0297533d489c84ce4d5954f416ff5116677ab89e12b24217920/pytecode-0.1.0-cp312-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:cabd96d213944267d1ace79f01c0c917e87b02daf754fef44cc67ce882dae4cf", size = 1848798, upload-time = "2026-04-13T03:35:56.503Z" },
+    { url = "https://files.pythonhosted.org/packages/f2/38/21146657b09f305a4f410b65c1a70a92abb07eb898f25920dd056abea790/pytecode-0.1.0-cp312-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:1f87773f074379c72a1230fe2b5e6772945b38447dcdf6a4bc58f955a57bfa0f", size = 1901993, upload-time = "2026-04-13T03:35:58.384Z" },
+    { url = "https://files.pythonhosted.org/packages/c4/78/db40a7cbc3c648b2c72c4b2e156addb82ae394599ceea51f1cf1cc3e375f/pytecode-0.1.0-cp312-abi3-win_amd64.whl", hash = "sha256:437d49e3716cd91a4b378b35483b81ca25979ae8f81f43bb007fcd0a0e3476c3", size = 1700682, upload-time = "2026-04-13T03:36:00.352Z" },
+    { url = "https://files.pythonhosted.org/packages/c5/73/b0ff54dc08245862fcca2a3716ed3bf4564d85a03b91bf0a4e79ca35634f/pytecode-0.1.0-cp312-abi3-win_arm64.whl", hash = "sha256:54e3f25e0eb2d88c751d66713a7f6148b043e6b9c508f37cb9f01e81cda57799", size = 1577824, upload-time = "2026-04-13T03:36:02.286Z" },
+]
+
+[[package]]
 name = "python-dateutil"
 version = "4.0.0"
 source = { registry = "https://pypi.org/simple" }
@@ -3042,6 +3056,7 @@ dependencies = [
     { name = "pydantic-settings" },
     { name = "pygments" },
     { name = "pyinstrument" },
+    { name = "pytecode" },
     { name = "python-inspector" },
     { name = "redis" },
     { name = "requests" },
@@ -3131,6 +3146,7 @@ requires-dist = [
     { name = "pydantic-settings", specifier = "==2.16.2" },
     { name = "pygments", specifier = "==2.21.0" },
     { name = "pyinstrument", specifier = "==5.1.3" },
+    { name = "pytecode", specifier = "==0.1.0" },
     { name = "python-inspector", specifier = "==0.15.2" },
     { name = "redis", specifier = "==8.1.0" },
     { name = "requests", specifier = "==2.34.2" },

@@ -121,6 +121,7 @@ dependencies = [
   "sqlparse==0.6.1",
   # pluggy 1.7 ignores hookspecs on classes, which breaks plugincode 32.0.0
   "pluggy==1.6.0",
+  "pytecode==0.1.0",
 ]
 
 [project.optional-dependencies]
