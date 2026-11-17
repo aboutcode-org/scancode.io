@@ -144,14 +144,6 @@
     return "";
   }
 
-  // Unavailable pipelines are not in the select options.
-  function selectPipeline(pipelineName) {
-    const isAvailable = Array.from(pipelineSelect.options).some(
-      (option) => option.value === pipelineName
-    );
-    pipelineSelect.value = isAvailable ? pipelineName : "";
-  }
-
   const textarea = document.getElementById("id_input_urls");
   const fileInput = document.getElementById("id_input_files");
 
@@ -159,7 +151,7 @@
   textarea.addEventListener("input", () => {
     const value = textarea.value.trim();
     const pipeline = detectPipelineFromValue(value);
-    selectPipeline(pipeline);
+    pipelineSelect.value = pipeline;
   });
 
   // Handle file uploads
@@ -170,7 +162,7 @@
     if (files.length === 1) {
       const firstFile = files[0].name.toLowerCase();
       const pipeline = detectPipelineFromValue(firstFile);
-      selectPipeline(pipeline);
+      pipelineSelect.value = pipeline;
     } else {
       pipelineSelect.value = "";
     }

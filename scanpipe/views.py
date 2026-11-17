@@ -708,17 +708,24 @@ class ProjectCreateView(ConditionalLoginRequired, generic.CreateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        available_pipelines = scanpipe_app.get_pipelines(
-            include_addon=False, include_unavailable=False
-        )
-        pipelines = {
+        base_pipelines = scanpipe_app.get_pipelines(include_addon=False)
+        pipelines_info = {
             key: pipeline_class.get_info()
-            for key, pipeline_class in available_pipelines.items()
+            for key, pipeline_class in base_pipelines.items()
+        }
+        pipelines = {
+            name: info for name, info in pipelines_info.items() if info["is_available"]
+        }
+        unavailable_pipelines = {
+            name: info
+            for name, info in pipelines_info.items()
+            if not info["is_available"]
         }
         pipelines_available_groups = {
             name: info["available_groups"] for name, info in pipelines.items()
         }
         context["pipelines"] = pipelines
+        context["unavailable_pipelines"] = unavailable_pipelines
         context["pipelines_available_groups"] = pipelines_available_groups
         return context
 

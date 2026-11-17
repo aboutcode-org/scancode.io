@@ -725,16 +725,24 @@ class ScanPipeViewsTest(TestCase):
         self, mock_missing_commands
     ):
         url = reverse("project_add")
+        nix_option = '<option value="scan_nix_package">'
+        unavailable_reason = (
+            "Missing commands: nix-build. Use the full ScanCode.io image."
+        )
 
         mock_missing_commands.return_value = ["nix-build"]
         response = self.client.get(url)
         self.assertNotIn("scan_nix_package", response.context["pipelines"])
-        self.assertNotContains(response, "scan_nix_package")
+        self.assertIn("scan_nix_package", response.context["unavailable_pipelines"])
+        self.assertNotContains(response, nix_option)
+        self.assertContains(response, unavailable_reason)
 
         mock_missing_commands.return_value = []
         response = self.client.get(url)
         self.assertIn("scan_nix_package", response.context["pipelines"])
-        self.assertContains(response, "scan_nix_package")
+        self.assertNotIn("scan_nix_package", response.context["unavailable_pipelines"])
+        self.assertContains(response, nix_option)
+        self.assertNotContains(response, unavailable_reason)
 
     def test_scanpipe_views_project_codebase_view(self):
         url = reverse("project_codebase", args=[self.project1.slug])
