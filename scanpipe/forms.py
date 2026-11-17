@@ -176,7 +176,9 @@ class ProjectForm(InputsBaseForm, PipelineBaseForm, forms.ModelForm):
         name_field.help_text = "The unique name of your project."
 
         # Do not include "add-on" pipelines in the context of the create Project form
-        pipeline_choices = scanpipe_app.get_pipeline_choices(include_addon=False)
+        pipeline_choices = scanpipe_app.get_pipeline_choices(
+            include_addon=False, include_unavailable=False
+        )
         self.fields["pipeline"].choices = pipeline_choices
 
     def clean_name(self):
@@ -201,6 +203,11 @@ class AddPipelineForm(PipelineBaseForm):
         widget=forms.RadioSelect(),
         required=True,
     )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        pipeline_choices = scanpipe_app.get_pipeline_choices(include_unavailable=False)
+        self.fields["pipeline"].choices = pipeline_choices
 
     def save(self, project):
         self.handle_pipeline(project)

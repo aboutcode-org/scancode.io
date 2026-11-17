@@ -471,6 +471,21 @@ class ScanPipeViewsTest(TestCase):
         self.assertEqual("analyze_docker_image", run.pipeline_name)
         self.assertIsNone(run.task_start_date)
 
+    @mock.patch("scanpipe.pipes.nix.get_missing_commands")
+    def test_scanpipe_views_project_details_add_pipeline_modal_unavailable_pipelines(
+        self, mock_missing_commands
+    ):
+        url = self.project1.get_absolute_url()
+        heading = "Unavailable pipelines:"
+        unavailable_reason = (
+            "Missing commands: nix-build. Use the full ScanCode.io image."
+        )
+
+        mock_missing_commands.return_value = ["nix-build"]
+        response = self.client.get(url)
+        self.assertContains(response, heading, count=1)
+        self.assertContains(response, unavailable_reason)
+
     def test_scanpipe_views_project_details_get_pipeline_choices(self):
         main_pipeline1 = "scan_codebase"
         main_pipeline2 = "scan_single_package"
@@ -719,6 +734,30 @@ class ScanPipeViewsTest(TestCase):
         response = self.client.get(url)
         self.assertContains(response, "scan_codebase")
         self.assertNotContains(response, "find_vulnerabilities")
+
+    @mock.patch("scanpipe.pipes.nix.get_missing_commands")
+    def test_scanpipe_views_project_create_view_unavailable_pipeline(
+        self, mock_missing_commands
+    ):
+        url = reverse("project_add")
+        nix_option = '<option value="scan_nix_package">'
+        unavailable_reason = (
+            "Missing commands: nix-build. Use the full ScanCode.io image."
+        )
+
+        mock_missing_commands.return_value = ["nix-build"]
+        response = self.client.get(url)
+        self.assertNotIn("scan_nix_package", response.context["pipelines"])
+        self.assertIn("scan_nix_package", response.context["unavailable_pipelines"])
+        self.assertNotContains(response, nix_option)
+        self.assertContains(response, unavailable_reason)
+
+        mock_missing_commands.return_value = []
+        response = self.client.get(url)
+        self.assertIn("scan_nix_package", response.context["pipelines"])
+        self.assertNotIn("scan_nix_package", response.context["unavailable_pipelines"])
+        self.assertContains(response, nix_option)
+        self.assertNotContains(response, unavailable_reason)
 
     def test_scanpipe_views_project_codebase_view(self):
         url = reverse("project_codebase", args=[self.project1.slug])

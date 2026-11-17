@@ -12,6 +12,7 @@ Unreleased
 * feat: [code-genetics] determine the origin of files from combined origin matches #1929 by @tdruez
 * feat: [code-genetics] resolve conflicting origins to detect the ultimate origin of files #1930 by @tdruez
 * feat: add post steps that always run at the end of a pipeline, even when it fails #2310 by @tdruez
+* feat: list unavailable pipelines with their reason in the project creation form and reject them in the forms and REST API #2311 by @tdruez
 
 v38.2.0 (2026-10-22)
 --------------------

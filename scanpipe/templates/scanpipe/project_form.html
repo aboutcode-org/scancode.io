@@ -91,20 +91,20 @@
         <div class="column has-background-ter has-border-radius mb-3">
           <h3 class="subtitle mb-3">Pipelines:</h3>
           {% for pipeline_name, pipeline_info in pipelines.items %}
-            <div {% if not forloop.last %}class="mb-2"{% endif %}>
-              <a class="modal-button is-block" data-target="pipeline-help-modal" data-pipeline-name="{{ pipeline_name }}" aria-haspopup="true">
-                <strong>{{ pipeline_name }}</strong>
-                <i class="fa-regular fa-circle-question"></i>
-              </a>
-              {{ pipeline_info.summary }}
-            </div>
+            {% include "scanpipe/includes/pipeline_summary.html" with pipeline_name=pipeline_name pipeline_info=pipeline_info is_last=forloop.last only %}
           {% endfor %}
+          {% if unavailable_pipelines %}
+            <hr class="my-3">
+            <h3 class="subtitle is-6 mb-2 has-text-grey">Unavailable pipelines:</h3>
+            {% for pipeline_name, pipeline_info in unavailable_pipelines.items %}
+              {% include "scanpipe/includes/pipeline_summary.html" with pipeline_name=pipeline_name pipeline_info=pipeline_info is_last=forloop.last only %}
+            {% endfor %}
+          {% endif %}
         </div>
       </div>
     </section>
   </div>
- {{ pipelines_available_groups|json_script:"pipelines_available_groups" }}
-{% endblock %}
+ {{ pipelines_available_groups|json_script:"pipelines_available_groups" }}{% endblock %}
 
 {% block modals %}
   {% include "scanpipe/modals/pipeline_help_modal.html" %}
