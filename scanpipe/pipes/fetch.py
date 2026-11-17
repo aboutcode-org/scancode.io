@@ -96,6 +96,17 @@ def get_request_session(uri):
     return session
 
 
+def get_safe_filename(filename):
+    """
+    Return the base name of the ``filename`` provided by the server, so a
+    download cannot be written outside of its download directory.
+    """
+    safe_filename = Path(filename).name
+    if safe_filename in ("", ".", ".."):
+        raise ValueError(f"Invalid download filename: {filename}")
+    return safe_filename
+
+
 def fetch_http(uri, to=None):
     """
     Download a given `uri` in a temporary directory and return the directory's
@@ -115,7 +126,7 @@ def fetch_http(uri, to=None):
         filename = unquote(Path(urlparse(response.url).path).name)
 
     download_directory = to or tempfile.mkdtemp()
-    output_file = Path(download_directory, filename)
+    output_file = Path(download_directory, get_safe_filename(filename))
 
     file_content = response.content
     with open(output_file, "wb") as f:
@@ -339,20 +350,20 @@ def fetch_git_repo(url, to=None):
     )
 
 
-def fetch_package_url(url):
+def fetch_package_url(url, to=None):
     """Fetch a package from the provided `url` and return a `Download` object."""
     # Ensure the provided Package URL is valid, or raise a ValueError.
     purl = PackageURL.from_string(url)
 
     # Resolve a Download URL using purl2url.
     if download_url := purl2url.get_download_url(url):
-        return fetch_http(download_url)
+        return fetch_http(download_url, to=to)
 
     # PyPI is not supported by purl2url.
     # It requires an API call to resolve download URLs.
     if purl.type == "pypi":
         if download_url := PyPIFetcher.get_download_url(url, preferred_type="sdist"):
-            return fetch_http(download_url)
+            return fetch_http(download_url, to=to)
 
     raise ValueError(f"Could not resolve a download URL for {url}.")
 
@@ -387,11 +398,11 @@ def get_fetcher(url):
     raise ValueError(error_msg)
 
 
-def fetch_url(url):
+def fetch_url(url, to=None):
     """Fetch provided `url` and return the result as a `Download` object."""
     fetcher = get_fetcher(url)
     logger.info(f'Fetching "{url}" using {fetcher.__name__}')
-    downloaded = fetcher(url)
+    downloaded = fetcher(url, to=to)
     return downloaded
 
 

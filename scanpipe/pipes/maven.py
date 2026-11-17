@@ -74,12 +74,14 @@ def check_input_and_return_purl(project):
     return input_purl
 
 
-def fetch_inputs(purl):
+def fetch_inputs(purl, download_directory):
     """Fetch the binary and source for the given input purl"""
     purl_str = PackageURL.to_string(purl)
 
-    purl_bin_path = fetch_path(purl_str, "binary")
-    purl_src_path = fetch_path(f"{purl_str}?classifier=sources", "source")
+    purl_bin_path = fetch_path(purl_str, "binary", download_directory)
+    purl_src_path = fetch_path(
+        f"{purl_str}?classifier=sources", "source", download_directory
+    )
 
     if not purl_bin_path and not purl_src_path:
         err_msg = f"No source or binary could be resolved for {purl}."
@@ -88,16 +90,16 @@ def fetch_inputs(purl):
     return purl_src_path, purl_bin_path
 
 
-def fetch_path(purl, package_type):
+def fetch_path(purl, package_type, download_directory):
     """Fetch the purl and return the location of the fetched tarball"""
     try:
-        return fetch.fetch_url(url=purl).path
+        return fetch.fetch_url(url=purl, to=download_directory).path
     except (ValueError, requests.RequestException) as e:
         logger.warning("Failed to fetch %s package: %s", package_type, e)
         return None
 
 
-def fetch_and_scan_remote_pom(input_purl, scan_output_location):
+def fetch_and_scan_remote_pom(input_purl, scan_output_location, download_directory):
     """Fetch the .pom file from maven.org if not present in codebase."""
     with open(scan_output_location) as file:
         data = json.load(file)
@@ -109,7 +111,7 @@ def fetch_and_scan_remote_pom(input_purl, scan_output_location):
     pom_url = get_pom_url(input_purl)
     if not pom_url:
         return [{str(input_purl): ["Failed to resolve POM URL."]}]
-    pom_file = download_pom_file(pom_url)
+    pom_file = download_pom_file(pom_url, download_directory)
     if not pom_file:
         return [{pom_url: ["Failed to download the POM file."]}]
     scanning_errors = scan_pom_file(pom_file)
@@ -151,10 +153,10 @@ def get_pom_url(input_purl):
     return pom_url
 
 
-def download_pom_file(pom_url):
+def download_pom_file(pom_url, download_directory):
     """Fetch the pom file from the input pom_url"""
     try:
-        downloaded_pom = fetch.fetch_http(pom_url)
+        downloaded_pom = fetch.fetch_http(pom_url, to=download_directory)
     except requests.RequestException:
         return {}
     path = str(downloaded_pom.path)
@@ -348,7 +350,9 @@ def _walk_parent_poms(main_pom):
             name=artifact,
             version=version,
         )
-        pom_file = download_pom_file(get_pom_url(parent_purl))
+        pom_file = download_pom_file(
+            get_pom_url(parent_purl), main_pom.project.tmp_path
+        )
         if not pom_file:
             return
         current_path = pom_file["pom_file_path"]

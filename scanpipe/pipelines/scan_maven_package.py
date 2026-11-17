@@ -69,7 +69,7 @@ class ScanMavenPackage(ScanSinglePackage, DeployToDevelop):
 
     def fetch_inputs(self):
         """Fetch the binary and source of the given PURL."""
-        from_file, to_file = fetch_inputs(self.purl)
+        from_file, to_file = fetch_inputs(self.purl, self.project.tmp_path)
         # The pipeline will call self.extract_inputs_to_codebase_directory()
         # from deploy_to_develop.py, which expects both self.from_files and
         # self.to_files to be of list type.
@@ -166,7 +166,7 @@ class ScanMavenPackage(ScanSinglePackage, DeployToDevelop):
     def fetch_and_scan_remote_pom(self):
         """Fetch and scan remote POM files."""
         scanning_errors = fetch_and_scan_remote_pom(
-            self.purl, self.scan_output_location
+            self.purl, self.scan_output_location, self.project.tmp_path
         )
         for scanning_error in scanning_errors:
             for resource_reference, errors in scanning_error.items():
