@@ -1062,6 +1062,39 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual({"status": "Pipeline added."}, response.data)
         mock_execute_pipeline_task.assert_called_once()
 
+    @mock.patch("scanpipe.pipes.nix.get_missing_commands")
+    def test_scanpipe_api_project_create_unavailable_pipeline(
+        self, mock_missing_commands
+    ):
+        mock_missing_commands.return_value = ["nix-build"]
+        data = {"name": "Name", "pipeline": "scan_nix_package"}
+        response = self.csrf_client.post(self.project_list_url, data)
+        self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
+        expected = {
+            "pipeline": [
+                "scan_nix_package is not available: "
+                "Missing commands: nix-build. Use the full ScanCode.io image."
+            ]
+        }
+        self.assertEqual(expected, response.data)
+        self.assertFalse(Project.objects.filter(name="Name").exists())
+
+    @mock.patch("scanpipe.pipes.nix.get_missing_commands")
+    def test_scanpipe_api_project_action_add_pipeline_unavailable_pipeline(
+        self, mock_missing_commands
+    ):
+        mock_missing_commands.return_value = ["nix-build"]
+        url = reverse("project-add-pipeline", args=[self.project1.uuid])
+        data = {"pipeline": "scan_nix_package"}
+        response = self.csrf_client.post(url, data=data)
+        self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
+        expected = {
+            "status": "scan_nix_package is not available: "
+            "Missing commands: nix-build. Use the full ScanCode.io image."
+        }
+        self.assertEqual(expected, response.data)
+        self.assertEqual(0, self.project1.runs.count())
+
     @filter_warnings("ignore", category=DeprecationWarning, module="scanpipe")
     def test_scanpipe_api_project_action_add_pipeline_old_name_compatibility(self):
         url = reverse("project-add-pipeline", args=[self.project1.uuid])

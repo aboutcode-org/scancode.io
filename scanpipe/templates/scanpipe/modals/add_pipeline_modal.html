@@ -50,6 +50,9 @@
           <div class="control">
             {% for pipeline_name, pipeline_info in pipeline_choices %}
               {% if not pipeline_info.is_available %}
+                {% ifchanged pipeline_info.is_available %}
+                  <h3 class="subtitle is-6 mb-2 has-text-grey">Unavailable pipelines:</h3>
+                {% endifchanged %}
                 <div class="mb-3">
                   <div class="is-flex is-align-items-center">
                     <span class="has-text-grey ml-4 mr-3">{{ pipeline_name }}</span>
