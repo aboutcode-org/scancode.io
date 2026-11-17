@@ -340,9 +340,7 @@ def read_class_file_source_file(location):
     if (
         not source_file
         or source_file in (".", "..")
-        or any(
-            char in source_file for char in ("/", "\\", "\x00", "\n", "\r", "\t")
-        )
+        or any(char in source_file for char in ("/", "\\", "\x00", "\n", "\r", "\t"))
     ):
         return None
 
