@@ -2244,6 +2244,9 @@ def codebase_resource_diff_view(request, slug):
     from_resource = get_object_or_404(project_files, path=from_path)
     to_resource = get_object_or_404(project_files, path=to_path)
 
+    if not (from_resource.is_in_codebase and to_resource.is_in_codebase):
+        raise Http404("Resource not found")
+
     if not (from_resource.is_text and to_resource.is_text):
         raise Http404("Cannot diff on binary files")
 

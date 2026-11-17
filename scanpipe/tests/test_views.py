@@ -1252,6 +1252,17 @@ class ScanPipeViewsTest(TestCase):
         response = self.client.get(url, data=data)
         self.assertContains(response, '<table class="diff"')
 
+    def test_scanpipe_views_codebase_relation_diff_view_path_traversal(self):
+        url = reverse("resource_diff", args=[self.project1.slug])
+        (self.project1.codebase_path / "a.txt").write_text("content")
+        resource = make_resource_file(self.project1, path="a.txt")
+        outside_path = f"../../../../../../../..{Path(__file__)}"
+        outside_resource = make_resource_file(self.project1, path=outside_path)
+
+        data = {"from_path": resource.path, "to_path": outside_resource.path}
+        response = self.client.get(url, data=data)
+        self.assertEqual(404, response.status_code)
+
     def test_scanpipe_views_codebase_resource_views(self):
         resource1 = make_resource_file(self.project1, "file1.ext")
         resource2 = make_resource_file(self.project1, "file2.ext")
