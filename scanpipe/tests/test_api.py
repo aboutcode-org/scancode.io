@@ -1332,6 +1332,22 @@ class ScanPipeAPITest(TransactionTestCase):
         expected = {"status": "Output file NOT_FOUND not found"}
         self.assertEqual(expected, response.data)
 
+    def test_scanpipe_api_project_action_outputs_path_traversal(self):
+        url = reverse("project-outputs", args=[self.project1.uuid])
+        output_file = self.project1.get_output_file_path("scan", "txt")
+        output_file.write_text("content")
+        traversal_filenames = [
+            str(output_file),
+            f"../output/{output_file.name}",
+            "/etc/hostname",
+        ]
+
+        for filename in traversal_filenames:
+            response = self.csrf_client.get(url, {"filename": filename})
+            self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
+            expected = {"status": f"Output file {filename} not found"}
+            self.assertEqual(expected, response.data)
+
     def test_scanpipe_api_project_action_compliance(self):
         project = make_project()
         url = reverse("project-compliance", args=[project.uuid])

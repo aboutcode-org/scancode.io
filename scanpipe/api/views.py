@@ -486,8 +486,10 @@ class ProjectViewSet(
         project = self.get_object()
 
         if filename := request.query_params.get("filename"):
-            file_path = project.output_path / filename
-            if file_path.exists():
+            # Only serve a file listed in output/, as the filename could be an
+            # absolute or a "../" path to any file of the server.
+            if filename in project.output_root:
+                file_path = project.output_path / filename
                 return FileResponse(file_path.open("rb"))
 
             return ErrorResponse(f"Output file {filename} not found")
