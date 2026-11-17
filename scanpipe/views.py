@@ -1530,6 +1530,17 @@ def delete_webhook_view(request, slug, webhook_uuid):
     return redirect(success_url)
 
 
+def sandboxed_file_response(file, **kwargs):
+    """
+    Return a ``FileResponse`` for a project file, such as an input or a codebase
+    resource. The ``sandbox`` policy prevents an HTML file from running scripts in
+    the ScanCode.io origin, with the session of the user viewing it.
+    """
+    response = FileResponse(file, **kwargs)
+    response["Content-Security-Policy"] = "sandbox"
+    return response
+
+
 def download_project_file(request, slug, filename, path_type):
     project = get_object_or_404(Project, slug=slug)
 
@@ -1544,7 +1555,7 @@ def download_project_file(request, slug, filename, path_type):
         raise Http404(f"{file_path} not found")
 
     is_too_large = file_path.stat().st_size > scanpipe_settings.INLINE_DOWNLOAD_MAX_SIZE
-    return FileResponse(file_path.open("rb"), as_attachment=is_too_large)
+    return sandboxed_file_response(file_path.open("rb"), as_attachment=is_too_large)
 
 
 @conditional_login_required
@@ -2631,7 +2642,7 @@ class CodebaseResourceRawView(
         resource_location_path = resource.location_path
 
         if resource.is_in_codebase and resource_location_path.is_file():
-            return FileResponse(
+            return sandboxed_file_response(
                 resource_location_path.open("rb"),
                 as_attachment=request.GET.get("as_attachment", False),
             )

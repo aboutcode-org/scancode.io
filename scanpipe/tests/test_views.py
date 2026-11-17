@@ -376,6 +376,23 @@ class ScanPipeViewsTest(TestCase):
             response.headers["Content-Disposition"],
         )
 
+    def test_scanpipe_views_project_file_views_sandboxed(self):
+        html_content = "<script>alert(1)</script>"
+        (self.project1.input_path / "page.html").write_text(html_content)
+        (self.project1.output_path / "page.html").write_text(html_content)
+        (self.project1.codebase_path / "page.html").write_text(html_content)
+        resource = make_resource_file(self.project1, path="page.html")
+
+        urls = [
+            reverse("project_download_input", args=[self.project1.slug, "page.html"]),
+            reverse("project_download_output", args=[self.project1.slug, "page.html"]),
+            resource.get_raw_url(),
+        ]
+        for url in urls:
+            response = self.client.get(url)
+            self.assertEqual("text/html", response.headers["Content-Type"])
+            self.assertEqual("sandbox", response.headers["Content-Security-Policy"])
+
     def test_scanpipe_views_project_details_download_output_view(self):
         url = reverse("project_download_output", args=[self.project1.slug, "file.zip"])
         response = self.client.get(url)

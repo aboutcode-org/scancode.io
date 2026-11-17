@@ -1326,6 +1326,7 @@ class ScanPipeAPITest(TransactionTestCase):
 
         response = self.csrf_client.get(download_url)
         self.assertEqual(b"content", response.getvalue())
+        self.assertEqual("sandbox", response.headers["Content-Security-Policy"])
 
         response = self.csrf_client.get(f"http://testserver{url}?filename=NOT_FOUND")
         self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)

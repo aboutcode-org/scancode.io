@@ -61,6 +61,7 @@ from scanpipe.pipes import filename_now
 from scanpipe.pipes import output
 from scanpipe.pipes.compliance import get_project_compliance_alerts
 from scanpipe.views import project_results_json_response
+from scanpipe.views import sandboxed_file_response
 
 logger = logging.getLogger(__name__)
 scanpipe_app = apps.get_app_config("scanpipe")
@@ -490,7 +491,7 @@ class ProjectViewSet(
             # absolute or a "../" path to any file of the server.
             if filename in project.output_root:
                 file_path = project.output_path / filename
-                return FileResponse(file_path.open("rb"))
+                return sandboxed_file_response(file_path.open("rb"))
 
             return ErrorResponse(f"Output file {filename} not found")
 
