@@ -66,7 +66,9 @@ def copy_input(input_location, dest_path):
     destination = destination_dir / filename
 
     if input_path.is_dir():
-        shutil.copytree(input_location, destination)
+        # Copy the symlinks as symlinks, as their target can be any file of the
+        # server, for example in a cloned Git repository.
+        shutil.copytree(input_location, destination, symlinks=True)
     else:
         if not os.path.exists(destination_dir):
             os.makedirs(destination_dir)

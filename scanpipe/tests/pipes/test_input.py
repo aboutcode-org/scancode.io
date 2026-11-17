@@ -75,6 +75,18 @@ class ScanPipeInputPipesTest(TestCase):
                 "LICENSE_2", input.get_unique_filename("LICENSE", dest_path)
             )
 
+    def test_scanpipe_pipes_input_copy_input_directory_keeps_symlinks(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            source_dir = Path(tmp_dir) / "repository"
+            source_dir.mkdir()
+            (source_dir / "outside_link").symlink_to(Path(__file__))
+
+            destination = input.copy_input(source_dir, Path(tmp_dir) / "codebase")
+
+            copied_link = destination / "outside_link"
+            self.assertTrue(copied_link.is_symlink())
+            self.assertEqual(Path(__file__), copied_link.readlink())
+
     def test_scanpipe_pipes_input_copy_input_filename_collision(self):
         with tempfile.TemporaryDirectory() as tmp_dir:
             dest_path = Path(tmp_dir)
