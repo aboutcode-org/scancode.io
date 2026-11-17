@@ -751,6 +751,46 @@ class ScanPipeModelsTest(TestCase):
         # Search for config files *ONLY* in immediate codebase/ subdirectories.
         self.assertIsNone(self.project1.get_input_config_file())
 
+    def test_scanpipe_project_config_archive_priority_and_ambiguity(self):
+        project = self.project1
+        filename = scanpipe_settings.CONFIG_FILE
+        (project.input_path / "source.zip").touch()
+        wrapper = project.codebase_path / "source.zip-extract" / "my-app"
+        wrapper.mkdir(parents=True)
+        embedded = wrapper / filename
+        embedded.write_text("product_name: Embedded")
+        (wrapper / "policies.yml").write_text("license_policies: []")
+        self.assertEqual(embedded, project.get_input_config_file())
+        self.assertIsNone(project.get_input_policies_file())
+
+        root_config = project.codebase_path / filename
+        root_config.write_text("product_name: Root")
+        self.assertIsNone(project.get_input_config_file())
+        warning = project.projectmessages.get()
+        self.assertIn("More than one scancode-config.yml found", warning.description)
+
+        explicit = project.input_path / filename
+        explicit.write_text("product_name: Explicit")
+        self.assertEqual(explicit, project.get_input_config_file())
+        self.assertEqual("Explicit", project.get_env("product_name"))
+        project.settings = {"product_name": "Project"}
+        self.assertEqual("Project", project.get_env("product_name"))
+
+    def test_scanpipe_project_config_requires_single_archive_wrapper(self):
+        project = self.project1
+        wrapper = project.codebase_path / "source.zip-extract" / "my-app"
+        wrapper.mkdir(parents=True)
+        config = wrapper / scanpipe_settings.CONFIG_FILE
+        config.touch()
+        self.assertIsNone(project.get_input_config_file())
+        (project.input_path / "source.zip").touch()
+        self.assertEqual(config, project.get_input_config_file())
+        (wrapper.parent / "another-app").mkdir()
+        self.assertIsNone(project.get_input_config_file())
+        (wrapper.parent / "another-app").rmdir()
+        (wrapper.parent / "README").touch()
+        self.assertIsNone(project.get_input_config_file())
+
     def test_scanpipe_project_get_input_policies_file(self):
         self.assertIsNone(self.project1.get_input_policies_file())
 
