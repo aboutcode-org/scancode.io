@@ -769,7 +769,7 @@ class ScanPipeManagementCommandTest(TestCase):
         options.extend(["--format", "json", "--print"])
         call_command("output", *options, stdout=out)
         out_value = out.getvalue().strip()
-        self.assertIn('"tool_name": "scanpipe"', out_value)
+        self.assertIn('"tool_name": "ScanCode.io"', out_value)
         self.assertIn('"notice": "Generated with ScanCode.io', out_value)
 
         out = StringIO()

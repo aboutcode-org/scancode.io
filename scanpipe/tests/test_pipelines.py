@@ -1778,6 +1778,25 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual(2, project2.discoveredpackages.count())
         self.assertEqual(4, project2.discovereddependencies.count())
 
+        # Use the ScanCode.io JSON output as input with the legacy tool name.
+        project3 = make_project()
+        input_location = self.data / "asgiref" / "asgiref-3.3.0_scanpipe_output.json"
+        project3.copy_input_from(input_location)
+
+        # Edit the input file to use the legacy "scanpipe" tool_name.
+        input_file = project3.input_path / "asgiref-3.3.0_scanpipe_output.json"
+        scan_data = json.loads(input_file.read_text())
+        scan_data["headers"][0]["tool_name"] = "scanpipe"
+        input_file.write_text(json.dumps(scan_data))
+
+        run = project3.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+        self.assertEqual(18, project3.codebaseresources.count())
+        self.assertEqual(2, project3.discoveredpackages.count())
+        self.assertEqual(4, project3.discovereddependencies.count())
+
     @mock.patch("scanpipe.pipes.vulnerablecode.is_available")
     @mock.patch("scanpipe.pipes.vulnerablecode.is_configured")
     @mock.patch("scanpipe.pipes.vulnerablecode.bulk_search_by_purl")

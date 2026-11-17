@@ -48,7 +48,7 @@ class ScanPipeInputPipesTest(TestCase):
         tool_name = input.get_tool_name_from_scan_headers(
             scan_data=json.loads(input_location.read_text())
         )
-        self.assertEqual("scanpipe", tool_name)
+        self.assertEqual("ScanCode.io", tool_name)
 
         input_location = self.data / "asgiref" / "asgiref-3.3.0_toolkit_scan.json"
         tool_name = input.get_tool_name_from_scan_headers(
