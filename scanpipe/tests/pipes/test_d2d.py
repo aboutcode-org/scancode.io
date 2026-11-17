@@ -2624,6 +2624,20 @@ class ScanPipeD2DPipesTest(TestCase):
 
         self.assertEqual(expected_extra_data, asdict(pipeline.ecosystem_config))
 
+    def test_scanpipe_d2d_load_ecosystem_config_keeps_the_default_unchanged(self):
+        run = self.project1.add_pipeline(pipeline_name="map_deploy_to_develop")
+        java_pipeline = run.make_pipeline_instance()
+        d2d_config.load_ecosystem_config(pipeline=java_pipeline, options=["Java"])
+
+        ruby_pipeline = run.make_pipeline_instance()
+        d2d_config.load_ecosystem_config(pipeline=ruby_pipeline, options=["Ruby"])
+
+        ruby_extensions = ruby_pipeline.ecosystem_config.matchable_package_extensions
+        self.assertEqual([".gem", ".zip", ".tar.gz", ".tar.xz"], ruby_extensions)
+        default_config = d2d_config.ECOSYSTEM_CONFIGS["Default"]
+        expected = [".zip", ".tar.gz", ".tar.xz"]
+        self.assertEqual(expected, default_config.matchable_package_extensions)
+
     def test_scanpipe_pipes_d2d_extract_protobuf_base_name(self):
         """Test the protobuf base name extraction function."""
         test_cases = [
