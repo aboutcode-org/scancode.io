@@ -380,7 +380,10 @@ def get_fetcher(url):
     if url.startswith("git@"):
         raise ValueError("SSH 'git@' URLs are not supported. Use https:// instead.")
 
-    if url.rstrip("/").endswith(".git"):
+    # Git also clones a local path or a file:// URL, that is any repository of the
+    # server, so only the remote URLs are cloned.
+    is_remote_url = url.startswith(("http://", "https://", "git://"))
+    if is_remote_url and url.rstrip("/").endswith(".git"):
         return fetch_git_repo
 
     if url.startswith("pkg:"):

@@ -45,6 +45,8 @@ class ScanPipeFetchPipesTest(TestCase):
         git_http_url = "https://github.com/aboutcode-org/scancode.io.git"
         self.assertEqual(fetch.fetch_git_repo, fetch.get_fetcher(git_http_url))
         self.assertEqual(fetch.fetch_git_repo, fetch.get_fetcher(git_http_url + "/"))
+        git_url = "git://github.com/aboutcode-org/scancode.io.git"
+        self.assertEqual(fetch.fetch_git_repo, fetch.get_fetcher(git_url))
         self.assertEqual(fetch.fetch_package_url, fetch.get_fetcher("pkg:npm/d3@5.8.0"))
         self.assertEqual(fetch.fetch_package_url, fetch.get_fetcher("pkg:pypi/django"))
 
@@ -72,6 +74,18 @@ class ScanPipeFetchPipesTest(TestCase):
             fetch.get_fetcher("git@github.com:nexB/scancode.io.git")
         expected = "SSH 'git@' URLs are not supported. Use https:// instead."
         self.assertEqual(expected, str(cm.exception))
+
+    def test_scanpipe_pipes_fetch_get_fetcher_refuses_local_git_repositories(self):
+        local_git_urls = {
+            "/srv/repository/.git": "/srv/repository/.git",
+            "file:///srv/repository/.git": "file",
+            "ssh://host/repository.git": "ssh",
+        }
+        for url, scheme in local_git_urls.items():
+            with self.assertRaises(ValueError) as cm:
+                fetch.get_fetcher(url)
+            expected = f"URL scheme '{scheme}' is not supported."
+            self.assertEqual(expected, str(cm.exception))
 
     @mock.patch("scanpipe.pipes.fetch.is_safe_url", return_value=True)
     @mock.patch("requests.sessions.Session.get")
