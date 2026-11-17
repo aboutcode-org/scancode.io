@@ -2627,7 +2627,7 @@ class CodebaseResourceRawView(
         resource = self.get_object()
         resource_location_path = resource.location_path
 
-        if resource_location_path.is_file():
+        if resource.is_in_codebase and resource_location_path.is_file():
             return FileResponse(
                 resource_location_path.open("rb"),
                 as_attachment=request.GET.get("as_attachment", False),

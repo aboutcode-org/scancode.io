@@ -2979,6 +2979,16 @@ class CodebaseResource(
         return str(self.location_path)
 
     @property
+    def is_in_codebase(self):
+        """
+        Return True if the resource location, with its symlinks resolved, is in
+        the project codebase/ directory. A symlink extracted from an input, such as
+        a Docker image layer, can target any file of the server.
+        """
+        codebase_path = self.project.codebase_path.resolve()
+        return self.location_path.resolve().is_relative_to(codebase_path)
+
+    @property
     def is_file(self):
         """Return True, if the resource is a file."""
         return self.type == self.Type.FILE
@@ -3139,6 +3149,9 @@ class CodebaseResource(
         Return the content of the current Resource file using TextCode utilities
         for optimal compatibility.
         """
+        if not self.is_in_codebase:
+            return ""
+
         from textcode.analysis import numbered_text_lines
         from typecode import get_type
 

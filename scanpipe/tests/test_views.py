@@ -1142,6 +1142,24 @@ class ScanPipeViewsTest(TestCase):
         self.assertContains(response, "?programming_language=C%23")
         self.assertNotContains(response, "?programming_language=C#")
 
+    def test_scanpipe_views_codebase_resource_raw_view_symlink(self):
+        codebase_path = self.project1.codebase_path
+        (codebase_path / "file.txt").write_text("content")
+        (codebase_path / "inside_link").symlink_to(codebase_path / "file.txt")
+        (codebase_path / "outside_link").symlink_to(Path(__file__))
+        inside_link = self.project1.codebaseresources.create(
+            path="inside_link", type=CodebaseResource.Type.SYMLINK
+        )
+        outside_link = self.project1.codebaseresources.create(
+            path="outside_link", type=CodebaseResource.Type.SYMLINK
+        )
+
+        response = self.client.get(inside_link.get_raw_url())
+        self.assertEqual(b"content", b"".join(response.streaming_content))
+
+        response = self.client.get(outside_link.get_raw_url())
+        self.assertEqual(404, response.status_code)
+
     def test_scanpipe_views_codebase_resource_details_view_tab_image(self):
         resource1 = make_resource_file(self.project1, "file1.ext")
         response = self.client.get(resource1.get_absolute_url())
