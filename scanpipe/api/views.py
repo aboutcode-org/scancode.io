@@ -351,6 +351,12 @@ class ProjectViewSet(
             pipeline_name, groups = scanpipe_app.extract_group_from_pipeline(pipeline)
             pipeline_name = scanpipe_app.get_new_pipeline_name(pipeline_name)
             if pipeline_name in scanpipe_app.pipelines:
+                unavailable_message = scanpipe_app.get_pipeline_unavailable_message(
+                    pipeline_name
+                )
+                if unavailable_message:
+                    return ErrorResponse(unavailable_message)
+
                 execute_now = request.data.get("execute_now")
                 project.add_pipeline(pipeline_name, execute_now, selected_groups=groups)
                 return Response(

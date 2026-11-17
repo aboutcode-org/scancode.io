@@ -91,13 +91,13 @@
         <div class="column has-background-ter has-border-radius mb-3">
           <h3 class="subtitle mb-3">Pipelines:</h3>
           {% for pipeline_name, pipeline_info in pipelines.items %}
-            {% include "scanpipe/includes/pipeline_summary.html" %}
+            {% include "scanpipe/includes/pipeline_summary.html" with pipeline_name=pipeline_name pipeline_info=pipeline_info is_last=forloop.last only %}
           {% endfor %}
           {% if unavailable_pipelines %}
             <hr class="my-3">
             <h3 class="subtitle is-6 mb-2 has-text-grey">Unavailable pipelines:</h3>
             {% for pipeline_name, pipeline_info in unavailable_pipelines.items %}
-              {% include "scanpipe/includes/pipeline_summary.html" %}
+              {% include "scanpipe/includes/pipeline_summary.html" with pipeline_name=pipeline_name pipeline_info=pipeline_info is_last=forloop.last only %}
             {% endfor %}
           {% endif %}
         </div>

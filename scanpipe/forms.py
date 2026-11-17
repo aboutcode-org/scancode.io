@@ -204,6 +204,11 @@ class AddPipelineForm(PipelineBaseForm):
         required=True,
     )
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        pipeline_choices = scanpipe_app.get_pipeline_choices(include_unavailable=False)
+        self.fields["pipeline"].choices = pipeline_choices
+
     def save(self, project):
         self.handle_pipeline(project)
         return project

@@ -154,6 +154,22 @@ class ScanPipeAppsTest(TestCase):
         pipelines = scanpipe_app.get_pipelines(include_unavailable=False)
         self.assertIs(scan_nix_package, pipelines["scan_nix_package"])
 
+    @mock.patch("scanpipe.pipes.nix.get_missing_commands")
+    def test_scanpipe_apps_get_pipeline_unavailable_message(
+        self, mock_missing_commands
+    ):
+        mock_missing_commands.return_value = ["nix-build"]
+        expected = (
+            "scan_nix_package is not available: "
+            "Missing commands: nix-build. Use the full ScanCode.io image."
+        )
+        message = scanpipe_app.get_pipeline_unavailable_message("scan_nix_package")
+        self.assertEqual(expected, message)
+
+        mock_missing_commands.return_value = []
+        message = scanpipe_app.get_pipeline_unavailable_message("scan_nix_package")
+        self.assertEqual("", message)
+
     @filter_warnings("ignore", category=DeprecationWarning, module="scanpipe")
     def test_scanpipe_apps_get_new_pipeline_name(self):
         self.assertEqual(

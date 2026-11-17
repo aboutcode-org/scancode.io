@@ -66,7 +66,9 @@ class PipelineChoicesMixin:
         import, which ensures all pipelines are first properly loaded.
         """
         super().__init__(*args, **kwargs)
-        self.fields["pipeline"].choices = scanpipe_app.get_pipeline_choices()
+        self.fields["pipeline"].choices = scanpipe_app.get_pipeline_choices(
+            include_unavailable=False
+        )
 
 
 class OrderedMultiplePipelineChoiceField(serializers.MultipleChoiceField):
@@ -90,6 +92,11 @@ class OrderedMultiplePipelineChoiceField(serializers.MultipleChoiceField):
             pipeline_name = scanpipe_app.get_new_pipeline_name(pipeline_name)
             if pipeline_name not in scanpipe_app.pipelines:
                 self.fail("invalid_choice", input=pipeline_name)
+            unavailable_message = scanpipe_app.get_pipeline_unavailable_message(
+                pipeline_name
+            )
+            if unavailable_message:
+                raise serializers.ValidationError(unavailable_message)
 
         return data
 

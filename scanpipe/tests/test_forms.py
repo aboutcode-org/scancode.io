@@ -28,6 +28,7 @@ from django.test import TestCase
 import requests
 import saneyaml
 
+from scanpipe.forms import AddPipelineForm
 from scanpipe.forms import EditInputSourceTagForm
 from scanpipe.forms import InputsBaseForm
 from scanpipe.forms import PipelineRunStepSelectionForm
@@ -126,6 +127,28 @@ class ScanPipeFormsTest(TestCase):
 
         mock_missing_commands.return_value = []
         form = ProjectForm(data=data)
+        self.assertIn(nix_pipeline, form.fields["pipeline"].choices)
+        self.assertTrue(form.is_valid())
+
+    @mock.patch("scanpipe.pipes.nix.get_missing_commands")
+    def test_scanpipe_forms_add_pipeline_form_unavailable_pipeline(
+        self, mock_missing_commands
+    ):
+        data = {"pipeline": "scan_nix_package"}
+        nix_pipeline = ("scan_nix_package", "scan_nix_package")
+
+        mock_missing_commands.return_value = ["nix-build"]
+        form = AddPipelineForm(data=data)
+        self.assertNotIn(nix_pipeline, form.fields["pipeline"].choices)
+        self.assertFalse(form.is_valid())
+        expected = [
+            "Select a valid choice. "
+            "scan_nix_package is not one of the available choices."
+        ]
+        self.assertEqual(expected, form.errors["pipeline"])
+
+        mock_missing_commands.return_value = []
+        form = AddPipelineForm(data=data)
         self.assertIn(nix_pipeline, form.fields["pipeline"].choices)
         self.assertTrue(form.is_valid())
 

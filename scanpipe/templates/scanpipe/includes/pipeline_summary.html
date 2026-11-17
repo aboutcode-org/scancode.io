@@ -1,4 +1,4 @@
-<div {% if not forloop.last %}class="mb-2"{% endif %}>
+<div {% if not is_last %}class="mb-2"{% endif %}>
   <a class="modal-button is-block" data-target="pipeline-help-modal" data-pipeline-name="{{ pipeline_name }}" aria-haspopup="true">
     <strong {% if not pipeline_info.is_available %}class="has-text-grey"{% endif %}>{{ pipeline_name }}</strong>
     <i class="fa-regular fa-circle-question"></i>
@@ -6,7 +6,7 @@
   {% if pipeline_info.is_available %}
     {{ pipeline_info.summary }}
   {% else %}
-    <p class="is-size-7 has-text-grey-dark">
+    <p class="is-size-7 has-text-grey">
       <i class="fa-solid fa-circle-info mr-1"></i>{{ pipeline_info.unavailable_reason }}
     </p>
     <p class="has-text-grey">{{ pipeline_info.summary }}</p>
