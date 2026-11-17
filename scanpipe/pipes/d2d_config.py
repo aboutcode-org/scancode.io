@@ -23,6 +23,7 @@
 
 from dataclasses import dataclass
 from dataclasses import field
+from dataclasses import replace
 
 
 @dataclass
@@ -204,7 +205,8 @@ def load_ecosystem_config(pipeline, options):
     - which unmapped paths to ignore in deployed binaries
     """
     # Add default configurations which are common across ecosystems
-    pipeline.ecosystem_config = ECOSYSTEM_CONFIGS.get("Default")
+    # A copy, as the selected ecosystem configs are added to it in place.
+    pipeline.ecosystem_config = replace(ECOSYSTEM_CONFIGS.get("Default"))
 
     # Add configurations for each selected ecosystem
     for selected_option in options:
