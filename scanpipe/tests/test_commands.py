@@ -425,6 +425,17 @@ class ScanPipeManagementCommandTest(TestCase):
             expected, sorted([path.name for path in project.codebase_path.iterdir()])
         )
 
+    def test_scanpipe_management_command_handle_copy_codebase_keeps_symlinks(self):
+        project = make_project(name="my_project")
+        copy_from = Path(tempfile.mkdtemp())
+        (copy_from / "outside_link").symlink_to(Path(__file__))
+
+        commands.handle_copy_codebase(project, copy_from)
+
+        copied_link = project.codebase_path / "outside_link"
+        self.assertTrue(copied_link.is_symlink())
+        self.assertEqual(Path(__file__), copied_link.readlink())
+
     @filter_warnings("ignore", category=DeprecationWarning, module="scanpipe")
     def test_scanpipe_management_command_add_pipeline(self):
         out = StringIO()
