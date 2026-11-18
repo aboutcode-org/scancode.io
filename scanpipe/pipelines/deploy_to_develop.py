@@ -55,6 +55,19 @@ class DeployToDevelop(Pipeline):
       for example, ``--input-file path/filename:tag``.
     """
 
+    JVM_GROUPS = frozenset(
+        {
+            "Java",
+            "Scala",
+            "Kotlin",
+            "Antlr",
+            "Groovy",
+            "AspectJ",
+            "Clojure",
+            "Xtend",
+        }
+    )
+
     @classmethod
     def steps(cls):
         return (
@@ -71,6 +84,7 @@ class DeployToDevelop(Pipeline):
             cls.map_about_files,
             cls.map_checksum,
             cls.match_archives_to_purldb,
+            cls.collect_jvm_sourcefiles_attribute,
             cls.find_java_packages,
             cls.map_java_to_class,
             cls.map_jar_to_java_source,
@@ -188,6 +202,13 @@ class DeployToDevelop(Pipeline):
             matcher_func=d2d.match_purldb_package,
             logger=self.log,
         )
+
+    def collect_jvm_sourcefiles_attribute(self):
+        """Collect the SourceFile attribute of every to/ .class file once."""
+        if not (self.JVM_GROUPS & set(self.selected_groups)):
+            self.log("No JVM language selected. Skipping SourceFile collection.")
+            return
+        d2d.collect_jvm_sourcefiles_attribute(project=self.project, logger=self.log)
 
     @optional_step("Java")
     def find_java_packages(self):

@@ -202,13 +202,12 @@ def _map_jvm_to_class_resource(
     # file can produce several class files whose basenames differ from the
     # source. See https://github.com/aboutcode-org/scancode.io/issues/1875
     # and https://github.com/aboutcode-org/scancode.io/issues/1993
-    # The ``SourceFile attribute is only available in JVM .class files. For
-    # scala, we have to exclude .tasty as it is not a JVM class file and
-    # pytecode would fail on it.
+    # The ``SourceFile`` attribute is only available in JVM .class files. For
+    # scala, we have to exclude .tasty as it is not a JVM class file.
     if to_resource.extension != ".class":
         return
 
-    source_file = jvm.read_class_file_source_file(to_resource.location_path)
+    source_file = to_resource.extra_data.get("source_file")
     if source_file is None:
         return
 
@@ -305,6 +304,32 @@ def map_jvm_to_class(project, jvm_lang: jvm.JvmLanguage, logger=None):
             from_classes_index=from_classes_index,
             jvm_lang=jvm_lang,
         )
+
+
+def collect_jvm_sourcefiles_attribute(project, logger=None):
+    """
+    Collect the JVM ``SourceFile`` attribute of every ``.class`` file once
+    and store it in ``extra_data``.
+    """
+    to_classes = (
+        project.codebaseresources.files()
+        .to_codebase()
+        .no_status()
+        .has_no_relation()
+        .filter(extension=".class")
+    )
+    resource_count = to_classes.count()
+
+    if logger:
+        logger(f"Collecting SourceFile attribute for {resource_count:,d} .class files.")
+
+    resource_iterator = to_classes.iterator(chunk_size=2000)
+    progress = LoopProgress(resource_count, logger)
+
+    for resource in progress.iter(resource_iterator):
+        source_file = jvm.read_class_file_source_file(resource.location_path)
+        if source_file:
+            resource.update_extra_data({"source_file": source_file})
 
 
 def find_jvm_packages(project, jvm_lang: jvm.JvmLanguage, logger=None):
