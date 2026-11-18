@@ -2416,10 +2416,6 @@ class CodebaseResourceQuerySet(ComplianceAlertQuerySetMixin, ProjectRelatedQuery
     def without_symlinks(self):
         return self.filter(~Q(type=self.model.Type.SYMLINK))
 
-    def with_parent_segment(self):
-        """Return the resources with a ".." path segment, located outside codebase/."""
-        return self.filter(path__regex=r"(^|/)\.\.(/|$)")
-
     def has_license_detections(self):
         return self.filter(~Q(license_detections=[]) | ~Q(license_clues=[]))
 

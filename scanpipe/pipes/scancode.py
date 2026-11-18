@@ -303,6 +303,19 @@ def save_scan_package_results(codebase_resource, scan_results, scan_errors):
         codebase_resource.update(status=flag.SCANNED_WITH_ERROR)
 
 
+def get_resources_in_codebase(resources):
+    """
+    Yield the ``resources`` located in the codebase, with their symlinks resolved,
+    and flag the others as ignored: a ".." path or a codebase symlink, from an
+    imported inventory or a cloned Git repository, can target any file of the server.
+    """
+    for resource in resources:
+        if not resource.is_in_codebase:
+            resource.update(status=flag.IGNORED_OUTSIDE_CODEBASE)
+            continue
+        yield resource
+
+
 def scan_resources(
     resource_qs,
     scan_func,
@@ -339,16 +352,13 @@ def scan_resources(
             f"Skipped {skipped_files_max_size} files over the size of {file_size_limit}"
         )
 
-    # Never read a file outside of the codebase.
-    if skipped_paths := flag.flag_and_ignore_paths_with_parent_segment(resource_qs):
-        logger.info(f"Skipped {skipped_paths} resources with a '..' path segment")
-
-    ignored_statuses = [flag.IGNORED_BY_MAX_FILE_SIZE, flag.IGNORED_PARENT_SEGMENT_PATH]
-    scan_resource_qs = resource_qs.filter(~Q(status__in=ignored_statuses))
+    scan_resource_qs = resource_qs.filter(~Q(status=flag.IGNORED_BY_MAX_FILE_SIZE))
 
     resource_count = scan_resource_qs.count()
     logger.info(f"Scan {resource_count} codebase resources with {scan_func.__name__}")
-    resource_iterator = scan_resource_qs.iterator(chunk_size=2000)
+    resource_iterator = get_resources_in_codebase(
+        scan_resource_qs.iterator(chunk_size=2000)
+    )
     progress = LoopProgress(resource_count, logger=progress_logger)
     max_workers = get_max_workers(keep_available=1)
 
