@@ -204,7 +204,8 @@ Example::
     https://github.com/aboutcode-org/scancode.io.git
 
 .. note::
-    SSH URLs (``git@github.com:...``) are not supported. Use HTTPS URLs instead.
+    Only ``http://``, ``https://`` and ``git://`` URLs are supported. SSH URLs
+    (``git@github.com:...``, ``ssh://``), local paths and ``file://`` URLs are refused.
 
 .. _inputs_authentication:
 
