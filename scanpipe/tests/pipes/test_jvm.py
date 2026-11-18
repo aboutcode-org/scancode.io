@@ -235,3 +235,9 @@ class ScanPipeJvmSourceFileAttributeTest(TestCase):
         # `head -c 20 ClusterShardingQuery.class > Truncated.class`
         path = self.data / "jvm" / "Truncated.class"
         self.assertIsNone(jvm.read_class_file_source_file(path))
+
+    def test_scanpipe_pipes_jvm_read_class_file_source_file_with_long_constant(self):
+        # The LongConstant.class is created by the following source
+        # public class LongConstant {static final long VALUE = 1234567890123456789L;}
+        path = self.data / "jvm" / "LongConstant.class"
+        self.assertEqual("LongConstant.java", jvm.read_class_file_source_file(path))

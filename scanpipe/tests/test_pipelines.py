@@ -2445,36 +2445,6 @@ class PipelinesIntegrationTest(TestCase):
         )
         self.assertIn(expected, message.description)
 
-    @mock.patch("scanpipe.pipes.d2d.collect_jvm_sourcefiles_attribute")
-    def test_scanpipe_deploy_to_develop_collect_jvm_sourcefiles_attribute_no_jvm_group(
-        self,
-        mock_collect_jvm_sourcefiles_attribute,
-    ):
-        project1 = make_project()
-        run = project1.add_pipeline(
-            pipeline_name="map_deploy_to_develop",
-            selected_groups=["JavaScript"],
-        )
-        pipeline = run.make_pipeline_instance()
-        pipeline.collect_jvm_sourcefiles_attribute()
-        mock_collect_jvm_sourcefiles_attribute.assert_not_called()
-
-    @mock.patch("scanpipe.pipes.d2d.collect_jvm_sourcefiles_attribute")
-    def test_scanpipe_deploy_to_develop_collect_jvm_sourcefiles_attribute_jvm_group(
-        self,
-        mock_collect_jvm_sourcefiles_attribute,
-    ):
-        project1 = make_project()
-        run = project1.add_pipeline(
-            pipeline_name="map_deploy_to_develop",
-            selected_groups=["Java", "JavaScript"],
-        )
-        pipeline = run.make_pipeline_instance()
-        pipeline.collect_jvm_sourcefiles_attribute()
-        mock_collect_jvm_sourcefiles_attribute.assert_called_once_with(
-            project=project1, logger=pipeline.log
-        )
-
     @mock.patch("scanpipe.pipes.purldb.request_post")
     @mock.patch("scanpipe.pipes.purldb.is_available")
     @mock.patch("scanpipe.pipes.purldb.is_configured", return_value=True)

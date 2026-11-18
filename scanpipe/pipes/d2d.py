@@ -202,11 +202,6 @@ def _map_jvm_to_class_resource(
     # file can produce several class files whose basenames differ from the
     # source. See https://github.com/aboutcode-org/scancode.io/issues/1875
     # and https://github.com/aboutcode-org/scancode.io/issues/1993
-    # The ``SourceFile`` attribute is only available in JVM .class files. For
-    # scala, we have to exclude .tasty as it is not a JVM class file.
-    if to_resource.extension != ".class":
-        return
-
     source_file = to_resource.extra_data.get("source_file")
     if source_file is None:
         return
@@ -323,13 +318,25 @@ def collect_jvm_sourcefiles_attribute(project, logger=None):
     if logger:
         logger(f"Collecting SourceFile attribute for {resource_count:,d} .class files.")
 
-    resource_iterator = to_classes.iterator(chunk_size=2000)
+    chunk_size = 2000
+    resource_iterator = to_classes.iterator(chunk_size=chunk_size)
     progress = LoopProgress(resource_count, logger)
+    resources_to_update = []
 
     for resource in progress.iter(resource_iterator):
         source_file = jvm.read_class_file_source_file(resource.location_path)
         if source_file:
-            resource.update_extra_data({"source_file": source_file})
+            resource.extra_data["source_file"] = source_file
+            resources_to_update.append(resource)
+
+        if len(resources_to_update) >= chunk_size:
+            CodebaseResource.objects.bulk_update(
+                resources_to_update, fields=["extra_data"]
+            )
+            resources_to_update.clear()
+
+    if resources_to_update:
+        CodebaseResource.objects.bulk_update(resources_to_update, fields=["extra_data"])
 
 
 def find_jvm_packages(project, jvm_lang: jvm.JvmLanguage, logger=None):
