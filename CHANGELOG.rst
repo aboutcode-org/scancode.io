@@ -5,6 +5,12 @@ Changelog
 
 * Migrate VulnerableCode integration to API v3
 
+v38.3.1 (2026-11-18)
+--------------------
+
+* fix: harden the handling of imported data and container images by @tdruez in https://github.com/aboutcode-org/scancode.io/pull/2350
+* fix: map JVM .class files to their sources using the SourceFile attribute by @chinyeungli in https://github.com/aboutcode-org/scancode.io/pull/2345
+
 v38.3.0 (2026-11-18)
 --------------------
 
