@@ -273,12 +273,16 @@ def get_about_file_locations(about_location):
     ``about_location``, resolved by ``About`` the way it reads them.
     """
     about_file_locations = AboutFileLocations(location=about_location)
-    return [
-        location
-        for field_name in ABOUT_FILE_FIELDS
-        for location in (about_file_locations.fields[field_name].value or {}).values()
-        if location
-    ]
+    file_locations = []
+
+    for field_name in ABOUT_FILE_FIELDS:
+        field_value = about_file_locations.fields[field_name].value
+        # A field keeps its raw value when the validation of a previous field
+        # failed: ``About`` does not read its files either.
+        if isinstance(field_value, dict):
+            file_locations.extend(filter(None, field_value.values()))
+
+    return file_locations
 
 
 def is_safe_about_location(location, allowed_root):

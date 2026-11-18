@@ -253,6 +253,11 @@ class ScanPipeResolvePipesTest(TestCase):
         ]
         self.assertEqual(sorted(expected), sorted(locations))
 
+        about_location.write_text(
+            "about_resource:\n  - a: b\nname: package\nnotice_file: NOTICE\n"
+        )
+        self.assertEqual([], resolve.get_about_file_locations(str(about_location)))
+
     def test_scanpipe_pipes_resolve_is_safe_about_location(self):
         allowed_root = Path(tempfile.mkdtemp()).resolve()
         (allowed_root / "NOTICE").write_text("notice")
