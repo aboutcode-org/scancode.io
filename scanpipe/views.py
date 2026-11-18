@@ -26,6 +26,7 @@ import json
 import operator
 from collections import Counter
 from contextlib import suppress
+from pathlib import Path
 
 from django.apps import apps
 from django.contrib import messages
@@ -1547,8 +1548,8 @@ def is_file_in_directory(directory, filename):
     filename provided by a user could be an absolute path, a "../" path, or a
     directory, such as a fetched repository.
     """
-    file_path = directory / filename
-    return file_path.parent == directory and file_path.is_file()
+    is_name_only = Path(filename).name == filename
+    return is_name_only and (directory / filename).is_file()
 
 
 def download_project_file(request, slug, filename, path_type):
