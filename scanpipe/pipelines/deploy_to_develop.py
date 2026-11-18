@@ -194,7 +194,7 @@ class DeployToDevelop(Pipeline):
         "Java", "Scala", "Kotlin", "Antlr", "Groovy", "AspectJ", "Clojure", "Xtend"
     )
     def collect_jvm_sourcefiles_attribute(self):
-        """Collect the SourceFile attribute of every to/ .class file once."""
+        """Collect the source filename recorded in the to/ .class files."""
         d2d.collect_jvm_sourcefiles_attribute(project=self.project, logger=self.log)
 
     @optional_step("Java")

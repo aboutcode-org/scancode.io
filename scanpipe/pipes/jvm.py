@@ -313,22 +313,12 @@ _CONSTANT_POOL_ENTRY_SIZES = {
 
 
 def _read_u2(class_file_bytes, offset):
-    """
-    Return the unsigned 2-byte big-endian integer at ``offset`` in ``class_file_bytes``.
-
-    ``>H`` in the struct format string means big-endian (``>``) unsigned
-    short (``H``, i.e. ``u2`` in JVM terminology).
-    """
+    """Return the unsigned 2-byte big-endian integer at ``offset``."""
     return struct.unpack_from(">H", class_file_bytes, offset)[0]
 
 
 def _read_u4(class_file_bytes, offset):
-    """
-    Return the unsigned 4-byte big-endian integer at ``offset`` in ``class_file_bytes``.
-
-    ``>I`` in the struct format string means big-endian (``>``) unsigned
-    int (``I``, i.e. ``u4`` in JVM terminology).
-    """
+    """Return the unsigned 4-byte big-endian integer at ``offset``."""
     return struct.unpack_from(">I", class_file_bytes, offset)[0]
 
 
@@ -431,8 +421,8 @@ def _find_source_file_in_attributes(class_file_bytes, offset, utf8_bytes_by_inde
         if attribute_length != 2:
             return
 
-        source_file_bytes = utf8_bytes_by_index.get(_read_u2(class_file_bytes, offset))
-        return source_file_bytes.decode("utf-8", errors="replace")
+        source_file_index = _read_u2(class_file_bytes, offset)
+        return utf8_bytes_by_index[source_file_index].decode("utf-8", errors="replace")
 
 
 def read_class_file_source_file(location):
@@ -470,18 +460,14 @@ def read_class_file_source_file(location):
         # Skip access_flags, this_class, and super_class (three u2 fields).
         offset += 6
 
-        # Skip the interfaces table: 2 bytes for the count, then
-        # interfaces_count × 2 bytes for the entries.
         interfaces_count = _read_u2(class_file_bytes, offset)
         offset += 2 + interfaces_count * 2
 
-        # Skip the fields table, then the methods table.
         offset = _skip_members(class_file_bytes, offset)  # fields
         offset = _skip_members(class_file_bytes, offset)  # methods
 
-        # Walk the class-level attribute table looking for "SourceFile".
         return _find_source_file_in_attributes(
             class_file_bytes, offset, utf8_bytes_by_index
         )
-    except (OSError, struct.error, IndexError):
+    except (OSError, struct.error, LookupError):
         return

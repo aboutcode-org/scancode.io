@@ -241,3 +241,9 @@ class ScanPipeJvmSourceFileAttributeTest(TestCase):
         # public class LongConstant {static final long VALUE = 1234567890123456789L;}
         path = self.data / "jvm" / "LongConstant.class"
         self.assertEqual("LongConstant.java", jvm.read_class_file_source_file(path))
+
+    def test_scanpipe_pipes_jvm_read_class_file_source_file_index_not_utf8(self):
+        # The SourceFileNotUtf8.class is LongConstant.class with its SourceFile
+        # index pointing to the constant pool entry 1, a Methodref.
+        path = self.data / "jvm" / "SourceFileNotUtf8.class"
+        self.assertIsNone(jvm.read_class_file_source_file(path))
