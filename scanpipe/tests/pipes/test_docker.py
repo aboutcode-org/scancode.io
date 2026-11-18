@@ -167,6 +167,81 @@ class ScanPipeDockerPipesTest(TestCase):
         self.assertIn("link/written.txt", errors[0])
         self.assertIs(default_filter, vars(tarfile.TarFile)["extraction_filter"])
 
+    def test_scanpipe_pipes_docker_get_layer_errors(self):
+        extract_target = Path(tempfile.mkdtemp())
+        layer_sha256 = "a" * 64
+        valid_layer = SimpleNamespace(
+            layer_id=layer_sha256,
+            archive_location=str(extract_target / layer_sha256 / "layer.tar"),
+        )
+        image = SimpleNamespace(layers=[valid_layer])
+        self.assertEqual([], docker.get_layer_errors(image, extract_target))
+
+        invalid_layer_ids = [
+            "../../escape",
+            "/var/escape",
+            "..",
+            "",
+            "A" * 64,
+            "layer1",
+        ]
+        for layer_id in invalid_layer_ids:
+            layer = SimpleNamespace(
+                layer_id=layer_id, archive_location=valid_layer.archive_location
+            )
+            image = SimpleNamespace(layers=[layer])
+            errors = docker.get_layer_errors(image, extract_target)
+            self.assertEqual([f"Invalid layer ID: {layer_id}"], errors)
+
+        outside_layer = SimpleNamespace(
+            layer_id=layer_sha256,
+            archive_location=str(extract_target / ".." / "outside.tar"),
+        )
+        image = SimpleNamespace(layers=[outside_layer])
+        expected = [f"Layer {layer_sha256} archive is outside of the image."]
+        self.assertEqual(expected, docker.get_layer_errors(image, extract_target))
+
+    def test_scanpipe_pipes_docker_extract_layers_refuses_symlinked_target(self):
+        work_path = Path(tempfile.mkdtemp())
+        outside_path = work_path / "outside"
+        outside_path.mkdir()
+        base_path = work_path / "codebase"
+        base_path.mkdir()
+        (base_path / "image").symlink_to(outside_path)
+
+        layer = SimpleNamespace(
+            layer_id="a" * 64, archive_location=str(work_path / "layer.tar")
+        )
+        image = SimpleNamespace(extracted_location="image", layers=[layer])
+        with self.assertRaises(ValueError) as cm:
+            docker.extract_layers_from_images_to_base_path(base_path, [image])
+
+        expected = f"Layer {layer.layer_id} target is outside of the codebase."
+        self.assertEqual(expected, str(cm.exception))
+        self.assertEqual([], list(outside_path.iterdir()))
+
+    @mock.patch("scanpipe.pipes.docker.Image.get_images_from_dir")
+    @mock.patch("scanpipe.pipes.docker.extract_tar_safely")
+    def test_scanpipe_pipes_docker_extract_image_from_tarball_forged_layer_id(
+        self, mock_extract_tar_safely, mock_get_images_from_dir
+    ):
+        extract_target = Path(tempfile.mkdtemp())
+        archive_location = str(extract_target / "layer.tar")
+        valid_layer = SimpleNamespace(
+            layer_id="a" * 64, archive_location=archive_location
+        )
+        forged_layer = SimpleNamespace(
+            layer_id="../../escape", archive_location=archive_location
+        )
+        valid_image = SimpleNamespace(layers=[valid_layer])
+        forged_image = SimpleNamespace(layers=[forged_layer])
+        mock_extract_tar_safely.return_value = []
+        mock_get_images_from_dir.return_value = [valid_image, forged_image]
+
+        images, errors = docker.extract_image_from_tarball("image.tar", extract_target)
+        self.assertEqual([valid_image], images)
+        self.assertEqual(["Invalid layer ID: ../../escape"], errors)
+
     def test_scanpipe_pipes_docker_default_extraction_filter(self):
         previous_filter = vars(tarfile.TarFile)["extraction_filter"]
         with docker.default_extraction_filter(docker.tar_filter_with_safe_hardlinks):

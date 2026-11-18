@@ -22,6 +22,7 @@
 
 import logging
 import posixpath
+import re
 import tarfile
 import threading
 from collections import namedtuple
@@ -39,6 +40,9 @@ from scanpipe.pipes import flag
 from scanpipe.pipes import rootfs
 
 logger = logging.getLogger(__name__)
+
+# A layer ID is the SHA256 of the layer archive, used as its extraction directory.
+LAYER_ID_REGEX = re.compile(r"[0-9a-f]{64}")
 
 
 def tar_filter_with_safe_hardlinks(member, dest_path):
@@ -144,7 +148,37 @@ def extract_image_from_tarball(input_tarball, extract_target, verify=False):
         extracted_location=str(extract_target),
         verify=verify,
     )
-    return images, errors
+
+    valid_images = []
+    for image in images:
+        if layer_errors := get_layer_errors(image, extract_target):
+            errors.extend(layer_errors)
+            continue
+        valid_images.append(image)
+
+    return valid_images, errors
+
+
+def get_layer_errors(image, extract_target):
+    """
+    Return the error messages for the ``image`` layers with an ID that is not a
+    SHA256, or with an archive outside of the ``extract_target`` directory. The
+    layer IDs and archive paths come from the image config and manifest files: a
+    forged image could extract a layer, or read a tarball, anywhere on the server.
+    """
+    extract_path = Path(extract_target).resolve()
+    errors = []
+
+    for layer in image.layers:
+        layer_id = layer.layer_id or ""
+        if not LAYER_ID_REGEX.fullmatch(layer_id):
+            errors.append(f"Invalid layer ID: {layer_id}")
+
+        archive_path = Path(layer.archive_location).resolve()
+        if not archive_path.is_relative_to(extract_path):
+            errors.append(f"Layer {layer_id} archive is outside of the image.")
+
+    return errors
 
 
 def extract_layers_from_images(project, images):
@@ -171,6 +205,7 @@ def extract_layers_from_images_to_base_path(base_path, images):
     """
     errors = []
     base_path = Path(base_path)
+    resolved_base_path = base_path.resolve()
 
     for image in images:
         image_dirname = Path(image.extracted_location).name
@@ -178,6 +213,12 @@ def extract_layers_from_images_to_base_path(base_path, images):
 
         for layer in image.layers:
             extract_target = target_path / layer.layer_id
+            # The codebase can already contain a symlink in place of the image or
+            # layer directory, for example from a cloned Git repository input.
+            if not extract_target.resolve().is_relative_to(resolved_base_path):
+                error_msg = f"Layer {layer.layer_id} target is outside of the codebase."
+                raise ValueError(error_msg)
+
             extract_errors = extract_tar_safely(
                 location=layer.archive_location, target_dir=extract_target
             )
