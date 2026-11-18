@@ -76,6 +76,7 @@ dependencies = [
   "python-inspector==0.15.2",
   "source-inspector==0.7.2; sys_platform != 'darwin' and platform_machine != 'arm64'",
   "aboutcode-toolkit==11.1.1",
+  "yara-python>=4.5.1",
   # Utilities
   "XlsxWriter==3.3.1",
   "openpyxl==3.1.5",
@@ -175,6 +176,7 @@ match_to_matchcode = "scanpipe.pipelines.match_to_matchcode:MatchToMatchCode"
 populate_purldb = "scanpipe.pipelines.populate_purldb:PopulatePurlDB"
 publish_to_federatedcode = "scanpipe.pipelines.publish_to_federatedcode:PublishToFederatedCode"
 resolve_dependencies = "scanpipe.pipelines.resolve_dependencies:ResolveDependencies"
+scan_and_match_with_yara = "scanpipe.pipelines.scan_and_match_with_yara:ScanAndMatchWithYara"
 scan_codebase = "scanpipe.pipelines.scan_codebase:ScanCodebase"
 scan_for_virus = "scanpipe.pipelines.scan_for_virus:ScanForVirus"
 scan_maven_package = "scanpipe.pipelines.scan_maven_package:ScanMavenPackage"
