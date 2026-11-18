@@ -168,6 +168,17 @@ class ScanPipeFilterTest(TestCase):
         filterset = ResourceFilterSet(data=data)
         self.assertEqual([resource2], list(filterset.qs))
 
+    def test_scanpipe_filters_resource_filterset_dropdown_escapes_labels(self):
+        script_tag = "<script>alert(1)</script>"
+        CodebaseResource.objects.create(
+            project=self.project1, path="file.txt", tag=script_tag
+        )
+
+        filterset = ResourceFilterSet(queryset=self.project1.codebaseresources.all())
+        rendered_widget = str(filterset.form["tag"])
+        self.assertNotIn(script_tag, rendered_widget)
+        self.assertIn("&lt;script&gt;alert(1)&lt;/script&gt;", rendered_widget)
+
     def test_scanpipe_filters_params_for_search(self):
         data = {
             "status": "succeed",

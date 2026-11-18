@@ -30,6 +30,7 @@ from django.db import models
 from django.db.models import Q
 from django.db.models.fields import BLANK_CHOICE_DASH
 from django.utils.functional import cached_property
+from django.utils.html import format_html
 from django.utils.http import urlencode
 from django.utils.translation import gettext as _
 
@@ -138,7 +139,9 @@ class BulmaLinkWidget(LinkWidget):
         except AttributeError:
             url = urlencode(data, doseq=True)
 
-        return self.option_string().format(
+        # The label can be a value from an imported inventory: it must be escaped.
+        return format_html(
+            self.option_string(),
             css_class=css_class,
             query_string=url,
             label=str(option_label),
@@ -438,10 +441,18 @@ class ProjectFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
 
         self.filters["is_archived"].extra["widget"] = BulmaLinkWidget(
             choices=[
-                ("", f'<i class="fa-solid fa-seedling"></i> {active_count} Active'),
+                (
+                    "",
+                    format_html(
+                        '<i class="fa-solid fa-seedling"></i> {} Active', active_count
+                    ),
+                ),
                 (
                     "true",
-                    f'<i class="fa-solid fa-dice-d6"></i> {archived_count} Archived',
+                    format_html(
+                        '<i class="fa-solid fa-dice-d6"></i> {} Archived',
+                        archived_count,
+                    ),
                 ),
             ]
         )

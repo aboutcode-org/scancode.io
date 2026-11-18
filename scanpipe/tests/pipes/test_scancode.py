@@ -273,6 +273,39 @@ class ScanPipeScancodePipesTest(TestCase):
         self.assertEqual(expected_description, message.description)
 
     @mock.patch("scanpipe.pipes.scancode._scan_resource")
+    def test_scanpipe_pipes_scancode_scan_for_files_outside_codebase(
+        self, mock_scan_resource
+    ):
+        mock_scan_resource.return_value = {}, []
+        project1 = Project.objects.create(name="Analysis")
+        (project1.codebase_path / "outside_dir_link").symlink_to(Path(__file__).parent)
+        outside_resources = [
+            CodebaseResource.objects.create(project=project1, path=path)
+            for path in ["../../etc/passwd", f"outside_dir_link/{Path(__file__).name}"]
+        ]
+
+        with override_settings(SCANPIPE={"PROCESSES": 0}):
+            scancode.scan_for_files(project1)
+
+        mock_scan_resource.assert_not_called()
+        for resource in outside_resources:
+            resource.refresh_from_db()
+            self.assertEqual("ignored-outside-codebase", resource.status)
+
+    def test_scanpipe_pipes_scancode_get_resources_in_codebase(self):
+        project1 = Project.objects.create(name="Analysis")
+        (project1.codebase_path / "file.txt").write_text("content")
+        inside_resource = make_resource_file(project1, path="file.txt")
+        outside_resource = make_resource_file(project1, path="../../etc/passwd")
+
+        resources = [inside_resource, outside_resource]
+        self.assertEqual(
+            [inside_resource], list(scancode.get_resources_in_codebase(resources))
+        )
+        outside_resource.refresh_from_db()
+        self.assertEqual("ignored-outside-codebase", outside_resource.status)
+
+    @mock.patch("scanpipe.pipes.scancode._scan_resource")
     def test_scanpipe_pipes_scancode_scan_for_files(self, mock_scan_resource):
         scan_results = {"detected_license_expression": "mit"}
         scan_errors = []

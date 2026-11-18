@@ -48,6 +48,7 @@ IGNORED_DATA_FILE_NO_CLUES = "ignored-data-file-no-clues"
 IGNORED_DOC_FILE = "ignored-doc-file"
 IGNORED_FROM_CONFIG = "ignored-from-config"
 IGNORED_BY_MAX_FILE_SIZE = "ignored-by-max-file-size"
+IGNORED_OUTSIDE_CODEBASE = "ignored-outside-codebase"
 
 COMPLIANCE_LICENSES = "compliance-licenses"
 COMPLIANCE_SOURCEMIRROR = "compliance-sourcemirror"

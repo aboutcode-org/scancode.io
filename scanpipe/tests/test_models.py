@@ -2443,6 +2443,7 @@ class ScanPipeModelsTest(TestCase):
         self.assertTrue(webhook_delivery.success)
 
         self.assertEqual(3, webhook.deliveries.count())
+        self.assertFalse(mock_post.call_args.kwargs["allow_redirects"])
 
     def test_scanpipe_webhook_subscription_model_get_payload(self):
         webhook = self.project1.add_webhook_subscription(target_url="https://localhost")

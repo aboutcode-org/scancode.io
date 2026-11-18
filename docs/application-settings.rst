@@ -287,6 +287,8 @@ Example configuration in the ``.env`` file::
 The available options are:
 
 - ``target_url`` (**required**): The URL where the webhook payload will be sent.
+  The redirects are not followed: use the final URL, such as ``https://`` in place
+  of an ``http://`` URL redirected to it.
 - ``trigger_on_each_run`` (**default**: ``False``): If ``True``, the webhook is triggered
   on every pipeline run.
 - ``include_summary`` (**default**: ``False``): If ``True``, a summary of the pipeline

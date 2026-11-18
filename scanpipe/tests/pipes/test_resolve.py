@@ -21,6 +21,8 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 import json
+import os
+import tempfile
 from pathlib import Path
 from unittest import mock
 
@@ -182,6 +184,97 @@ class ScanPipeResolvePipesTest(TestCase):
         package = resolve.resolve_about_packages(str(input_location))
         expected = {"extra_data": {}, "name": "project"}
         self.assertEqual([expected], package)
+
+    def test_scanpipe_pipes_resolve_resolve_about_package_file_references(self):
+        work_path = Path(tempfile.mkdtemp())
+        (work_path / "secret.txt").write_text("server secret")
+        codebase_path = work_path / "codebase"
+        about_directory = codebase_path / "package"
+        about_directory.mkdir(parents=True)
+        (codebase_path / "NOTICE").write_text("project notice")
+        about_location = about_directory / "package.ABOUT"
+
+        unsafe_references = [
+            "notice_file: ../../secret.txt",
+            "Notice_File: ../../secret.txt",
+            "notice_file: ..\\..\\secret.txt",
+            "licenses:\n  - key: mit\n    file: ../../secret.txt",
+            "notice_file: ../NOTICE",
+        ]
+        for unsafe_reference in unsafe_references:
+            about_location.write_text(
+                f"about_resource: .\nname: package\n{unsafe_reference}\n"
+            )
+            package_data = resolve.resolve_about_package(str(about_location))
+            self.assertEqual({}, package_data, msg=unsafe_reference)
+
+        package_data = resolve.resolve_about_package(
+            str(about_location), allowed_root=codebase_path
+        )
+        self.assertEqual("project notice", package_data["notice_text"])
+
+    def test_scanpipe_pipes_resolve_resolve_about_package_special_file(self):
+        about_directory = Path(tempfile.mkdtemp())
+        os.mkfifo(about_directory / "NOTICE")
+        about_location = about_directory / "package.ABOUT"
+        about_location.write_text(
+            "about_resource: .\nname: package\nnotice_file: NOTICE\n"
+        )
+
+        self.assertEqual({}, resolve.resolve_about_package(str(about_location)))
+
+    def test_scanpipe_pipes_resolve_resolve_about_package_invalid_yaml(self):
+        about_location = Path(tempfile.mkdtemp()) / "package.ABOUT"
+        invalid_contents = ["name: !foo bar\n", "? [a]\n: b\n"]
+        for invalid_content in invalid_contents:
+            about_location.write_text(invalid_content)
+            package_data = resolve.resolve_about_package(str(about_location))
+            self.assertEqual({"extra_data": {}}, package_data, msg=invalid_content)
+
+    def test_scanpipe_pipes_resolve_get_about_file_locations(self):
+        about_directory = Path(tempfile.mkdtemp())
+        (about_directory / "NOTICE").write_text("notice")
+        (about_directory / "mit.LICENSE").write_text("license")
+        about_location = about_directory / "package.ABOUT"
+        about_location.write_text(
+            "about_resource: .\n"
+            "name: package\n"
+            "Notice_File: NOTICE\n"
+            "changelog_file: MISSING\n"
+            "licenses:\n"
+            "  - key: mit\n"
+            "    file: mit.LICENSE\n"
+        )
+
+        locations = resolve.get_about_file_locations(str(about_location))
+        expected = [
+            str(about_directory / "mit.LICENSE"),
+            str(about_directory / "NOTICE"),
+        ]
+        self.assertEqual(sorted(expected), sorted(locations))
+
+        about_location.write_text(
+            "about_resource:\n  - a: b\nname: package\nnotice_file: NOTICE\n"
+        )
+        self.assertEqual([], resolve.get_about_file_locations(str(about_location)))
+
+    def test_scanpipe_pipes_resolve_is_safe_about_location(self):
+        allowed_root = Path(tempfile.mkdtemp()).resolve()
+        (allowed_root / "NOTICE").write_text("notice")
+        (allowed_root / "outside_link").symlink_to(Path(__file__))
+        os.mkfifo(allowed_root / "FIFO")
+
+        self.assertTrue(
+            resolve.is_safe_about_location(allowed_root / "NOTICE", allowed_root)
+        )
+        unsafe_locations = [
+            allowed_root / "outside_link",
+            allowed_root / "FIFO",
+            Path(__file__),
+            "/dev/zero",
+        ]
+        for location in unsafe_locations:
+            self.assertFalse(resolve.is_safe_about_location(location, allowed_root))
 
     def test_scanpipe_pipes_resolve_get_spdx_document_from_file(self):
         input_location = self.data / "spdx" / "SPDXJSONExample-v2.3.spdx.json"

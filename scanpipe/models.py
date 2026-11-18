@@ -4890,11 +4890,13 @@ class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):
         )
 
         try:
+            # A redirect could lead the request from the target to an internal service.
             response = requests.post(
                 url=self.target_url,
                 data=json.dumps(payload, cls=DjangoJSONEncoder),
                 headers={"Content-Type": "application/json"},
                 timeout=timeout,
+                allow_redirects=False,
             )
         except requests.exceptions.RequestException as exception:
             logger.error(exception)

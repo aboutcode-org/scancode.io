@@ -949,7 +949,8 @@ class AboutFileIndexes:
 
         for about_file_resource in from_about_files:
             package_data = resolve.resolve_about_package(
-                input_location=str(about_file_resource.location_path)
+                input_location=str(about_file_resource.location_path),
+                allowed_root=project.codebase_path,
             )
             error_message_details = {"package_data": package_data}
             if not package_data:

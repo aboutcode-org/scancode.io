@@ -32,6 +32,7 @@ from django.core.exceptions import ObjectDoesNotExist
 import python_inspector.api as python_inspector
 import saneyaml
 from attributecode.model import About
+from attributecode.model import PathField
 from packagedcode import APPLICATION_PACKAGE_DATAFILE_HANDLERS
 from packagedcode.licensing import get_license_detections_and_expression
 from packageurl import PackageURL
@@ -248,8 +249,76 @@ def resolve_pypi_packages(input_location):
     return packages
 
 
-def resolve_about_package(input_location):
-    """Resolve the package from the ``input_location`` .ABOUT file."""
+# Fields of an .ABOUT file with a path to a file that ``About`` reads.
+ABOUT_FILE_FIELDS = ("license_file", "notice_file", "changelog_file", "author_file")
+
+
+class AboutFileLocations(About):
+    """
+    Resolve the locations of the file fields of an .ABOUT file without reading
+    them: the file fields are plain ``PathField`` in place of ``FileTextField``.
+    """
+
+    def set_standard_fields(self):
+        super().set_standard_fields()
+        for field_name in ABOUT_FILE_FIELDS:
+            path_field = PathField(name=field_name)
+            self.fields[field_name] = path_field
+            setattr(self, field_name, path_field)
+
+
+def get_about_file_locations(about_location):
+    """
+    Return the locations of the existing files referenced by the .ABOUT file at
+    ``about_location``, resolved by ``About`` the way it reads them.
+    """
+    about_file_locations = AboutFileLocations(location=about_location)
+    file_locations = []
+
+    for field_name in ABOUT_FILE_FIELDS:
+        field_value = about_file_locations.fields[field_name].value
+        # A field keeps its raw value when the validation of a previous field
+        # failed: ``About`` does not read its files either.
+        if isinstance(field_value, dict):
+            file_locations.extend(filter(None, field_value.values()))
+
+    return file_locations
+
+
+def is_safe_about_location(location, allowed_root):
+    """
+    Return True if the ``location`` is a regular file in ``allowed_root``, with its
+    symlinks resolved. A file of the server, or a special file such as /dev/zero
+    or a FIFO, is not safe to read.
+    """
+    resolved_path = Path(location).resolve()
+    is_in_root = resolved_path.is_relative_to(Path(allowed_root).resolve())
+    return is_in_root and resolved_path.is_file()
+
+
+def has_safe_file_references(about_location, allowed_root):
+    """
+    Return True if all the files referenced by the .ABOUT file at
+    ``about_location`` are safe to read by ``About``, as it reads them as soon as
+    it is built.
+    """
+    return all(
+        is_safe_about_location(location, allowed_root)
+        for location in get_about_file_locations(about_location)
+    )
+
+
+def resolve_about_package(input_location, allowed_root=None):
+    """
+    Resolve the package from the ``input_location`` .ABOUT file. Its referenced
+    files must be in ``allowed_root``, the .ABOUT file directory by default:
+    otherwise nothing is read and an empty mapping is returned.
+    """
+    allowed_root = allowed_root or Path(input_location).parent
+    if not has_safe_file_references(input_location, allowed_root):
+        logger.warning(f"{input_location} references unsafe files: not loaded.")
+        return {}
+
     about = About(location=input_location)
     about_data = about.as_dict()
     package_data = about_data.copy()
