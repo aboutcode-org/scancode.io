@@ -194,17 +194,19 @@ class ScanPipeResolvePipesTest(TestCase):
         (codebase_path / "NOTICE").write_text("project notice")
         about_location = about_directory / "package.ABOUT"
 
-        about_location.write_text(
-            "about_resource: .\nname: package\nnotice_file: ../../secret.txt\n"
-        )
-        package_data = resolve.resolve_about_package(str(about_location))
-        self.assertEqual({}, package_data)
-
-        about_location.write_text(
-            "about_resource: .\nname: package\nnotice_file: ../NOTICE\n"
-        )
-        package_data = resolve.resolve_about_package(str(about_location))
-        self.assertEqual({}, package_data)
+        unsafe_references = [
+            "notice_file: ../../secret.txt",
+            "Notice_File: ../../secret.txt",
+            "notice_file: ..\\..\\secret.txt",
+            "licenses:\n  - key: mit\n    file: ../../secret.txt",
+            "notice_file: ../NOTICE",
+        ]
+        for unsafe_reference in unsafe_references:
+            about_location.write_text(
+                f"about_resource: .\nname: package\n{unsafe_reference}\n"
+            )
+            package_data = resolve.resolve_about_package(str(about_location))
+            self.assertEqual({}, package_data, msg=unsafe_reference)
 
         package_data = resolve.resolve_about_package(
             str(about_location), allowed_root=codebase_path
@@ -221,47 +223,53 @@ class ScanPipeResolvePipesTest(TestCase):
 
         self.assertEqual({}, resolve.resolve_about_package(str(about_location)))
 
-    def test_scanpipe_pipes_resolve_get_about_file_references(self):
-        about_data = {
-            "name": "package",
-            "notice_file": "NOTICE",
-            "license_file": "LICENSE-1, LICENSE-2\nLICENSE-3",
-            "changelog_file": ["CHANGELOG"],
-            "author_file": "",
-            "licenses": [{"key": "mit", "file": "mit.LICENSE"}, "not-a-mapping"],
-        }
+    def test_scanpipe_pipes_resolve_resolve_about_package_invalid_yaml(self):
+        about_location = Path(tempfile.mkdtemp()) / "package.ABOUT"
+        invalid_contents = ["name: !foo bar\n", "? [a]\n: b\n"]
+        for invalid_content in invalid_contents:
+            about_location.write_text(invalid_content)
+            package_data = resolve.resolve_about_package(str(about_location))
+            self.assertEqual({"extra_data": {}}, package_data, msg=invalid_content)
+
+    def test_scanpipe_pipes_resolve_get_about_file_locations(self):
+        about_directory = Path(tempfile.mkdtemp())
+        (about_directory / "NOTICE").write_text("notice")
+        (about_directory / "mit.LICENSE").write_text("license")
+        about_location = about_directory / "package.ABOUT"
+        about_location.write_text(
+            "about_resource: .\n"
+            "name: package\n"
+            "Notice_File: NOTICE\n"
+            "changelog_file: MISSING\n"
+            "licenses:\n"
+            "  - key: mit\n"
+            "    file: mit.LICENSE\n"
+        )
+
+        locations = resolve.get_about_file_locations(str(about_location))
         expected = [
-            "LICENSE-1",
-            "LICENSE-2",
-            "LICENSE-3",
-            "NOTICE",
-            "CHANGELOG",
-            "mit.LICENSE",
+            str(about_directory / "mit.LICENSE"),
+            str(about_directory / "NOTICE"),
         ]
-        self.assertEqual(expected, resolve.get_about_file_references(about_data))
-        self.assertEqual([], resolve.get_about_file_references(["not", "a", "mapping"]))
+        self.assertEqual(sorted(expected), sorted(locations))
 
-    def test_scanpipe_pipes_resolve_is_safe_about_reference(self):
-        allowed_root = Path(tempfile.mkdtemp())
-        about_location = allowed_root / "package" / "package.ABOUT"
-        safe_references = ["NOTICE", "../NOTICE", "/NOTICE"]
-        for reference in safe_references:
-            self.assertTrue(
-                resolve.is_safe_about_reference(about_location, reference, allowed_root)
-            )
+    def test_scanpipe_pipes_resolve_is_safe_about_location(self):
+        allowed_root = Path(tempfile.mkdtemp()).resolve()
+        (allowed_root / "NOTICE").write_text("notice")
+        (allowed_root / "outside_link").symlink_to(Path(__file__))
+        os.mkfifo(allowed_root / "FIFO")
 
-        (allowed_root / "package").mkdir()
-        (allowed_root / "package" / "outside_link").symlink_to(Path(__file__))
-        unsafe_references = [
-            "../../NOTICE",
-            "..\\..\\NOTICE",
-            "outside_link",
-            "../../../../dev/zero",
+        self.assertTrue(
+            resolve.is_safe_about_location(allowed_root / "NOTICE", allowed_root)
+        )
+        unsafe_locations = [
+            allowed_root / "outside_link",
+            allowed_root / "FIFO",
+            Path(__file__),
+            "/dev/zero",
         ]
-        for reference in unsafe_references:
-            self.assertFalse(
-                resolve.is_safe_about_reference(about_location, reference, allowed_root)
-            )
+        for location in unsafe_locations:
+            self.assertFalse(resolve.is_safe_about_location(location, allowed_root))
 
     def test_scanpipe_pipes_resolve_get_spdx_document_from_file(self):
         input_location = self.data / "spdx" / "SPDXJSONExample-v2.3.spdx.json"

@@ -22,7 +22,6 @@
 
 import json
 import logging
-import posixpath
 import sys
 import uuid
 from pathlib import Path
@@ -33,9 +32,7 @@ from django.core.exceptions import ObjectDoesNotExist
 import python_inspector.api as python_inspector
 import saneyaml
 from attributecode.model import About
-from attributecode.util import replace_tab_with_spaces
-from attributecode.util import to_posix
-from attributecode.util import wrap_boolean_value
+from attributecode.model import PathField
 from packagedcode import APPLICATION_PACKAGE_DATAFILE_HANDLERS
 from packagedcode.licensing import get_license_detections_and_expression
 from packageurl import PackageURL
@@ -256,74 +253,54 @@ def resolve_pypi_packages(input_location):
 ABOUT_FILE_FIELDS = ("license_file", "notice_file", "changelog_file", "author_file")
 
 
-def load_about_data(about_location):
-    """Return the data of the .ABOUT file at ``about_location``, parsed as ``About``."""
-    about_text = Path(about_location).read_text(encoding="utf-8", errors="replace")
-    about_text = replace_tab_with_spaces(wrap_boolean_value(about_text))
-    return saneyaml.load(about_text, allow_duplicate_keys=False)
-
-
-def get_about_file_references(about_data):
+class AboutFileLocations(About):
     """
-    Return the file paths of the ``about_data`` file fields and licenses. A field
-    value can be a list, and a value can contain several paths, one per line or
-    separated by a comma.
+    Resolve the locations of the file fields of an .ABOUT file without reading
+    them: the file fields are plain ``PathField`` in place of ``FileTextField``.
     """
-    if not isinstance(about_data, dict):
-        return []
 
-    field_values = [about_data.get(field_name) for field_name in ABOUT_FILE_FIELDS]
-    licenses = about_data.get("licenses") or []
-    field_values.extend(
-        license_data.get("file")
-        for license_data in licenses
-        if isinstance(license_data, dict)
-    )
+    def set_standard_fields(self):
+        super().set_standard_fields()
+        for field_name in ABOUT_FILE_FIELDS:
+            path_field = PathField(name=field_name)
+            self.fields[field_name] = path_field
+            setattr(self, field_name, path_field)
 
-    values = []
-    for field_value in field_values:
-        values.extend(field_value if isinstance(field_value, list) else [field_value])
 
-    paths = [
-        path.strip()
-        for value in values
-        if value
-        for path in str(value).replace("\n", ",").split(",")
+def get_about_file_locations(about_location):
+    """
+    Return the locations of the existing files referenced by the .ABOUT file at
+    ``about_location``, resolved by ``About`` the way it reads them.
+    """
+    about_file_locations = AboutFileLocations(location=about_location)
+    return [
+        location
+        for field_name in ABOUT_FILE_FIELDS
+        for location in (about_file_locations.fields[field_name].value or {}).values()
+        if location
     ]
-    return [path for path in paths if path]
 
 
-def is_safe_about_reference(about_location, reference, allowed_root):
+def is_safe_about_location(location, allowed_root):
     """
-    Return True if the ``reference`` path of the .ABOUT file at ``about_location``
-    targets a regular file in ``allowed_root``, with its symlinks resolved, or a
-    missing file. ``About`` normalizes the reference the same way, then reads it:
-    Windows separators converted, leading "/" stripped, joined, and normalized.
+    Return True if the ``location`` is a regular file in ``allowed_root``, with its
+    symlinks resolved. A file of the server, or a special file such as /dev/zero
+    or a FIFO, is not safe to read.
     """
-    about_directory = Path(about_location).parent
-    reference_path = to_posix(reference).strip("/")
-    reference_location = posixpath.normpath(about_directory / reference_path)
-    resolved_path = Path(reference_location).resolve()
+    resolved_path = Path(location).resolve()
     is_in_root = resolved_path.is_relative_to(Path(allowed_root).resolve())
-    is_regular_or_missing = resolved_path.is_file() or not resolved_path.exists()
-    return is_in_root and is_regular_or_missing
+    return is_in_root and resolved_path.is_file()
 
 
 def has_safe_file_references(about_location, allowed_root):
     """
     Return True if all the files referenced by the .ABOUT file at
-    ``about_location`` are safe to read by ``About``: a file of the server, or a
-    special file such as /dev/zero or a FIFO, would be read as soon as ``About`` is
-    built.
+    ``about_location`` are safe to read by ``About``, as it reads them as soon as
+    it is built.
     """
-    try:
-        about_data = load_about_data(about_location)
-    except saneyaml.YAMLError:
-        return False
-
     return all(
-        is_safe_about_reference(about_location, reference, allowed_root)
-        for reference in get_about_file_references(about_data)
+        is_safe_about_location(location, allowed_root)
+        for location in get_about_file_locations(about_location)
     )
 
 
