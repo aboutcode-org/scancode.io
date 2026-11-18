@@ -70,6 +70,8 @@ GENERATED = "generated-file"
 
 SHADED_CLASS = "shaded-class"
 
+MATCHED_BY_YARA_RULE = "matched_by_yara_rule"
+
 
 # Target files that should be ignored during processing as those are related to the app
 # configuration.
