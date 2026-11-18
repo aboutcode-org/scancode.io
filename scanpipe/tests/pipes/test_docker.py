@@ -26,6 +26,7 @@ import tarfile
 import tempfile
 from pathlib import Path
 from types import SimpleNamespace
+from unittest import mock
 
 from django.apps import apps
 from django.test import TestCase
@@ -165,6 +166,37 @@ class ScanPipeDockerPipesTest(TestCase):
         self.assertEqual(1, len(errors))
         self.assertIn("link/written.txt", errors[0])
         self.assertIs(default_filter, vars(tarfile.TarFile)["extraction_filter"])
+
+    def test_scanpipe_pipes_docker_default_extraction_filter(self):
+        previous_filter = vars(tarfile.TarFile)["extraction_filter"]
+        with docker.default_extraction_filter(docker.tar_filter_with_safe_hardlinks):
+            self.assertIs(
+                docker.tar_filter_with_safe_hardlinks,
+                tarfile.TarFile.extraction_filter,
+            )
+            self.assertTrue(docker.extraction_filter_lock.locked())
+
+        self.assertIs(previous_filter, vars(tarfile.TarFile)["extraction_filter"])
+        self.assertFalse(docker.extraction_filter_lock.locked())
+
+    @mock.patch("scanpipe.pipes.docker.extract_tar")
+    def test_scanpipe_pipes_docker_extract_tar_safely_default_filter(
+        self, mock_extract_tar
+    ):
+        default_filters = []
+
+        def record_default_filter(**kwargs):
+            default_filters.append(tarfile.TarFile.extraction_filter)
+            return []
+
+        mock_extract_tar.side_effect = record_default_filter
+        with mock.patch("scanpipe.pipes.docker.py314", False):
+            docker.extract_tar_safely(location="layer.tar", target_dir="target")
+        with mock.patch("scanpipe.pipes.docker.py314", True):
+            docker.extract_tar_safely(location="layer.tar", target_dir="target")
+
+        expected = [docker.tar_filter_with_safe_hardlinks, None]
+        self.assertEqual(expected, default_filters)
 
     def test_pipes_docker_flag_whiteout_codebase_resources(self):
         p1 = Project.objects.create(name="Analysis")

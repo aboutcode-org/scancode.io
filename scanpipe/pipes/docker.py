@@ -23,9 +23,13 @@
 import logging
 import posixpath
 import tarfile
+import threading
 from collections import namedtuple
+from contextlib import contextmanager
+from contextlib import nullcontext
 from pathlib import Path
 
+from commoncode.system import py314
 from container_inspector.image import Image
 from container_inspector.utils import extract_tar
 from extractcode import EXTRACT_SUFFIX
@@ -49,19 +53,42 @@ def tar_filter_with_safe_hardlinks(member, dest_path):
     return member
 
 
+# Serializes the changes of the ``TarFile.extraction_filter`` class attribute,
+# shared by all the threads of the process.
+extraction_filter_lock = threading.Lock()
+
+
+@contextmanager
+def default_extraction_filter(extraction_filter):
+    """
+    Set the ``extraction_filter`` as the ``tarfile`` default filter, used when
+    ``extract()`` is called without filter, and restore the previous one on exit.
+    """
+    with extraction_filter_lock:
+        previous_filter = vars(tarfile.TarFile)["extraction_filter"]
+        tarfile.TarFile.extraction_filter = staticmethod(extraction_filter)
+        try:
+            yield
+        finally:
+            tarfile.TarFile.extraction_filter = previous_filter
+
+
 def extract_tar_safely(location, target_dir):
     """
     Extract the tarball at ``location`` to ``target_dir`` with the
     ``tar_filter_with_safe_hardlinks`` filter, on all Python versions.
 
     container_inspector only passes its ``tar_filter`` on Python 3.14. On older
-    versions, it extracts without filter and ``tarfile`` uses the
-    ``TarFile.extraction_filter`` default, "fully_trusted" unless set: a member
-    could be written outside of ``target_dir`` through a symlink.
+    versions, it extracts without filter and ``tarfile`` uses its default filter,
+    "fully_trusted": a member could be written outside of ``target_dir`` through a
+    symlink.
     """
-    default_filter = vars(tarfile.TarFile)["extraction_filter"]
-    tarfile.TarFile.extraction_filter = staticmethod(tar_filter_with_safe_hardlinks)
-    try:
+    if py314:
+        filter_context = nullcontext()
+    else:
+        filter_context = default_extraction_filter(tar_filter_with_safe_hardlinks)
+
+    with filter_context:
         return extract_tar(
             location=location,
             target_dir=target_dir,
@@ -69,8 +96,6 @@ def extract_tar_safely(location, target_dir):
             as_events=False,
             tar_filter=tar_filter_with_safe_hardlinks,
         )
-    finally:
-        tarfile.TarFile.extraction_filter = default_filter
 
 
 def get_tarballs_from_inputs(project):
