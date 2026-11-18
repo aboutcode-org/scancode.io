@@ -76,7 +76,7 @@ dependencies = [
   "python-inspector==0.15.2",
   "source-inspector==0.7.2; sys_platform != 'darwin' and platform_machine != 'arm64'",
   "aboutcode-toolkit==11.1.1",
-  "yara-python>=4.5.1",
+  "yara-python>=4.5.1; python_version < '3.14'",
   # Utilities
   "XlsxWriter==3.3.1",
   "openpyxl==3.1.5",
