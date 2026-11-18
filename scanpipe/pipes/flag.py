@@ -48,6 +48,7 @@ IGNORED_DATA_FILE_NO_CLUES = "ignored-data-file-no-clues"
 IGNORED_DOC_FILE = "ignored-doc-file"
 IGNORED_FROM_CONFIG = "ignored-from-config"
 IGNORED_BY_MAX_FILE_SIZE = "ignored-by-max-file-size"
+IGNORED_PARENT_SEGMENT_PATH = "ignored-parent-segment-path"
 
 COMPLIANCE_LICENSES = "compliance-licenses"
 COMPLIANCE_SOURCEMIRROR = "compliance-sourcemirror"
@@ -122,6 +123,15 @@ def flag_and_ignore_files_over_max_size(resource_qs, file_size_limit):
     return resource_qs.filter(size__gte=file_size_limit).update(
         status=IGNORED_BY_MAX_FILE_SIZE
     )
+
+
+def flag_and_ignore_paths_with_parent_segment(resource_qs):
+    """
+    Flag the codebase resources with a ".." path segment, located outside of the
+    codebase, and return the count of flagged resources. These paths are refused
+    on import, but a project can contain resources imported before.
+    """
+    return resource_qs.with_parent_segment().update(status=IGNORED_PARENT_SEGMENT_PATH)
 
 
 def analyze_scanned_files(project):

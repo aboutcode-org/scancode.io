@@ -59,6 +59,17 @@ class ScanPipeFlagPipesTest(TestCase):
         self.assertEqual("", self.resource1.status)
         self.assertEqual("ignored-empty-file", self.resource2.status)
 
+    def test_scanpipe_pipes_flag_flag_and_ignore_paths_with_parent_segment(self):
+        resource = make_resource_file(self.project1, path="../../etc/passwd")
+
+        resource_qs = self.project1.codebaseresources.all()
+        updated = flag.flag_and_ignore_paths_with_parent_segment(resource_qs)
+        self.assertEqual(1, updated)
+        resource.refresh_from_db()
+        self.assertEqual("ignored-parent-segment-path", resource.status)
+        self.resource2.refresh_from_db()
+        self.assertEqual("", self.resource2.status)
+
     def test_scanpipe_pipes_flag_flag_ignored_directories(self):
         updated = flag.flag_ignored_directories(self.project1)
         self.assertEqual(2, updated)

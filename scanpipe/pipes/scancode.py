@@ -339,7 +339,12 @@ def scan_resources(
             f"Skipped {skipped_files_max_size} files over the size of {file_size_limit}"
         )
 
-    scan_resource_qs = resource_qs.filter(~Q(status=flag.IGNORED_BY_MAX_FILE_SIZE))
+    # Never read a file outside of the codebase.
+    if skipped_paths := flag.flag_and_ignore_paths_with_parent_segment(resource_qs):
+        logger.info(f"Skipped {skipped_paths} resources with a '..' path segment")
+
+    ignored_statuses = [flag.IGNORED_BY_MAX_FILE_SIZE, flag.IGNORED_PARENT_SEGMENT_PATH]
+    scan_resource_qs = resource_qs.filter(~Q(status__in=ignored_statuses))
 
     resource_count = scan_resource_qs.count()
     logger.info(f"Scan {resource_count} codebase resources with {scan_func.__name__}")

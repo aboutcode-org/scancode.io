@@ -2416,6 +2416,10 @@ class CodebaseResourceQuerySet(ComplianceAlertQuerySetMixin, ProjectRelatedQuery
     def without_symlinks(self):
         return self.filter(~Q(type=self.model.Type.SYMLINK))
 
+    def with_parent_segment(self):
+        """Return the resources with a ".." path segment, located outside codebase/."""
+        return self.filter(path__regex=r"(^|/)\.\.(/|$)")
+
     def has_license_detections(self):
         return self.filter(~Q(license_detections=[]) | ~Q(license_clues=[]))
 
@@ -4890,11 +4894,13 @@ class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):
         )
 
         try:
+            # A redirect could lead the request from the target to an internal service.
             response = requests.post(
                 url=self.target_url,
                 data=json.dumps(payload, cls=DjangoJSONEncoder),
                 headers={"Content-Type": "application/json"},
                 timeout=timeout,
+                allow_redirects=False,
             )
         except requests.exceptions.RequestException as exception:
             logger.error(exception)

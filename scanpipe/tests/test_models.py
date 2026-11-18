@@ -2038,6 +2038,15 @@ class ScanPipeModelsTest(TestCase):
 
         return resource1, resource2, resource3
 
+    def test_scanpipe_codebase_resource_queryset_with_parent_segment(self):
+        paths = ["file.txt", "dir/file..txt", "..dir/file", "../file", "dir/../../file"]
+        for path in paths:
+            make_resource_file(self.project1, path=path)
+
+        resource_qs = self.project1.codebaseresources.with_parent_segment()
+        resource_paths = sorted(resource_qs.values_list("path", flat=True))
+        self.assertEqual(["../file", "dir/../../file"], resource_paths)
+
     def test_scanpipe_codebase_resource_queryset_json_field_contains(self):
         resource1, resource2, resource3 = self._create_resources_for_queryset_methods()
 
@@ -2443,6 +2452,7 @@ class ScanPipeModelsTest(TestCase):
         self.assertTrue(webhook_delivery.success)
 
         self.assertEqual(3, webhook.deliveries.count())
+        self.assertFalse(mock_post.call_args.kwargs["allow_redirects"])
 
     def test_scanpipe_webhook_subscription_model_get_payload(self):
         webhook = self.project1.add_webhook_subscription(target_url="https://localhost")

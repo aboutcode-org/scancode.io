@@ -273,6 +273,23 @@ class ScanPipeScancodePipesTest(TestCase):
         self.assertEqual(expected_description, message.description)
 
     @mock.patch("scanpipe.pipes.scancode._scan_resource")
+    def test_scanpipe_pipes_scancode_scan_for_files_parent_segment_path(
+        self, mock_scan_resource
+    ):
+        mock_scan_resource.return_value = {}, []
+        project1 = Project.objects.create(name="Analysis")
+        resource = CodebaseResource.objects.create(
+            project=project1, path="../../etc/passwd"
+        )
+
+        with override_settings(SCANPIPE={"PROCESSES": 0}):
+            scancode.scan_for_files(project1)
+
+        mock_scan_resource.assert_not_called()
+        resource.refresh_from_db()
+        self.assertEqual("ignored-parent-segment-path", resource.status)
+
+    @mock.patch("scanpipe.pipes.scancode._scan_resource")
     def test_scanpipe_pipes_scancode_scan_for_files(self, mock_scan_resource):
         scan_results = {"detected_license_expression": "mit"}
         scan_errors = []
