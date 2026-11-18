@@ -34,6 +34,7 @@ import python_inspector.api as python_inspector
 import saneyaml
 from attributecode.model import About
 from attributecode.util import replace_tab_with_spaces
+from attributecode.util import to_posix
 from attributecode.util import wrap_boolean_value
 from packagedcode import APPLICATION_PACKAGE_DATAFILE_HANDLERS
 from packagedcode.licensing import get_license_detections_and_expression
@@ -296,10 +297,12 @@ def is_safe_about_reference(about_location, reference, allowed_root):
     """
     Return True if the ``reference`` path of the .ABOUT file at ``about_location``
     targets a regular file in ``allowed_root``, with its symlinks resolved, or a
-    missing file. ``About`` normalizes the reference the same way, then reads it.
+    missing file. ``About`` normalizes the reference the same way, then reads it:
+    Windows separators converted, leading "/" stripped, joined, and normalized.
     """
     about_directory = Path(about_location).parent
-    reference_location = posixpath.normpath(about_directory / reference.strip("/"))
+    reference_path = to_posix(reference).strip("/")
+    reference_location = posixpath.normpath(about_directory / reference_path)
     resolved_path = Path(reference_location).resolve()
     is_in_root = resolved_path.is_relative_to(Path(allowed_root).resolve())
     is_regular_or_missing = resolved_path.is_file() or not resolved_path.exists()

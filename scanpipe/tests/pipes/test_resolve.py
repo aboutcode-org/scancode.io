@@ -252,7 +252,12 @@ class ScanPipeResolvePipesTest(TestCase):
 
         (allowed_root / "package").mkdir()
         (allowed_root / "package" / "outside_link").symlink_to(Path(__file__))
-        unsafe_references = ["../../NOTICE", "outside_link", "../../../../dev/zero"]
+        unsafe_references = [
+            "../../NOTICE",
+            "..\\..\\NOTICE",
+            "outside_link",
+            "../../../../dev/zero",
+        ]
         for reference in unsafe_references:
             self.assertFalse(
                 resolve.is_safe_about_reference(about_location, reference, allowed_root)
