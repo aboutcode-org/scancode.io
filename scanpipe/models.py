@@ -3000,20 +3000,28 @@ class CodebaseResource(
         return self.project.is_in_codebase(self.location_path)
 
     @staticmethod
-    def validate_path(project, path):
+    def has_parent_segment(path):
+        """
+        Return True if the resource ``path`` has a ".." segment. The resource location
+        is the ``path`` joined to the codebase/ directory: a "../" path would target
+        any file of the server.
+        """
+        return ".." in Path(path).parts
+
+    @classmethod
+    def validate_path(cls, project, path):
         """
         Return True if the imported resource ``path`` has no ".." segment, or record
-        an error on the ``project``. The resource location is the ``path`` joined to
-        the codebase/ directory: a "../" path would target any file of the server.
+        an error on the ``project``.
         """
-        has_parent_segment = ".." in Path(path).parts
-        if has_parent_segment:
+        if cls.has_parent_segment(path):
             project.add_error(
                 description=f'Resource path "{path}" contains "..": not imported.',
                 model=CodebaseResource,
                 details={"path": path},
             )
-        return not has_parent_segment
+            return False
+        return True
 
     @property
     def is_file(self):

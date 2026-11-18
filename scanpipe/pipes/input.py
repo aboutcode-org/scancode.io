@@ -125,6 +125,20 @@ def load_inventory_from_toolkit_scan(project, input_location):
     loaded from the ScanCode-toolkit scan results located at ``input_location``.
     """
     scanned_codebase = scancode.get_virtual_codebase(project, input_location)
+
+    # A ".." path would target a file of the server, and changes the codebase tree
+    # built from the paths: the whole scan is refused, nothing is imported.
+    if parent_segment_path := scancode.get_parent_segment_path(scanned_codebase):
+        project.add_error(
+            description=(
+                f'Resource path "{parent_segment_path}" contains "..": '
+                f"{Path(input_location).name} not imported."
+            ),
+            model="load_inventory_from_toolkit_scan",
+            details={"path": parent_segment_path},
+        )
+        return
+
     scancode.create_discovered_licenses(project, scanned_codebase)
     scancode.create_discovered_packages(project, scanned_codebase)
     scancode.create_codebase_resources(project, scanned_codebase)

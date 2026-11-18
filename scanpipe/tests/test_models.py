@@ -1707,6 +1707,12 @@ class ScanPipeModelsTest(TestCase):
         line_count = len(resource.file_content.split("\n"))
         self.assertEqual(101, line_count)
 
+    def test_scanpipe_codebase_resource_model_has_parent_segment(self):
+        self.assertFalse(CodebaseResource.has_parent_segment("dir/file..txt"))
+        self.assertFalse(CodebaseResource.has_parent_segment("..dir/file"))
+        self.assertTrue(CodebaseResource.has_parent_segment(".."))
+        self.assertTrue(CodebaseResource.has_parent_segment("dir/../../etc/passwd"))
+
     def test_scanpipe_codebase_resource_model_validate_path(self):
         valid_paths = ["dir/file.txt", "/dir/file.txt", "dir/file..txt", "..dir/file"]
         for path in valid_paths:

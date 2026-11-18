@@ -999,9 +999,19 @@ def create_codebase_resources(project, scanned_codebase):
     skipped.
     """
     for scanned_resource in scanned_codebase.walk(skip_root=True):
+        create_codebase_resource(project, scanned_resource)
+
+
+def get_parent_segment_path(scanned_codebase):
+    """
+    Return the first resource path of the ``scanned_codebase`` with a ".." segment,
+    or an empty string.
+    """
+    for scanned_resource in scanned_codebase.walk(skip_root=True):
         resource_path = scanned_resource.get_path(strip_root=True)
-        if CodebaseResource.validate_path(project, resource_path):
-            create_codebase_resource(project, scanned_resource)
+        if CodebaseResource.has_parent_segment(resource_path):
+            return resource_path
+    return ""
 
 
 def create_discovered_packages(project, scanned_codebase):

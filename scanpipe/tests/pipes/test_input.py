@@ -145,11 +145,14 @@ class ScanPipeInputPipesTest(TestCase):
         input_location = self.data / "scancode" / "path_traversal_toolkit_scan.json"
         input.load_inventory_from_toolkit_scan(project, input_location)
 
-        resource_paths = project.codebaseresources.values_list("path", flat=True)
-        self.assertEqual(["", "file.txt"], sorted(resource_paths))
-        error_paths = project.projectmessages.values_list("details__path", flat=True)
-        expected = ["..", "../..", "../../etc", "../../etc/passwd"]
-        self.assertEqual(expected, sorted(error_paths))
+        self.assertEqual(0, project.codebaseresources.count())
+        error = project.projectmessages.get()
+        expected = (
+            'Resource path ".." contains "..": '
+            "path_traversal_toolkit_scan.json not imported."
+        )
+        self.assertEqual(expected, error.description)
+        self.assertEqual("load_inventory_from_toolkit_scan", error.model)
 
     def test_scanpipe_pipes_scancode_load_inventory_from_scanpipe_path_traversal(self):
         project = Project.objects.create(name="Analysis")
