@@ -20,6 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
+import base64
 import ipaddress
 import json
 import logging
@@ -28,6 +29,7 @@ import re
 import socket
 import tempfile
 from collections import namedtuple
+from contextlib import contextmanager
 from pathlib import Path
 from urllib.parse import unquote
 from urllib.parse import urljoin
@@ -195,6 +197,30 @@ def _get_skopeo_location(_cache=[]):
     return cmd_loc
 
 
+@contextmanager
+def skopeo_authfile(docker_url):
+    """
+    Yield the location of the skopeo authentication file for the registry of the
+    ``docker_url``, or an empty string for an anonymous access.
+
+    The ``SKOPEO_CREDENTIALS`` of the registry are written to a temporary file,
+    deleted on exit: as a command argument, they would be visible to the other
+    processes of the server.
+    """
+    registry = urlparse(docker_url).netloc
+    credential = scanpipe_settings.SKOPEO_CREDENTIALS.get(registry)
+    if not credential:
+        yield scanpipe_settings.SKOPEO_AUTHFILE_LOCATION
+        return
+
+    encoded_credential = base64.b64encode(credential.encode()).decode()
+    authfile_data = {"auths": {registry: {"auth": encoded_credential}}}
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".json") as authfile:
+        json.dump(authfile_data, authfile)
+        authfile.flush()
+        yield authfile.name
+
+
 def get_docker_image_platform(docker_url):
     """
     Return a platform mapping of a docker reference.
@@ -202,30 +228,21 @@ def get_docker_image_platform(docker_url):
     """
     skopeo_executable = _get_skopeo_location()
 
-    authentication_args = []
-    authfile = scanpipe_settings.SKOPEO_AUTHFILE_LOCATION
-    if authfile:
-        authentication_args.append(f"--authfile={authfile}")
+    with skopeo_authfile(docker_url) as authfile:
+        # Access the registry anonymously without an authentication file.
+        authentication_arg = f"--authfile={authfile}" if authfile else "--no-creds"
+        cmd_args = (
+            str(skopeo_executable),
+            "inspect",
+            "--insecure-policy",
+            "--raw",
+            authentication_arg,
+            docker_url,
+        )
 
-    netloc = urlparse(docker_url).netloc
-    if credential := scanpipe_settings.SKOPEO_CREDENTIALS.get(netloc):
-        # Username and password for accessing the registry.
-        authentication_args.append(f"--creds={credential}")
-    elif not authfile:
-        # Access the registry anonymously.
-        authentication_args.append("--no-creds")
+        logger.info(f"Fetching image os/arch data: {cmd_args}")
+        output = run_command_safely(cmd_args)
 
-    cmd_args = (
-        str(skopeo_executable),
-        "inspect",
-        "--insecure-policy",
-        "--raw",
-        *authentication_args,
-        docker_url,
-    )
-
-    logger.info(f"Fetching image os/arch data: {cmd_args}")
-    output = run_command_safely(cmd_args)
     logger.info(output)
 
     # Data has this shape:
@@ -293,26 +310,20 @@ def fetch_docker_image(docker_url, to=None):
         if variant:
             platform_args.append(f"--override-variant={variant}")
 
-    authentication_args = []
-    if authfile := scanpipe_settings.SKOPEO_AUTHFILE_LOCATION:
-        authentication_args.append(f"--authfile={authfile}")
+    with skopeo_authfile(docker_url) as authfile:
+        authentication_args = [f"--authfile={authfile}"] if authfile else []
+        cmd_args = (
+            str(skopeo_executable),
+            "copy",
+            "--insecure-policy",
+            *platform_args,
+            *authentication_args,
+            docker_url,
+            target,
+        )
+        logger.info(f"Fetching image with: {cmd_args}")
+        output = run_command_safely(cmd_args)
 
-    netloc = urlparse(docker_url).netloc
-    if credential := scanpipe_settings.SKOPEO_CREDENTIALS.get(netloc):
-        # Credentials for accessing the source registry.
-        authentication_args.append(f"--src-creds={credential}")
-
-    cmd_args = (
-        str(skopeo_executable),
-        "copy",
-        "--insecure-policy",
-        *platform_args,
-        *authentication_args,
-        docker_url,
-        target,
-    )
-    logger.info(f"Fetching image with: {cmd_args}")
-    output = run_command_safely(cmd_args)
     logger.info(output)
 
     checksums = multi_checksums(output_file, ("md5", "sha1"))
@@ -330,12 +341,24 @@ def fetch_docker_image(docker_url, to=None):
 
 def fetch_git_repo(url, to=None):
     """Fetch provided git `url` as a clone and return a `Download` object."""
+    # Same SSRF protection as ``fetch_http``: no private or internal address.
+    if not is_safe_url(url):
+        raise ValueError(f"Unsafe URL: {url}")
+
     download_directory = to or tempfile.mkdtemp()
     url = url.rstrip("/")
     filename = url.split("/")[-1]
     to_path = Path(download_directory) / filename
-    # Disable any prompt, especially for credentials
-    git_env = {"GIT_TERMINAL_PROMPT": "0"}
+
+    git_env = {
+        # Disable any prompt, especially for credentials
+        "GIT_TERMINAL_PROMPT": "0",
+        # Do not follow the redirects: their target is not checked by ``is_safe_url``
+        # and could be an internal address.
+        "GIT_CONFIG_COUNT": "1",
+        "GIT_CONFIG_KEY_0": "http.followRedirects",
+        "GIT_CONFIG_VALUE_0": "false",
+    }
 
     git.Repo.clone_from(url=url, to_path=to_path, depth=1, env=git_env)
 
@@ -380,7 +403,17 @@ def get_fetcher(url):
     if url.startswith("git@"):
         raise ValueError("SSH 'git@' URLs are not supported. Use https:// instead.")
 
+    # The git:// protocol is not encrypted, and its URLs cannot be checked against
+    # internal addresses by ``is_safe_url``, which only supports HTTP.
+    if url.startswith("git://"):
+        error_msg = "Unencrypted git:// URLs are not supported. Use https:// instead."
+        raise ValueError(error_msg)
+
     if url.rstrip("/").endswith(".git"):
+        # Git also clones a local path or a file:// URL, that is any repository of
+        # the server, so only the HTTP URLs are cloned.
+        if not url.startswith(("http://", "https://")):
+            raise ValueError("Only http:// and https:// Git URLs are supported.")
         return fetch_git_repo
 
     if url.startswith("pkg:"):

@@ -372,6 +372,17 @@ class ScanPipeScancodePipesTest(TestCase):
         with_threading = scan_func.call_args[0][-1]
         self.assertTrue(with_threading)
 
+    def test_scanpipe_pipes_scancode_get_parent_segment_path(self):
+        project = Project.objects.create(name="Analysis")
+        input_location = self.data / "asgiref" / "asgiref-3.3.0_toolkit_scan.json"
+        virtual_codebase = scancode.get_virtual_codebase(project, input_location)
+        self.assertEqual("", scancode.get_parent_segment_path(virtual_codebase))
+
+        input_location = self.data / "scancode" / "path_traversal_toolkit_scan.json"
+        virtual_codebase = scancode.get_virtual_codebase(project, input_location)
+        expected = "../../etc/passwd"
+        self.assertEqual(expected, scancode.get_parent_segment_path(virtual_codebase))
+
     @expectedFailure
     def test_scanpipe_pipes_scancode_virtual_codebase(self):
         project = Project.objects.create(name="asgiref")

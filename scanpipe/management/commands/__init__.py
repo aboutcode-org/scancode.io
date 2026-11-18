@@ -373,7 +373,10 @@ def handle_copy_codebase(project, copy_from, command=None):
     if command and command.verbosity > 0:
         msg = f"{copy_from} content copied in {project_codebase}"
         command.stdout.write(msg, command.style.SUCCESS)
-    shutil.copytree(src=copy_from, dst=project_codebase, dirs_exist_ok=True)
+    # Copy the symlinks as symlinks, as their target can be any file of the server.
+    shutil.copytree(
+        src=copy_from, dst=project_codebase, symlinks=True, dirs_exist_ok=True
+    )
 
 
 def add_project_inputs(

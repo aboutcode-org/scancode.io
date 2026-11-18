@@ -26,6 +26,7 @@ import json
 import operator
 from collections import Counter
 from contextlib import suppress
+from pathlib import Path
 
 from django.apps import apps
 from django.contrib import messages
@@ -1530,21 +1531,44 @@ def delete_webhook_view(request, slug, webhook_uuid):
     return redirect(success_url)
 
 
+def sandboxed_file_response(file, **kwargs):
+    """
+    Return a ``FileResponse`` for a project file, such as an input or a codebase
+    resource. The ``sandbox`` policy prevents an HTML file from running scripts in
+    the ScanCode.io origin, with the session of the user viewing it.
+    """
+    response = FileResponse(file, **kwargs)
+    response["Content-Security-Policy"] = "sandbox"
+    return response
+
+
+def is_file_in_directory(directory, filename):
+    """
+    Return True if the ``filename`` is a file directly in the ``directory``. A
+    filename provided by a user could be an absolute path, a "../" path, or a
+    directory, such as a fetched repository.
+    """
+    is_name_only = Path(filename).name == filename
+    return is_name_only and (directory / filename).is_file()
+
+
 def download_project_file(request, slug, filename, path_type):
     project = get_object_or_404(Project, slug=slug)
 
     if path_type == "input":
-        file_path = project.input_path / filename
+        directory = project.input_path
     elif path_type == "output":
-        file_path = project.output_path / filename
+        directory = project.output_path
     else:
         raise Http404("Invalid path_type")
 
-    if not file_path.exists():
-        raise Http404(f"{file_path} not found")
+    if not is_file_in_directory(directory, filename):
+        raise Http404(f"{filename} not found")
+
+    file_path = directory / filename
 
     is_too_large = file_path.stat().st_size > scanpipe_settings.INLINE_DOWNLOAD_MAX_SIZE
-    return FileResponse(file_path.open("rb"), as_attachment=is_too_large)
+    return sandboxed_file_response(file_path.open("rb"), as_attachment=is_too_large)
 
 
 @conditional_login_required
@@ -2244,6 +2268,9 @@ def codebase_resource_diff_view(request, slug):
     from_resource = get_object_or_404(project_files, path=from_path)
     to_resource = get_object_or_404(project_files, path=to_path)
 
+    if not (from_resource.is_in_codebase and to_resource.is_in_codebase):
+        raise Http404("Resource not found")
+
     if not (from_resource.is_text and to_resource.is_text):
         raise Http404("Cannot diff on binary files")
 
@@ -2627,8 +2654,8 @@ class CodebaseResourceRawView(
         resource = self.get_object()
         resource_location_path = resource.location_path
 
-        if resource_location_path.is_file():
-            return FileResponse(
+        if resource.is_in_codebase and resource_location_path.is_file():
+            return sandboxed_file_response(
                 resource_location_path.open("rb"),
                 as_attachment=request.GET.get("as_attachment", False),
             )

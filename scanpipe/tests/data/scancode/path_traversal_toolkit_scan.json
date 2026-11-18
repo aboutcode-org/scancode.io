@@ -1,0 +1,24 @@
+{
+  "headers": [
+    {
+      "tool_name": "scancode-toolkit"
+    }
+  ],
+  "files": [
+    {
+      "path": "root",
+      "type": "directory",
+      "name": "root"
+    },
+    {
+      "path": "root/file.txt",
+      "type": "file",
+      "name": "file.txt"
+    },
+    {
+      "path": "root/../../../../etc/passwd",
+      "type": "file",
+      "name": "passwd"
+    }
+  ]
+}

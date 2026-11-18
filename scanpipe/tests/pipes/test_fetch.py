@@ -20,6 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import json
 import socket
 from pathlib import Path
 from unittest import mock
@@ -72,6 +73,23 @@ class ScanPipeFetchPipesTest(TestCase):
             fetch.get_fetcher("git@github.com:nexB/scancode.io.git")
         expected = "SSH 'git@' URLs are not supported. Use https:// instead."
         self.assertEqual(expected, str(cm.exception))
+
+        with self.assertRaises(ValueError) as cm:
+            fetch.get_fetcher("git://github.com/aboutcode-org/scancode.io.git")
+        expected = "Unencrypted git:// URLs are not supported. Use https:// instead."
+        self.assertEqual(expected, str(cm.exception))
+
+    def test_scanpipe_pipes_fetch_get_fetcher_refuses_unsupported_git_urls(self):
+        unsupported_git_urls = [
+            "/srv/repository/.git",
+            "file:///srv/repository/.git",
+            "ssh://host/repository.git",
+        ]
+        for url in unsupported_git_urls:
+            with self.assertRaises(ValueError) as cm:
+                fetch.get_fetcher(url)
+            expected = "Only http:// and https:// Git URLs are supported."
+            self.assertEqual(expected, str(cm.exception))
 
     @mock.patch("scanpipe.pipes.fetch.is_safe_url", return_value=True)
     @mock.patch("requests.sessions.Session.get")
@@ -216,7 +234,8 @@ class ScanPipeFetchPipesTest(TestCase):
             with self.assertRaises(Exception):
                 fetch.fetch_docker_image(url)
             cmd_args = mock_run_command_safely.call_args[0][0]
-            self.assertIn("--src-creds=user:password", cmd_args)
+            self.assertTrue(cmd_args[5].startswith("--authfile="))
+            self.assertNotIn("password", " ".join(cmd_args))
 
     @mock.patch("scanpipe.pipes.fetch._get_skopeo_location")
     @mock.patch("scanpipe.pipes.fetch.run_command_safely")
@@ -252,8 +271,26 @@ class ScanPipeFetchPipesTest(TestCase):
         with override_settings(SCANPIPE={"SKOPEO_CREDENTIALS": credentials}):
             fetch.get_docker_image_platform(url)
             cmd_args = mock_run_command_safely.call_args[0][0]
-            self.assertIn("--creds=user:password", cmd_args)
-            self.assertNotIn("--no-creds", cmd_args)
+            self.assertTrue(cmd_args[4].startswith("--authfile="))
+            self.assertNotIn("password", " ".join(cmd_args))
+
+    def test_scanpipe_pipes_fetch_skopeo_authfile(self):
+        url = "docker://registry.com/busybox"
+        with fetch.skopeo_authfile(url) as authfile:
+            self.assertEqual("", authfile)
+
+        with override_settings(SCANPIPE={"SKOPEO_AUTHFILE_LOCATION": "auth.json"}):
+            with fetch.skopeo_authfile(url) as authfile:
+                self.assertEqual("auth.json", authfile)
+
+        credentials = {"registry.com": "user:password"}
+        with override_settings(SCANPIPE={"SKOPEO_CREDENTIALS": credentials}):
+            with fetch.skopeo_authfile(url) as authfile:
+                authfile_path = Path(authfile)
+                expected = {"auths": {"registry.com": {"auth": "dXNlcjpwYXNzd29yZA=="}}}
+                self.assertEqual(expected, json.loads(authfile_path.read_text()))
+                self.assertEqual(0o600, authfile_path.stat().st_mode & 0o777)
+            self.assertFalse(authfile_path.exists())
 
     def test_scanpipe_pipes_fetch_docker_image_string_injection_protection(self):
         url = 'docker://;echo${IFS}"PoC"${IFS}"'
@@ -305,11 +342,17 @@ class ScanPipeFetchPipesTest(TestCase):
             session = fetch.get_request_session(url)
             self.assertEqual("token TOKEN", session.headers.get("Authorization"))
 
+    @mock.patch("scanpipe.pipes.fetch.is_safe_url", return_value=True)
     @mock.patch("git.repo.base.Repo.clone_from")
-    def test_scanpipe_pipes_fetch_git_repo(self, mock_clone_from):
+    def test_scanpipe_pipes_fetch_git_repo(self, mock_clone_from, mock_is_safe_url):
         mock_clone_from.return_value = None
         url = "https://github.com/aboutcode-org/scancode.io.git"
         download = fetch.fetch_git_repo(url)
+
+        mock_is_safe_url.assert_called_once_with(url)
+        git_env = mock_clone_from.call_args.kwargs["env"]
+        self.assertEqual("http.followRedirects", git_env["GIT_CONFIG_KEY_0"])
+        self.assertEqual("false", git_env["GIT_CONFIG_VALUE_0"])
 
         self.assertEqual(url, download.uri)
         self.assertEqual("scancode.io.git", download.filename)
@@ -317,6 +360,20 @@ class ScanPipeFetchPipesTest(TestCase):
         self.assertEqual("", download.size)
         self.assertEqual("", download.sha1)
         self.assertEqual("", download.md5)
+
+    @mock.patch("scanpipe.pipes.fetch.is_safe_url", return_value=False)
+    @mock.patch("git.repo.base.Repo.clone_from")
+    def test_scanpipe_pipes_fetch_git_repo_unsafe_url(
+        self, mock_clone_from, mock_is_safe_url
+    ):
+        url = "https://internal.host/repository.git"
+        with mock.patch("tempfile.mkdtemp") as mock_mkdtemp:
+            with self.assertRaises(ValueError) as cm:
+                fetch.fetch_git_repo(url)
+
+        self.assertEqual(f"Unsafe URL: {url}", str(cm.exception))
+        mock_mkdtemp.assert_not_called()
+        mock_clone_from.assert_not_called()
 
     @staticmethod
     def make_addrinfo(*ips):

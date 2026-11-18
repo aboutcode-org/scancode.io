@@ -60,7 +60,9 @@ from scanpipe.models import RunInProgressError
 from scanpipe.pipes import filename_now
 from scanpipe.pipes import output
 from scanpipe.pipes.compliance import get_project_compliance_alerts
+from scanpipe.views import is_file_in_directory
 from scanpipe.views import project_results_json_response
+from scanpipe.views import sandboxed_file_response
 
 logger = logging.getLogger(__name__)
 scanpipe_app = apps.get_app_config("scanpipe")
@@ -486,9 +488,9 @@ class ProjectViewSet(
         project = self.get_object()
 
         if filename := request.query_params.get("filename"):
-            file_path = project.output_path / filename
-            if file_path.exists():
-                return FileResponse(file_path.open("rb"))
+            if is_file_in_directory(project.output_path, filename):
+                file_path = project.output_path / filename
+                return sandboxed_file_response(file_path.open("rb"))
 
             return ErrorResponse(f"Output file {filename} not found")
 

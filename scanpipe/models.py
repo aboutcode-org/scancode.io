@@ -866,6 +866,15 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         """Return the `tmp` directory as a Path instance."""
         return Path(self.work_path / "tmp")
 
+    def is_in_codebase(self, location):
+        """
+        Return True if the ``location``, with its symlinks resolved, is in the
+        codebase/ directory. A symlink extracted from an input, such as a cloned Git
+        repository or a Docker image layer, can target any file of the server.
+        """
+        codebase_path = self.codebase_path.resolve()
+        return Path(location).resolve().is_relative_to(codebase_path)
+
     def get_codebase_config_directory(self):
         """
         Return the ``.scancode`` config directory if available in the `codebase`
@@ -892,7 +901,11 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
             return root_file
 
         # Search for files in immediate codebase/ subdirectories.
-        subdir_files = list(self.codebase_path.glob(f"*/{filename}"))
+        subdir_files = [
+            path
+            for path in self.codebase_path.glob(f"*/{filename}")
+            if self.is_in_codebase(path)
+        ]
 
         # If exactly one file is found in codebase/ subdirectories, return it.
         if len(subdir_files) == 1:
@@ -2979,6 +2992,23 @@ class CodebaseResource(
         return str(self.location_path)
 
     @property
+    def is_in_codebase(self):
+        """
+        Return True if the resource location, with its symlinks resolved, is in
+        the project codebase/ directory.
+        """
+        return self.project.is_in_codebase(self.location_path)
+
+    @staticmethod
+    def has_parent_segment(path):
+        """
+        Return True if the resource ``path`` has a ".." segment. The resource location
+        is the ``path`` joined to the codebase/ directory: a "../" path would target
+        any file of the server.
+        """
+        return ".." in Path(path).parts
+
+    @property
     def is_file(self):
         """Return True, if the resource is a file."""
         return self.type == self.Type.FILE
@@ -3139,6 +3169,9 @@ class CodebaseResource(
         Return the content of the current Resource file using TextCode utilities
         for optimal compatibility.
         """
+        if not self.is_in_codebase:
+            raise OSError(f"{self.path} is located outside of the project codebase.")
+
         from textcode.analysis import numbered_text_lines
         from typecode import get_type
 
@@ -3184,6 +3217,14 @@ class CodebaseResource(
         is created instead of a new DiscoveredPackage instance.
         """
         resource_data = resource_data.copy()
+
+        resource_path = resource_data.get("path") or ""
+        if cls.has_parent_segment(resource_path):
+            message = f'Resource path "{resource_path}" contains "..": not imported.'
+            project.add_error(
+                description=message, model=cls, details={"path": resource_path}
+            )
+            return
 
         cleaned_data = {
             field_name: value

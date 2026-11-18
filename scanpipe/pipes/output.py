@@ -1022,7 +1022,7 @@ def get_attribution_template(project):
     """Return a custom attribution template if provided or the default one."""
     if config_directory := project.get_codebase_config_directory():
         custom_template = config_directory / "templates" / "attribution.html"
-        if custom_template.exists():
+        if custom_template.exists() and project.is_in_codebase(custom_template):
             return custom_template
 
     scanpipe_templates = Path(scanpipe_app.path) / "templates"

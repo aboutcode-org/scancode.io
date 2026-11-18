@@ -20,9 +20,13 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import io
 import json
+import tarfile
 import tempfile
 from pathlib import Path
+from types import SimpleNamespace
+from unittest import mock
 
 from django.apps import apps
 from django.test import TestCase
@@ -80,6 +84,119 @@ class ScanPipeDockerPipesTest(TestCase):
             self.data / "docker" / "docker-images.tar.gz-expected-data-2.json"
         )
         self.assertResultsEqual(expected_location, results)
+
+    @staticmethod
+    def make_tar_member(name, member_type=tarfile.REGTYPE, linkname=""):
+        member = tarfile.TarInfo(name)
+        member.type = member_type
+        member.linkname = linkname
+        return member
+
+    def test_scanpipe_pipes_docker_tar_filter_with_safe_hardlinks(self):
+        dest_path = str(Path(tempfile.mkdtemp()).resolve())
+        safe_members = [
+            self.make_tar_member("file.txt"),
+            self.make_tar_member("hardlink", tarfile.LNKTYPE, "file.txt"),
+            self.make_tar_member("etc_link", tarfile.SYMTYPE, "/etc"),
+        ]
+        for member in safe_members:
+            filtered = docker.tar_filter_with_safe_hardlinks(member, dest_path)
+            self.assertEqual(member.linkname, filtered.linkname)
+
+        for linkname in ("../outside.txt", "/etc/passwd"):
+            member = self.make_tar_member("hardlink", tarfile.LNKTYPE, linkname)
+            with self.assertRaises(tarfile.FilterError):
+                docker.tar_filter_with_safe_hardlinks(member, dest_path)
+
+    def test_scanpipe_pipes_docker_extract_layers_refuses_outside_hardlinks(self):
+        work_path = Path(tempfile.mkdtemp())
+        outside_file = work_path / "outside.txt"
+        outside_file.write_text("outside")
+
+        layer_location = work_path / "layer.tar"
+        with tarfile.open(layer_location, "w") as layer_tarball:
+            file_member = self.make_tar_member("file.txt")
+            file_member.size = len(b"inside")
+            layer_tarball.addfile(file_member, io.BytesIO(b"inside"))
+            layer_tarball.addfile(
+                self.make_tar_member("hardlink", tarfile.LNKTYPE, "file.txt")
+            )
+            layer_tarball.addfile(
+                self.make_tar_member(
+                    "outside_hardlink", tarfile.LNKTYPE, str(outside_file)
+                )
+            )
+
+        layer = SimpleNamespace(archive_location=str(layer_location), layer_id="layer1")
+        image = SimpleNamespace(
+            extracted_location=str(work_path / "image"), layers=[layer]
+        )
+        errors = docker.extract_layers_from_images_to_base_path(
+            base_path=work_path / "codebase", images=[image]
+        )
+
+        layer_path = Path(layer.extracted_location)
+        self.assertEqual("inside", (layer_path / "hardlink").read_text())
+        self.assertFalse((layer_path / "outside_hardlink").exists())
+        self.assertEqual(1, len(errors))
+        self.assertIn("outside_hardlink", errors[0])
+
+    def test_scanpipe_pipes_docker_extract_tar_safely_refuses_writes_through_symlinks(
+        self,
+    ):
+        work_path = Path(tempfile.mkdtemp())
+        outside_path = work_path / "outside"
+        outside_path.mkdir()
+
+        tarball_location = work_path / "layer.tar"
+        with tarfile.open(tarball_location, "w") as tarball:
+            tarball.addfile(
+                self.make_tar_member("link", tarfile.SYMTYPE, str(outside_path))
+            )
+            file_member = self.make_tar_member("link/written.txt")
+            file_member.size = len(b"content")
+            tarball.addfile(file_member, io.BytesIO(b"content"))
+
+        default_filter = vars(tarfile.TarFile)["extraction_filter"]
+        errors = docker.extract_tar_safely(
+            location=tarball_location, target_dir=work_path / "target"
+        )
+
+        self.assertFalse((outside_path / "written.txt").exists())
+        self.assertEqual(1, len(errors))
+        self.assertIn("link/written.txt", errors[0])
+        self.assertIs(default_filter, vars(tarfile.TarFile)["extraction_filter"])
+
+    def test_scanpipe_pipes_docker_default_extraction_filter(self):
+        previous_filter = vars(tarfile.TarFile)["extraction_filter"]
+        with docker.default_extraction_filter(docker.tar_filter_with_safe_hardlinks):
+            self.assertIs(
+                docker.tar_filter_with_safe_hardlinks,
+                tarfile.TarFile.extraction_filter,
+            )
+            self.assertTrue(docker.extraction_filter_lock.locked())
+
+        self.assertIs(previous_filter, vars(tarfile.TarFile)["extraction_filter"])
+        self.assertFalse(docker.extraction_filter_lock.locked())
+
+    @mock.patch("scanpipe.pipes.docker.extract_tar")
+    def test_scanpipe_pipes_docker_extract_tar_safely_default_filter(
+        self, mock_extract_tar
+    ):
+        default_filters = []
+
+        def record_default_filter(**kwargs):
+            default_filters.append(tarfile.TarFile.extraction_filter)
+            return []
+
+        mock_extract_tar.side_effect = record_default_filter
+        with mock.patch("scanpipe.pipes.docker.py314", False):
+            docker.extract_tar_safely(location="layer.tar", target_dir="target")
+        with mock.patch("scanpipe.pipes.docker.py314", True):
+            docker.extract_tar_safely(location="layer.tar", target_dir="target")
+
+        expected = [docker.tar_filter_with_safe_hardlinks, None]
+        self.assertEqual(expected, default_filters)
 
     def test_pipes_docker_flag_whiteout_codebase_resources(self):
         p1 = Project.objects.create(name="Analysis")

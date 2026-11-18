@@ -81,6 +81,17 @@ class ScanPipePipesTest(TestCase):
         self.assertIn("missing-command", str(context.exception))
         self.assertNotIn("secret-value", str(context.exception))
 
+    def test_scanpipe_pipes_run_command_safely_error_excludes_arguments(self):
+        with self.assertRaises(subprocess.SubprocessError) as context:
+            pipes.run_command_safely(
+                ["/usr/bin/env", "TOKEN=secret-value", "missing-command"]
+            )
+        error_message = str(context.exception)
+        expected = 'Error while executing cmd="/usr/bin/env": '
+        self.assertTrue(error_message.startswith(expected))
+        self.assertIn("missing-command", error_message)
+        self.assertNotIn("secret-value", error_message)
+
     def test_scanpipe_pipes_create_origin_matches(self):
         project1 = make_project()
         six_resource = make_resource_file(project1, "six.py")
@@ -257,6 +268,18 @@ class ScanPipePipesTest(TestCase):
         resource_data["for_packages"] = ["does_not_exists"]
         with self.assertRaises(DiscoveredPackage.DoesNotExist):
             pipes.update_or_create_resource(p1, resource_data)
+
+    def test_scanpipe_pipes_update_or_create_resource_path_traversal(self):
+        p1 = Project.objects.create(name="Analysis")
+        package = pipes.update_or_create_package(p1, package_data1)
+        resource_data = {
+            "path": "../../etc/passwd",
+            "for_packages": [package.package_uid],
+        }
+
+        self.assertIsNone(pipes.update_or_create_resource(p1, resource_data))
+        self.assertEqual(0, p1.codebaseresources.count())
+        self.assertEqual(0, package.codebase_resources.count())
 
     def test_scanpipe_pipes_update_or_create_package(self):
         p1 = Project.objects.create(name="Analysis")

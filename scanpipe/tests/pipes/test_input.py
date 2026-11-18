@@ -75,6 +75,18 @@ class ScanPipeInputPipesTest(TestCase):
                 "LICENSE_2", input.get_unique_filename("LICENSE", dest_path)
             )
 
+    def test_scanpipe_pipes_input_copy_input_directory_keeps_symlinks(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            source_dir = Path(tmp_dir) / "repository"
+            source_dir.mkdir()
+            (source_dir / "outside_link").symlink_to(Path(__file__))
+
+            destination = input.copy_input(source_dir, Path(tmp_dir) / "codebase")
+
+            copied_link = destination / "outside_link"
+            self.assertTrue(copied_link.is_symlink())
+            self.assertEqual(Path(__file__), copied_link.readlink())
+
     def test_scanpipe_pipes_input_copy_input_filename_collision(self):
         with tempfile.TemporaryDirectory() as tmp_dir:
             dest_path = Path(tmp_dir)
@@ -125,6 +137,37 @@ class ScanPipeInputPipesTest(TestCase):
         self.assertEqual(18, project.codebaseresources.count())
         self.assertEqual(2, project.discoveredpackages.count())
         self.assertEqual(4, project.discovereddependencies.count())
+
+    def test_scanpipe_pipes_scancode_load_inventory_from_toolkit_scan_path_traversal(
+        self,
+    ):
+        project = Project.objects.create(name="Analysis")
+        input_location = self.data / "scancode" / "path_traversal_toolkit_scan.json"
+        input.load_inventory_from_toolkit_scan(project, input_location)
+
+        self.assertEqual(0, project.codebaseresources.count())
+        error = project.projectmessages.get()
+        expected = (
+            'Resource path "../../etc/passwd" contains "..": '
+            "path_traversal_toolkit_scan.json not imported."
+        )
+        self.assertEqual(expected, error.description)
+        self.assertEqual("load_inventory_from_toolkit_scan", error.model)
+
+    def test_scanpipe_pipes_scancode_load_inventory_from_scanpipe_path_traversal(self):
+        project = Project.objects.create(name="Analysis")
+        scan_data = {
+            "files": [
+                {"path": "file.txt", "type": "file"},
+                {"path": "../../etc/passwd", "type": "file"},
+            ]
+        }
+        input.load_inventory_from_scanpipe(project, scan_data)
+
+        resource_paths = project.codebaseresources.values_list("path", flat=True)
+        self.assertEqual(["file.txt"], list(resource_paths))
+        error = project.projectmessages.get()
+        self.assertEqual({"path": "../../etc/passwd"}, error.details)
 
     def test_scanpipe_pipes_scancode_load_inventory_from_scanpipe(self):
         project = Project.objects.create(name="1")

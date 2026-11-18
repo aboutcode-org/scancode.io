@@ -163,6 +163,9 @@ def update_or_create_resource(project, resource_data):
     else:
         resource = CodebaseResource.create_from_data(project, resource_data)
 
+    if not resource:
+        return
+
     for package_uid in for_packages:
         package = project.discoveredpackages.get(package_uid=package_uid)
         resource.add_package(package)
@@ -593,8 +596,9 @@ def run_command_safely(command_args, env=None):
     - This does not use the Shell (shell=False) to prevent injection vulnerabilities.
     - The command should be provided as a list of ``command_args`` arguments.
     - Only full paths to executable commands should be provided to avoid any ambiguity.
-    - Secrets go in the optional ``env`` mapping, as the ``command_args`` are
-      included in the error message.
+    - Secrets go in the optional ``env`` mapping or in a file, never in the
+      ``command_args``: they are visible to the other processes of the server.
+    - The error message only includes the executable, not the ``command_args``.
 
     WARNING: If you're incorporating user input into the command, make
     sure to sanitize and validate the input to prevent any malicious commands from
@@ -611,7 +615,7 @@ def run_command_safely(command_args, env=None):
 
     if completed_process.returncode:
         error_msg = (
-            f'Error while executing cmd="{completed_process.args}": '
+            f'Error while executing cmd="{completed_process.args[0]}": '
             f'"{completed_process.stderr.strip()}"'
         )
         raise subprocess.SubprocessError(error_msg)

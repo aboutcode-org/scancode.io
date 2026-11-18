@@ -22,9 +22,14 @@
 
 import logging
 import posixpath
+import tarfile
+import threading
 from collections import namedtuple
+from contextlib import contextmanager
+from contextlib import nullcontext
 from pathlib import Path
 
+from commoncode.system import py314
 from container_inspector.image import Image
 from container_inspector.utils import extract_tar
 from extractcode import EXTRACT_SUFFIX
@@ -34,6 +39,63 @@ from scanpipe.pipes import flag
 from scanpipe.pipes import rootfs
 
 logger = logging.getLogger(__name__)
+
+
+def tar_filter_with_safe_hardlinks(member, dest_path):
+    """
+    Apply the ``tar`` extraction filter, and refuse a hard link to a file outside
+    of the ``dest_path`` extraction directory: the ``tar`` filter does not check
+    the hard link targets, so an image could link any file of the server.
+    """
+    member = tarfile.tar_filter(member, dest_path)
+    if member.islnk():
+        return tarfile.data_filter(member, dest_path)
+    return member
+
+
+# Serializes the changes of the ``TarFile.extraction_filter`` class attribute,
+# shared by all the threads of the process.
+extraction_filter_lock = threading.Lock()
+
+
+@contextmanager
+def default_extraction_filter(extraction_filter):
+    """
+    Set the ``extraction_filter`` as the ``tarfile`` default filter, used when
+    ``extract()`` is called without filter, and restore the previous one on exit.
+    """
+    with extraction_filter_lock:
+        previous_filter = vars(tarfile.TarFile)["extraction_filter"]
+        tarfile.TarFile.extraction_filter = staticmethod(extraction_filter)
+        try:
+            yield
+        finally:
+            tarfile.TarFile.extraction_filter = previous_filter
+
+
+def extract_tar_safely(location, target_dir):
+    """
+    Extract the tarball at ``location`` to ``target_dir`` with the
+    ``tar_filter_with_safe_hardlinks`` filter, on all Python versions.
+
+    container_inspector only passes its ``tar_filter`` on Python 3.14. On older
+    versions, it extracts without filter and ``tarfile`` uses its default filter,
+    "fully_trusted": a member could be written outside of ``target_dir`` through a
+    symlink.
+    """
+    if py314:
+        filter_context = nullcontext()
+    else:
+        filter_context = default_extraction_filter(tar_filter_with_safe_hardlinks)
+
+    with filter_context:
+        return extract_tar(
+            location=location,
+            target_dir=target_dir,
+            skip_symlinks=False,
+            as_events=False,
+            tar_filter=tar_filter_with_safe_hardlinks,
+        )
 
 
 def get_tarballs_from_inputs(project):
@@ -77,13 +139,7 @@ def extract_image_from_tarball(input_tarball, extract_target, verify=False):
     Return the `images` and an `errors` list of error messages that may have
     happened during the extraction.
     """
-    errors = extract_tar(
-        location=input_tarball,
-        target_dir=extract_target,
-        skip_symlinks=False,
-        as_events=False,
-        tar_filter="tar",
-    )
+    errors = extract_tar_safely(location=input_tarball, target_dir=extract_target)
     images = Image.get_images_from_dir(
         extracted_location=str(extract_target),
         verify=verify,
@@ -122,12 +178,8 @@ def extract_layers_from_images_to_base_path(base_path, images):
 
         for layer in image.layers:
             extract_target = target_path / layer.layer_id
-            extract_errors = extract_tar(
-                location=layer.archive_location,
-                target_dir=extract_target,
-                skip_symlinks=False,
-                as_events=False,
-                tar_filter="tar",
+            extract_errors = extract_tar_safely(
+                location=layer.archive_location, target_dir=extract_target
             )
             errors.extend(extract_errors)
             layer.extracted_location = str(extract_target)
