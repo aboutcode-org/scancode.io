@@ -749,6 +749,16 @@ class ScanPipeOutputPipesTest(TestCase):
         expected_location = "codebase/.scancode/templates/attribution.html"
         self.assertTrue(template_location.endswith(expected_location))
 
+    def test_scanpipe_pipes_outputs_get_attribution_template_outside_symlink(self):
+        project = make_project(name="Analysis")
+        custom_template_dir = make_config_directory(project) / "templates"
+        custom_template_dir.mkdir(parents=True)
+        (custom_template_dir / "attribution.html").symlink_to(Path(__file__))
+
+        template_location = str(output.get_attribution_template(project))
+        expected_location = "templates/scanpipe/attribution.html"
+        self.assertTrue(template_location.endswith(expected_location))
+
     def test_scanpipe_pipes_outputs_get_package_data_for_attribution(self):
         project = make_project(name="Analysis")
         package_data = dict(package_data1)

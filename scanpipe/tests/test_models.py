@@ -751,6 +751,28 @@ class ScanPipeModelsTest(TestCase):
         # Search for config files *ONLY* in immediate codebase/ subdirectories.
         self.assertIsNone(self.project1.get_input_config_file())
 
+    def test_scanpipe_project_is_in_codebase(self):
+        codebase_path = self.project1.codebase_path
+        (codebase_path / "file.txt").write_text("content")
+        (codebase_path / "outside_link").symlink_to(Path(__file__))
+
+        self.assertTrue(self.project1.is_in_codebase(codebase_path / "file.txt"))
+        self.assertTrue(self.project1.is_in_codebase(codebase_path / "missing.txt"))
+        self.assertFalse(self.project1.is_in_codebase(codebase_path / "outside_link"))
+        self.assertFalse(self.project1.is_in_codebase(codebase_path / ".." / "input"))
+
+    def test_scanpipe_project_get_input_config_file_outside_symlink(self):
+        outside_dir = Path(tempfile.mkdtemp())
+        (outside_dir / scanpipe_settings.CONFIG_FILE).touch()
+        (self.project1.codebase_path / "dir_link").symlink_to(outside_dir)
+        file_link_dir = self.project1.codebase_path / "dir1"
+        file_link_dir.mkdir()
+        file_link = file_link_dir / scanpipe_settings.CONFIG_FILE
+        file_link.symlink_to(outside_dir / scanpipe_settings.CONFIG_FILE)
+
+        self.assertIsNone(self.project1.get_input_config_file())
+        self.assertEqual(0, self.project1.projectmessages.count())
+
     def test_scanpipe_project_get_input_policies_file(self):
         self.assertIsNone(self.project1.get_input_policies_file())
 
@@ -1713,15 +1735,15 @@ class ScanPipeModelsTest(TestCase):
         (codebase_path / "outside_link").symlink_to(Path(__file__))
         (codebase_path / "outside_dir_link").symlink_to(Path(__file__).parent)
 
-        file_resource = self.project1.codebaseresources.create(path="file.txt")
+        file_resource = make_resource_file(self.project1, path="file.txt")
         inside_link = self.project1.codebaseresources.create(
             path="inside_link", type=CodebaseResource.Type.SYMLINK
         )
         outside_link = self.project1.codebaseresources.create(
             path="outside_link", type=CodebaseResource.Type.SYMLINK
         )
-        file_in_outside_dir_link = self.project1.codebaseresources.create(
-            path=f"outside_dir_link/{Path(__file__).name}"
+        file_in_outside_dir_link = make_resource_file(
+            self.project1, path=f"outside_dir_link/{Path(__file__).name}"
         )
 
         self.assertTrue(file_resource.is_in_codebase)
@@ -1729,7 +1751,8 @@ class ScanPipeModelsTest(TestCase):
         self.assertFalse(outside_link.is_in_codebase)
         self.assertFalse(file_in_outside_dir_link.is_in_codebase)
         self.assertEqual("content\n", file_resource.file_content)
-        self.assertEqual("", file_in_outside_dir_link.file_content)
+        with self.assertRaises(OSError):
+            file_in_outside_dir_link.file_content
 
     def test_scanpipe_codebase_resource_model_file_content_for_map(self):
         map_file_path = self.data / "d2d-javascript/to/main.js.map"

@@ -866,6 +866,15 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         """Return the `tmp` directory as a Path instance."""
         return Path(self.work_path / "tmp")
 
+    def is_in_codebase(self, location):
+        """
+        Return True if the ``location``, with its symlinks resolved, is in the
+        codebase/ directory. A symlink extracted from an input, such as a cloned Git
+        repository or a Docker image layer, can target any file of the server.
+        """
+        codebase_path = self.codebase_path.resolve()
+        return Path(location).resolve().is_relative_to(codebase_path)
+
     def get_codebase_config_directory(self):
         """
         Return the ``.scancode`` config directory if available in the `codebase`
@@ -892,7 +901,11 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
             return root_file
 
         # Search for files in immediate codebase/ subdirectories.
-        subdir_files = list(self.codebase_path.glob(f"*/{filename}"))
+        subdir_files = [
+            path
+            for path in self.codebase_path.glob(f"*/{filename}")
+            if self.is_in_codebase(path)
+        ]
 
         # If exactly one file is found in codebase/ subdirectories, return it.
         if len(subdir_files) == 1:
@@ -2982,11 +2995,9 @@ class CodebaseResource(
     def is_in_codebase(self):
         """
         Return True if the resource location, with its symlinks resolved, is in
-        the project codebase/ directory. A symlink extracted from an input, such as
-        a Docker image layer, can target any file of the server.
+        the project codebase/ directory.
         """
-        codebase_path = self.project.codebase_path.resolve()
-        return self.location_path.resolve().is_relative_to(codebase_path)
+        return self.project.is_in_codebase(self.location_path)
 
     @staticmethod
     def validate_path(project, path):
@@ -3166,7 +3177,7 @@ class CodebaseResource(
         for optimal compatibility.
         """
         if not self.is_in_codebase:
-            return ""
+            raise OSError(f"{self.path} is located outside of the project codebase.")
 
         from textcode.analysis import numbered_text_lines
         from typecode import get_type

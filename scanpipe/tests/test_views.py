@@ -376,6 +376,17 @@ class ScanPipeViewsTest(TestCase):
             response.headers["Content-Disposition"],
         )
 
+    def test_scanpipe_views_project_details_download_views_directory(self):
+        (self.project1.input_path / "repository").mkdir()
+        directory_names = {"input": ["..", "repository"], "output": [".."]}
+
+        for path_type, names in directory_names.items():
+            for name in names:
+                url_name = f"project_download_{path_type}"
+                url = reverse(url_name, args=[self.project1.slug, name])
+                response = self.client.get(url)
+                self.assertEqual(404, response.status_code)
+
     def test_scanpipe_views_project_file_views_sandboxed(self):
         html_content = "<script>alert(1)</script>"
         (self.project1.input_path / "page.html").write_text(html_content)

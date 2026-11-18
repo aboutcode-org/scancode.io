@@ -1551,8 +1551,9 @@ def download_project_file(request, slug, filename, path_type):
     else:
         raise Http404("Invalid path_type")
 
-    if not file_path.exists():
-        raise Http404(f"{file_path} not found")
+    # A ".." filename or a fetched repository targets a directory.
+    if not file_path.is_file():
+        raise Http404(f"{filename} not found")
 
     is_too_large = file_path.stat().st_size > scanpipe_settings.INLINE_DOWNLOAD_MAX_SIZE
     return sandboxed_file_response(file_path.open("rb"), as_attachment=is_too_large)
