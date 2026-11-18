@@ -204,8 +204,10 @@ Example::
     https://github.com/aboutcode-org/scancode.io.git
 
 .. note::
-    Only ``http://``, ``https://`` and ``git://`` URLs are supported. SSH URLs
-    (``git@github.com:...``, ``ssh://``), local paths and ``file://`` URLs are refused.
+    Only ``http://`` and ``https://`` URLs are supported. SSH URLs
+    (``git@github.com:...``, ``ssh://``), unencrypted ``git://`` URLs, local paths and
+    ``file://`` URLs are refused. Like the other URL inputs, repositories on a private
+    or internal network address are refused, and redirects are not followed.
 
 .. _inputs_authentication:
 

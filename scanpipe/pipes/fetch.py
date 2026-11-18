@@ -345,8 +345,20 @@ def fetch_git_repo(url, to=None):
     url = url.rstrip("/")
     filename = url.split("/")[-1]
     to_path = Path(download_directory) / filename
-    # Disable any prompt, especially for credentials
-    git_env = {"GIT_TERMINAL_PROMPT": "0"}
+
+    # Same SSRF protection as ``fetch_http``: no private or internal address.
+    if not is_safe_url(url):
+        raise ValueError(f"Unsafe URL: {url}")
+
+    git_env = {
+        # Disable any prompt, especially for credentials
+        "GIT_TERMINAL_PROMPT": "0",
+        # Do not follow the redirects: their target is not checked by ``is_safe_url``
+        # and could be an internal address.
+        "GIT_CONFIG_COUNT": "1",
+        "GIT_CONFIG_KEY_0": "http.followRedirects",
+        "GIT_CONFIG_VALUE_0": "false",
+    }
 
     git.Repo.clone_from(url=url, to_path=to_path, depth=1, env=git_env)
 
@@ -391,12 +403,17 @@ def get_fetcher(url):
     if url.startswith("git@"):
         raise ValueError("SSH 'git@' URLs are not supported. Use https:// instead.")
 
+    # The git:// protocol is not encrypted, and its URLs cannot be checked against
+    # internal addresses by ``is_safe_url``, which only supports HTTP.
+    if url.startswith("git://"):
+        error_msg = "git:// URLs are not supported, as not encrypted. Use https://."
+        raise ValueError(error_msg)
+
     if url.rstrip("/").endswith(".git"):
         # Git also clones a local path or a file:// URL, that is any repository of
-        # the server, so only the remote URLs are cloned.
-        if not url.startswith(("http://", "https://", "git://")):
-            error_msg = "Only http://, https:// and git:// Git URLs are supported."
-            raise ValueError(error_msg)
+        # the server, so only the HTTP URLs are cloned.
+        if not url.startswith(("http://", "https://")):
+            raise ValueError("Only http:// and https:// Git URLs are supported.")
         return fetch_git_repo
 
     if url.startswith("pkg:"):
