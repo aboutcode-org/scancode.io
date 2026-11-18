@@ -5,15 +5,28 @@ Changelog
 
 * Migrate VulnerableCode integration to API v3
 
-Unreleased
-----------
+v38.3.0 (2026-11-18)
+--------------------
 
-* feat: expose the ``is_addon`` attribute in the pipelines REST API
+* feat: expose the ``is_addon`` attribute in the pipelines REST API by @StefanFl in https://github.com/aboutcode-org/scancode.io/pull/2281
 * feat: [code-genetics] determine the origin of files from combined origin matches #1929 by @tdruez
 * feat: [code-genetics] resolve conflicting origins to detect the ultimate origin of files #1930 by @tdruez
 * feat: add post steps that always run at the end of a pipeline, even when it fails #2310 by @tdruez
-* fix: keep the D2D default ecosystem config unchanged across runs #2341 by @tdruez
 * feat: list unavailable pipelines with their reason in the project creation form and reject them in the forms and REST API #2311 by @tdruez
+* feat: add the ``scan_nix_package`` pipeline for a single nixpkg by @tdruez in https://github.com/aboutcode-org/scancode.io/pull/2291
+* feat: attribute shaded Maven classes to their dependency packages #2247 by @chinyeungli
+* feat: resolve shade relocation placeholders and use the from/ POM #2284 by @chinyeungli
+* feat: verify Maven shaded classes against dependency JAR contents #2288 by @chinyeungli
+* feat: map DWARF paths to their ``.in`` template files by @chinyeungli in https://github.com/aboutcode-org/scancode.io/pull/2272
+* fix: harden the handling of project files and external inputs by @tdruez in https://github.com/aboutcode-org/scancode.io/pull/2348
+* fix: keep the D2D default ecosystem config unchanged across runs #2341 by @tdruez
+* fix: download the Maven package scan files to the project tmp directory #2342 by @tdruez
+* fix: keep deploy-to-develop statuses in ``scan_maven_package`` #2322 by @tdruez
+* fix: skip non-UTF-8 files when loading JSON map files by @tdruez in https://github.com/aboutcode-org/scancode.io/pull/2333
+* fix: use ScanCode.io as the ``tool_name`` in place of scanpipe #1556 by @ziadhany
+* fix: round score after subtraction in ``normalize_score_and_model`` by @Rucha0901 in https://github.com/aboutcode-org/scancode.io/pull/2294
+* chore: improve the Docker image build by @tdruez in https://github.com/aboutcode-org/scancode.io/pull/2326
+* chore: upgrade dependencies, uv and Docker images by @tdruez in https://github.com/aboutcode-org/scancode.io/pull/2309
 
 v38.2.0 (2026-10-22)
 --------------------
