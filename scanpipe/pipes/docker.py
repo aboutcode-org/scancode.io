@@ -170,7 +170,7 @@ def get_layer_errors(image, extract_target):
     errors = []
 
     for layer in image.layers:
-        layer_id = layer.layer_id or ""
+        layer_id = layer.layer_id
         if not LAYER_ID_REGEX.fullmatch(layer_id):
             errors.append(f"Invalid layer ID: {layer_id}")
 
