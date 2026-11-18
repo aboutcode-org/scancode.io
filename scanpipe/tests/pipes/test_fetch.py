@@ -20,6 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import json
 import socket
 from pathlib import Path
 from unittest import mock
@@ -230,7 +231,8 @@ class ScanPipeFetchPipesTest(TestCase):
             with self.assertRaises(Exception):
                 fetch.fetch_docker_image(url)
             cmd_args = mock_run_command_safely.call_args[0][0]
-            self.assertIn("--src-creds=user:password", cmd_args)
+            self.assertTrue(cmd_args[5].startswith("--authfile="))
+            self.assertNotIn("password", " ".join(cmd_args))
 
     @mock.patch("scanpipe.pipes.fetch._get_skopeo_location")
     @mock.patch("scanpipe.pipes.fetch.run_command_safely")
@@ -266,8 +268,26 @@ class ScanPipeFetchPipesTest(TestCase):
         with override_settings(SCANPIPE={"SKOPEO_CREDENTIALS": credentials}):
             fetch.get_docker_image_platform(url)
             cmd_args = mock_run_command_safely.call_args[0][0]
-            self.assertIn("--creds=user:password", cmd_args)
-            self.assertNotIn("--no-creds", cmd_args)
+            self.assertTrue(cmd_args[4].startswith("--authfile="))
+            self.assertNotIn("password", " ".join(cmd_args))
+
+    def test_scanpipe_pipes_fetch_skopeo_authfile(self):
+        url = "docker://registry.com/busybox"
+        with fetch.skopeo_authfile(url) as authfile:
+            self.assertEqual("", authfile)
+
+        with override_settings(SCANPIPE={"SKOPEO_AUTHFILE_LOCATION": "auth.json"}):
+            with fetch.skopeo_authfile(url) as authfile:
+                self.assertEqual("auth.json", authfile)
+
+        credentials = {"registry.com": "user:password"}
+        with override_settings(SCANPIPE={"SKOPEO_CREDENTIALS": credentials}):
+            with fetch.skopeo_authfile(url) as authfile:
+                authfile_path = Path(authfile)
+                expected = {"auths": {"registry.com": {"auth": "dXNlcjpwYXNzd29yZA=="}}}
+                self.assertEqual(expected, json.loads(authfile_path.read_text()))
+                self.assertEqual(0o600, authfile_path.stat().st_mode & 0o777)
+            self.assertFalse(authfile_path.exists())
 
     def test_scanpipe_pipes_fetch_docker_image_string_injection_protection(self):
         url = 'docker://;echo${IFS}"PoC"${IFS}"'

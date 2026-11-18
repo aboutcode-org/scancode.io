@@ -20,6 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
+import base64
 import ipaddress
 import json
 import logging
@@ -28,6 +29,7 @@ import re
 import socket
 import tempfile
 from collections import namedtuple
+from contextlib import contextmanager
 from pathlib import Path
 from urllib.parse import unquote
 from urllib.parse import urljoin
@@ -48,7 +50,6 @@ from packageurl.contrib import url2purl
 from plugincode.location_provider import get_location
 from requests import auth as request_auth
 
-from scanpipe.pipes import mask_credentials
 from scanpipe.pipes import run_command_safely
 from scanpipe.settings import scanpipe_settings
 
@@ -196,6 +197,30 @@ def _get_skopeo_location(_cache=[]):
     return cmd_loc
 
 
+@contextmanager
+def skopeo_authfile(docker_url):
+    """
+    Yield the location of the skopeo authentication file for the registry of the
+    ``docker_url``, or an empty string for an anonymous access.
+
+    The ``SKOPEO_CREDENTIALS`` of the registry are written to a temporary file,
+    deleted on exit: as a command argument, they would be visible to the other
+    processes of the server.
+    """
+    registry = urlparse(docker_url).netloc
+    credential = scanpipe_settings.SKOPEO_CREDENTIALS.get(registry)
+    if not credential:
+        yield scanpipe_settings.SKOPEO_AUTHFILE_LOCATION
+        return
+
+    encoded_credential = base64.b64encode(credential.encode()).decode()
+    authfile_data = {"auths": {registry: {"auth": encoded_credential}}}
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".json") as authfile:
+        json.dump(authfile_data, authfile)
+        authfile.flush()
+        yield authfile.name
+
+
 def get_docker_image_platform(docker_url):
     """
     Return a platform mapping of a docker reference.
@@ -203,30 +228,21 @@ def get_docker_image_platform(docker_url):
     """
     skopeo_executable = _get_skopeo_location()
 
-    authentication_args = []
-    authfile = scanpipe_settings.SKOPEO_AUTHFILE_LOCATION
-    if authfile:
-        authentication_args.append(f"--authfile={authfile}")
+    with skopeo_authfile(docker_url) as authfile:
+        # Access the registry anonymously without an authentication file.
+        authentication_arg = f"--authfile={authfile}" if authfile else "--no-creds"
+        cmd_args = (
+            str(skopeo_executable),
+            "inspect",
+            "--insecure-policy",
+            "--raw",
+            authentication_arg,
+            docker_url,
+        )
 
-    netloc = urlparse(docker_url).netloc
-    if credential := scanpipe_settings.SKOPEO_CREDENTIALS.get(netloc):
-        # Username and password for accessing the registry.
-        authentication_args.append(f"--creds={credential}")
-    elif not authfile:
-        # Access the registry anonymously.
-        authentication_args.append("--no-creds")
+        logger.info(f"Fetching image os/arch data: {cmd_args}")
+        output = run_command_safely(cmd_args)
 
-    cmd_args = (
-        str(skopeo_executable),
-        "inspect",
-        "--insecure-policy",
-        "--raw",
-        *authentication_args,
-        docker_url,
-    )
-
-    logger.info(f"Fetching image os/arch data: {mask_credentials(cmd_args)}")
-    output = run_command_safely(cmd_args)
     logger.info(output)
 
     # Data has this shape:
@@ -294,26 +310,20 @@ def fetch_docker_image(docker_url, to=None):
         if variant:
             platform_args.append(f"--override-variant={variant}")
 
-    authentication_args = []
-    if authfile := scanpipe_settings.SKOPEO_AUTHFILE_LOCATION:
-        authentication_args.append(f"--authfile={authfile}")
+    with skopeo_authfile(docker_url) as authfile:
+        authentication_args = [f"--authfile={authfile}"] if authfile else []
+        cmd_args = (
+            str(skopeo_executable),
+            "copy",
+            "--insecure-policy",
+            *platform_args,
+            *authentication_args,
+            docker_url,
+            target,
+        )
+        logger.info(f"Fetching image with: {cmd_args}")
+        output = run_command_safely(cmd_args)
 
-    netloc = urlparse(docker_url).netloc
-    if credential := scanpipe_settings.SKOPEO_CREDENTIALS.get(netloc):
-        # Credentials for accessing the source registry.
-        authentication_args.append(f"--src-creds={credential}")
-
-    cmd_args = (
-        str(skopeo_executable),
-        "copy",
-        "--insecure-policy",
-        *platform_args,
-        *authentication_args,
-        docker_url,
-        target,
-    )
-    logger.info(f"Fetching image with: {mask_credentials(cmd_args)}")
-    output = run_command_safely(cmd_args)
     logger.info(output)
 
     checksums = multi_checksums(output_file, ("md5", "sha1"))

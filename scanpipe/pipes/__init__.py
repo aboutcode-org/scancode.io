@@ -579,25 +579,6 @@ def poll_until_success(check, sleep=10, **kwargs):
         time.sleep(sleep)
 
 
-# Command options that take a credential as value, such as the skopeo
-# "--creds=username:password" option.
-CREDENTIAL_OPTIONS = ("--creds=", "--src-creds=")
-
-
-def mask_credential(command_arg):
-    """Return the ``command_arg`` with its value masked if it is a credential."""
-    if not command_arg.startswith(CREDENTIAL_OPTIONS):
-        return command_arg
-
-    option = command_arg.split("=", maxsplit=1)[0]
-    return f"{option}=********"
-
-
-def mask_credentials(command_args):
-    """Return the ``command_args`` list with the credential values masked."""
-    return [mask_credential(str(command_arg)) for command_arg in command_args]
-
-
 def run_command_safely(command_args, env=None):
     """
     Execute the external commands following security best practices.
@@ -612,8 +593,9 @@ def run_command_safely(command_args, env=None):
     - This does not use the Shell (shell=False) to prevent injection vulnerabilities.
     - The command should be provided as a list of ``command_args`` arguments.
     - Only full paths to executable commands should be provided to avoid any ambiguity.
-    - Secrets go in the optional ``env`` mapping, as the ``command_args`` are
-      included in the error message.
+    - Secrets go in the optional ``env`` mapping or in a file, never in the
+      ``command_args``: they are visible to the other processes of the server.
+    - The error message only includes the executable, not the ``command_args``.
 
     WARNING: If you're incorporating user input into the command, make
     sure to sanitize and validate the input to prevent any malicious commands from
@@ -630,7 +612,7 @@ def run_command_safely(command_args, env=None):
 
     if completed_process.returncode:
         error_msg = (
-            f'Error while executing cmd="{mask_credentials(completed_process.args)}": '
+            f'Error while executing cmd="{completed_process.args[0]}": '
             f'"{completed_process.stderr.strip()}"'
         )
         raise subprocess.SubprocessError(error_msg)

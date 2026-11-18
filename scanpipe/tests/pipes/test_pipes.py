@@ -81,28 +81,16 @@ class ScanPipePipesTest(TestCase):
         self.assertIn("missing-command", str(context.exception))
         self.assertNotIn("secret-value", str(context.exception))
 
-    def test_scanpipe_pipes_mask_credentials(self):
-        command_args = (
-            Path("/usr/bin/skopeo"),
-            "--src-creds=user:secret-value",
-            "--creds=user:secret-value",
-            "docker://image",
-        )
-        expected = [
-            "/usr/bin/skopeo",
-            "--src-creds=********",
-            "--creds=********",
-            "docker://image",
-        ]
-        self.assertEqual(expected, pipes.mask_credentials(command_args))
-
-    def test_scanpipe_pipes_run_command_safely_masks_credentials(self):
+    def test_scanpipe_pipes_run_command_safely_error_excludes_arguments(self):
         with self.assertRaises(subprocess.SubprocessError) as context:
             pipes.run_command_safely(
-                ["/usr/bin/env", "--creds=user:secret-value", "missing-command"]
+                ["/usr/bin/env", "TOKEN=secret-value", "missing-command"]
             )
-        self.assertIn("--creds=********", str(context.exception))
-        self.assertNotIn("secret-value", str(context.exception))
+        error_message = str(context.exception)
+        expected = 'Error while executing cmd="/usr/bin/env": '
+        self.assertTrue(error_message.startswith(expected))
+        self.assertIn("missing-command", error_message)
+        self.assertNotIn("secret-value", error_message)
 
     def test_scanpipe_pipes_create_origin_matches(self):
         project1 = make_project()
