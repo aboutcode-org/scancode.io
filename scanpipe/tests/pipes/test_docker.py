@@ -22,12 +22,10 @@
 
 import io
 import json
-import sys
 import tarfile
 import tempfile
 from pathlib import Path
 from types import SimpleNamespace
-from unittest import skipIf
 
 from django.apps import apps
 from django.test import TestCase
@@ -109,7 +107,6 @@ class ScanPipeDockerPipesTest(TestCase):
             with self.assertRaises(tarfile.FilterError):
                 docker.tar_filter_with_safe_hardlinks(member, dest_path)
 
-    @skipIf(sys.version_info < (3, 14), "container_inspector filters on 3.14 only")
     def test_scanpipe_pipes_docker_extract_layers_refuses_outside_hardlinks(self):
         work_path = Path(tempfile.mkdtemp())
         outside_file = work_path / "outside.txt"
@@ -142,6 +139,32 @@ class ScanPipeDockerPipesTest(TestCase):
         self.assertFalse((layer_path / "outside_hardlink").exists())
         self.assertEqual(1, len(errors))
         self.assertIn("outside_hardlink", errors[0])
+
+    def test_scanpipe_pipes_docker_extract_tar_safely_refuses_writes_through_symlinks(
+        self,
+    ):
+        work_path = Path(tempfile.mkdtemp())
+        outside_path = work_path / "outside"
+        outside_path.mkdir()
+
+        tarball_location = work_path / "layer.tar"
+        with tarfile.open(tarball_location, "w") as tarball:
+            tarball.addfile(
+                self.make_tar_member("link", tarfile.SYMTYPE, str(outside_path))
+            )
+            file_member = self.make_tar_member("link/written.txt")
+            file_member.size = len(b"content")
+            tarball.addfile(file_member, io.BytesIO(b"content"))
+
+        default_filter = vars(tarfile.TarFile)["extraction_filter"]
+        errors = docker.extract_tar_safely(
+            location=tarball_location, target_dir=work_path / "target"
+        )
+
+        self.assertFalse((outside_path / "written.txt").exists())
+        self.assertEqual(1, len(errors))
+        self.assertIn("link/written.txt", errors[0])
+        self.assertIs(default_filter, vars(tarfile.TarFile)["extraction_filter"])
 
     def test_pipes_docker_flag_whiteout_codebase_resources(self):
         p1 = Project.objects.create(name="Analysis")

@@ -49,6 +49,30 @@ def tar_filter_with_safe_hardlinks(member, dest_path):
     return member
 
 
+def extract_tar_safely(location, target_dir):
+    """
+    Extract the tarball at ``location`` to ``target_dir`` with the
+    ``tar_filter_with_safe_hardlinks`` filter, on all Python versions.
+
+    container_inspector only passes its ``tar_filter`` on Python 3.14. On older
+    versions, it extracts without filter and ``tarfile`` uses the
+    ``TarFile.extraction_filter`` default, "fully_trusted" unless set: a member
+    could be written outside of ``target_dir`` through a symlink.
+    """
+    default_filter = vars(tarfile.TarFile)["extraction_filter"]
+    tarfile.TarFile.extraction_filter = staticmethod(tar_filter_with_safe_hardlinks)
+    try:
+        return extract_tar(
+            location=location,
+            target_dir=target_dir,
+            skip_symlinks=False,
+            as_events=False,
+            tar_filter=tar_filter_with_safe_hardlinks,
+        )
+    finally:
+        tarfile.TarFile.extraction_filter = default_filter
+
+
 def get_tarballs_from_inputs(project):
     """
     Return the tarballs from the `project` input/ work directory.
@@ -90,13 +114,7 @@ def extract_image_from_tarball(input_tarball, extract_target, verify=False):
     Return the `images` and an `errors` list of error messages that may have
     happened during the extraction.
     """
-    errors = extract_tar(
-        location=input_tarball,
-        target_dir=extract_target,
-        skip_symlinks=False,
-        as_events=False,
-        tar_filter=tar_filter_with_safe_hardlinks,
-    )
+    errors = extract_tar_safely(location=input_tarball, target_dir=extract_target)
     images = Image.get_images_from_dir(
         extracted_location=str(extract_target),
         verify=verify,
@@ -135,12 +153,8 @@ def extract_layers_from_images_to_base_path(base_path, images):
 
         for layer in image.layers:
             extract_target = target_path / layer.layer_id
-            extract_errors = extract_tar(
-                location=layer.archive_location,
-                target_dir=extract_target,
-                skip_symlinks=False,
-                as_events=False,
-                tar_filter=tar_filter_with_safe_hardlinks,
+            extract_errors = extract_tar_safely(
+                location=layer.archive_location, target_dir=extract_target
             )
             errors.extend(extract_errors)
             layer.extracted_location = str(extract_target)
