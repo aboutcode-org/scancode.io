@@ -1685,6 +1685,27 @@ class ScanPipeModelsTest(TestCase):
         line_count = len(resource.file_content.split("\n"))
         self.assertEqual(101, line_count)
 
+    def test_scanpipe_codebase_resource_model_validate_path(self):
+        valid_paths = ["dir/file.txt", "/dir/file.txt", "dir/file..txt", "..dir/file"]
+        for path in valid_paths:
+            self.assertTrue(CodebaseResource.validate_path(self.project1, path))
+        self.assertEqual(0, self.project1.projectmessages.count())
+
+        traversal_path = "dir/../../etc/passwd"
+        self.assertFalse(CodebaseResource.validate_path(self.project1, traversal_path))
+        error = self.project1.projectmessages.get()
+        self.assertEqual("error", error.severity)
+        expected = 'Resource path "dir/../../etc/passwd" contains "..": not imported.'
+        self.assertEqual(expected, error.description)
+        self.assertEqual({"path": traversal_path}, error.details)
+
+    def test_scanpipe_codebase_resource_model_create_from_data_path_traversal(self):
+        resource_data = {"path": "../../etc/passwd", "type": "file"}
+        resource = CodebaseResource.create_from_data(self.project1, resource_data)
+        self.assertIsNone(resource)
+        self.assertEqual(0, self.project1.codebaseresources.count())
+        self.assertEqual(1, self.project1.projectmessages.count())
+
     def test_scanpipe_codebase_resource_model_is_in_codebase(self):
         codebase_path = self.project1.codebase_path
         (codebase_path / "file.txt").write_text("content")

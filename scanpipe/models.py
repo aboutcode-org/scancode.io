@@ -2988,6 +2988,22 @@ class CodebaseResource(
         codebase_path = self.project.codebase_path.resolve()
         return self.location_path.resolve().is_relative_to(codebase_path)
 
+    @staticmethod
+    def validate_path(project, path):
+        """
+        Return True if the imported resource ``path`` has no ".." segment, or record
+        an error on the ``project``. The resource location is the ``path`` joined to
+        the codebase/ directory: a "../" path would target any file of the server.
+        """
+        has_parent_segment = ".." in Path(path).parts
+        if has_parent_segment:
+            project.add_error(
+                description=f'Resource path "{path}" contains "..": not imported.',
+                model=CodebaseResource,
+                details={"path": path},
+            )
+        return not has_parent_segment
+
     @property
     def is_file(self):
         """Return True, if the resource is a file."""
@@ -3197,6 +3213,9 @@ class CodebaseResource(
         is created instead of a new DiscoveredPackage instance.
         """
         resource_data = resource_data.copy()
+
+        if not cls.validate_path(project, resource_data.get("path") or ""):
+            return
 
         cleaned_data = {
             field_name: value

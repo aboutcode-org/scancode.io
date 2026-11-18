@@ -138,6 +138,34 @@ class ScanPipeInputPipesTest(TestCase):
         self.assertEqual(2, project.discoveredpackages.count())
         self.assertEqual(4, project.discovereddependencies.count())
 
+    def test_scanpipe_pipes_scancode_load_inventory_from_toolkit_scan_path_traversal(
+        self,
+    ):
+        project = Project.objects.create(name="Analysis")
+        input_location = self.data / "scancode" / "path_traversal_toolkit_scan.json"
+        input.load_inventory_from_toolkit_scan(project, input_location)
+
+        resource_paths = project.codebaseresources.values_list("path", flat=True)
+        self.assertEqual(["", "file.txt"], sorted(resource_paths))
+        error_paths = project.projectmessages.values_list("details__path", flat=True)
+        expected = ["..", "../..", "../../etc", "../../etc/passwd"]
+        self.assertEqual(expected, sorted(error_paths))
+
+    def test_scanpipe_pipes_scancode_load_inventory_from_scanpipe_path_traversal(self):
+        project = Project.objects.create(name="Analysis")
+        scan_data = {
+            "files": [
+                {"path": "file.txt", "type": "file"},
+                {"path": "../../etc/passwd", "type": "file"},
+            ]
+        }
+        input.load_inventory_from_scanpipe(project, scan_data)
+
+        resource_paths = project.codebaseresources.values_list("path", flat=True)
+        self.assertEqual(["file.txt"], list(resource_paths))
+        error = project.projectmessages.get()
+        self.assertEqual({"path": "../../etc/passwd"}, error.details)
+
     def test_scanpipe_pipes_scancode_load_inventory_from_scanpipe(self):
         project = Project.objects.create(name="1")
         input_location = self.data / "asgiref" / "asgiref-3.3.0_scanpipe_output.json"

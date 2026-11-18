@@ -269,6 +269,18 @@ class ScanPipePipesTest(TestCase):
         with self.assertRaises(DiscoveredPackage.DoesNotExist):
             pipes.update_or_create_resource(p1, resource_data)
 
+    def test_scanpipe_pipes_update_or_create_resource_path_traversal(self):
+        p1 = Project.objects.create(name="Analysis")
+        package = pipes.update_or_create_package(p1, package_data1)
+        resource_data = {
+            "path": "../../etc/passwd",
+            "for_packages": [package.package_uid],
+        }
+
+        self.assertIsNone(pipes.update_or_create_resource(p1, resource_data))
+        self.assertEqual(0, p1.codebaseresources.count())
+        self.assertEqual(0, package.codebase_resources.count())
+
     def test_scanpipe_pipes_update_or_create_package(self):
         p1 = Project.objects.create(name="Analysis")
         package = pipes.update_or_create_package(p1, package_data1)

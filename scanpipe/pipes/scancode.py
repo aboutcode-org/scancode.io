@@ -999,7 +999,9 @@ def create_codebase_resources(project, scanned_codebase):
     skipped.
     """
     for scanned_resource in scanned_codebase.walk(skip_root=True):
-        create_codebase_resource(project, scanned_resource)
+        resource_path = scanned_resource.get_path(strip_root=True)
+        if CodebaseResource.validate_path(project, resource_path):
+            create_codebase_resource(project, scanned_resource)
 
 
 def create_discovered_packages(project, scanned_codebase):

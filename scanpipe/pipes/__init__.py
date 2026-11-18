@@ -163,6 +163,9 @@ def update_or_create_resource(project, resource_data):
     else:
         resource = CodebaseResource.create_from_data(project, resource_data)
 
+    if not resource:
+        return
+
     for package_uid in for_packages:
         package = project.discoveredpackages.get(package_uid=package_uid)
         resource.add_package(package)
