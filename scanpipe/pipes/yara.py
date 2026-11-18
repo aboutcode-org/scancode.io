@@ -18,7 +18,10 @@ from aboutcode.pipeline import LoopProgress
 from scanpipe import pipes
 from scanpipe.pipes import flag
 
-DEFAULT_RULES_FILE = Path(__file__).resolve().parent.parent / "rules" / "c_packages.yar"
+# Point to upstream YARA rule repository once available
+DEFAULT_RULES_DIR = (
+    Path(__file__).resolve().parent.parent / "tests" / "data" / "yara_rules"
+)
 
 
 class InvalidYaraRules(Exception):
@@ -47,15 +50,29 @@ class MatchResult(NamedTuple):
 class YaraPackageScanner:
     """Scan files or byte streams with compiled YARA rules to detect packages."""
 
-    def __init__(self, rule_file_path=DEFAULT_RULES_FILE):
-        self.rule_file_path = str(rule_file_path)
-        try:
-            self.rules = yara.compile(filepath=self.rule_file_path)
-            if not self.rules:
-                raise InvalidYaraRules(f"Empty YARA rules from {self.rule_file_path}")
-        except Exception as e:
+    def __init__(self, rule_path=DEFAULT_RULES_DIR):
+        self.rule_path = Path(rule_path) if rule_path else DEFAULT_RULES_DIR
+        self.rules = self._compile_rules(self.rule_path)
+
+    @classmethod
+    def _compile_rules(cls, rules_directory):
+        """Compile YARA rules from a directory of .yar files."""
+        if not rules_directory or not rules_directory.is_dir():
             raise InvalidYaraRules(
-                f"Invalid Yara Rules from {self.rule_file_path}"
+                f"YARA rules directory does not exist: {rules_directory}"
+            )
+
+        rule_files = sorted(rules_directory.glob("*.yar"))
+        if not rule_files:
+            raise InvalidYaraRules(
+                f"No .yar rule files found in directory: {rules_directory}"
+            )
+
+        try:
+            return yara.compile(filepaths={f.stem: str(f) for f in rule_files})
+        except yara.Error as e:
+            raise InvalidYaraRules(
+                f"Failed to compile YARA rules from {rules_directory}: {e}"
             ) from e
 
     def scan_file(self, location):
