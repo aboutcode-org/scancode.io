@@ -60,6 +60,7 @@ from scanpipe.models import RunInProgressError
 from scanpipe.pipes import filename_now
 from scanpipe.pipes import output
 from scanpipe.pipes.compliance import get_project_compliance_alerts
+from scanpipe.views import is_file_in_directory
 from scanpipe.views import project_results_json_response
 from scanpipe.views import sandboxed_file_response
 
@@ -487,9 +488,7 @@ class ProjectViewSet(
         project = self.get_object()
 
         if filename := request.query_params.get("filename"):
-            # Only serve a file listed in output/, as the filename could be an
-            # absolute or a "../" path to any file of the server.
-            if filename in project.output_root:
+            if is_file_in_directory(project.output_path, filename):
                 file_path = project.output_path / filename
                 return sandboxed_file_response(file_path.open("rb"))
 

@@ -3008,21 +3008,6 @@ class CodebaseResource(
         """
         return ".." in Path(path).parts
 
-    @classmethod
-    def validate_path(cls, project, path):
-        """
-        Return True if the imported resource ``path`` has no ".." segment, or record
-        an error on the ``project``.
-        """
-        if cls.has_parent_segment(path):
-            project.add_error(
-                description=f'Resource path "{path}" contains "..": not imported.',
-                model=CodebaseResource,
-                details={"path": path},
-            )
-            return False
-        return True
-
     @property
     def is_file(self):
         """Return True, if the resource is a file."""
@@ -3233,7 +3218,12 @@ class CodebaseResource(
         """
         resource_data = resource_data.copy()
 
-        if not cls.validate_path(project, resource_data.get("path") or ""):
+        resource_path = resource_data.get("path") or ""
+        if cls.has_parent_segment(resource_path):
+            message = f'Resource path "{resource_path}" contains "..": not imported.'
+            project.add_error(
+                description=message, model=cls, details={"path": resource_path}
+            )
             return
 
         cleaned_data = {

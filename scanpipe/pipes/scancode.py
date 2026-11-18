@@ -1004,14 +1004,20 @@ def create_codebase_resources(project, scanned_codebase):
 
 def get_parent_segment_path(scanned_codebase):
     """
-    Return the first resource path of the ``scanned_codebase`` with a ".." segment,
-    or an empty string.
+    Return the longest resource path of the ``scanned_codebase`` with a ".."
+    segment, or an empty string. The original scan entry is not kept: its path is
+    split in a tree of ".." directories, and the longest path is the closest to it.
     """
-    for scanned_resource in scanned_codebase.walk(skip_root=True):
-        resource_path = scanned_resource.get_path(strip_root=True)
-        if CodebaseResource.has_parent_segment(resource_path):
-            return resource_path
-    return ""
+    resource_paths = (
+        scanned_resource.get_path(strip_root=True)
+        for scanned_resource in scanned_codebase.walk(skip_root=True)
+    )
+    parent_segment_paths = [
+        resource_path
+        for resource_path in resource_paths
+        if CodebaseResource.has_parent_segment(resource_path)
+    ]
+    return max(parent_segment_paths, key=len, default="")
 
 
 def create_discovered_packages(project, scanned_codebase):

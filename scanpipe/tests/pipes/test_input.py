@@ -148,7 +148,7 @@ class ScanPipeInputPipesTest(TestCase):
         self.assertEqual(0, project.codebaseresources.count())
         error = project.projectmessages.get()
         expected = (
-            'Resource path ".." contains "..": '
+            'Resource path "../../etc/passwd" contains "..": '
             "path_traversal_toolkit_scan.json not imported."
         )
         self.assertEqual(expected, error.description)

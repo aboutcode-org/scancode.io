@@ -61,6 +61,7 @@ from scanpipe.views import CodebaseResourceDetailsView
 from scanpipe.views import ProjectActionView
 from scanpipe.views import ProjectCodebasePanelView
 from scanpipe.views import ProjectDetailView
+from scanpipe.views import is_file_in_directory
 
 scanpipe_app = apps.get_app_config("scanpipe")
 
@@ -375,6 +376,23 @@ class ScanPipeViewsTest(TestCase):
             'attachment; filename="notice.NOTICE"',
             response.headers["Content-Disposition"],
         )
+
+    def test_scanpipe_views_is_file_in_directory(self):
+        directory = self.project1.output_path
+        (directory / "file.txt").write_text("content")
+        (directory / "subdir").mkdir()
+
+        self.assertTrue(is_file_in_directory(directory, "file.txt"))
+        unsafe_filenames = [
+            "subdir",
+            "..",
+            "missing.txt",
+            "../output/file.txt",
+            str(directory / "file.txt"),
+            "/etc/hostname",
+        ]
+        for filename in unsafe_filenames:
+            self.assertFalse(is_file_in_directory(directory, filename))
 
     def test_scanpipe_views_project_details_download_views_directory(self):
         (self.project1.input_path / "repository").mkdir()

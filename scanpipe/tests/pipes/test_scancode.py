@@ -380,7 +380,8 @@ class ScanPipeScancodePipesTest(TestCase):
 
         input_location = self.data / "scancode" / "path_traversal_toolkit_scan.json"
         virtual_codebase = scancode.get_virtual_codebase(project, input_location)
-        self.assertEqual("..", scancode.get_parent_segment_path(virtual_codebase))
+        expected = "../../etc/passwd"
+        self.assertEqual(expected, scancode.get_parent_segment_path(virtual_codebase))
 
     @expectedFailure
     def test_scanpipe_pipes_scancode_virtual_codebase(self):

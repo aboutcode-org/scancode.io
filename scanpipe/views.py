@@ -1541,19 +1541,30 @@ def sandboxed_file_response(file, **kwargs):
     return response
 
 
+def is_file_in_directory(directory, filename):
+    """
+    Return True if the ``filename`` is a file directly in the ``directory``. A
+    filename provided by a user could be an absolute path, a "../" path, or a
+    directory, such as a fetched repository.
+    """
+    file_path = directory / filename
+    return file_path.parent == directory and file_path.is_file()
+
+
 def download_project_file(request, slug, filename, path_type):
     project = get_object_or_404(Project, slug=slug)
 
     if path_type == "input":
-        file_path = project.input_path / filename
+        directory = project.input_path
     elif path_type == "output":
-        file_path = project.output_path / filename
+        directory = project.output_path
     else:
         raise Http404("Invalid path_type")
 
-    # A ".." filename or a fetched repository targets a directory.
-    if not file_path.is_file():
+    if not is_file_in_directory(directory, filename):
         raise Http404(f"{filename} not found")
+
+    file_path = directory / filename
 
     is_too_large = file_path.stat().st_size > scanpipe_settings.INLINE_DOWNLOAD_MAX_SIZE
     return sandboxed_file_response(file_path.open("rb"), as_attachment=is_too_large)
