@@ -76,7 +76,7 @@ class ScanPipeFetchPipesTest(TestCase):
 
         with self.assertRaises(ValueError) as cm:
             fetch.get_fetcher("git://github.com/aboutcode-org/scancode.io.git")
-        expected = "git:// URLs are not supported, as not encrypted. Use https://."
+        expected = "Unencrypted git:// URLs are not supported. Use https:// instead."
         self.assertEqual(expected, str(cm.exception))
 
     def test_scanpipe_pipes_fetch_get_fetcher_refuses_unsupported_git_urls(self):
@@ -367,10 +367,12 @@ class ScanPipeFetchPipesTest(TestCase):
         self, mock_clone_from, mock_is_safe_url
     ):
         url = "https://internal.host/repository.git"
-        with self.assertRaises(ValueError) as cm:
-            fetch.fetch_git_repo(url)
+        with mock.patch("tempfile.mkdtemp") as mock_mkdtemp:
+            with self.assertRaises(ValueError) as cm:
+                fetch.fetch_git_repo(url)
 
         self.assertEqual(f"Unsafe URL: {url}", str(cm.exception))
+        mock_mkdtemp.assert_not_called()
         mock_clone_from.assert_not_called()
 
     @staticmethod

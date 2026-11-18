@@ -341,14 +341,14 @@ def fetch_docker_image(docker_url, to=None):
 
 def fetch_git_repo(url, to=None):
     """Fetch provided git `url` as a clone and return a `Download` object."""
+    # Same SSRF protection as ``fetch_http``: no private or internal address.
+    if not is_safe_url(url):
+        raise ValueError(f"Unsafe URL: {url}")
+
     download_directory = to or tempfile.mkdtemp()
     url = url.rstrip("/")
     filename = url.split("/")[-1]
     to_path = Path(download_directory) / filename
-
-    # Same SSRF protection as ``fetch_http``: no private or internal address.
-    if not is_safe_url(url):
-        raise ValueError(f"Unsafe URL: {url}")
 
     git_env = {
         # Disable any prompt, especially for credentials
@@ -406,7 +406,7 @@ def get_fetcher(url):
     # The git:// protocol is not encrypted, and its URLs cannot be checked against
     # internal addresses by ``is_safe_url``, which only supports HTTP.
     if url.startswith("git://"):
-        error_msg = "git:// URLs are not supported, as not encrypted. Use https://."
+        error_msg = "Unencrypted git:// URLs are not supported. Use https:// instead."
         raise ValueError(error_msg)
 
     if url.rstrip("/").endswith(".git"):
