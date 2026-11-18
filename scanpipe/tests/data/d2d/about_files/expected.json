@@ -1526,7 +1526,9 @@
       "is_readme": false,
       "is_top_level": false,
       "is_key_file": false,
-      "extra_data": {}
+      "extra_data": {
+        "source_file": "ConfigurationProvider.java"
+      }
     },
     {
       "path": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/EnvVarResolverProperties.class",

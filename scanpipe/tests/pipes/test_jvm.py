@@ -208,3 +208,42 @@ class ScanPipeJvmKotlinTest(TestCase):
     def test_scanpipe_pipes_jvm_get_fully_qualified_kotlin_path(self):
         fqjp = jvm.get_fully_qualified_path("org.common", "Bar.kt")
         self.assertEqual("org/common/Bar.kt", fqjp)
+
+
+class ScanPipeJvmSourceFileAttributeTest(TestCase):
+    data = Path(__file__).parent.parent / "data"
+
+    def test_scanpipe_pipes_jvm_read_class_file_source_file_returns_value(self):
+        input_location = self.data / "jvm" / "ClusterShardingQuery.class"
+        self.assertEqual(
+            "ClusterShardingQuery.scala",
+            jvm.read_class_file_source_file(input_location),
+        )
+
+    def test_scanpipe_pipes_jvm_read_class_file_source_file_non_class_file(
+        self,
+    ):
+        input_location = self.data / "jvm" / "common.java"
+        self.assertIsNone(jvm.read_class_file_source_file(input_location))
+
+    def test_scanpipe_pipes_jvm_read_class_file_source_file_no_attribute(self):
+        path = self.data / "jvm" / "NoSourceFile.class"
+        self.assertIsNone(jvm.read_class_file_source_file(path))
+
+    def test_scanpipe_pipes_jvm_read_class_file_source_file_truncated(self):
+        # The Truncated.class is created by
+        # `head -c 20 ClusterShardingQuery.class > Truncated.class`
+        path = self.data / "jvm" / "Truncated.class"
+        self.assertIsNone(jvm.read_class_file_source_file(path))
+
+    def test_scanpipe_pipes_jvm_read_class_file_source_file_with_long_constant(self):
+        # The LongConstant.class is created by the following source
+        # public class LongConstant {static final long VALUE = 1234567890123456789L;}
+        path = self.data / "jvm" / "LongConstant.class"
+        self.assertEqual("LongConstant.java", jvm.read_class_file_source_file(path))
+
+    def test_scanpipe_pipes_jvm_read_class_file_source_file_index_not_utf8(self):
+        # The SourceFileNotUtf8.class is LongConstant.class with its SourceFile
+        # index pointing to the constant pool entry 1, a Methodref.
+        path = self.data / "jvm" / "SourceFileNotUtf8.class"
+        self.assertIsNone(jvm.read_class_file_source_file(path))

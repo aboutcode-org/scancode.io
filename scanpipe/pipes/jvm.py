@@ -26,6 +26,7 @@ Support for JVM-specific file formats such as
 """
 
 import re
+import struct
 from pathlib import Path
 from re import Pattern
 
@@ -285,3 +286,188 @@ def get_fully_qualified_path(jvm_package, filename):
     """
     jvm_package = jvm_package.replace(".", "/")
     return f"{jvm_package}/{filename}"
+
+
+# Ref: https://docs.oracle.com/javase/specs/jvms/se21/html/jvms-4.html#jvms-4.1
+_CLASS_FILE_MAGIC = b"\xca\xfe\xba\xbe"
+
+# Ref: https://docs.oracle.com/javase/specs/jvms/se11/html/jvms-4.html#jvms-4.4
+_CONSTANT_POOL_ENTRY_SIZES = {
+    3: 4,  # Integer
+    4: 4,  # Float
+    5: 8,  # Long
+    6: 8,  # Double
+    7: 2,  # Class
+    8: 2,  # String
+    9: 4,  # Fieldref
+    10: 4,  # Methodref
+    11: 4,  # InterfaceMethodref
+    12: 4,  # NameAndType
+    15: 3,  # MethodHandle
+    16: 2,  # MethodType
+    17: 4,  # Dynamic
+    18: 4,  # InvokeDynamic
+    19: 2,  # Module
+    20: 2,  # Package
+}
+
+
+def _read_u2(class_file_bytes, offset):
+    """Return the unsigned 2-byte big-endian integer at ``offset``."""
+    return struct.unpack_from(">H", class_file_bytes, offset)[0]
+
+
+def _read_u4(class_file_bytes, offset):
+    """Return the unsigned 4-byte big-endian integer at ``offset``."""
+    return struct.unpack_from(">I", class_file_bytes, offset)[0]
+
+
+def _skip_members(class_file_bytes, offset):
+    """
+    Skip a ``fields`` or ``methods`` table and return the offset just past it.
+
+    Both tables share the same layout::
+
+        u2 count
+        repeat count times:
+            u2 access_flags
+            u2 name_index
+            u2 descriptor_index
+            attribute table:
+                u2 attributes_count
+                repeat attributes_count times:
+                    u2 attribute_name_index
+                    u4 attribute_length
+                    attribute_length bytes of payload
+    """
+    count = _read_u2(class_file_bytes, offset)
+    offset += 2
+
+    for _ in range(count):
+        # Skip access_flags, name_index, and descriptor_index (6 bytes).
+        offset += 6
+
+        # Then skip this member's own attribute table.
+        attributes_count = _read_u2(class_file_bytes, offset)
+        offset += 2
+
+        for _ in range(attributes_count):
+            # ``attribute_length`` follows the u2 name index, so read it
+            # from ``offset + 2`` before consuming the 6-byte header.
+            attribute_length = _read_u4(class_file_bytes, offset + 2)
+            offset += 6 + attribute_length
+
+    return offset
+
+
+def _parse_constant_pool(class_file_bytes, offset):
+    """
+    Walk the constant pool starting at ``offset`` and return
+    ``(utf8_bytes_by_index, new_offset)``.
+
+    Only ``CONSTANT_Utf8`` values are kept, as those are the only entries
+    needed to resolve the ``SourceFile`` attribute name and its value. All
+    other entries are skipped using their known sizes.
+    """
+    constant_pool_count = _read_u2(class_file_bytes, offset)
+    offset += 2
+
+    utf8_bytes_by_index = {}
+    index = 1
+
+    while index < constant_pool_count:
+        tag = class_file_bytes[offset]
+        offset += 1
+
+        if tag == 1:  # CONSTANT_Utf8: u2 length followed by length bytes.
+            utf8_length = _read_u2(class_file_bytes, offset)
+            offset += 2
+            end = offset + utf8_length
+            utf8_bytes_by_index[index] = class_file_bytes[offset:end]
+            offset = end
+        else:
+            entry_size = _CONSTANT_POOL_ENTRY_SIZES.get(tag)
+            if entry_size is None:
+                raise struct.error(f"Unknown constant-pool tag: {tag}")
+            offset += entry_size
+
+        # Long (tag 5) and Double (tag 6) occupy two pool slots; the
+        # second slot is unusable but still counted by the JVM.
+        index += 2 if tag in (5, 6) else 1
+
+    return utf8_bytes_by_index, offset
+
+
+def _find_source_file_in_attributes(class_file_bytes, offset, utf8_bytes_by_index):
+    """
+    Walk the class-level attribute table at ``offset`` and return the value of
+    the ``SourceFile`` attribute, or ``None`` if no such attribute is present.
+    """
+    attributes_count = _read_u2(class_file_bytes, offset)
+    offset += 2
+
+    for _ in range(attributes_count):
+        # Attribute layout: u2 name_index, u4 attribute_length, then the
+        # payload. Read the length first, then advance past the header.
+        name_index = _read_u2(class_file_bytes, offset)
+        attribute_length = _read_u4(class_file_bytes, offset + 2)
+        offset += 6
+
+        if utf8_bytes_by_index.get(name_index) != b"SourceFile":
+            offset += attribute_length
+            continue
+
+        # SourceFile payload is exactly one u2 pool index.
+        if attribute_length != 2:
+            return
+
+        source_file_index = _read_u2(class_file_bytes, offset)
+        return utf8_bytes_by_index[source_file_index].decode("utf-8", errors="replace")
+
+
+def read_class_file_source_file(location):
+    """
+    Return the value of the JVM ``SourceFile`` class-level attribute for the
+    ``.class`` file at ``location``, or None if the attribute is absent or
+    the file cannot be parsed as a valid class file.
+
+    The ``SourceFile`` attribute records the source filename the compiler used
+    when producing this class file. It is defined in the JVM specification::
+
+        SourceFile_attribute {
+            u2 attribute_name_index;
+            u4 attribute_length;
+            u2 sourcefile_index;
+        }
+
+    A .class file is a fixed sequence of sections with no table of contents,
+    so reaching the class-level attribute table requires walking past every
+    earlier section. This function parses just enough of the file to reach
+    that table, keeping only ``CONSTANT_Utf8`` entries because the attribute
+    name and the filename value are both stored as Utf8 strings.
+    """
+    try:
+        class_file_bytes = Path(location).read_bytes()
+
+        if class_file_bytes[:4] != _CLASS_FILE_MAGIC:
+            return
+
+        # Skip the magic number (u4), minor_version (u2), and major_version
+        # (u2), 8 bytes total, to reach the constant_pool_count field.
+        offset = 8
+        utf8_bytes_by_index, offset = _parse_constant_pool(class_file_bytes, offset)
+
+        # Skip access_flags, this_class, and super_class (three u2 fields).
+        offset += 6
+
+        interfaces_count = _read_u2(class_file_bytes, offset)
+        offset += 2 + interfaces_count * 2
+
+        offset = _skip_members(class_file_bytes, offset)  # fields
+        offset = _skip_members(class_file_bytes, offset)  # methods
+
+        return _find_source_file_in_attributes(
+            class_file_bytes, offset, utf8_bytes_by_index
+        )
+    except (OSError, struct.error, LookupError):
+        return

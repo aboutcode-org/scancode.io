@@ -168,7 +168,11 @@ def _map_jvm_to_class_resource(
     """
     Map the ``to_resource`` .class file Resource with a Resource in
     ``from_resources`` source files, using the ``from_classes_index`` index of
-    from/ fully qualified binary files.
+    from/ fully qualified source paths.
+
+    Try the filename-based derivation first. If no filename match is found,
+    fall back to the JVM ``SourceFile`` class-file attribute, which records
+    the source filename the compiler used to produce this class file.
     """
     for extension in jvm_lang.source_extensions:
         # Perform basic conversion from .class to source file path
@@ -184,22 +188,56 @@ def _map_jvm_to_class_resource(
                 path=to_resource.path, extension=extension
             )
             match = pathmap.find_paths(path=normalized_path, index=from_classes_index)
-            if not match:
-                return
 
-        for resource_id in match.resource_ids:
-            from_resource = from_resources.get(id=resource_id)
-            # compute the root of the packages on the source side
-            from_source_root_parts = from_resource.path.strip("/").split("/")
-            from_source_root = "/".join(
-                from_source_root_parts[: -match.matched_path_length]
-            )
-            pipes.make_relation(
-                from_resource=from_resource,
+        if match:
+            _create_jvm_binary_relations(
                 to_resource=to_resource,
-                map_type=jvm_lang.binary_map_type,
-                extra_data={"from_source_root": f"{from_source_root}/"},
+                from_resources=from_resources,
+                match=match,
+                jvm_lang=jvm_lang,
             )
+            return
+
+    # Use the JVM ``SourceFile`` class-file attribute where a single source
+    # file can produce several class files whose basenames differ from the
+    # source. See https://github.com/aboutcode-org/scancode.io/issues/1875
+    # and https://github.com/aboutcode-org/scancode.io/issues/1993
+    source_file = to_resource.extra_data.get("source_file")
+    if source_file is None:
+        return
+
+    source_path = _source_path_from_source_file(to_resource, source_file)
+    match = pathmap.find_paths(path=source_path, index=from_classes_index)
+    if match:
+        _create_jvm_binary_relations(
+            to_resource=to_resource,
+            from_resources=from_resources,
+            match=match,
+            jvm_lang=jvm_lang,
+        )
+
+
+def _source_path_from_source_file(to_resource, source_file):
+    """Return the derived source path from a ``SourceFile`` attribute value."""
+    class_path = Path(to_resource.path)
+    return str(class_path.parent / source_file)
+
+
+def _create_jvm_binary_relations(to_resource, from_resources, match, jvm_lang):
+    """Create the relations between each matched source resource and ``to_resource``."""
+    for resource_id in match.resource_ids:
+        from_resource = from_resources.get(id=resource_id)
+        # compute the root of the packages on the source side
+        from_source_root_parts = from_resource.path.strip("/").split("/")
+        from_source_root = "/".join(
+            from_source_root_parts[: -match.matched_path_length]
+        )
+        pipes.make_relation(
+            from_resource=from_resource,
+            to_resource=to_resource,
+            map_type=jvm_lang.binary_map_type,
+            extra_data={"from_source_root": f"{from_source_root}/"},
+        )
 
 
 def map_jvm_to_class(project, jvm_lang: jvm.JvmLanguage, logger=None):
@@ -261,6 +299,44 @@ def map_jvm_to_class(project, jvm_lang: jvm.JvmLanguage, logger=None):
             from_classes_index=from_classes_index,
             jvm_lang=jvm_lang,
         )
+
+
+def collect_jvm_sourcefiles_attribute(project, logger=None):
+    """
+    Collect the JVM ``SourceFile`` attribute of every ``.class`` file once
+    and store it in ``extra_data``.
+    """
+    to_classes = (
+        project.codebaseresources.files()
+        .to_codebase()
+        .no_status()
+        .has_no_relation()
+        .filter(extension=".class")
+    )
+    resource_count = to_classes.count()
+
+    if logger:
+        logger(f"Collecting SourceFile attribute for {resource_count:,d} .class files.")
+
+    chunk_size = 2000
+    resource_iterator = to_classes.iterator(chunk_size=chunk_size)
+    progress = LoopProgress(resource_count, logger)
+    resources_to_update = []
+
+    for resource in progress.iter(resource_iterator):
+        source_file = jvm.read_class_file_source_file(resource.location_path)
+        if source_file:
+            resource.extra_data["source_file"] = source_file
+            resources_to_update.append(resource)
+
+        if len(resources_to_update) >= chunk_size:
+            CodebaseResource.objects.bulk_update(
+                resources_to_update, fields=["extra_data"]
+            )
+            resources_to_update.clear()
+
+    if resources_to_update:
+        CodebaseResource.objects.bulk_update(resources_to_update, fields=["extra_data"])
 
 
 def find_jvm_packages(project, jvm_lang: jvm.JvmLanguage, logger=None):

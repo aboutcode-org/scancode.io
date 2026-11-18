@@ -463,6 +463,34 @@ class ScanPipeD2DPipesTest(TestCase):
         expected = {"from_source_root": "from/antlr4-4.5.1-beta-1/tool/src/"}
         self.assertEqual(expected, r1.extra_data)
 
+    def test_scanpipe_pipes_d2d_map_grammar_to_class_g4(self):
+        from1 = make_resource_file(
+            self.project1,
+            path="from/antlr4-4.5.1-beta-1/tool/src/org/antlr/v4/parse/BlockSetTransformer.g4",
+            extra_data={"grammar_package": "org.antlr.v4.parse"},
+        )
+
+        to1 = make_resource_file(
+            self.project1,
+            path="to/org/antlr/v4/parse/BlockSetTransformer.class",
+        )
+
+        buffer = io.StringIO()
+        d2d.map_jvm_to_class(
+            self.project1, logger=buffer.write, jvm_lang=jvm.GrammarLanguage
+        )
+
+        expected = (
+            "Mapping 1 .class (or other deployed file) resources to 1 ('.g', '.g4')"
+        )
+        self.assertIn(expected, buffer.getvalue())
+        self.assertEqual(1, self.project1.codebaserelations.count())
+
+        r1 = self.project1.codebaserelations.get(to_resource=to1, from_resource=from1)
+        self.assertEqual("grammar_to_class", r1.map_type)
+        expected = {"from_source_root": "from/antlr4-4.5.1-beta-1/tool/src/"}
+        self.assertEqual(expected, r1.extra_data)
+
     def test_scanpipe_pipes_d2d_map_xtend_to_class(self):
         from1 = make_resource_file(
             self.project1,
@@ -740,6 +768,139 @@ class ScanPipeD2DPipesTest(TestCase):
         self.assertEqual(from2, relation.from_resource)
         self.assertEqual(to_jar, relation.to_resource)
 
+    def test_scanpipe_pipes_d2d_map_jvm_to_class_scala_multi_declarations(self):
+        # Sample case from
+        # https://github.com/aboutcode-org/scancode.io/issues/1875
+        from1 = make_resource_file(
+            self.project1,
+            path="from/org/apache/pekko/cluster/sharding/typed/"
+            "ClusterShardingQuery.scala",
+            extra_data={"scala_package": "org.apache.pekko.cluster.sharding.typed"},
+        )
+        to1 = make_resource_file(
+            self.project1,
+            path="to/org/apache/pekko/cluster/sharding/typed/"
+            "ClusterShardingQuery.class",
+            extra_data={"source_file": "ClusterShardingQuery.scala"},
+        )
+        to2 = make_resource_file(
+            self.project1,
+            path="to/org/apache/pekko/cluster/sharding/typed/GetShardRegionState.class",
+            extra_data={"source_file": "ClusterShardingQuery.scala"},
+        )
+        to3 = make_resource_file(
+            self.project1,
+            path="to/org/apache/pekko/cluster/sharding/typed/"
+            "GetClusterShardingStats.class",
+            extra_data={"source_file": "ClusterShardingQuery.scala"},
+        )
+
+        buffer = io.StringIO()
+        d2d.map_jvm_to_class(
+            self.project1, logger=buffer.write, jvm_lang=jvm.ScalaLanguage
+        )
+
+        expected = (
+            "Mapping 3 .class (or other deployed file) resources to 1 ('.scala',)"
+        )
+        self.assertIn(expected, buffer.getvalue())
+        self.assertEqual(3, self.project1.codebaserelations.count())
+
+        r1 = self.project1.codebaserelations.get(to_resource=to1, from_resource=from1)
+        self.assertEqual("scala_to_class", r1.map_type)
+        expected = {"from_source_root": "from/"}
+        self.assertEqual(expected, r1.extra_data)
+
+        r2 = self.project1.codebaserelations.get(to_resource=to2, from_resource=from1)
+        self.assertEqual("scala_to_class", r2.map_type)
+        expected = {"from_source_root": "from/"}
+        self.assertEqual(expected, r2.extra_data)
+
+        r3 = self.project1.codebaserelations.get(to_resource=to3, from_resource=from1)
+        self.assertEqual("scala_to_class", r3.map_type)
+        expected = {"from_source_root": "from/"}
+        self.assertEqual(expected, r3.extra_data)
+
+    def test_scanpipe_pipes_d2d_map_jvm_to_class_not_read_tasty_files(self):
+        from1 = make_resource_file(
+            self.project1,
+            path="from/foo/Bar.scala",
+            extra_data={"scala_package": "foo"},
+        )
+        to1 = make_resource_file(
+            self.project1,
+            path="to/foo/Generated.class",
+            extra_data={"source_file": "Bar.scala"},
+        )
+        to2 = make_resource_file(self.project1, path="to/foo/Generated.tasty")
+
+        buffer = io.StringIO()
+        d2d.map_jvm_to_class(
+            self.project1, logger=buffer.write, jvm_lang=jvm.ScalaLanguage
+        )
+
+        # Only the .class file gets mapped; the .tasty is skipped because it
+        # is not a JVM class file.
+        self.assertEqual(1, self.project1.codebaserelations.count())
+
+        r1 = self.project1.codebaserelations.get(to_resource=to1, from_resource=from1)
+        self.assertEqual("scala_to_class", r1.map_type)
+        expected = {"from_source_root": "from/"}
+        self.assertEqual(expected, r1.extra_data)
+
+        self.assertFalse(
+            self.project1.codebaserelations.filter(to_resource=to2).exists()
+        )
+
+    def test_scanpipe_pipes_d2d_map_jvm_to_class_source_file_attribute(self):
+        to_dir = self.project1.codebase_path / "to/lombok/delombok/ant"
+        to_dir.mkdir(parents=True)
+        # The `Tasks.class` is from lombok-1.18.42.jar
+        # Ref: https://github.com/aboutcode-org/scancode.io/issues/1993
+        copy_input(self.data / "jvm" / "Tasks.class", to_dir)
+
+        from1 = make_resource_file(
+            self.project1,
+            path="from/lombok/delombok/ant/DelombokTask.java",
+            extra_data={"java_package": "lombok.delombok.ant"},
+        )
+
+        pipes.collect_and_create_codebase_resources(self.project1)
+        to1 = self.project1.codebaseresources.get(
+            path="to/lombok/delombok/ant/Tasks.class"
+        )
+
+        d2d.collect_jvm_sourcefiles_attribute(self.project1)
+        to1.refresh_from_db()
+        self.assertEqual("DelombokTask.java", to1.extra_data["source_file"])
+
+        d2d.map_jvm_to_class(self.project1, jvm_lang=jvm.JavaLanguage)
+        self.assertEqual(1, self.project1.codebaserelations.count())
+        relation = self.project1.codebaserelations.get(to_resource=to1)
+        self.assertEqual(from1, relation.from_resource)
+        self.assertEqual("java_to_class", relation.map_type)
+
+    def test_scanpipe_pipes_d2d_map_jvm_to_class_filename_match_wins(self):
+        from1 = make_resource_file(
+            self.project1,
+            path="from/org/example/Foo.java",
+            extra_data={"java_package": "org.example"},
+        )
+        to1 = make_resource_file(
+            self.project1,
+            path="to/org/example/Foo.class",
+        )
+
+        buffer = io.StringIO()
+        d2d.map_jvm_to_class(
+            self.project1, logger=buffer.write, jvm_lang=jvm.JavaLanguage
+        )
+
+        self.assertEqual(1, self.project1.codebaserelations.count())
+        self.assertEqual(
+            from1, self.project1.codebaserelations.get(to_resource=to1).from_resource
+        )
+
     def test_scanpipe_pipes_d2d_scala_ignore_pattern(self):
         make_resource_file(self.project1, path="to/META-INF/MANIFEST.MF")
         make_resource_file(self.project1, path="to/test.class")
@@ -820,6 +981,37 @@ class ScanPipeD2DPipesTest(TestCase):
         )
         expected = "Ignoring 2 to/ resources with ecosystem specific configurations."
         self.assertIn(expected, buffer.getvalue())
+
+    def test_scanpipe_pipes_d2d_map_kotlin_to_class_kts(self):
+        from1 = make_resource_file(
+            self.project1,
+            path="from/scripts/Build.kts",
+            extra_data={"kotlin_package": "scripts"},
+        )
+        to1 = make_resource_file(self.project1, path="to/scripts/Build.class")
+        d2d.map_jvm_to_class(self.project1, logger=None, jvm_lang=jvm.KotlinLanguage)
+        self.assertEqual(1, self.project1.codebaserelations.count())
+        self.assertEqual(
+            from1, self.project1.codebaserelations.get(to_resource=to1).from_resource
+        )
+
+    def test_scanpipe_pipes_d2d_map_kotlin_to_class_prefers_kt_over_kts(self):
+        from_kt = make_resource_file(
+            self.project1,
+            path="from/scripts/Foo.kt",
+            extra_data={"kotlin_package": "scripts"},
+        )
+        make_resource_file(
+            self.project1,
+            path="from/scripts/Foo.kts",
+            extra_data={"kotlin_package": "scripts"},
+        )
+        to1 = make_resource_file(self.project1, path="to/scripts/Foo.class")
+        d2d.map_jvm_to_class(self.project1, logger=None, jvm_lang=jvm.KotlinLanguage)
+        self.assertEqual(1, self.project1.codebaserelations.count())
+        self.assertEqual(
+            from_kt, self.project1.codebaserelations.get(to_resource=to1).from_resource
+        )
 
     def test_scanpipe_pipes_d2d_map_jar_to_source_works_for_jar(self):
         from1 = make_resource_file(
