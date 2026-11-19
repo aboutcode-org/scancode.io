@@ -127,6 +127,46 @@ The following are some of the ``CodebaseResource`` attributes:
     Please note that `ScanCode-toolkit <https://github.com/aboutcode-org/scancode-toolkit>`_
     use the same attributes and attribute names for files.
 
+.. _codebase_resources_ignored_rules:
+
+Ignored and uninteresting resources
+------------------------------------
+
+Not all ``CodebaseResource`` end up in the final scan results. During a pipeline run,
+some resources are automatically flagged as **ignored**, meaning they are considered
+uninteresting for license and origin detection: examples include version control
+directories, build artifacts, empty or media files, and system directories in a root
+filesystem.
+
+Those resources are still created as ``CodebaseResource`` records, with their
+**status** set to one of the ``ignored-*`` values, but they are excluded from
+scanning for license, copyright, and other origin clues.
+
+These rules are defined in the code rather than in this documentation, and come
+from two main sources:
+
+- `commoncode.ignore
+  <https://github.com/aboutcode-org/commoncode/blob/main/src/commoncode/ignore.py>`_,
+  a `ScanCode-toolkit <https://github.com/aboutcode-org/scancode-toolkit>`_
+  dependency, provides a long list of default glob patterns for files and
+  directories that are commonly ignored, such as VCS directories, build and
+  packaging metadata, and temporary files.
+  In ScanCode.io, resources matching one of those patterns are flagged with the
+  ``ignored-default-ignores`` status by the ``flag_ignorable_codebase_resources``
+  function in
+  `rootfs.py <https://github.com/aboutcode-org/scancode.io/blob/main/scanpipe/pipes/rootfs.py>`_.
+- ScanCode.io's own
+  `flag.py <https://github.com/aboutcode-org/scancode.io/blob/main/scanpipe/pipes/flag.py>`_
+  and ``rootfs.py`` pipes (linked above) define additional rules, for example
+  flagging empty files, media files, and "data" files with no detected license,
+  copyright, or other clues, as well as system directories such as ``/tmp/``,
+  ``/etc/``, ``/proc/``, ``/dev/``, and ``/run/`` in a root filesystem, as
+  ``ignored-not-interesting``.
+
+.. tip::
+    Refer to those source files for the exhaustive and up-to-date list of rules, as
+    they may evolve independently of this documentation.
+
 .. _discovered_packages:
 
 Discovered Packages
