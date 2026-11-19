@@ -552,7 +552,7 @@ class ProjectSettingsForm(forms.ModelForm):
             "Customize the attribution template to personalize the generated "
             "attribution for your needs."
             "\nThe default template can be found at "
-            "https://raw.githubusercontent.com/nexB/scancode.io/main/scanpipe/"
+            "https://raw.githubusercontent.com/aboutcode-org/scancode.io/main/scanpipe/"
             "templates/scanpipe/attribution.html"
             "\nFeel free to modify its content according to your preferences and paste "
             "the entire HTML code into this field."

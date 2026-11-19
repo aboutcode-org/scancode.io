@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# http://nexb.com and https://github.com/nexB/scancode.io
+# http://nexb.com and https://github.com/aboutcode-org/scancode.io
 # The ScanCode.io software is licensed under the Apache License version 2.0.
 # Data generated with ScanCode.io is provided as-is without warranties.
 # ScanCode is a trademark of nexB Inc.
@@ -18,7 +18,7 @@
 # for any legal advice.
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
-# Visit https://github.com/nexB/scancode.io for support and download.
+# Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 import json
 import multiprocessing
@@ -148,17 +148,17 @@ class ScanPipeScancodePipesTest(TestCase):
 
     def test_scanpipe_pipes_scancode_get_resource_info(self):
         input_location = str(self.data / "aboutcode" / "notice.NOTICE")
-        sha256 = "b323607418a36b5bd700fcf52ae9ca49f82ec6359bc4b89b1b2d73cf75321757"
+        sha256 = "bbb1d76c18601f8186a858443041e69a23537207ce7902cf119755b12feec2fa"
         expected = {
             "type": CodebaseResource.Type.FILE,
             "name": "notice.NOTICE",
             "extension": ".NOTICE",
             "is_text": True,
-            "size": 1178,
-            "sha1": "4bd631df28995c332bf69d9d4f0f74d7ee089598",
-            "md5": "90cd416fd24df31f608249b77bae80f1",
+            "size": 1196,
+            "sha1": "7ffbed4ff93b4da01f2ba5c271c851d419aa25b8",
+            "md5": "decf1795c66a0570d5a96716212b5dd0",
             "sha256": sha256,
-            "sha1_git": "1f72cf031889492f93c055fd29c4a3083025c6cf",
+            "sha1_git": "a571757138f61def063b34ac321c128acd91634e",
             "mime_type": "text/plain",
             "file_type": "ASCII text",
         }

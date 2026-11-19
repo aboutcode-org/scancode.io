@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# http://nexb.com and https://github.com/nexB/scancode.io
+# http://nexb.com and https://github.com/aboutcode-org/scancode.io
 # The ScanCode.io software is licensed under the Apache License version 2.0.
 # Data generated with ScanCode.io is provided as-is without warranties.
 # ScanCode is a trademark of nexB Inc.
@@ -18,7 +18,7 @@
 # for any legal advice.
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
-# Visit https://github.com/nexB/scancode.io for support and download.
+# Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 import io
 import json
@@ -477,7 +477,7 @@ class ScanPipeModelsTest(TestCase):
                 "filename": "notice.NOTICE",
                 "is_uploaded": False,
                 "is_file": True,
-                "size": 1178,
+                "size": 1196,
                 "exists": True,
             },
         ]
@@ -584,7 +584,7 @@ class ScanPipeModelsTest(TestCase):
                 "download_url": "https://example.com/filename.zip",
                 "is_uploaded": False,
                 "tag": "",
-                "size": 1178,
+                "size": 1196,
                 "is_file": True,
                 "exists": True,
             }

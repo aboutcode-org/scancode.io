@@ -30,7 +30,7 @@ Template
 
 To simplify the configuration process, we provide a template for the
 ``scancode-config.yml`` file. You can download it from the following link:
-`download scancode-config.yml template <https://raw.githubusercontent.com/nexB/scancode.io/main/docs/scancode-config.yml>`_
+`download scancode-config.yml template <https://raw.githubusercontent.com/aboutcode-org/scancode.io/main/docs/scancode-config.yml>`_
 
 Once downloaded, follow these steps:
 
