@@ -155739,6 +155739,154 @@
       "affected_by_vulnerabilities": []
     },
     {
+      "purl": "pkg:rpm/gpg-pubkey@d4082792",
+      "type": "rpm",
+      "namespace": "",
+      "name": "gpg-pubkey",
+      "version": "d4082792",
+      "qualifiers": "",
+      "subpath": "",
+      "tag": "img-c967b7-layer-01-a10cf7",
+      "primary_language": "",
+      "release_date": null,
+      "parties": [],
+      "keywords": [],
+      "homepage_url": "",
+      "download_url": "",
+      "bug_tracking_url": "",
+      "code_view_url": "",
+      "vcs_url": "",
+      "repository_homepage_url": "",
+      "repository_download_url": "",
+      "api_data_url": "",
+      "md5": "",
+      "sha1": "4d3b67245e29cc1e4ec83d6813cacc7e55c699ac",
+      "sha256": "",
+      "sha512": "",
+      "copyright": "",
+      "holder": "",
+      "declared_license_expression": "unknown",
+      "declared_license_expression_spdx": "LicenseRef-scancode-unknown",
+      "license_detections": [
+        {
+          "matches": [
+            {
+              "score": 100.0,
+              "matcher": "5-undetected",
+              "end_line": 1,
+              "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/package-manifest-unknown-b9931200c2f732e2ea95da8f66af5f41a403ecf7",
+              "from_file": "a10cf747c363a52be048f884c084a25e03280d54a7ac02e17dbd8c5ad160e9bd/var/lib/rpm/Packages",
+              "start_line": 1,
+              "matched_text": "license pubkey",
+              "match_coverage": 100.0,
+              "matched_length": 2,
+              "rule_relevance": 100,
+              "rule_identifier": "package-manifest-unknown-b9931200c2f732e2ea95da8f66af5f41a403ecf7",
+              "license_expression": "unknown",
+              "license_expression_spdx": "LicenseRef-scancode-unknown"
+            }
+          ],
+          "identifier": "unknown-6638c8ac-18c2-ed3f-78bb-1c72e6cc0939",
+          "license_expression": "unknown",
+          "license_expression_spdx": "LicenseRef-scancode-unknown"
+        }
+      ],
+      "other_license_expression": "",
+      "other_license_expression_spdx": "",
+      "other_license_detections": [],
+      "extracted_license_statement": "pubkey",
+      "notice_text": "",
+      "source_packages": [],
+      "extra_data": {},
+      "package_uid": "pkg:rpm/gpg-pubkey@d4082792?uuid=fixed-uid-done-for-testing-5642512d1758",
+      "is_private": false,
+      "is_virtual": false,
+      "datasource_ids": [
+        "rpm_installed_database_bdb"
+      ],
+      "datafile_paths": [
+        "a10cf747c363a52be048f884c084a25e03280d54a7ac02e17dbd8c5ad160e9bd/var/lib/rpm/Packages"
+      ],
+      "file_references": [],
+      "missing_resources": [],
+      "modified_resources": [],
+      "affected_by_vulnerabilities": []
+    },
+    {
+      "purl": "pkg:rpm/gpg-pubkey@fd431d51",
+      "type": "rpm",
+      "namespace": "",
+      "name": "gpg-pubkey",
+      "version": "fd431d51",
+      "qualifiers": "",
+      "subpath": "",
+      "tag": "img-c967b7-layer-01-a10cf7",
+      "primary_language": "",
+      "release_date": null,
+      "parties": [],
+      "keywords": [],
+      "homepage_url": "",
+      "download_url": "",
+      "bug_tracking_url": "",
+      "code_view_url": "",
+      "vcs_url": "",
+      "repository_homepage_url": "",
+      "repository_download_url": "",
+      "api_data_url": "",
+      "md5": "",
+      "sha1": "bbdaa73ef24bd638ff8d785ff827e0a4bc0e6eb7",
+      "sha256": "",
+      "sha512": "",
+      "copyright": "",
+      "holder": "",
+      "declared_license_expression": "unknown",
+      "declared_license_expression_spdx": "LicenseRef-scancode-unknown",
+      "license_detections": [
+        {
+          "matches": [
+            {
+              "score": 100.0,
+              "matcher": "5-undetected",
+              "end_line": 1,
+              "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/package-manifest-unknown-b9931200c2f732e2ea95da8f66af5f41a403ecf7",
+              "from_file": "a10cf747c363a52be048f884c084a25e03280d54a7ac02e17dbd8c5ad160e9bd/var/lib/rpm/Packages",
+              "start_line": 1,
+              "matched_text": "license pubkey",
+              "match_coverage": 100.0,
+              "matched_length": 2,
+              "rule_relevance": 100,
+              "rule_identifier": "package-manifest-unknown-b9931200c2f732e2ea95da8f66af5f41a403ecf7",
+              "license_expression": "unknown",
+              "license_expression_spdx": "LicenseRef-scancode-unknown"
+            }
+          ],
+          "identifier": "unknown-6638c8ac-18c2-ed3f-78bb-1c72e6cc0939",
+          "license_expression": "unknown",
+          "license_expression_spdx": "LicenseRef-scancode-unknown"
+        }
+      ],
+      "other_license_expression": "",
+      "other_license_expression_spdx": "",
+      "other_license_detections": [],
+      "extracted_license_statement": "pubkey",
+      "notice_text": "",
+      "source_packages": [],
+      "extra_data": {},
+      "package_uid": "pkg:rpm/gpg-pubkey@fd431d51?uuid=fixed-uid-done-for-testing-5642512d1758",
+      "is_private": false,
+      "is_virtual": false,
+      "datasource_ids": [
+        "rpm_installed_database_bdb"
+      ],
+      "datafile_paths": [
+        "a10cf747c363a52be048f884c084a25e03280d54a7ac02e17dbd8c5ad160e9bd/var/lib/rpm/Packages"
+      ],
+      "file_references": [],
+      "missing_resources": [],
+      "modified_resources": [],
+      "affected_by_vulnerabilities": []
+    },
+    {
       "purl": "pkg:rpm/gpgme@1.10.0?arch=x86_64",
       "type": "rpm",
       "namespace": "",
@@ -155930,154 +156078,6 @@
         ]
       },
       "package_uid": "pkg:rpm/gpgme@1.10.0?arch=x86_64&uuid=fixed-uid-done-for-testing-5642512d1758",
-      "is_private": false,
-      "is_virtual": false,
-      "datasource_ids": [
-        "rpm_installed_database_bdb"
-      ],
-      "datafile_paths": [
-        "a10cf747c363a52be048f884c084a25e03280d54a7ac02e17dbd8c5ad160e9bd/var/lib/rpm/Packages"
-      ],
-      "file_references": [],
-      "missing_resources": [],
-      "modified_resources": [],
-      "affected_by_vulnerabilities": []
-    },
-    {
-      "purl": "pkg:rpm/gpg-pubkey@d4082792",
-      "type": "rpm",
-      "namespace": "",
-      "name": "gpg-pubkey",
-      "version": "d4082792",
-      "qualifiers": "",
-      "subpath": "",
-      "tag": "img-c967b7-layer-01-a10cf7",
-      "primary_language": "",
-      "release_date": null,
-      "parties": [],
-      "keywords": [],
-      "homepage_url": "",
-      "download_url": "",
-      "bug_tracking_url": "",
-      "code_view_url": "",
-      "vcs_url": "",
-      "repository_homepage_url": "",
-      "repository_download_url": "",
-      "api_data_url": "",
-      "md5": "",
-      "sha1": "4d3b67245e29cc1e4ec83d6813cacc7e55c699ac",
-      "sha256": "",
-      "sha512": "",
-      "copyright": "",
-      "holder": "",
-      "declared_license_expression": "unknown",
-      "declared_license_expression_spdx": "LicenseRef-scancode-unknown",
-      "license_detections": [
-        {
-          "matches": [
-            {
-              "score": 100.0,
-              "matcher": "5-undetected",
-              "end_line": 1,
-              "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/package-manifest-unknown-b9931200c2f732e2ea95da8f66af5f41a403ecf7",
-              "from_file": "a10cf747c363a52be048f884c084a25e03280d54a7ac02e17dbd8c5ad160e9bd/var/lib/rpm/Packages",
-              "start_line": 1,
-              "matched_text": "license pubkey",
-              "match_coverage": 100.0,
-              "matched_length": 2,
-              "rule_relevance": 100,
-              "rule_identifier": "package-manifest-unknown-b9931200c2f732e2ea95da8f66af5f41a403ecf7",
-              "license_expression": "unknown",
-              "license_expression_spdx": "LicenseRef-scancode-unknown"
-            }
-          ],
-          "identifier": "unknown-6638c8ac-18c2-ed3f-78bb-1c72e6cc0939",
-          "license_expression": "unknown",
-          "license_expression_spdx": "LicenseRef-scancode-unknown"
-        }
-      ],
-      "other_license_expression": "",
-      "other_license_expression_spdx": "",
-      "other_license_detections": [],
-      "extracted_license_statement": "pubkey",
-      "notice_text": "",
-      "source_packages": [],
-      "extra_data": {},
-      "package_uid": "pkg:rpm/gpg-pubkey@d4082792?uuid=fixed-uid-done-for-testing-5642512d1758",
-      "is_private": false,
-      "is_virtual": false,
-      "datasource_ids": [
-        "rpm_installed_database_bdb"
-      ],
-      "datafile_paths": [
-        "a10cf747c363a52be048f884c084a25e03280d54a7ac02e17dbd8c5ad160e9bd/var/lib/rpm/Packages"
-      ],
-      "file_references": [],
-      "missing_resources": [],
-      "modified_resources": [],
-      "affected_by_vulnerabilities": []
-    },
-    {
-      "purl": "pkg:rpm/gpg-pubkey@fd431d51",
-      "type": "rpm",
-      "namespace": "",
-      "name": "gpg-pubkey",
-      "version": "fd431d51",
-      "qualifiers": "",
-      "subpath": "",
-      "tag": "img-c967b7-layer-01-a10cf7",
-      "primary_language": "",
-      "release_date": null,
-      "parties": [],
-      "keywords": [],
-      "homepage_url": "",
-      "download_url": "",
-      "bug_tracking_url": "",
-      "code_view_url": "",
-      "vcs_url": "",
-      "repository_homepage_url": "",
-      "repository_download_url": "",
-      "api_data_url": "",
-      "md5": "",
-      "sha1": "bbdaa73ef24bd638ff8d785ff827e0a4bc0e6eb7",
-      "sha256": "",
-      "sha512": "",
-      "copyright": "",
-      "holder": "",
-      "declared_license_expression": "unknown",
-      "declared_license_expression_spdx": "LicenseRef-scancode-unknown",
-      "license_detections": [
-        {
-          "matches": [
-            {
-              "score": 100.0,
-              "matcher": "5-undetected",
-              "end_line": 1,
-              "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/package-manifest-unknown-b9931200c2f732e2ea95da8f66af5f41a403ecf7",
-              "from_file": "a10cf747c363a52be048f884c084a25e03280d54a7ac02e17dbd8c5ad160e9bd/var/lib/rpm/Packages",
-              "start_line": 1,
-              "matched_text": "license pubkey",
-              "match_coverage": 100.0,
-              "matched_length": 2,
-              "rule_relevance": 100,
-              "rule_identifier": "package-manifest-unknown-b9931200c2f732e2ea95da8f66af5f41a403ecf7",
-              "license_expression": "unknown",
-              "license_expression_spdx": "LicenseRef-scancode-unknown"
-            }
-          ],
-          "identifier": "unknown-6638c8ac-18c2-ed3f-78bb-1c72e6cc0939",
-          "license_expression": "unknown",
-          "license_expression_spdx": "LicenseRef-scancode-unknown"
-        }
-      ],
-      "other_license_expression": "",
-      "other_license_expression_spdx": "",
-      "other_license_detections": [],
-      "extracted_license_statement": "pubkey",
-      "notice_text": "",
-      "source_packages": [],
-      "extra_data": {},
-      "package_uid": "pkg:rpm/gpg-pubkey@fd431d51?uuid=fixed-uid-done-for-testing-5642512d1758",
       "is_private": false,
       "is_virtual": false,
       "datasource_ids": [
