@@ -72,7 +72,7 @@ class LoadInventory(Pipeline):
             if tool_name == "scancode-toolkit":
                 input.load_inventory_from_toolkit_scan(self.project, input_path)
 
-            elif tool_name == "scanpipe":
+            elif tool_name in ("scanpipe", "ScanCode.io"):
                 input.load_inventory_from_scanpipe(
                     self.project, scan_data, extra_data_prefix
                 )
