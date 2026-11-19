@@ -129,9 +129,15 @@ class RootFS(Pipeline):
     def collect_and_create_license_detections(self):
         """
         Collect and create unique license detections from resources and
-        package data.
+        package data. Also look for license issues and try to resolve them.
         """
         scancode.collect_and_create_license_detections(project=self.project)
+        scancode.follow_and_resolve_referenced_licenses_in_resources(
+            project=self.project
+        )
+        scancode.follow_and_resolve_referenced_licenses_in_packages(
+            project=self.project
+        )
 
     def analyze_scanned_files(self):
         """Analyze single file scan results for completeness."""
