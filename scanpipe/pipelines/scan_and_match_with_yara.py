@@ -18,6 +18,11 @@ class ScanAndMatchWithYara(Pipeline):
     results_url = "/project/{slug}/packages/"
 
     @classmethod
+    def get_availability(cls):
+        if not yara.is_available():
+            return "yara-python is not installed."
+
+    @classmethod
     def steps(cls):
         return (
             cls.copy_inputs_to_codebase_directory,

@@ -7,6 +7,7 @@
 
 from pathlib import Path
 from unittest import mock
+from unittest import skipIf
 
 from django.test import TestCase
 
@@ -16,6 +17,7 @@ from scanpipe.pipes import yara
 from scanpipe.tests import make_resource_file
 
 
+@skipIf(not yara.is_available(), "yara-python is required to run YARA tests.")
 class ScanPipeYaraPipesTest(TestCase):
     data = Path(__file__).parent.parent / "data"
 

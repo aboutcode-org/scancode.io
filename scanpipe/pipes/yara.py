@@ -11,7 +11,11 @@ import re
 from pathlib import Path
 from typing import NamedTuple
 
-import yara
+try:
+    import yara
+except ImportError:
+    yara = None
+
 from packageurl import PackageURL
 
 from aboutcode.pipeline import LoopProgress
@@ -26,6 +30,15 @@ DEFAULT_RULES_DIR = (
 
 class InvalidYaraRules(Exception):
     pass
+
+
+class YaraNotInstalled(Exception):
+    pass
+
+
+def is_available():
+    """Return True if the yara-python library is installed and available."""
+    return yara is not None
 
 
 class MatchedString(NamedTuple):
@@ -57,6 +70,12 @@ class YaraPackageScanner:
     @classmethod
     def _compile_rules(cls, rules_directory):
         """Compile YARA rules from a directory of .yar files."""
+        if not is_available():
+            raise YaraNotInstalled(
+                "``yara-python`` is not installed. "
+                "Install ``yara-python`` to use this pipeline."
+            )
+
         if not rules_directory or not rules_directory.is_dir():
             raise InvalidYaraRules(
                 f"YARA rules directory does not exist: {rules_directory}"
