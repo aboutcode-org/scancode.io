@@ -109,6 +109,22 @@ class ScanPipeFlagPipesTest(TestCase):
         self.assertIn(r1, ignored_qs)
         self.assertIn(r2, ignored_qs)
 
+        project3 = make_project()
+        r1 = make_resource_file(project3, ".DS_Store")
+        r2 = make_resource_file(project3, "to/.DS_Store")
+        r3 = make_resource_file(project3, "from/a/b/.DS_Store")
+        make_resource_file(project3, "a/b.DS_Store")
+        make_resource_file(project3, "a/.DS_Store.txt")
+        updated = flag.flag_ignored_patterns(
+            project3.codebaseresources.no_status(), flag.DEFAULT_IGNORED_PATTERNS
+        )
+        self.assertEqual(3, updated)
+        ignored_qs = project3.codebaseresources.status(flag.IGNORED_PATTERN)
+        self.assertEqual(3, ignored_qs.count())
+        self.assertIn(r1, ignored_qs)
+        self.assertIn(r2, ignored_qs)
+        self.assertIn(r3, ignored_qs)
+
     def test_scanpipe_pipes_flag_flag_not_analyzed_codebase_resources(self):
         resource1 = CodebaseResource.objects.create(
             project=self.project1, path="filename.ext"
