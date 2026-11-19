@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# http://nexb.com and https://github.com/nexB/scancode.io
+# http://nexb.com and https://github.com/aboutcode-org/scancode.io
 # The ScanCode.io software is licensed under the Apache License version 2.0.
 # Data generated with ScanCode.io is provided as-is without warranties.
 # ScanCode is a trademark of nexB Inc.
@@ -18,7 +18,7 @@
 # for any legal advice.
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
-# Visit https://github.com/nexB/scancode.io for support and download.
+# Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 import datetime
 import io
@@ -487,9 +487,9 @@ class ScanPipePipesTransactionTest(TransactionTestCase):
         pipes.make_codebase_resource(p1, resource_location)
 
         resource = p1.codebaseresources.get()
-        self.assertEqual(1178, resource.size)
-        self.assertEqual("4bd631df28995c332bf69d9d4f0f74d7ee089598", resource.sha1)
-        self.assertEqual("90cd416fd24df31f608249b77bae80f1", resource.md5)
+        self.assertEqual(1196, resource.size)
+        self.assertEqual("7ffbed4ff93b4da01f2ba5c271c851d419aa25b8", resource.sha1)
+        self.assertEqual("decf1795c66a0570d5a96716212b5dd0", resource.md5)
         self.assertEqual("text/plain", resource.mime_type)
         self.assertEqual("ASCII text", resource.file_type)
         self.assertEqual("", resource.status)
