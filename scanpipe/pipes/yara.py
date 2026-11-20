@@ -1,15 +1,28 @@
-#
-# Copyright (c) nexB Inc. and others. All rights reserved.
-# ScanCode is a trademark of nexB Inc.
 # SPDX-License-Identifier: Apache-2.0
-# See http://www.apache.org/licenses/LICENSE-2.0 for the license text.
-# See https://github.com/aboutcode-org/scancode.io for support or download.
-# See https://aboutcode.org for more information about nexB OSS projects.
 #
+# http://nexb.com and https://github.com/aboutcode-org/scancode.io
+# The ScanCode.io software is licensed under the Apache License version 2.0.
+# Data generated with ScanCode.io is provided as-is without warranties.
+# ScanCode is a trademark of nexB Inc.
+#
+# You may not use this software except in compliance with the License.
+# You may obtain a copy of the License at: http://apache.org/licenses/LICENSE-2.0
+# Unless required by applicable law or agreed to in writing, software distributed
+# under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+# CONDITIONS OF ANY KIND, either express or implied. See the License for the
+# specific language governing permissions and limitations under the License.
+#
+# Data Generated with ScanCode.io is provided on an "AS IS" BASIS, WITHOUT WARRANTIES
+# OR CONDITIONS OF ANY KIND, either express or implied. No content created from
+# ScanCode.io should be considered or used as legal advice. Consult an Attorney
+# for any legal advice.
+#
+# ScanCode.io is a free software code scanning tool from nexB Inc. and others.
+# Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 import re
+from dataclasses import dataclass
 from pathlib import Path
-from typing import NamedTuple
 
 try:
     import yara
@@ -32,23 +45,21 @@ class InvalidYaraRules(Exception):
     pass
 
 
-class YaraNotInstalled(Exception):
-    pass
-
-
 def is_available():
     """Return True if the yara-python library is installed and available."""
     return yara is not None
 
 
-class MatchedString(NamedTuple):
+@dataclass
+class MatchedString:
     identifier: str
     value: str
 
 
-class MatchResult(NamedTuple):
+@dataclass
+class MatchResult:
     rule: str
-    purl: str
+    purl: PackageURL
     version: str | None
     matched_strings: list[MatchedString]
 
@@ -60,102 +71,109 @@ class MatchResult(NamedTuple):
         }
 
 
-class YaraPackageScanner:
-    """Scan files or byte streams with compiled YARA rules to detect packages."""
+def compile_rules(rules_directory=DEFAULT_RULES_DIR):
+    """Compile YARA rules from a directory of .yar files."""
+    rules_directory = Path(rules_directory)
+    if not rules_directory.is_dir():
+        raise InvalidYaraRules(
+            f"YARA rules directory does not exist: {rules_directory}"
+        )
 
-    def __init__(self, rule_path=DEFAULT_RULES_DIR):
-        self.rule_path = Path(rule_path) if rule_path else DEFAULT_RULES_DIR
-        self.rules = self._compile_rules(self.rule_path)
+    rule_files = sorted(rules_directory.glob("*.yar"))
+    if not rule_files:
+        raise InvalidYaraRules(
+            f"No .yar rule files found in directory: {rules_directory}"
+        )
 
-    @classmethod
-    def _compile_rules(cls, rules_directory):
-        """Compile YARA rules from a directory of .yar files."""
-        if not is_available():
-            raise YaraNotInstalled(
-                "``yara-python`` is not installed. "
-                "Install ``yara-python`` to use this pipeline."
-            )
+    filepaths = {rule_file.stem: str(rule_file) for rule_file in rule_files}
+    try:
+        rules = yara.compile(filepaths=filepaths)
+    except yara.Error as error:
+        raise InvalidYaraRules(
+            f"Failed to compile YARA rules from {rules_directory}: {error}"
+        ) from error
 
-        if not rules_directory or not rules_directory.is_dir():
-            raise InvalidYaraRules(
-                f"YARA rules directory does not exist: {rules_directory}"
-            )
-
-        rule_files = sorted(rules_directory.glob("*.yar"))
-        if not rule_files:
-            raise InvalidYaraRules(
-                f"No .yar rule files found in directory: {rules_directory}"
-            )
-
+    # Validate that each YARA rule has a valid base_purl
+    for rule in rules:
+        base_purl = rule.meta.get("base_purl")
+        if not base_purl:
+            raise InvalidYaraRules(f"Rule {rule.identifier} is missing base_purl.")
         try:
-            return yara.compile(filepaths={f.stem: str(f) for f in rule_files})
-        except yara.Error as e:
+            PackageURL.from_string(base_purl)
+        except ValueError as error:
             raise InvalidYaraRules(
-                f"Failed to compile YARA rules from {rules_directory}: {e}"
-            ) from e
+                f"Rule {rule.identifier} has an invalid base_purl: {error}"
+            )
 
-    def scan_file(self, location):
-        """Scan a codebase file and return matching package details."""
-        if not location:
-            return []
-        try:
-            yara_matches = self.rules.match(filepath=str(location))
-        except yara.Error:
-            return []
+    return rules
 
-        return self._build_match_results(yara_matches=yara_matches)
 
-    def _build_match_results(self, yara_matches):
-        package_results = []
-        for match in yara_matches:
-            meta = match.meta
-            base_purl = meta.get("base_purl")
-            matched_strings = self._extract_matched_strings(yara_match=match)
-            version_strings = []
-            for ms in matched_strings:
-                if ms.identifier.startswith("$version"):
-                    version_strings.append(ms.value)
+def scan_file(location, rules):
+    """Scan a codebase file and return matching package details."""
+    yara_matches = rules.match(filepath=str(location))
+    return build_match_results(yara_matches=yara_matches)
 
-            version = self._extract_version(version_strings)
-            purl = f"{base_purl}@{version}" if version else base_purl
 
-            package_results.append(
-                MatchResult(
-                    rule=match.rule,
-                    purl=purl,
-                    version=version,
-                    matched_strings=matched_strings,
+def build_match_results(yara_matches):
+    package_results = []
+    for match in yara_matches:
+        base_purl = PackageURL.from_string(match.meta["base_purl"])
+        matched_strings = extract_matched_strings(yara_match=match)
+        version_strings = [
+            matched_string.value
+            for matched_string in matched_strings
+            if matched_string.identifier.startswith("$version")
+        ]
+
+        version = extract_version(version_strings)
+        purl = (
+            PackageURL(
+                type=base_purl.type,
+                namespace=base_purl.namespace,
+                name=base_purl.name,
+                version=version,
+            )
+            if version
+            else base_purl
+        )
+
+        package_results.append(
+            MatchResult(
+                rule=match.rule,
+                purl=purl,
+                version=version,
+                matched_strings=matched_strings,
+            )
+        )
+
+    return package_results
+
+
+def extract_matched_strings(yara_match):
+    """
+    Return a list of ``MatchedString`` from a YARA match.
+
+    yara_match.strings contains all rule strings that matched in the file.
+    Each string can match at multiple file offsets (`instances`).
+    """
+    matched_strings = []
+    for yara_string in yara_match.strings:
+        for instance in yara_string.instances:
+            # Safely decode arbitrary binary without raising UnicodeDecodeError
+            text = instance.matched_data.decode("utf-8", errors="replace").strip()
+            if text:
+                matched_strings.append(
+                    MatchedString(identifier=yara_string.identifier, value=text)
                 )
-            )
+                break
+    return matched_strings
 
-        return package_results
 
-    @staticmethod
-    def _extract_matched_strings(yara_match):
-        """
-        Return a list of ``MatchedString`` from a YARA match.
-
-        yara_match.strings contains all rule strings that matched in the file.
-        Each string can match at multiple file offsets (`instances`).
-        """
-        matched_strings = []
-        for yara_string in yara_match.strings:
-            for instance in yara_string.instances:
-                # Safely decode arbitrary binary without raising UnicodeDecodeError
-                text = instance.matched_data.decode("utf-8", errors="replace").strip()
-                if text:
-                    matched_strings.append(
-                        MatchedString(identifier=yara_string.identifier, value=text)
-                    )
-                    break
-        return matched_strings
-
-    @staticmethod
-    def _extract_version(version_strings):
-        """Extract clean version number from matched version strings."""
-        for text in version_strings:
-            if match := re.search(r"\d+(?:\.\d+)+(?:[a-zA-Z0-9.\-_]*)?", text):
-                return match.group(0).rstrip(".-")
+def extract_version(version_strings):
+    """Extract clean version number from matched version strings."""
+    for text in version_strings:
+        if match := re.search(r"\d+(?:\.\d+)+(?:[a-zA-Z0-9.\-_]*)?", text):
+            return match.group(0).rstrip(".-")
 
 
 def match_resources_by_yara(project, logger=None):
@@ -169,20 +187,26 @@ def match_resources_by_yara(project, logger=None):
     if not resource_count:
         return
 
-    scanner = YaraPackageScanner()
+    rules = compile_rules()
     if logger:
         logger(f"Scanning {resource_count} resources with YARA rules.")
 
     progress = LoopProgress(total_iterations=resource_count, logger=logger)
     matched_count = 0
 
-    for codebase_resource in progress.iter(unmatched_files):
-        matches = scanner.scan_file(location=codebase_resource.location)
-        if not matches:
+    for codebase_resource in progress.iter(unmatched_files.iterator(chunk_size=2000)):
+        try:
+            matches = scan_file(location=codebase_resource.location, rules=rules)
+        except yara.Error as error:
+            project.add_error(
+                model="match_resources_by_yara",
+                exception=error,
+                object_instance=codebase_resource,
+            )
             continue
 
         for match in matches:
-            purl = PackageURL.from_string(match.purl)
+            purl = match.purl
             package_data = purl.to_dict()
             name = purl.name
             version = match.version
@@ -198,15 +222,7 @@ def match_resources_by_yara(project, logger=None):
             existing_pkg = project.discoveredpackages.filter(name=name).first()
             if existing_pkg:
                 if version and not existing_pkg.version:
-                    updated_purl = PackageURL(
-                        type=existing_pkg.type,
-                        namespace=existing_pkg.namespace,
-                        name=name,
-                        version=version,
-                    )
-                    existing_pkg.version = version
-                    existing_pkg.set_package_url(str(updated_purl))
-                    existing_pkg.save()
+                    existing_pkg.update(version=version)
                 package = existing_pkg
             else:
                 package_data["extra_data"] = match_extra_data
