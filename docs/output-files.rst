@@ -351,3 +351,5 @@ The following variable are available as the template context:
 - ``licenses``
 
 Refer to :ref:`data_model` for the full details of available fields.
+
+See :ref:`tutorial_custom_attribution` for a step-by-step example.
