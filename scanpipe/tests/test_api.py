@@ -45,6 +45,7 @@ from scanpipe.api.serializers import ProjectMessageSerializer
 from scanpipe.api.serializers import ProjectSerializer
 from scanpipe.api.serializers import get_model_serializer
 from scanpipe.api.serializers import get_serializer_fields
+from scanpipe.api.serializers import is_absolute_http_url
 from scanpipe.models import APIToken
 from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
@@ -576,6 +577,58 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual("inspect_packages", runs[1].pipeline_name)
         self.assertEqual(["Java", "JavaScript"], runs[0].selected_groups)
         self.assertEqual(["StaticResolver"], runs[1].selected_groups)
+
+    def test_scanpipe_api_project_create_webhook_url(self):
+        webhook_url = "http://server:8000/notifications/IjEi:1sZEvv:_br-G/"
+        data = {"name": "Project1", "webhook_url": webhook_url}
+        response = self.csrf_client.post(self.project_list_url, data)
+        self.assertEqual(status.HTTP_201_CREATED, response.status_code)
+
+        project = Project.objects.get(name=data["name"])
+        webhook_subscription = project.webhooksubscriptions.get()
+        self.assertEqual(webhook_url, webhook_subscription.target_url)
+        self.assertEqual(0, project.projectmessages.count())
+
+    def test_scanpipe_api_project_create_webhook_url_not_absolute(self):
+        # A sender with an empty base URL setting ends up providing only the path.
+        # The ":" in the path makes `requests` fail with "No connection adapters".
+        webhook_url = "/notifications/send_scan_notification/IjEi:1sZEvv:_br-G/"
+        data = {"name": "Project1", "webhook_url": webhook_url}
+        response = self.csrf_client.post(self.project_list_url, data)
+        self.assertEqual(status.HTTP_201_CREATED, response.status_code)
+
+        project = Project.objects.get(name=data["name"])
+        self.assertEqual(0, project.webhooksubscriptions.count())
+        message = project.projectmessages.get()
+        self.assertEqual("warning", message.severity)
+        self.assertEqual("WebhookSubscription", message.model)
+        expected = (
+            f'Webhook subscription not created: "{webhook_url}" is not an absolute '
+            f"http(s) URL."
+        )
+        self.assertEqual(expected, message.description)
+
+    def test_scanpipe_api_is_absolute_http_url(self):
+        valid = [
+            "https://example.com/webhook",
+            "http://dejacode:8000/notifications/key/",
+            "http://127.0.0.1:8000/",
+            "http://[::1]:8000/hook",
+        ]
+        for url in valid:
+            self.assertTrue(is_absolute_http_url(url), msg=url)
+
+        invalid = [
+            "/notifications/send_scan_notification/IjEi:1sZEvv:_br-G/",
+            "notifications/key/",
+            "example.com/webhook",
+            "//example.com/webhook",
+            "ftp://example.com/webhook",
+            "http:///webhook",
+            "http://[::1/webhook",
+        ]
+        for url in invalid:
+            self.assertFalse(is_absolute_http_url(url), msg=url)
 
     def test_scanpipe_api_project_create_webhooks(self):
         data = {

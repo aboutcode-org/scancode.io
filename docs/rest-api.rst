@@ -212,6 +212,9 @@ You can either provide:
 
 Webhook fields:
     - ``webhook_url`` (string, optional): A single webhook URL to be notified.
+      It must be an absolute ``http(s)`` URL. Any other value is ignored: the
+      project is created without that webhook and a warning message is added to
+      the project.
     - ``webhooks`` (list, optional): A list of webhook configurations.
         - ``target_url`` (string, required): The URL to which the webhook will send a
           ``POST`` request.

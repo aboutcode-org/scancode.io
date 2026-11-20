@@ -20,6 +20,8 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
+from urllib.parse import urlparse
+
 from django.apps import apps
 
 from rest_framework import serializers
@@ -152,6 +154,20 @@ class InputSourceSerializer(serializers.ModelSerializer):
             "exists",
             "uuid",
         ]
+
+
+def is_absolute_http_url(url):
+    """
+    Return True if the `url` has an http(s) scheme and a host.
+
+    Django's URLValidator is not used here as it rejects single-label hosts,
+    such as ``http://dejacode:8000/``, which are common in container networks.
+    """
+    try:
+        parsed = urlparse(url)
+        return parsed.scheme in ("http", "https") and bool(parsed.hostname)
+    except ValueError:
+        return False
 
 
 class WebhookSubscriptionSerializer(serializers.ModelSerializer):
@@ -334,7 +350,18 @@ class ProjectSerializer(
             project.add_pipeline(pipeline_name, execute_now, selected_groups=groups)
 
         if webhook_url:
-            project.add_webhook_subscription(target_url=webhook_url)
+            if is_absolute_http_url(webhook_url):
+                project.add_webhook_subscription(target_url=webhook_url)
+            else:
+                # The project is still created: a client that ignores the response
+                # would otherwise lose its scan along with the notification.
+                project.add_warning(
+                    description=(
+                        f'Webhook subscription not created: "{webhook_url}" is not '
+                        f"an absolute http(s) URL."
+                    ),
+                    model=WebhookSubscription,
+                )
 
         for webhook_data in webhooks:
             project.add_webhook_subscription(**webhook_data)
