@@ -1710,7 +1710,7 @@ def match_unmapped_resources(project, matched_extensions=None, logger=None):
     to_unmapped = project_files.to_codebase().no_status().exclude(is_media=True)
 
     if matched_extensions:
-        to_unmapped.exclude(extension__in=matched_extensions)
+        to_unmapped = to_unmapped.exclude(extension__in=matched_extensions)
 
     if to_unmapped:
         resource_count = to_unmapped.count()
