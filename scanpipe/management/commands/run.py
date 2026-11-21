@@ -31,6 +31,8 @@ from django.utils.crypto import get_random_string
 from scanpipe.management.commands import extract_tag_from_input_file
 from scanpipe.pipes.fetch import SCHEME_TO_FETCHER_MAPPING
 
+URL_SCHEMES = tuple(f"{scheme}://" for scheme in SCHEME_TO_FETCHER_MAPPING) + ("pkg:",)
+
 
 class Command(BaseCommand):
     help = "Run a pipeline and print the results."
@@ -85,6 +87,70 @@ class Command(BaseCommand):
         call_command("output", project=project_name, format=[output_format], print=True)
 
     @staticmethod
+    def split_input_location(input_location):
+        """
+        Split a comma-separated `input_location` string into individual locations,
+        avoiding splitting inside URL qualifiers or quotes.
+        """
+        locations = []
+        current = []
+        in_single_quote = False
+        in_double_quote = False
+        in_qualifiers = False
+
+        chars = list(input_location)
+        i = 0
+        n = len(chars)
+
+        while i < n:
+            char = chars[i]
+            if char == "'" and not in_double_quote:
+                in_single_quote = not in_single_quote
+                current.append(char)
+                i += 1
+                continue
+            if char == '"' and not in_single_quote:
+                in_double_quote = not in_double_quote
+                current.append(char)
+                i += 1
+                continue
+
+            if not in_single_quote and not in_double_quote:
+                if char == "?":
+                    in_qualifiers = True
+                elif char == "#":
+                    in_qualifiers = False
+                elif char == ",":
+                    remainder = "".join(chars[i + 1 :]).lstrip()
+                    is_next_url = any(
+                        remainder.startswith(scheme) for scheme in URL_SCHEMES
+                    )
+                    if in_qualifiers and not is_next_url:
+                        first_token = remainder.split(",")[0].strip().strip("'\"")
+                        cleaned_token, _ = extract_tag_from_input_file(first_token)
+                        if not Path(cleaned_token).exists():
+                            current.append(char)
+                            i += 1
+                            continue
+
+                    loc = "".join(current).strip().strip("'\"")
+                    if loc:
+                        locations.append(loc)
+                    current = []
+                    in_qualifiers = False
+                    i += 1
+                    continue
+
+            current.append(char)
+            i += 1
+
+        loc = "".join(current).strip().strip("'\"")
+        if loc:
+            locations.append(loc)
+
+        return locations
+
+    @staticmethod
     def get_input_options(input_location):
         """
         Parse a comma-separated list of input locations and convert them into options
@@ -92,8 +158,8 @@ class Command(BaseCommand):
         """
         input_options = defaultdict(list)
 
-        for location in input_location.split(","):
-            if location.startswith(tuple(SCHEME_TO_FETCHER_MAPPING.keys())):
+        for location in Command.split_input_location(input_location):
+            if location.startswith(URL_SCHEMES):
                 input_options["input_urls"].append(location)
 
             else:
