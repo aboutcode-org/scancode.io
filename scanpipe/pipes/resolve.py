@@ -451,7 +451,7 @@ def get_spdx_document_from_file(input_location):
     """Return the loaded SPDX document from the `input_location` file."""
     input_path = Path(input_location)
 
-    if str(input_path).endswith((".yml", ".yaml")):
+    if input_path.suffix.lower() in (".yml", ".yaml"):
         spdx_document = saneyaml.load(input_path.read_text())
     else:
         spdx_document = json.loads(input_path.read_text())
@@ -507,7 +507,7 @@ def get_default_package_type(input_location):
     if input_location.endswith(("bom.json", ".cdx.json", "bom.xml", ".cdx.xml")):
         return "cyclonedx"
 
-    if input_location.endswith((".json", ".xml", ".yml", ".yaml")):
+    if input_location.lower().endswith((".json", ".xml", ".yml", ".yaml")):
         if cyclonedx.is_cyclonedx_bom(input_location):
             return "cyclonedx"
         if spdx.is_spdx_document(input_location):
