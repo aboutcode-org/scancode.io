@@ -485,6 +485,22 @@ class ScanPipeResolvePipesTest(TestCase):
         headers = resolve.get_manifest_headers(resource)
         self.assertEqual(expected, list(headers.keys()))
 
+    def test_scanpipe_resolve_get_manifest_headers_spdx_yaml(self):
+        input_location = self.data / "manifests" / "curl-7.70.0-v2.2.spdx.yml"
+        resource = mock.Mock(location=input_location)
+        expected = [
+            "SPDXID",
+            "spdxVersion",
+            "creationInfo",
+            "name",
+            "dataLicense",
+            "documentNamespace",
+        ]
+        headers = resolve.get_manifest_headers(resource)
+        self.assertEqual(expected, list(headers.keys()))
+        self.assertEqual("SPDX-2.2", headers["spdxVersion"])
+        self.assertEqual("3.9", headers["creationInfo"]["licenseListVersion"])
+
     def test_get_data_from_manifests_returns_tuple_when_no_resources(self):
         project1 = Project.objects.create(name="TestEmptyManifest")
         empty_resources = project1.codebaseresources.none()

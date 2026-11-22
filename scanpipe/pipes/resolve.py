@@ -583,12 +583,16 @@ def extract_headers(input_location, extract_fields):
     document_data = input_path.read_text()
 
     if str(input_location).endswith(".json"):
-        cyclonedx_document = json.loads(document_data)
-        extracted_headers = {
-            field: value
-            for field, value in cyclonedx_document.items()
-            if field in extract_fields
-        }
-        return extracted_headers
+        document = json.loads(document_data)
+    elif str(input_location).endswith((".yml", ".yaml")):
+        document = saneyaml.load(document_data)
+    else:
+        return {}
 
-    return {}
+    if not isinstance(document, dict):
+        return {}
+
+    extracted_headers = {
+        field: value for field, value in document.items() if field in extract_fields
+    }
+    return extracted_headers
