@@ -219,6 +219,15 @@ def get_manifest_resources(project):
         manifest_type = get_default_package_type(input_location=resource.location)
         if manifest_type:
             resource.update(status=flag.APPLICATION_PACKAGE)
+        elif is_spdx_tag_value_file(resource.location):
+            project.add_warning(
+                description=(
+                    "SPDX tag-value documents are not supported, "
+                    "please provide the SPDX document in JSON or YAML format."
+                ),
+                model="get_manifest_resources",
+                object_instance=resource,
+            )
 
     return project.codebaseresources.filter(status=flag.APPLICATION_PACKAGE)
 
@@ -451,12 +460,11 @@ def get_spdx_document_from_file(input_location):
     """Return the loaded SPDX document from the `input_location` file."""
     input_path = Path(input_location)
 
-    if input_path.suffix.lower() in (".yml", ".yaml"):
-        spdx_document = saneyaml.load(input_path.read_text())
-    else:
-        spdx_document = json.loads(input_path.read_text())
-
     try:
+        if input_path.suffix.lower() in (".yml", ".yaml"):
+            spdx_document = saneyaml.load(input_path.read_text())
+        else:
+            spdx_document = json.loads(input_path.read_text())
         spdx.validate_document(spdx_document)
     except Exception as e:
         raise Exception(f'SPDX document "{input_path.name}" is not valid: {e}')
@@ -490,6 +498,16 @@ def resolve_spdx_dependencies(input_location):
     ]
 
 
+def is_spdx_tag_value_file(input_location):
+    """
+    Return True if the file at `input_location` has the ".spdx" extension of the
+    SPDX tag-value format but does not contain an SPDX JSON document.
+    """
+    if not str(input_location).endswith(".spdx"):
+        return False
+    return not spdx.is_spdx_document(input_location)
+
+
 def get_default_package_type(input_location):
     """
     Return the package type associated with the provided `input_location`.
@@ -501,7 +519,12 @@ def get_default_package_type(input_location):
         if handler.is_datafile(input_location):
             return handler.default_package_type
 
-    if input_location.endswith((".spdx", ".spdx.json", ".spdx.yml")):
+    if input_location.endswith((".spdx.json", ".spdx.yml")):
+        return "spdx"
+
+    # ".spdx" is the usual extension of the SPDX tag-value format, which is not
+    # supported: only consider a ".spdx" file that contains an SPDX JSON document.
+    if input_location.endswith(".spdx") and spdx.is_spdx_document(input_location):
         return "spdx"
 
     if input_location.endswith(("bom.json", ".cdx.json", "bom.xml", ".cdx.xml")):

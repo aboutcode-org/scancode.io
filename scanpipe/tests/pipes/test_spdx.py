@@ -445,6 +445,16 @@ class ScanPipeSPDXPipesTest(TestCase):
             yaml_list.write_text("- item1\n- item2\n")
             self.assertFalse(spdx.is_spdx_document(yaml_list))
 
+            # SPDX JSON document saved with the ".spdx" extension
+            spdx_json = tmp_path / "document.spdx"
+            spdx_json.write_text('{"SPDXID": "SPDXRef-DOCUMENT"}')
+            self.assertTrue(spdx.is_spdx_document(spdx_json))
+
+            # SPDX tag-value document
+            tag_value = tmp_path / "tag-value.spdx"
+            tag_value.write_text("SPDXVersion: SPDX-2.3\nSPDXID: SPDXRef-DOCUMENT\n")
+            self.assertFalse(spdx.is_spdx_document(tag_value))
+
             # JSON and YAML without SPDXID
             no_spdx_json = tmp_path / "no_spdx.json"
             no_spdx_json.write_text('{"name": "test"}')

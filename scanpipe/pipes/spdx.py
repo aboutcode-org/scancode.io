@@ -705,7 +705,9 @@ def is_spdx_document(input_location):
 
     with suppress(Exception):
         data = {}
-        if location_lower.endswith(".json"):
+        # ".spdx" is also used for SPDX JSON documents. A tag-value document
+        # fails to parse as JSON and is not considered a SPDX document here.
+        if location_lower.endswith((".json", ".spdx")):
             data = json.loads(Path(input_location).read_text())
         elif location_lower.endswith((".yml", ".yaml")):
             data = saneyaml.load(Path(input_location).read_text())
