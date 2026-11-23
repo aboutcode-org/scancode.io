@@ -1463,6 +1463,7 @@ class ProjectCloneView(ConditionalLoginRequired, HTMXFormMixin, UpdateView):
     template_name = "scanpipe/forms/project_clone_form.html"
 
 
+@require_POST
 @conditional_login_required
 def execute_pipelines_view(request, slug):
     project = get_object_or_404(Project, slug=slug)
@@ -1477,6 +1478,7 @@ def execute_pipelines_view(request, slug):
     return redirect(project)
 
 
+@require_POST
 @conditional_login_required
 def stop_pipeline_view(request, slug, run_uuid):
     project = get_object_or_404(Project, slug=slug)
@@ -1490,6 +1492,7 @@ def stop_pipeline_view(request, slug, run_uuid):
     return redirect(project)
 
 
+@require_POST
 @conditional_login_required
 def delete_pipeline_view(request, slug, run_uuid):
     project = get_object_or_404(Project, slug=slug)

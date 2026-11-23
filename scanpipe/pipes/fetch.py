@@ -860,8 +860,26 @@ def check_urls_availability(urls):
     return errors
 
 
+# The url2purl regular expressions backtrack excessively on long URLs, URLs with
+# many path segments, and URLs with control characters once percent-decoded.
+PURL_INFERENCE_MAX_URL_LENGTH = 512
+PURL_INFERENCE_MAX_SLASH_COUNT = 16
+
+
+def is_url_safe_for_purl_inference(url):
+    """Return True if ``url`` is simple enough to infer a PURL in bounded time."""
+    decoded_url = unquote(url)
+    return (
+        len(url) <= PURL_INFERENCE_MAX_URL_LENGTH
+        and decoded_url.count("/") <= PURL_INFERENCE_MAX_SLASH_COUNT
+        and decoded_url.isprintable()
+    )
+
+
 def set_project_purl_from_input_url(project, input_urls):
     """Auto-fill the project PURL when the sole input is a single resolvable URL."""
     if not project.purl and input_urls and len(input_urls) == 1:
+        if not is_url_safe_for_purl_inference(input_urls[0]):
+            return
         if purl := url2purl.get_purl(input_urls[0]):
             project.update(purl=str(purl))
