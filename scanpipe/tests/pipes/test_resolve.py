@@ -336,6 +336,33 @@ class ScanPipeResolvePipesTest(TestCase):
         }
         self.assertEqual(expected, package_data)
 
+    def test_scanpipe_pipes_resolve_spdx_package_to_package_data_without_purl(self):
+        package_spdx = spdx.Package(
+            spdx_id="SPDXRef-expat", name="expat", version="2.7.3"
+        )
+        package_data = resolve.spdx_package_to_package_data(package_spdx)
+        expected = {
+            "package_uid": "SPDXRef-expat",
+            "name": "expat",
+            "declared_license_expression": "unknown",
+            "version": "2.7.3",
+            "type": "generic",
+        }
+        self.assertEqual(expected, package_data)
+        p1 = Project.objects.create(name="Analysis")
+        package = pipes.update_or_create_package(p1, package_data)
+        self.assertEqual("pkg:generic/expat@2.7.3", package.purl)
+
+        package_spdx = spdx.Package(spdx_id="SPDXRef-libb2", name="libb2")
+        package_data = resolve.spdx_package_to_package_data(package_spdx)
+        expected = {
+            "package_uid": "SPDXRef-libb2",
+            "name": "libb2",
+            "declared_license_expression": "unknown",
+            "type": "generic",
+        }
+        self.assertEqual(expected, package_data)
+
     def test_scanpipe_pipes_spdx_relationship_to_dependency_data(self):
         spdx_relationship_data = {
             "spdxElementId": "SPDXRef-package1",
@@ -371,6 +398,7 @@ class ScanPipeResolvePipesTest(TestCase):
                 "declared_license_expression_spdx": "(GPL-2.0-only AND LGPL-2.1-only)",
                 "extracted_license_statement": "(GPL-2.0-only AND LGPL-2.1-only)",
                 "version": "1.0",
+                "type": "generic",
             }
         ]
         self.assertEqual(expected, packages_data)
