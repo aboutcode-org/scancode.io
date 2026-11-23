@@ -38,6 +38,7 @@ from scanpipe.models import Run
 from scanpipe.models import WebhookSubscription
 from scanpipe.pipes import count_group_by
 from scanpipe.pipes.fetch import set_project_purl_from_input_url
+from scanpipe.pipes.fetch import validate_safe_url
 
 scanpipe_app = apps.get_app_config("scanpipe")
 
@@ -165,6 +166,10 @@ class WebhookSubscriptionSerializer(serializers.ModelSerializer):
             "is_active",
         ]
 
+    def validate_target_url(self, value):
+        validate_safe_url(value)
+        return value
+
 
 class ProjectSerializer(
     ExcludeFromListViewMixin,
@@ -284,6 +289,10 @@ class ProjectSerializer(
     def get_codebase_relations_summary(self, project):
         queryset = project.codebaserelations.all()
         return count_group_by(queryset, "map_type")
+
+    def validate_webhook_url(self, value):
+        validate_safe_url(value)
+        return value
 
     def validate_input_urls(self, value):
         """Add support for providing multiple URLs in a single string."""

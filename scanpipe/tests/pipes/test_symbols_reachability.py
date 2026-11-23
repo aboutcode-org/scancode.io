@@ -23,6 +23,7 @@
 import json
 import os
 import shutil
+import socket
 import sys
 import tempfile
 from pathlib import Path
@@ -40,6 +41,7 @@ from scanpipe.pipes.reachability import ReachabilityStatus
 from scanpipe.pipes.reachability import ResourceAnalyzer
 from scanpipe.pipes.reachability import ResourcePatchMatcher
 from scanpipe.pipes.reachability import classify_reachability
+from scanpipe.pipes.reachability import collect_patch_symbols
 from scanpipe.pipes.symbols import TS_QUERIES
 from scanpipe.pipes.symbols import SymbolExtractor
 
@@ -52,9 +54,12 @@ class SymbolReachabilityPipesTest(TestCase):
         self.project1 = Project.objects.create(name="Analysis")
         self.project1.codebase_path.mkdir(parents=True, exist_ok=True)
 
+    # The local file:// repository is not a safe URL to clone, this check is tested
+    # in ``test_scanpipe_pipes_reachability_collect_patch_symbols_unsafe_url``.
+    @patch("scanpipe.pipes.reachability.get_git_environment", return_value={})
     @patch.object(Project, "package_vulnerabilities", new_callable=PropertyMock)
     def test_end_to_end_symbol_reachability_pipeline(
-        self, mock_package_vulnerabilities
+        self, mock_package_vulnerabilities, mock_get_git_environment
     ):
         """
         Global end-to-end test for the symbol reachability pipeline.
@@ -360,7 +365,8 @@ class SymbolReachabilityPipesTest(TestCase):
 
         run = self.project1.add_pipeline("analyze_symbols_reachability")
         pipeline = run.make_pipeline_instance()
-        pipeline.execute()
+        with patch("scanpipe.pipes.reachability.get_git_environment", return_value={}):
+            pipeline.execute()
 
         resource.refresh_from_db()
         results = resource.extra_data.get("symbols_reachability")
@@ -669,6 +675,42 @@ class FleetManagement:
 
         self.assertEqual(outer_class_name, "FleetManagement")
         self.assertEqual(inner_class_name, "FleetManagement.DroneController")
+
+    @patch("scanpipe.pipes.reachability.Repo")
+    def test_scanpipe_pipes_reachability_collect_patch_symbols_unsafe_url(
+        self, mock_repo
+    ):
+        unsafe_vcs_urls = [
+            "file:///srv/repository",
+            "ssh://git.example/repository.git",
+            "http://127.0.0.1/repository.git",
+        ]
+        for vcs_url in unsafe_vcs_urls:
+            patches = [{"vcs_url": vcs_url, "commit_hash": "07ec0de1"}]
+            with self.assertRaisesMessage(Exception, f"Unsafe URL: {vcs_url}"):
+                collect_patch_symbols(patches)
+
+        mock_repo.clone_from.assert_not_called()
+
+    @patch("socket.getaddrinfo")
+    @patch("scanpipe.pipes.reachability.Repo")
+    def test_scanpipe_pipes_reachability_collect_patch_symbols_git_env(
+        self, mock_repo, mock_getaddrinfo
+    ):
+        mock_getaddrinfo.return_value = [
+            (socket.AF_INET, socket.SOCK_STREAM, 6, "", ("140.82.121.4", 0))
+        ]
+        vcs_url = "https://github.com/aboutcode-org/test"
+        patches = [{"vcs_url": vcs_url, "commit_hash": "07ec0de1"}]
+
+        with patch("scanpipe.pipes.reachability.PatchAnalyzer"):
+            collect_patch_symbols(patches)
+
+        git_environment = mock_repo.clone_from.call_args.kwargs["env"]
+        self.assertEqual("0", git_environment["GIT_TERMINAL_PROMPT"])
+        self.assertEqual("false", git_environment["GIT_CONFIG_VALUE_0"])
+        expected = "github.com:443:140.82.121.4"
+        self.assertEqual(expected, git_environment["GIT_CONFIG_VALUE_1"])
 
     def test_classify_reachability(self):
         """

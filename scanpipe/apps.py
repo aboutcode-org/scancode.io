@@ -64,6 +64,7 @@ class ScanPipeConfig(AppConfig):
     def ready(self):
         self.load_pipelines()
         self.set_policies()
+        self.check_allowed_private_hosts()
 
         if netrc_location := scanpipe_settings.NETRC_LOCATION:
             # Propagate the location to the environ for `requests.utils.get_netrc_auth`
@@ -255,6 +256,16 @@ class ScanPipeConfig(AppConfig):
             self.policies = policies
         else:
             logger.debug(style.WARNING("Policies file not found."))
+
+    def check_allowed_private_hosts(self):
+        """
+        Raise an exception while the app is loading if an ``ALLOWED_PRIVATE_HOSTS``
+        entry is invalid, to warn system admins about the issue.
+        """
+        # The pipes import the models, which are not loaded when this module is.
+        from scanpipe.pipes.fetch import get_allowed_private_addresses
+
+        get_allowed_private_addresses()
 
     def sync_runs_and_jobs(self):
         """Synchronize ``QUEUED`` and ``RUNNING`` Run with their related Jobs."""

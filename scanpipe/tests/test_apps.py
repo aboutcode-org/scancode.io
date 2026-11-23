@@ -62,6 +62,16 @@ class ScanPipeAppsTest(TestCase):
             scanpipe_app.set_policies()
             self.assertEqual(global_policies, scanpipe_app.policies)
 
+    def test_scanpipe_apps_check_allowed_private_hosts(self):
+        allowed_hosts = ["dejacode.internal:8000"]
+        with override_settings(SCANPIPE={"ALLOWED_PRIVATE_HOSTS": allowed_hosts}):
+            scanpipe_app.check_allowed_private_hosts()
+
+        allowed_hosts = ["http://dejacode.internal:8000"]
+        with override_settings(SCANPIPE={"ALLOWED_PRIVATE_HOSTS": allowed_hosts}):
+            with self.assertRaises(ImproperlyConfigured):
+                scanpipe_app.check_allowed_private_hosts()
+
     def test_scanpipe_apps_register_pipeline_from_file(self):
         path = self.pipelines_location / "do_nothing.py"
         with self.assertRaises(ImproperlyConfigured):

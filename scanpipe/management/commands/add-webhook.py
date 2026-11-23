@@ -26,6 +26,7 @@ from django.core.management.base import CommandError
 from django.core.validators import URLValidator
 
 from scanpipe.management.commands import ProjectCommand
+from scanpipe.pipes.fetch import validate_safe_url
 
 
 class Command(ProjectCommand):
@@ -70,6 +71,11 @@ class Command(ProjectCommand):
             validate_url(target_url)
         except ValidationError:
             raise CommandError(f"Invalid URL: {target_url}")
+
+        try:
+            validate_safe_url(target_url)
+        except ValidationError as error:
+            raise CommandError(f"Unsafe URL: {target_url}. {error.message}")
 
         self.project.add_webhook_subscription(
             target_url=target_url,

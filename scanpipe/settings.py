@@ -51,6 +51,9 @@ from django.core.signals import setting_changed
 ENV_PREFIX = "SCANCODEIO_"
 
 DEFAULTS = {
+    # Private hosts that inputs and webhooks are allowed to reach.
+    # Syntax in .env: SCANCODEIO_ALLOWED_PRIVATE_HOSTS=host1:8000,10.0.0.1:8080
+    "ALLOWED_PRIVATE_HOSTS": [],
     "ASYNC": False,
     "CONFIG_DIR": ".scancode",
     "CONFIG_FILE": "scancode-config.yml",
