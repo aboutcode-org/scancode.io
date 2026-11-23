@@ -21,10 +21,14 @@
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 import logging
+from collections import defaultdict
+from urllib.parse import urlsplit
+from urllib.parse import urlunsplit
 
 from django.conf import settings
 
 import requests
+from packageurl import PackageURL
 
 label = "VulnerableCode"
 logger = logging.getLogger(__name__)
@@ -53,6 +57,10 @@ VULNERABLECODE_USER_AGENT = getattr(
     settings, "VULNERABLECODE_USER_AGENT", "VCIO_API_AGENT"
 )
 session.headers.update({"User-Agent": VULNERABLECODE_USER_AGENT})
+
+
+class VulnerableCodeError(Exception):
+    """VulnerableCode returned an unexpected or incomplete response."""
 
 
 def is_configured():
@@ -91,20 +99,90 @@ def chunked(iterable, chunk_size):
         yield iterable[index:end]
 
 
-def get_purls(packages):
-    """Return the PURLs for the given list of `packages`."""
-    return [package_url for package in packages if (package_url := package.package_url)]
+def get_plain_purl(purl):
+    """Return the `purl` string without its qualifiers and subpath."""
+    package_url = PackageURL.from_string(purl)
+    plain_package_url = PackageURL(
+        type=package_url.type,
+        namespace=package_url.namespace,
+        name=package_url.name,
+        version=package_url.version,
+    )
+    return plain_package_url.to_string()
 
 
-def request_post(
+def get_packages_by_plain_purl(packages):
+    """Return the `packages` that have a PURL, grouped by plain PURL."""
+    packages_by_plain_purl = defaultdict(list)
+    for package in packages:
+        if package_url := package.package_url:
+            packages_by_plain_purl[get_plain_purl(package_url)].append(package)
+    return dict(packages_by_plain_purl)
+
+
+def request_json(
+    method,
     url,
-    data,
+    data=None,
     timeout=None,
+    api_url=VULNERABLECODE_API_URL,
 ):
-    """Send a POST request with `data` as JSON to `url` and return the response."""
-    response = session.post(url, json=data, timeout=timeout)
+    """
+    Send a `method` request with `data` as JSON to `url` and return the response.
+    Only the URLs under `api_url` are requested, as the session carries credentials.
+    """
+    if not url.startswith(f"{api_url.rstrip('/')}/"):
+        raise VulnerableCodeError(f"URL outside of the VulnerableCode API: {url}")
+
+    response = session.request(method, url, json=data, timeout=timeout)
     response.raise_for_status()
     return response.json()
+
+
+def get_api_link(link_url, api_url):
+    """
+    Return the path and query of the `link_url` returned by VulnerableCode on the
+    scheme and host of the configured `api_url`.
+    VulnerableCode builds its links from the request host and scheme, which depend
+    on the proxy in front of it.
+    """
+    link_parts = urlsplit(link_url)
+    api_parts = urlsplit(api_url)
+    return urlunsplit(
+        (api_parts.scheme, api_parts.netloc, link_parts.path, link_parts.query, "")
+    )
+
+
+def get_all_results(
+    method,
+    url,
+    data=None,
+    timeout=None,
+    api_url=VULNERABLECODE_API_URL,
+):
+    """
+    Return the results of every page of the paginated response from `url`.
+    The `next` pages are requested with the same `method` and `data`.
+    """
+    page_data = request_json(method, url, data, timeout, api_url)
+    expected_count = page_data["count"]
+    all_results = page_data["results"]
+
+    # A page holds at least one result: the count bounds the number of requests.
+    remaining_page_requests = expected_count
+    while page_data["next"] and remaining_page_requests:
+        next_url = get_api_link(page_data["next"], api_url)
+        page_data = request_json(method, next_url, data, timeout, api_url)
+        all_results.extend(page_data["results"])
+        remaining_page_requests -= 1
+
+    if page_data["next"] or len(all_results) != expected_count:
+        raise VulnerableCodeError(
+            f"Incomplete response from {url}: "
+            f"{len(all_results)} results out of {expected_count}."
+        )
+
+    return all_results
 
 
 def bulk_search_by_purl(
@@ -112,17 +190,67 @@ def bulk_search_by_purl(
     timeout=None,
     api_url=VULNERABLECODE_API_URL,
 ):
-    """Bulk search of vulnerabilities using the provided list of `purls`."""
+    """
+    Bulk search of vulnerabilities using the provided list of `purls`.
+    Return the matched packages of all pages, qualifiers and subpath are ignored.
+    """
     url = f"{api_url.rstrip('/')}/packages"
 
     data = {
         "purls": purls,
         "details": True,
         "reachability": True,
+        "ignore_qualifiers_subpath": True,
     }
 
     logger.debug(f"VulnerableCode: url={url} purls_count={len(purls)}")
-    return request_post(url, data, timeout)
+    return get_all_results("POST", url, data, timeout, api_url)
+
+
+def get_affected_by_vulnerabilities(
+    package_data,
+    timeout=None,
+    api_url=VULNERABLECODE_API_URL,
+):
+    """
+    Return the vulnerabilities affecting the `package_data` package.
+    They are fetched from the `affected_by_vulnerabilities_url` when not provided
+    inline, for packages affected by many vulnerabilities.
+    """
+    affected_by = package_data.get("affected_by_vulnerabilities")
+    if affected_by is not None:
+        return affected_by
+
+    if affected_by_url := package_data.get("affected_by_vulnerabilities_url"):
+        affected_by_url = get_api_link(affected_by_url, api_url)
+        return get_all_results("GET", affected_by_url, timeout=timeout, api_url=api_url)
+
+    raise VulnerableCodeError(f"No vulnerability data for {package_data['purl']}")
+
+
+def get_vulnerabilities_by_plain_purl(plain_purls, chunk_size):
+    """
+    Return the vulnerabilities of each matched plain PURL from `plain_purls`.
+    The vulnerabilities of all the qualifiers and subpath variants of a plain PURL
+    are merged, without duplicates.
+    """
+    vulnerabilities_by_plain_purl = defaultdict(dict)
+
+    for purls_batch in chunked(plain_purls, chunk_size):
+        for package_data in bulk_search_by_purl(purls_batch):
+            plain_purl = get_plain_purl(package_data["purl"])
+            if plain_purl not in purls_batch:
+                raise VulnerableCodeError(f"Unexpected PURL: {package_data['purl']}")
+
+            vulnerabilities_by_uid = vulnerabilities_by_plain_purl[plain_purl]
+            for vulnerability in get_affected_by_vulnerabilities(package_data):
+                advisory_uid = vulnerability["advisory_uid"]
+                vulnerabilities_by_uid.setdefault(advisory_uid, vulnerability)
+
+    return {
+        plain_purl: list(vulnerabilities_by_uid.values())
+        for plain_purl, vulnerabilities_by_uid in vulnerabilities_by_plain_purl.items()
+    }
 
 
 def filter_vulnerabilities(vulnerabilities, ignore_set):
@@ -141,32 +269,25 @@ def fetch_vulnerabilities(
 ):
     """
     Fetch and store vulnerabilities for each provided `packages`.
-    The PURLs are used for the lookups in batch of `chunk_size` per request.
+    The PURLs, without qualifiers and subpath, are used for the lookups in batch of
+    `chunk_size` per request.
+    The vulnerabilities of every matched package are replaced, including with an
+    empty list, only once all the lookups succeeded.
     """
-    vulnerabilities_by_purl = {}
-
-    for purls_batch in chunked(get_purls(packages), chunk_size):
-        try:
-            response_data = bulk_search_by_purl(purls_batch)
-        except (requests.RequestException, ValueError, TypeError) as exception:
-            logger(f"{label} [Exception] {exception}")
-            return
-
-        for vulnerability_data in response_data.get("results", []):
-            purl = vulnerability_data["purl"]
-            vulnerabilities_by_purl[purl] = vulnerability_data
+    packages_by_plain_purl = get_packages_by_plain_purl(packages)
+    vulnerabilities_by_plain_purl = get_vulnerabilities_by_plain_purl(
+        plain_purls=list(packages_by_plain_purl),
+        chunk_size=chunk_size,
+    )
 
     unsaved_objects = []
-    for package in packages:
-        if package_data := vulnerabilities_by_purl.get(package.package_url):
-            affected_by = package_data.get("affected_by_vulnerabilities", [])
+    for plain_purl, affected_by in vulnerabilities_by_plain_purl.items():
+        if ignore_set:
+            affected_by = filter_vulnerabilities(affected_by, ignore_set)
 
-            if ignore_set and affected_by:
-                affected_by = filter_vulnerabilities(affected_by, ignore_set)
-
-            if affected_by:
-                package.affected_by_vulnerabilities = affected_by
-                unsaved_objects.append(package)
+        for package in packages_by_plain_purl[plain_purl]:
+            package.affected_by_vulnerabilities = affected_by
+            unsaved_objects.append(package)
 
     if unsaved_objects:
         model_class = unsaved_objects[0].__class__

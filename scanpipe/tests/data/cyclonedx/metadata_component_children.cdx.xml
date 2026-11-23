@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bom xmlns="http://cyclonedx.org/schema/bom/1.6" version="1">
+  <metadata>
+    <component type="application" bom-ref="pkg:generic/application@1.0">
+      <name>application</name>
+      <version>1.0</version>
+      <purl>pkg:generic/application@1.0</purl>
+      <components>
+        <component type="library" bom-ref="pkg:pypi/child@1.0">
+          <name>child</name>
+          <version>1.0</version>
+          <purl>pkg:pypi/child@1.0</purl>
+          <components>
+            <component type="library" bom-ref="pkg:pypi/grandchild@2.0">
+              <name>grandchild</name>
+              <version>2.0</version>
+              <purl>pkg:pypi/grandchild@2.0</purl>
+            </component>
+          </components>
+        </component>
+      </components>
+    </component>
+  </metadata>
+  <components>
+    <component type="library" bom-ref="pkg:pypi/top@3.0">
+      <name>top</name>
+      <version>3.0</version>
+      <purl>pkg:pypi/top@3.0</purl>
+    </component>
+  </components>
+  <vulnerabilities>
+    <vulnerability bom-ref="CVE-2024-0001">
+      <id>CVE-2024-0001</id>
+      <affects>
+        <target>
+          <ref>pkg:pypi/child@1.0</ref>
+        </target>
+      </affects>
+    </vulnerability>
+  </vulnerabilities>
+</bom>
