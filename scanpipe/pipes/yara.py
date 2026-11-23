@@ -32,7 +32,7 @@ except ImportError:
 from packageurl import PackageURL
 
 from aboutcode.pipeline import LoopProgress
-from scanpipe import pipes
+from scanpipe.models import DiscoveredPackage
 from scanpipe.pipes import flag
 
 # Point to upstream YARA rule repository once available
@@ -211,11 +211,16 @@ def match_resources_by_yara(project, logger=None):
         yara_rules = [match.rule for match in matches]
         matched_strings = {}
         for match in matches:
-            pipes.update_or_create_package(
-                project=project,
-                package_data=match.purl.to_dict(),
-                codebase_resources=[codebase_resource],
-            )
+            # Get or create the package for this PURL and link the resource.
+            lookup = DiscoveredPackage.extract_purl_data(match.purl.to_dict())
+            package = project.discoveredpackages.filter(**lookup).first()
+            if not package:
+                package = DiscoveredPackage.create_from_data(
+                    project=project,
+                    package_data=match.purl.to_dict(),
+                )
+
+            package.add_resources([codebase_resource])
             matched_strings[match.rule] = match.matched_strings_dict()
 
         resource_extra_data = {
