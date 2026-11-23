@@ -126,6 +126,7 @@ class CommonStepsMixin:
         # Reload the project env post-extraction as the scancode-config.yml file
         # may be located in one of the extracted archives.
         self.env = self.project.get_env()
+        self.project.add_ignored_codebase_config_warning()
 
     def download_missing_inputs(self):
         """

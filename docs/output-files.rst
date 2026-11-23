@@ -343,6 +343,9 @@ You usually want to start with a copy of the default template available at
 You can then place your custom template file into the :guilabel:`.scancode` config
 directory in your input files, such as it will end up at
 ``codebase/.scancode/templates/attribution.html`` on extraction.
+This directory is only used when :ref:`scancodeio_settings_trust_codebase_config`
+is enabled. Otherwise, provide the template content with the
+``attribution_template`` setting of the :ref:`project_configuration`.
 
 The following variable are available as the template context:
 

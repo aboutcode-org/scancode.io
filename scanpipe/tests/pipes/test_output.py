@@ -34,6 +34,7 @@ from unittest import mock
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import call_command
 from django.test import TestCase
+from django.test import override_settings
 
 import openpyxl
 import xlsxwriter
@@ -733,6 +734,7 @@ class ScanPipeOutputPipesTest(TestCase):
         rendered = output.render_template_file(template_location, context)
         self.assertEqual("value", rendered)
 
+    @override_settings(SCANPIPE={"TRUST_CODEBASE_CONFIG": True})
     def test_scanpipe_pipes_outputs_get_attribution_template(self):
         project = make_project(name="Analysis")
         template_location = str(output.get_attribution_template(project))
@@ -749,11 +751,22 @@ class ScanPipeOutputPipesTest(TestCase):
         expected_location = "codebase/.scancode/templates/attribution.html"
         self.assertTrue(template_location.endswith(expected_location))
 
+    @override_settings(SCANPIPE={"TRUST_CODEBASE_CONFIG": True})
     def test_scanpipe_pipes_outputs_get_attribution_template_outside_symlink(self):
         project = make_project(name="Analysis")
         custom_template_dir = make_config_directory(project) / "templates"
         custom_template_dir.mkdir(parents=True)
         (custom_template_dir / "attribution.html").symlink_to(Path(__file__))
+
+        template_location = str(output.get_attribution_template(project))
+        expected_location = "templates/scanpipe/attribution.html"
+        self.assertTrue(template_location.endswith(expected_location))
+
+    def test_scanpipe_pipes_outputs_get_attribution_template_not_trusted(self):
+        project = make_project(name="Analysis")
+        custom_template_dir = make_config_directory(project) / "templates"
+        custom_template_dir.mkdir(parents=True)
+        (custom_template_dir / "attribution.html").touch()
 
         template_location = str(output.get_attribution_template(project))
         expected_location = "templates/scanpipe/attribution.html"
@@ -777,6 +790,7 @@ class ScanPipeOutputPipesTest(TestCase):
         licenses = [license.key for license in data["licenses"]]
         self.assertEqual(sorted(expected), sorted(licenses))
 
+    @override_settings(SCANPIPE={"TRUST_CODEBASE_CONFIG": True})
     def test_scanpipe_pipes_outputs_to_attribution(self):
         project = make_project(name="Analysis")
         package_data = dict(package_data1)

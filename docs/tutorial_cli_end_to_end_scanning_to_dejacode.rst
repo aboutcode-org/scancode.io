@@ -148,11 +148,14 @@ Run ScanCode Package Detection
 Execute the following command to run the ScanCode scanner
 with **inspect_packages** pipeline with static resolution
 on the codebase in our current directory.
+The ``SCANCODEIO_TRUST_CODEBASE_CONFIG`` setting applies the ``scancode-config.yml``
+file of this codebase, see :ref:`scancodeio_settings_trust_codebase_config`.
 
 .. code-block:: shell
 
     docker run --rm \
       -v "$(pwd)":/code \
+      --env SCANCODEIO_TRUST_CODEBASE_CONFIG=True \
       ghcr.io/aboutcode-org/scancode.io:latest \
       sh -c "run inspect_packages:StaticResolver /code" \
       > results.json

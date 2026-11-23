@@ -111,6 +111,8 @@ DEFAULTS = {
     "SKOPEO_CREDENTIALS": {},
     # Maximum time allowed for a pipeline to complete.
     "TASK_TIMEOUT": "24h",
+    # Apply the configuration files found in the scanned codebase.
+    "TRUST_CODEBASE_CONFIG": False,
     "WORKSPACE_LOCATION": "var",
 }
 

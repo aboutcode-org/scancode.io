@@ -93,6 +93,34 @@ it to ScanCode.io. The expected location of the attribution template is::
 
   .scancode/templates/attribution.html
 
+This directory is only used when :ref:`scancodeio_settings_trust_codebase_config`
+is enabled.
+
+.. _scancodeio_settings_trust_codebase_config:
+
+SCANCODEIO_TRUST_CODEBASE_CONFIG
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+By default, ScanCode.io only reads the ``scancode-config.yml`` and ``policies.yml``
+configuration files from the project inputs, and ignores the configuration found in
+the scanned codebase: the ``scancode-config.yml`` and ``policies.yml`` files of the
+codebase immediate subdirectories, and the :guilabel:`.scancode/` directory.
+
+The scanned codebase is usually third-party code, such as a downloaded package or a
+supplier archive. Its configuration files would let its authors decide how it is
+analyzed: for example, ignore its vulnerabilities or files, replace the license
+policies, or rewrite the attribution notice.
+
+Enable this setting only when every scanned codebase is trusted, for example when
+ScanCode.io only scans your own repositories that store their configuration::
+
+    SCANCODEIO_TRUST_CODEBASE_CONFIG=True
+
+In all other cases, provide the configuration as a project input, in the project
+settings, or with the :ref:`scancodeio_settings_policies_file` setting.
+
+Default: ``False``
+
 SCANCODEIO_PROCESSES
 ^^^^^^^^^^^^^^^^^^^^
 
