@@ -1687,6 +1687,31 @@ class ScanPipeD2DPipesTest(TestCase):
         self.assertEqual(1, expected_requires_review_count)
         self.assertEqual(flag.IGNORED_MEDIA_FILE, media_file.status)
 
+    @mock.patch("scanpipe.pipes.d2d._match_purldb_resources")
+    def test_scanpipe_pipes_d2d_match_unmapped_resources_skips_matched_extensions(
+        self, mock_match_purldb_resources
+    ):
+        to_dir = self.project1.codebase_path / "to/project.tar.zst-extract/"
+        to_dir.mkdir(parents=True)
+        to_resource_files = [
+            self.data / "d2d/find_java_packages/Baz.java",
+            self.data / "d2d/about_files/expected.json",
+        ]
+        copy_inputs(to_resource_files, to_dir)
+        pipes.collect_and_create_codebase_resources(self.project1)
+
+        buffer = io.StringIO()
+        d2d.match_unmapped_resources(
+            self.project1, matched_extensions=[".java"], logger=buffer.write
+        )
+
+        expected = "Mapping 1 to/ resources with empty status in PurlDB using SHA1"
+        self.assertIn(expected, buffer.getvalue())
+        requires_review = self.project1.codebaseresources.filter(
+            status=flag.REQUIRES_REVIEW
+        )
+        self.assertEqual(2, requires_review.count())
+
     def test_flag_undeployed_resources(self):
         from_input_location = self.data / "d2d-javascript" / "from" / "main.js"
         from_dir = (
