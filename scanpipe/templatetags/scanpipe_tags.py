@@ -20,6 +20,8 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
+from urllib.parse import urlsplit
+
 from django import template
 
 from scancode_config import __version__ as scancode_toolkit_version
@@ -39,3 +41,14 @@ def scancodeio_version_tag():
 def scancode_toolkit_version_tag():
     """Return the ScanCode toolkit version string."""
     return scancode_toolkit_version
+
+
+@register.filter
+def is_http_url(url):
+    """Return True if the ``url`` uses the http or https scheme."""
+    try:
+        scheme = urlsplit(str(url)).scheme
+    except ValueError:
+        return False
+
+    return scheme in {"http", "https"}
