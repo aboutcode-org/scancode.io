@@ -21,14 +21,19 @@
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
 import json
+import os
 import socket
+import tempfile
 from pathlib import Path
 from unittest import mock
 
+from django.core.exceptions import ImproperlyConfigured
+from django.core.exceptions import ValidationError
 from django.test import TestCase
 from django.test import override_settings
 
 import requests
+import urllib3
 from requests import auth as request_auth
 
 from scanpipe.models import Project
@@ -191,11 +196,12 @@ class ScanPipeFetchPipesTest(TestCase):
         self.assertEqual(project.tmp_path, downloaded_file.directory)
         self.assertTrue(Path(project.tmp_path, "Django-5.2.tar.gz").exists())
 
+    @mock.patch("scanpipe.pipes.fetch.validate_docker_registry")
     @mock.patch("scanpipe.pipes.fetch.get_docker_image_platform")
     @mock.patch("scanpipe.pipes.fetch._get_skopeo_location")
     @mock.patch("scanpipe.pipes.fetch.run_command_safely")
     def test_scanpipe_pipes_fetch_docker_image(
-        self, mock_run_command_safely, mock_skopeo, mock_platform
+        self, mock_run_command_safely, mock_skopeo, mock_platform, mock_validate
     ):
         with self.assertRaises(ValueError) as cm:
             fetch.fetch_docker_image("Docker://debian")
@@ -292,6 +298,44 @@ class ScanPipeFetchPipesTest(TestCase):
                 self.assertEqual(0o600, authfile_path.stat().st_mode & 0o777)
             self.assertFalse(authfile_path.exists())
 
+    def test_scanpipe_pipes_fetch_get_docker_registry(self):
+        registry_by_docker_url = {
+            "docker://debian": "docker.io",
+            "docker://library/debian:10.9": "docker.io",
+            "docker://registry.com/debian:10.9": "registry.com",
+            "docker://registry.com:5000/debian": "registry.com:5000",
+            "docker://127.0.0.1:5000/image": "127.0.0.1:5000",
+            "docker://localhost/image": "localhost",
+            "docker://Internal/image": "Internal",
+        }
+        for docker_url, expected in registry_by_docker_url.items():
+            self.assertEqual(expected, fetch.get_docker_registry(docker_url))
+
+    @mock.patch("scanpipe.pipes.fetch.run_command_safely")
+    @mock.patch("scanpipe.pipes.fetch.socket.getaddrinfo")
+    def test_scanpipe_pipes_fetch_docker_image_rejects_private_registry(
+        self, mock_getaddrinfo, mock_run_command_safely
+    ):
+        mock_getaddrinfo.return_value = self.make_addrinfo("10.0.0.5")
+        unsafe_docker_urls = [
+            "docker://registry.internal/image",
+            "docker://127.0.0.1:5000/image",
+            "docker://Internal/image",
+            "docker://10.0.0.1@registry.com/image",
+        ]
+        for docker_url in unsafe_docker_urls:
+            with self.assertRaisesMessage(ValueError, "Unsafe Docker registry"):
+                fetch.fetch_docker_image(docker_url)
+        mock_run_command_safely.assert_not_called()
+
+        allowed_hosts = ["registry.internal"]
+        with override_settings(SCANPIPE={"ALLOWED_PRIVATE_HOSTS": allowed_hosts}):
+            fetch.validate_docker_registry("docker://registry.internal/image")
+
+        mock_getaddrinfo.return_value = self.make_addrinfo("93.184.216.34")
+        fetch.validate_docker_registry("docker://debian")
+        mock_getaddrinfo.assert_called_with("docker.io", None)
+
     def test_scanpipe_pipes_fetch_docker_image_string_injection_protection(self):
         url = 'docker://;echo${IFS}"PoC"${IFS}"'
         with self.assertRaises(ValueError) as cm:
@@ -342,10 +386,14 @@ class ScanPipeFetchPipesTest(TestCase):
             session = fetch.get_request_session(url)
             self.assertEqual("token TOKEN", session.headers.get("Authorization"))
 
+    @mock.patch("scanpipe.pipes.fetch.socket.getaddrinfo")
     @mock.patch("scanpipe.pipes.fetch.is_safe_url", return_value=True)
     @mock.patch("git.repo.base.Repo.clone_from")
-    def test_scanpipe_pipes_fetch_git_repo(self, mock_clone_from, mock_is_safe_url):
+    def test_scanpipe_pipes_fetch_git_repo(
+        self, mock_clone_from, mock_is_safe_url, mock_getaddrinfo
+    ):
         mock_clone_from.return_value = None
+        mock_getaddrinfo.return_value = self.make_addrinfo("140.82.121.4")
         url = "https://github.com/aboutcode-org/scancode.io.git"
         download = fetch.fetch_git_repo(url)
 
@@ -353,6 +401,9 @@ class ScanPipeFetchPipesTest(TestCase):
         git_env = mock_clone_from.call_args.kwargs["env"]
         self.assertEqual("http.followRedirects", git_env["GIT_CONFIG_KEY_0"])
         self.assertEqual("false", git_env["GIT_CONFIG_VALUE_0"])
+        self.assertEqual("http.curloptResolve", git_env["GIT_CONFIG_KEY_1"])
+        expected = "github.com:443:140.82.121.4"
+        self.assertEqual(expected, git_env["GIT_CONFIG_VALUE_1"])
 
         self.assertEqual(url, download.uri)
         self.assertEqual("scancode.io.git", download.filename)
@@ -428,6 +479,10 @@ class ScanPipeFetchPipesTest(TestCase):
         # Multicast
         mock_getaddrinfo.return_value = self.make_addrinfo("224.0.0.1")
         self.assertFalse(fetch.is_safe_url("http://224.0.0.1/"))
+
+        # Shared address space (CGNAT), used by some cloud metadata services
+        mock_getaddrinfo.return_value = self.make_addrinfo("100.100.100.200")
+        self.assertFalse(fetch.is_safe_url("http://100.100.100.200/"))
 
         # One of several resolved addresses is unsafe
         mock_getaddrinfo.return_value = self.make_addrinfo("93.184.216.34", "127.0.0.1")
@@ -603,6 +658,399 @@ class ScanPipeFetchPipesTest(TestCase):
         response = fetch._request_with_safe_redirects(url, "get")
         self.assertEqual(final_response, response)
         self.assertEqual(fetch.MAX_REDIRECT_HOPS + 1, mock_get.call_count)
+
+    def test_scanpipe_pipes_fetch_is_unsafe_ip_address(self):
+        unsafe_ip_addresses = [
+            "0.0.0.1",
+            "10.0.0.1",
+            "100.64.0.1",
+            "100.100.100.200",
+            "127.0.0.1",
+            "169.254.169.254",
+            "192.168.1.1",
+            "224.0.0.1",
+            "255.255.255.255",
+            "::1",
+            "::ffff:127.0.0.1",
+            "::ffff:169.254.169.254",
+            "fc00::1",
+            "fe80::1",
+            "fe80::1%eth0",
+            "ff02::1",
+        ]
+        for ip_address in unsafe_ip_addresses:
+            self.assertTrue(fetch.is_unsafe_ip_address(ip_address), msg=ip_address)
+
+        public_ip_addresses = [
+            "93.184.216.34",
+            "::ffff:93.184.216.34",
+            "2606:4700:4700::1111",
+        ]
+        for ip_address in public_ip_addresses:
+            self.assertFalse(fetch.is_unsafe_ip_address(ip_address), msg=ip_address)
+
+    @mock.patch("scanpipe.pipes.fetch.socket.getaddrinfo")
+    def test_scanpipe_pipes_fetch_is_safe_url_host_parsing(self, mock_getaddrinfo):
+        # A URL that urllib3 cannot parse is rejected without an exception.
+        self.assertFalse(fetch.is_safe_url("http://[::1/"))
+        mock_getaddrinfo.assert_not_called()
+
+        # An IPv6 literal host is resolved without its brackets.
+        mock_getaddrinfo.return_value = self.make_addrinfo6("2606:4700:4700::1111")
+        self.assertTrue(fetch.is_safe_url("http://[2606:4700:4700::1111]:8080/"))
+        mock_getaddrinfo.assert_called_once_with("2606:4700:4700::1111", None)
+
+        mock_getaddrinfo.return_value = self.make_addrinfo6("::ffff:127.0.0.1")
+        self.assertFalse(fetch.is_safe_url("http://[::ffff:127.0.0.1]/"))
+
+    @mock.patch("scanpipe.pipes.fetch.socket.getaddrinfo")
+    def test_scanpipe_pipes_fetch_is_safe_url_allowed_private_hosts(
+        self, mock_getaddrinfo
+    ):
+        mock_getaddrinfo.return_value = self.make_addrinfo("10.0.0.5")
+        url = "http://dejacode.internal:8000/api/"
+        self.assertFalse(fetch.is_safe_url(url))
+
+        allowed_hosts = ["dejacode.internal:8000", "10.0.0.6", "[fd00::1]:8080", ""]
+        with override_settings(SCANPIPE={"ALLOWED_PRIVATE_HOSTS": allowed_hosts}):
+            self.assertTrue(fetch.is_safe_url(url))
+            self.assertTrue(fetch.is_safe_url("https://DEJACODE.internal:8000/"))
+            self.assertFalse(fetch.is_safe_url("http://dejacode.internal/"))
+            self.assertFalse(fetch.is_safe_url("http://dejacode.internal:8001/"))
+            self.assertTrue(fetch.is_safe_url("http://10.0.0.6/"))
+            self.assertTrue(fetch.is_safe_url("https://10.0.0.6/"))
+            self.assertTrue(fetch.is_safe_url("http://10.0.0.6:80/"))
+            self.assertFalse(fetch.is_safe_url("http://10.0.0.6:8080/"))
+            self.assertTrue(fetch.is_safe_url("http://[fd00::1]:8080/"))
+            self.assertFalse(fetch.is_safe_url("http://[fd00::1]/"))
+            self.assertFalse(fetch.is_safe_url("http://other.internal/"))
+            self.assertFalse(fetch.is_safe_url("http://dejacode.internal.example/"))
+            self.assertFalse(fetch.is_safe_url("ftp://dejacode.internal/"))
+
+    def test_scanpipe_pipes_fetch_get_allowed_private_addresses_purldb_url(self):
+        with override_settings(PURLDB_URL=""):
+            self.assertEqual(set(), fetch.get_allowed_private_addresses())
+
+        with override_settings(PURLDB_URL="http://purldb:8000"):
+            expected = {("purldb", 8000)}
+            self.assertEqual(expected, fetch.get_allowed_private_addresses())
+            self.assertTrue(fetch.is_allowed_private_host("purldb", 8000))
+            self.assertFalse(fetch.is_allowed_private_host("purldb", 8001))
+
+        with override_settings(PURLDB_URL="https://PURLDB.internal"):
+            expected = {("purldb.internal", 443)}
+            self.assertEqual(expected, fetch.get_allowed_private_addresses())
+
+        with override_settings(PURLDB_URL="purldb:8000"):
+            expected = 'Invalid PURLDB_URL setting: "purldb:8000".'
+            with self.assertRaisesMessage(ImproperlyConfigured, expected):
+                fetch.get_allowed_private_addresses()
+
+    def test_scanpipe_pipes_fetch_parse_allowed_private_host(self):
+        valid_entries = {
+            "dejacode.internal:8000": ("dejacode.internal", 8000),
+            "DEJACODE.internal": ("dejacode.internal", None),
+            "10.0.0.6": ("10.0.0.6", None),
+            "[fd00::1]:8080": ("fd00::1", 8080),
+        }
+        for allowed_entry, expected in valid_entries.items():
+            parsed_entry = fetch.parse_allowed_private_host(allowed_entry)
+            self.assertEqual(expected, parsed_entry)
+
+        invalid_entries = [
+            "dejacode.internal:abc",
+            "http://dejacode.internal:8000",
+            "dejacode.internal/path",
+            "user@dejacode.internal",
+            ":8000",
+        ]
+        for allowed_entry in invalid_entries:
+            expected = (
+                f'Invalid SCANCODEIO_ALLOWED_PRIVATE_HOSTS entry: "{allowed_entry}"'
+            )
+            with self.assertRaisesMessage(ImproperlyConfigured, expected):
+                fetch.parse_allowed_private_host(allowed_entry)
+
+    @mock.patch("scanpipe.pipes.fetch.socket.getaddrinfo")
+    def test_scanpipe_pipes_fetch_validate_safe_url(self, mock_getaddrinfo):
+        mock_getaddrinfo.return_value = self.make_addrinfo("93.184.216.34")
+        fetch.validate_safe_url("https://example.com/webhook")
+
+        mock_getaddrinfo.return_value = self.make_addrinfo("127.0.0.1")
+        with self.assertRaises(ValidationError) as cm:
+            fetch.validate_safe_url("https://localhost/webhook")
+        self.assertIn("SCANCODEIO_ALLOWED_PRIVATE_HOSTS", cm.exception.message)
+
+    @mock.patch("urllib3.util.connection.create_connection")
+    @mock.patch("scanpipe.pipes.fetch.socket.getaddrinfo")
+    def test_scanpipe_pipes_fetch_public_address_connection_pins_address(
+        self, mock_getaddrinfo, mock_create_connection
+    ):
+        connected_socket = mock.Mock()
+        mock_create_connection.return_value = connected_socket
+        mock_getaddrinfo.return_value = self.make_addrinfo("93.184.216.34")
+        connection = fetch.PublicAddressHTTPSConnection("example.com", 443)
+
+        self.assertEqual(connected_socket, connection._new_conn())
+        self.assertEqual(
+            ("93.184.216.34", 443), mock_create_connection.call_args.args[0]
+        )
+        # The host name is kept for the TLS SNI, certificate, and Host header.
+        self.assertEqual("example.com", connection.host)
+
+    @mock.patch("urllib3.util.connection.create_connection")
+    @mock.patch("scanpipe.pipes.fetch.socket.getaddrinfo")
+    def test_scanpipe_pipes_fetch_public_address_connection_rejects_private_address(
+        self, mock_getaddrinfo, mock_create_connection
+    ):
+        mock_getaddrinfo.return_value = self.make_addrinfo("93.184.216.34", "10.0.0.1")
+        connection = fetch.PublicAddressHTTPConnection("example.com", 80)
+
+        with self.assertRaises(urllib3.exceptions.NewConnectionError):
+            connection._new_conn()
+        mock_create_connection.assert_not_called()
+
+    @mock.patch("urllib3.util.connection.create_connection")
+    @mock.patch("scanpipe.pipes.fetch.socket.getaddrinfo")
+    def test_scanpipe_pipes_fetch_public_address_connection_tries_each_address(
+        self, mock_getaddrinfo, mock_create_connection
+    ):
+        connected_socket = mock.Mock()
+        mock_create_connection.side_effect = [OSError("unreachable"), connected_socket]
+        mock_getaddrinfo.return_value = self.make_addrinfo6(
+            "2606:4700:4700::1111"
+        ) + self.make_addrinfo("93.184.216.34")
+        connection = fetch.PublicAddressHTTPConnection("example.com", 80)
+
+        self.assertEqual(connected_socket, connection._new_conn())
+        connected_addresses = [
+            call.args[0] for call in mock_create_connection.call_args_list
+        ]
+        expected = [("2606:4700:4700::1111", 80), ("93.184.216.34", 80)]
+        self.assertEqual(expected, connected_addresses)
+        self.assertEqual("example.com", connection.host)
+
+    @mock.patch("urllib3.util.connection.create_connection")
+    @mock.patch("scanpipe.pipes.fetch.socket.getaddrinfo")
+    def test_scanpipe_pipes_fetch_public_address_connection_allowed_private_host(
+        self, mock_getaddrinfo, mock_create_connection
+    ):
+        connected_socket = mock.Mock()
+        mock_create_connection.return_value = connected_socket
+        mock_getaddrinfo.return_value = self.make_addrinfo("10.0.0.5")
+        connection = fetch.PublicAddressHTTPConnection("dejacode.internal", 8000)
+
+        allowed_hosts = ["dejacode.internal:8000"]
+        with override_settings(SCANPIPE={"ALLOWED_PRIVATE_HOSTS": allowed_hosts}):
+            self.assertEqual(connected_socket, connection._new_conn())
+        self.assertEqual(
+            ("dejacode.internal", 8000), mock_create_connection.call_args.args[0]
+        )
+
+        other_port_connection = fetch.PublicAddressHTTPConnection(
+            "dejacode.internal", 8001
+        )
+        with override_settings(SCANPIPE={"ALLOWED_PRIVATE_HOSTS": allowed_hosts}):
+            with self.assertRaises(urllib3.exceptions.NewConnectionError):
+                other_port_connection._new_conn()
+        self.assertEqual(1, mock_create_connection.call_count)
+
+    @mock.patch("urllib3.util.connection.create_connection")
+    @mock.patch("scanpipe.pipes.fetch.socket.getaddrinfo")
+    def test_scanpipe_pipes_fetch_check_url_rejects_changed_dns_answer(
+        self, mock_getaddrinfo, mock_create_connection
+    ):
+        # A public address when the URL is checked, then a private one when the
+        # connection resolves the host again.
+        mock_getaddrinfo.side_effect = [
+            self.make_addrinfo("93.184.216.34"),
+            self.make_addrinfo("127.0.0.1"),
+        ]
+        mock_create_connection.side_effect = OSError("blocked in tests")
+
+        self.assertFalse(fetch.check_url("http://rebinding.example/file.zip"))
+        mock_create_connection.assert_not_called()
+
+    @mock.patch("urllib3.util.connection.create_connection")
+    @mock.patch("scanpipe.pipes.fetch.socket.getaddrinfo")
+    def test_scanpipe_pipes_fetch_get_request_session_pins_proxy_address(
+        self, mock_getaddrinfo, mock_create_connection
+    ):
+        mock_getaddrinfo.return_value = self.make_addrinfo("93.184.216.35")
+        mock_create_connection.side_effect = OSError("blocked in tests")
+        proxies = {"https": "http://proxy.example:3128"}
+
+        session = fetch.get_request_session("https://example.com/")
+        with self.assertRaises(requests.exceptions.ConnectionError):
+            session.get("https://example.com/", proxies=proxies, timeout=1)
+        self.assertEqual(
+            ("93.184.216.35", 3128), mock_create_connection.call_args.args[0]
+        )
+
+    @mock.patch("scanpipe.pipes.fetch.socket.getaddrinfo")
+    def test_scanpipe_pipes_fetch_get_request_session_without_credentials(
+        self, mock_getaddrinfo
+    ):
+        url = "https://example.com/filename.zip"
+        fetch_settings = {
+            "FETCH_BASIC_AUTH": {"example.com": ("user", "password")},
+            "FETCH_HEADERS": {"example.com": {"X-Api-Key": "secret"}},
+        }
+        with override_settings(SCANPIPE=fetch_settings):
+            session = fetch.get_request_session(url, include_credentials=False)
+
+        self.assertIsInstance(session.auth, fetch.NoCredentialsAuth)
+        self.assertNotIn("X-Api-Key", session.headers)
+        adapter = session.get_adapter(url)
+        self.assertIsInstance(adapter, fetch.PublicAddressHTTPAdapter)
+
+    def test_scanpipe_pipes_fetch_get_request_session_without_netrc_credentials(self):
+        url = "http://packages.example/private.zip"
+        request = requests.Request("GET", url)
+
+        with tempfile.TemporaryDirectory() as netrc_directory:
+            netrc_file = Path(netrc_directory) / "netrc"
+            netrc_file.write_text("machine packages.example login user password pass")
+
+            with mock.patch.dict(os.environ, {"NETRC": str(netrc_file)}):
+                session = fetch.get_request_session(url)
+                prepared_request = session.prepare_request(request)
+                self.assertIn("Authorization", prepared_request.headers)
+
+                session = fetch.get_request_session(url, include_credentials=False)
+                prepared_request = session.prepare_request(request)
+                self.assertNotIn("Authorization", prepared_request.headers)
+
+    @mock.patch("requests.sessions.Session.post")
+    @mock.patch("scanpipe.pipes.fetch.socket.getaddrinfo")
+    def test_scanpipe_pipes_fetch_send_safe_request(self, mock_getaddrinfo, mock_post):
+        url = "https://example.com/webhook"
+        mock_getaddrinfo.return_value = self.make_addrinfo("93.184.216.34")
+        mock_post.return_value = make_mock_response(url=url)
+
+        response = fetch.send_safe_request(url, "post", data="{}", timeout=5)
+        self.assertEqual(200, response.status_code)
+        mock_post.assert_called_once_with(
+            url, allow_redirects=False, data="{}", timeout=5
+        )
+
+        mock_post.reset_mock()
+        mock_getaddrinfo.return_value = self.make_addrinfo("169.254.169.254")
+        with self.assertRaisesMessage(requests.RequestException, "Unsafe URL"):
+            fetch.send_safe_request(url, "post")
+        mock_post.assert_not_called()
+
+    @mock.patch("scanpipe.pipes.fetch.is_safe_url", return_value=True)
+    @mock.patch("requests.sessions.Session.get", autospec=True)
+    def test_scanpipe_pipes_fetch_request_with_safe_redirects_scopes_credentials(
+        self, mock_get, mock_is_safe_url
+    ):
+        first_url = "https://packages.example/private.zip"
+        redirect_url = "https://unrelated.example/artifact.zip"
+        mock_get.side_effect = [
+            make_mock_response(
+                url=first_url, status_code=302, headers={"location": redirect_url}
+            ),
+            make_mock_response(url=redirect_url),
+        ]
+        fetch_settings = {
+            "FETCH_BASIC_AUTH": {"packages.example": ("user", "password")},
+            "FETCH_HEADERS": {"packages.example": {"X-Api-Key": "secret"}},
+        }
+
+        with override_settings(SCANPIPE=fetch_settings):
+            fetch._request_with_safe_redirects(first_url, "get")
+
+        first_session = mock_get.call_args_list[0].args[0]
+        expected_auth = request_auth.HTTPBasicAuth("user", "password")
+        self.assertEqual(expected_auth, first_session.auth)
+        self.assertEqual("secret", first_session.headers.get("X-Api-Key"))
+        redirect_session = mock_get.call_args_list[1].args[0]
+        self.assertIsNone(redirect_session.auth)
+        self.assertNotIn("X-Api-Key", redirect_session.headers)
+
+    @mock.patch("scanpipe.pipes.fetch.is_safe_url", return_value=True)
+    @mock.patch("requests.sessions.Session.get", autospec=True)
+    def test_scanpipe_pipes_fetch_request_with_safe_redirects_https_downgrade(
+        self, mock_get, mock_is_safe_url
+    ):
+        https_url = "https://packages.example/private.zip"
+        same_host_https_url = "https://packages.example/mirror/private.zip"
+        http_url = "http://packages.example/private.zip"
+        mock_get.side_effect = [
+            make_mock_response(
+                url=https_url,
+                status_code=302,
+                headers={"location": same_host_https_url},
+            ),
+            make_mock_response(
+                url=same_host_https_url,
+                status_code=302,
+                headers={"location": http_url},
+            ),
+            make_mock_response(url=http_url),
+        ]
+        fetch_settings = {
+            "FETCH_DIGEST_AUTH": {"packages.example": ("user", "password")},
+            "FETCH_HEADERS": {"packages.example": {"X-Api-Key": "secret"}},
+        }
+
+        with override_settings(SCANPIPE=fetch_settings):
+            fetch._request_with_safe_redirects(https_url, "get")
+
+        expected_auth = request_auth.HTTPDigestAuth("user", "password")
+        same_host_https_session = mock_get.call_args_list[1].args[0]
+        self.assertEqual(expected_auth, same_host_https_session.auth)
+        self.assertEqual("secret", same_host_https_session.headers.get("X-Api-Key"))
+        http_session = mock_get.call_args_list[2].args[0]
+        self.assertIsInstance(http_session.auth, fetch.NoCredentialsAuth)
+        self.assertNotIn("X-Api-Key", http_session.headers)
+
+    @mock.patch("scanpipe.pipes.fetch.socket.getaddrinfo")
+    def test_scanpipe_pipes_fetch_get_git_environment(self, mock_getaddrinfo):
+        mock_getaddrinfo.return_value = self.make_addrinfo6(
+            "2606:4700:4700::1111"
+        ) + self.make_addrinfo("93.184.216.34")
+
+        git_environment = fetch.get_git_environment("http://Example.com:8080/a.git")
+        expected = {
+            "GIT_TERMINAL_PROMPT": "0",
+            "GIT_CONFIG_COUNT": "2",
+            "GIT_CONFIG_KEY_0": "http.followRedirects",
+            "GIT_CONFIG_VALUE_0": "false",
+            "GIT_CONFIG_KEY_1": "http.curloptResolve",
+            "GIT_CONFIG_VALUE_1": (
+                "example.com:8080:[2606:4700:4700::1111],93.184.216.34"
+            ),
+        }
+        self.assertEqual(expected, git_environment)
+
+        mock_getaddrinfo.return_value = self.make_addrinfo("10.0.0.5")
+        url = "https://git.internal/repository.git"
+        with self.assertRaisesMessage(ValueError, f"Unsafe URL: {url}"):
+            fetch.get_git_environment(url)
+
+        with override_settings(SCANPIPE={"ALLOWED_PRIVATE_HOSTS": ["git.internal"]}):
+            git_environment = fetch.get_git_environment(url)
+        self.assertEqual("1", git_environment["GIT_CONFIG_COUNT"])
+        self.assertNotIn("GIT_CONFIG_KEY_1", git_environment)
+
+        for unsupported_url in ["file:///srv/repository.git", "ssh://host/repo.git"]:
+            with self.assertRaisesMessage(ValueError, "Unsafe URL"):
+                fetch.get_git_environment(unsupported_url)
+
+    @mock.patch("scanpipe.pipes.fetch.socket.getaddrinfo")
+    def test_scanpipe_pipes_fetch_get_curl_resolve_entry_rejects_changed_answer(
+        self, mock_getaddrinfo
+    ):
+        # The pinned addresses come from their own validated DNS resolution.
+        mock_getaddrinfo.side_effect = [
+            self.make_addrinfo("93.184.216.34"),
+            self.make_addrinfo("127.0.0.1"),
+        ]
+        url = "https://rebinding.example/repository.git"
+        with self.assertRaisesMessage(ValueError, f"Unsafe URL: {url}"):
+            fetch.get_git_environment(url)
 
     @mock.patch("scanpipe.pipes.fetch.socket.getaddrinfo")
     @mock.patch("requests.sessions.Session.get")

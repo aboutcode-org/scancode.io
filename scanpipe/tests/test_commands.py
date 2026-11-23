@@ -22,6 +22,7 @@
 
 import datetime
 import json
+import socket
 import tempfile
 import uuid
 from contextlib import redirect_stdout
@@ -474,7 +475,11 @@ class ScanPipeManagementCommandTest(TestCase):
         with self.assertRaisesMessage(CommandError, expected):
             call_command("add-pipeline", *options, stdout=out)
 
-    def test_scanpipe_management_command_add_webhook(self):
+    @mock.patch("socket.getaddrinfo")
+    def test_scanpipe_management_command_add_webhook(self, mock_getaddrinfo):
+        mock_getaddrinfo.return_value = [
+            (socket.AF_INET, socket.SOCK_STREAM, 6, "", ("93.184.216.34", 0))
+        ]
         out = StringIO()
 
         project = make_project(name="my_project")
@@ -525,6 +530,25 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertTrue(webhook.trigger_on_each_run)
         self.assertTrue(webhook.include_summary)
         self.assertTrue(webhook.include_results)
+
+    @mock.patch("socket.getaddrinfo")
+    def test_scanpipe_management_command_add_webhook_unsafe_url(self, mock_getaddrinfo):
+        mock_getaddrinfo.return_value = [
+            (socket.AF_INET, socket.SOCK_STREAM, 6, "", ("10.0.0.5", 0))
+        ]
+        project = make_project(name="my_project")
+        target_url = "http://dejacode.internal:8000/hook"
+        options = [target_url, "--project", project.name]
+
+        expected = f"Unsafe URL: {target_url}. Enter an http:// or https:// URL"
+        with self.assertRaisesMessage(CommandError, expected):
+            call_command("add-webhook", *options, stdout=StringIO())
+        self.assertFalse(project.webhooksubscriptions.exists())
+
+        allowed_hosts = ["dejacode.internal:8000"]
+        with override_settings(SCANPIPE={"ALLOWED_PRIVATE_HOSTS": allowed_hosts}):
+            call_command("add-webhook", *options, stdout=StringIO())
+        self.assertEqual(target_url, project.webhooksubscriptions.get().target_url)
 
     def test_scanpipe_management_command_show_pipeline(self):
         pipeline_names = [

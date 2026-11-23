@@ -299,7 +299,62 @@ The available options are:
 If this setting is provided, ScanCode.io will create a webhook subscription
 **only for newly created projects that are not clones**.
 
+A ``target_url`` on a private host is only reached when this host is listed in
+:ref:`scancodeio_settings_allowed_private_hosts`.
+
 Default: ``{}`` (no global webhook is set)
+
+.. _scancodeio_settings_allowed_private_hosts:
+
+SCANCODEIO_ALLOWED_PRIVATE_HOSTS
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+ScanCode.io only connects to public addresses for the input URLs, the git
+repositories, and the webhooks: a host resolving to a private, loopback,
+link-local, shared (CGNAT), reserved, or multicast address is rejected, when the
+URL is entered and again at connection time.
+
+This setting lists the private services that are allowed, such as an internal
+artifact repository or the DejaCode instance receiving the webhooks, as a
+comma-separated list of ``host:port`` entries, without scheme::
+
+    SCANCODEIO_ALLOWED_PRIVATE_HOSTS=dejacode.internal:8000,artifacts.internal:8081,10.0.0.5:8080
+
+A host matches when it is written exactly as in the URLs, case aside. Write IPv6
+addresses in brackets: ``[fd00::1]:8000``. An entry without port only allows the
+default ports, 80 and 443.
+
+For DejaCode, list the host and port of its ``SITE_URL`` setting, for example
+``dejacode.internal:8000`` for ``SITE_URL=http://dejacode.internal:8000``.
+
+The host and port of the :ref:`PURLDB_URL <scancodeio_settings_purldb>` setting are
+always allowed: the PurlDB scan worker sends its scan results to this service.
+
+.. warning::
+    The users of all projects can reach a listed service, with any path, through
+    their input URLs and webhooks. List the most specific address: a service that
+    requires authentication, rather than a reverse proxy serving several
+    applications on the same host and port.
+
+    This setting is a protection in the application. Also restrict the network
+    access of the ScanCode.io web and worker services to what they need, for
+    example with an outbound firewall, and enable
+    :ref:`scancodeio_settings_require_authentication` so that only known users can
+    create projects.
+
+.. note::
+    When a proxy is configured with the ``HTTP_PROXY`` and ``HTTPS_PROXY``
+    environment variables, the connection check applies to the proxy address: list
+    the proxy host when it is private. The proxy resolves the target host itself,
+    so its own policy must block the private addresses.
+
+.. note::
+    For a ``docker://`` input, the registry host is checked before the image is
+    fetched. The image is then fetched by skopeo, which resolves the host again and
+    follows the redirects of the registry: restrict the outbound network access as
+    described above.
+
+Default: ``""`` (no private host is allowed)
 
 TIME_ZONE
 ^^^^^^^^^

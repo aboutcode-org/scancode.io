@@ -739,5 +739,10 @@ class WebhookSubscriptionForm(forms.ModelForm):
         target_url_field = self.fields["target_url"]
         target_url_field.widget.attrs["class"] = "input"
 
+    def clean_target_url(self):
+        target_url = self.cleaned_data["target_url"]
+        fetch.validate_safe_url(target_url)
+        return target_url
+
     def save(self, project):
         return project.add_webhook_subscription(**self.cleaned_data)

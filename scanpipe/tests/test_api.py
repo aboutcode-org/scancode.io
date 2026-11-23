@@ -22,6 +22,7 @@
 
 import io
 import json
+import socket
 import uuid
 from pathlib import Path
 from unittest import mock
@@ -577,7 +578,13 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual(["Java", "JavaScript"], runs[0].selected_groups)
         self.assertEqual(["StaticResolver"], runs[1].selected_groups)
 
-    def test_scanpipe_api_project_create_webhooks(self):
+    @staticmethod
+    def make_addrinfo(ip_address):
+        return [(socket.AF_INET, socket.SOCK_STREAM, 6, "", (ip_address, 0))]
+
+    @mock.patch("socket.getaddrinfo")
+    def test_scanpipe_api_project_create_webhooks(self, mock_getaddrinfo):
+        mock_getaddrinfo.return_value = self.make_addrinfo("93.184.216.34")
         data = {
             "name": "Project1",
             "webhooks": [
@@ -618,6 +625,35 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertFalse(webhook_subscriptions[1].include_summary)
         self.assertFalse(webhook_subscriptions[1].include_results)
         self.assertFalse(webhook_subscriptions[1].is_active)
+
+    @mock.patch("socket.getaddrinfo")
+    def test_scanpipe_api_project_create_rejects_private_webhooks(
+        self, mock_getaddrinfo
+    ):
+        mock_getaddrinfo.return_value = self.make_addrinfo("127.0.0.1")
+        data = {
+            "name": "Project1",
+            "webhook_url": "http://localhost:8000/",
+            "webhooks": [{"target_url": "http://localhost:8001/"}],
+        }
+
+        response = self.csrf_client.post(self.project_list_url, data, format="json")
+        self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
+        expected = (
+            "Enter an http:// or https:// URL whose host resolves to public "
+            "addresses only. Private hosts must be listed in the "
+            "SCANCODEIO_ALLOWED_PRIVATE_HOSTS setting."
+        )
+        self.assertEqual([expected], response.data["webhook_url"])
+        self.assertEqual({0: {"target_url": [expected]}}, response.data["webhooks"])
+        self.assertFalse(Project.objects.filter(name="Project1").exists())
+
+        allowed_hosts = ["localhost:8000", "localhost:8001"]
+        with override_settings(SCANPIPE={"ALLOWED_PRIVATE_HOSTS": allowed_hosts}):
+            response = self.csrf_client.post(self.project_list_url, data, format="json")
+        self.assertEqual(status.HTTP_201_CREATED, response.status_code)
+        project = Project.objects.get(name="Project1")
+        self.assertEqual(2, project.webhooksubscriptions.count())
 
     def test_scanpipe_api_project_results_generator(self):
         results_generator = JSONResultsGenerator(self.project1)
@@ -1164,7 +1200,9 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual(expected, response.data.get("status"))
         self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
 
-    def test_scanpipe_api_project_action_add_webhook(self):
+    @mock.patch("socket.getaddrinfo")
+    def test_scanpipe_api_project_action_add_webhook(self, mock_getaddrinfo):
+        mock_getaddrinfo.return_value = self.make_addrinfo("93.184.216.34")
         url = reverse("project-add-webhook", args=[self.project1.uuid])
 
         # Test missing target_url
@@ -1180,6 +1218,17 @@ class ScanPipeAPITest(TransactionTestCase):
         response = self.csrf_client.post(url, data=data)
         self.assertIn("target_url", response.data)
         self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
+
+        # Test private URL
+        mock_getaddrinfo.return_value = self.make_addrinfo("169.254.169.254")
+        data = {"target_url": "http://169.254.169.254/latest/meta-data/"}
+        response = self.csrf_client.post(url, data=data)
+        self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
+        self.assertIn(
+            "resolves to public addresses only", str(response.data["target_url"])
+        )
+        self.assertFalse(self.project1.webhooksubscriptions.exists())
+        mock_getaddrinfo.return_value = self.make_addrinfo("93.184.216.34")
 
         # Test valid webhook creation
         data = {

@@ -4715,6 +4715,10 @@ class WebhookSubscriptionQuerySet(ProjectRelatedQuerySet):
         return self.filter(is_active=True)
 
 
+# Only the start of a Webhook response is kept, as a delivery diagnostic.
+WEBHOOK_RESPONSE_TEXT_MAX_LENGTH = 500
+
+
 class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):
     """
     A model to define Webhook subscriptions for Project pipeline execution events.
@@ -4868,6 +4872,8 @@ class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):
 
     def deliver(self, pipeline_run, timeout=10):
         """Deliver this Webhook by sending a POST request to the `target_url`."""
+        from scanpipe.pipes import fetch
+
         logger.info(f"Delivering Webhook {self.uuid}")
 
         if not self.is_active:
@@ -4889,13 +4895,13 @@ class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):
         )
 
         try:
-            # A redirect could lead the request from the target to an internal service.
-            response = requests.post(
-                url=self.target_url,
+            response = fetch.send_safe_request(
+                self.target_url,
+                "post",
+                include_credentials=False,
                 data=json.dumps(payload, cls=DjangoJSONEncoder),
                 headers={"Content-Type": "application/json"},
                 timeout=timeout,
-                allow_redirects=False,
             )
         except requests.exceptions.RequestException as exception:
             logger.error(exception)
@@ -4904,7 +4910,7 @@ class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):
             return delivery
 
         delivery.response_status_code = response.status_code
-        delivery.response_text = response.text
+        delivery.response_text = response.text[:WEBHOOK_RESPONSE_TEXT_MAX_LENGTH]
         delivery.save()
 
         if delivery.success:
