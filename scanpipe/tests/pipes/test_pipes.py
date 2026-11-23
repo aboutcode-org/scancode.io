@@ -642,3 +642,17 @@ class ScanPipePipesTransactionTest(TransactionTestCase):
         self.assertEqual("from", from_resource.tag)
         to_resource = p1.codebaseresources.get(path="to/a.txt")
         self.assertEqual("to", to_resource.tag)
+
+    def test_scanpipe_pipes_collect_and_create_codebase_resources_existing(self):
+        p1 = Project.objects.create(name="Analysis")
+        input_location = self.data / "codebase" / "a.txt"
+        copy_input(input_location, p1.codebase_path)
+        pipes.collect_and_create_codebase_resources(p1)
+
+        expected = (
+            "Codebase resources already exist for this project. "
+            "Reset the project before running this pipeline again."
+        )
+        with self.assertRaisesMessage(pipes.CodebaseResourcesExistError, expected):
+            pipes.collect_and_create_codebase_resources(p1)
+        self.assertEqual(1, p1.codebaseresources.count())

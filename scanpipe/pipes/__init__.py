@@ -46,6 +46,10 @@ from scanpipe.pipes import scancode
 logger = logging.getLogger("scanpipe.pipes")
 
 
+class CodebaseResourcesExistError(Exception):
+    """The project already has codebase resources."""
+
+
 def make_codebase_resource(project, location, save=True, **extra_fields):
     """
     Create a CodebaseResource instance in the database for the given ``project``.
@@ -138,7 +142,15 @@ def collect_and_create_codebase_resources(project, batch_size=5000):
 
     The default ``batch_size`` can be overridden, although the benefits of a value
     greater than 5000 objects are usually not significant.
+
+    Raise a ``CodebaseResourcesExistError`` if the project already has resources.
     """
+    if project.codebaseresources.exists():
+        raise CodebaseResourcesExistError(
+            "Codebase resources already exist for this project. "
+            "Reset the project before running this pipeline again."
+        )
+
     model_class = CodebaseResource
     objs = yield_resources_from_codebase(project)
 

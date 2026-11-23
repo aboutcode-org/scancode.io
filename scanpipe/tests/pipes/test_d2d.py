@@ -858,6 +858,7 @@ class ScanPipeD2DPipesTest(TestCase):
         # The `Tasks.class` is from lombok-1.18.42.jar
         # Ref: https://github.com/aboutcode-org/scancode.io/issues/1993
         copy_input(self.data / "jvm" / "Tasks.class", to_dir)
+        pipes.collect_and_create_codebase_resources(self.project1)
 
         from1 = make_resource_file(
             self.project1,
@@ -865,7 +866,6 @@ class ScanPipeD2DPipesTest(TestCase):
             extra_data={"java_package": "lombok.delombok.ant"},
         )
 
-        pipes.collect_and_create_codebase_resources(self.project1)
         to1 = self.project1.codebaseresources.get(
             path="to/lombok/delombok/ant/Tasks.class"
         )
