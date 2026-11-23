@@ -382,7 +382,7 @@ def convert_spdx_expression(license_expression_spdx):
 
 def spdx_package_to_package_data(spdx_package):
     """Convert the provided spdx_package into package_data."""
-    package_url_dict = {}
+    package_url_dict = {"type": "generic"}
     # Store the original "SPDXID" as package_uid for dependencies resolution.
     package_uid = spdx_package.spdx_id
 
