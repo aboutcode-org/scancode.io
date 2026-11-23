@@ -134,6 +134,7 @@ TEST_DATA = {
         "dependencies": 11,
         "vulnerabilities": 0,
         "purls": [
+            "pkg:generic/proj1@0.0.1",
             "pkg:golang/gopkg.in/yaml.v3@3.0.1",
             "pkg:maven/pkg1-grp/pkg1@0.0.1",
             "pkg:maven/pkg2-grp/pkg2@0.0.1",
@@ -141,7 +142,6 @@ TEST_DATA = {
             "pkg:maven/pkg4-grp/pkg4@0.0.1",
             "pkg:maven/pkg6-grp/pkg6@0.0.1",
             "pkg:maven/pkg7-grp/pkg7@0.0.1",
-            "pkg:unknown/proj1@0.0.1",
         ],
     },
     "ort-reporter-spdx-2.3/synthetic-scan-result-expected-output.spdx.json": {
@@ -151,6 +151,7 @@ TEST_DATA = {
         "dependencies": 11,
         "vulnerabilities": 0,
         "purls": [
+            "pkg:generic/proj1@0.0.1",
             "pkg:golang/gopkg.in/yaml.v3@3.0.1",
             "pkg:maven/pkg1-grp/pkg1@0.0.1",
             "pkg:maven/pkg2-grp/pkg2@0.0.1",
@@ -158,7 +159,6 @@ TEST_DATA = {
             "pkg:maven/pkg4-grp/pkg4@0.0.1",
             "pkg:maven/pkg6-grp/pkg6@0.0.1",
             "pkg:maven/pkg7-grp/pkg7@0.0.1",
-            "pkg:unknown/proj1@0.0.1",
         ],
     },
 }
