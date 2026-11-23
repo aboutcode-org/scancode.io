@@ -3153,7 +3153,7 @@ requires-dist = [
     { name = "urllib3", specifier = "==2.8.0" },
     { name = "uv", specifier = "==0.13.7" },
     { name = "xlsxwriter", specifier = "==3.3.1" },
-    { name = "yara-python", marker = "python_full_version < '3.14'", specifier = ">=4.5.1" },
+    { name = "yara-python", marker = "python_full_version < '3.14'", specifier = "==4.5.4" },
 ]
 provides-extras = ["dev", "android-analysis", "mining"]
 
