@@ -26,6 +26,7 @@ from unittest import mock
 from django.apps import apps
 from django.core.exceptions import ValidationError
 from django.test import TestCase
+from django.test import override_settings
 
 from scanpipe.pipes.input import copy_input
 from scanpipe.policies import load_policies_file
@@ -91,6 +92,7 @@ class ScanPipePoliciesTest(TestCase):
             license_policies_index, make_license_policy_index(global_policies)
         )
 
+    @override_settings(SCANPIPE={"TRUST_CODEBASE_CONFIG": True})
     def test_scanpipe_policies_scan_codebase_pipeline_integration(self):
         pipeline_name = "scan_codebase"
         project1 = make_project()

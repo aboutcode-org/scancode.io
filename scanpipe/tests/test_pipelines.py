@@ -34,6 +34,7 @@ from unittest import mock
 from unittest import skipIf
 
 from django.test import TestCase
+from django.test import override_settings
 from django.test import tag
 
 import requests
@@ -675,6 +676,7 @@ class ScanPipePipelinesTest(TestCase):
         pipeline = run.make_pipeline_instance()
         self.assertEqual({"product_name": "Product"}, pipeline.env)
 
+    @override_settings(SCANPIPE={"TRUST_CODEBASE_CONFIG": True})
     def test_scanpipe_pipeline_class_env_reloaded_after_extraction(self):
         project1 = make_project()
 
@@ -695,6 +697,22 @@ class ScanPipePipelinesTest(TestCase):
             "ignored_patterns": ["*.tmp", "tests/*"],
         }
         self.assertEqual(expected, pipeline.env)
+        self.assertEqual(0, project1.projectmessages.count())
+
+    def test_scanpipe_pipeline_class_env_ignores_untrusted_archive_config(self):
+        project1 = make_project()
+
+        input_location = self.data / "settings" / "archived-scancode-config.zip"
+        project1.copy_input_from(input_location)
+        run = project1.add_pipeline("scan_codebase")
+        pipeline = run.make_pipeline_instance()
+
+        pipeline.copy_inputs_to_codebase_directory()
+        pipeline.extract_archives()
+
+        self.assertEqual({}, pipeline.env)
+        warning = project1.projectmessages.get()
+        self.assertIn("SCANCODEIO_TRUST_CODEBASE_CONFIG", warning.description)
 
     def test_scanpipe_pipeline_class_flag_ignored_resources(self):
         project1 = make_project()

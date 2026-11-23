@@ -708,12 +708,66 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(expected, project.vulnerabilities)
         self.assertEqual(4, project.vulnerability_count)
 
+    @override_settings(SCANPIPE={"TRUST_CODEBASE_CONFIG": True})
     def test_scanpipe_project_get_codebase_config_directory(self):
         self.assertIsNone(self.project1.get_codebase_config_directory())
         (self.project1.codebase_path / scanpipe_settings.CONFIG_DIR).mkdir()
         config_directory = str(self.project1.get_codebase_config_directory())
         self.assertTrue(config_directory.endswith("codebase/.scancode"))
 
+    def test_scanpipe_project_codebase_config_not_trusted_by_default(self):
+        (self.project1.codebase_path / scanpipe_settings.CONFIG_DIR).mkdir()
+        dir1_path = self.project1.codebase_path / "dir1"
+        dir1_path.mkdir()
+        (dir1_path / scanpipe_settings.CONFIG_FILE).write_text(
+            "ignored_vulnerabilities:\n  - VCID-1\n"
+        )
+        (dir1_path / "policies.yml").touch()
+
+        self.assertIsNone(self.project1.get_codebase_config_directory())
+        self.assertIsNone(self.project1.get_input_config_file())
+        self.assertIsNone(self.project1.get_input_policies_file())
+        self.assertEqual({}, self.project1.get_env())
+        # The lookups have no side effects.
+        self.assertEqual(0, self.project1.projectmessages.count())
+
+        with override_settings(SCANPIPE={"TRUST_CODEBASE_CONFIG": True}):
+            expected = {"ignored_vulnerabilities": ["VCID-1"]}
+            self.assertEqual(expected, self.project1.get_env())
+
+        config_file = self.project1.input_path / scanpipe_settings.CONFIG_FILE
+        config_file.write_text("product_name: from-input\n")
+        self.assertEqual({"product_name": "from-input"}, self.project1.get_env())
+
+    def test_scanpipe_project_add_ignored_codebase_config_warning(self):
+        self.project1.add_ignored_codebase_config_warning()
+        self.assertEqual(0, self.project1.projectmessages.count())
+
+        (self.project1.codebase_path / scanpipe_settings.CONFIG_DIR).mkdir()
+        dir1_path = self.project1.codebase_path / "dir1"
+        dir1_path.mkdir()
+        (dir1_path / scanpipe_settings.CONFIG_FILE).touch()
+        (dir1_path / "policies.yml").touch()
+
+        with override_settings(SCANPIPE={"TRUST_CODEBASE_CONFIG": True}):
+            self.project1.add_ignored_codebase_config_warning()
+        self.assertEqual(0, self.project1.projectmessages.count())
+
+        self.project1.add_ignored_codebase_config_warning()
+        warning = self.project1.projectmessages.get()
+        self.assertEqual("warning", warning.severity)
+        self.assertIn("SCANCODEIO_TRUST_CODEBASE_CONFIG", warning.description)
+        expected_resources = [
+            "codebase/dir1/scancode-config.yml",
+            "codebase/dir1/policies.yml",
+            "codebase/.scancode",
+        ]
+        self.assertEqual(expected_resources, warning.details["resources"])
+
+        self.project1.add_ignored_codebase_config_warning()
+        self.assertEqual(1, self.project1.projectmessages.count())
+
+    @override_settings(SCANPIPE={"TRUST_CODEBASE_CONFIG": True})
     def test_scanpipe_project_get_input_config_file(self):
         self.assertIsNone(self.project1.get_input_config_file())
 
@@ -764,6 +818,7 @@ class ScanPipeModelsTest(TestCase):
         self.assertFalse(self.project1.is_in_codebase(codebase_path / "outside_link"))
         self.assertFalse(self.project1.is_in_codebase(codebase_path / ".." / "input"))
 
+    @override_settings(SCANPIPE={"TRUST_CODEBASE_CONFIG": True})
     def test_scanpipe_project_get_input_config_file_outside_symlink(self):
         outside_dir = Path(tempfile.mkdtemp())
         (outside_dir / scanpipe_settings.CONFIG_FILE).touch()
