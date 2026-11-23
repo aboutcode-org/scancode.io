@@ -31,6 +31,8 @@ from django.test import TestCase
 from scanpipe.models import Project
 from scanpipe.pipes import codebase
 from scanpipe.pipes import scancode
+from scanpipe.tests import make_resource_directory
+from scanpipe.tests import make_resource_file
 
 
 class ScanPipeCodebasePipesTest(TestCase):
@@ -71,6 +73,20 @@ class ScanPipeCodebasePipesTest(TestCase):
         _replace_path(virtual_tree_children)
 
         self.assertEqual(expected["children"], virtual_tree_children)
+
+    def test_scanpipe_pipes_codebase_get_resource_tree(self):
+        project = Project.objects.create(name="project")
+        directory = make_resource_directory(project, path="dir")
+        make_resource_file(project, path="dir/file.txt")
+
+        expected = {
+            "name": "dir",
+            "path": "dir",
+            "children": [{"name": "file.txt", "path": "dir/file.txt"}],
+        }
+        tree = codebase.get_resource_tree(directory, ["name", "path"])
+        self.assertEqual(expected, tree)
+        self.assertEqual((None, None), codebase.get_resource_tree.__defaults__)
 
     def test_scanpipe_pipes_codebase_project_codebase_class_no_resources(self):
         project = Project.objects.create(name="project")
