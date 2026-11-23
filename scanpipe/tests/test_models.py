@@ -1707,6 +1707,14 @@ class ScanPipeModelsTest(TestCase):
         line_count = len(resource.file_content.split("\n"))
         self.assertEqual(101, line_count)
 
+    def test_scanpipe_codebase_resource_model_long_file_type(self):
+        file_type = "ELF 64-bit LSB shared object, " * 50
+        resource = self.project1.codebaseresources.create(
+            path="lib.so", file_type=file_type
+        )
+        resource.refresh_from_db()
+        self.assertEqual(file_type, resource.file_type)
+
     def test_scanpipe_codebase_resource_model_has_parent_segment(self):
         self.assertFalse(CodebaseResource.has_parent_segment("dir/file..txt"))
         self.assertFalse(CodebaseResource.has_parent_segment("..dir/file"))
