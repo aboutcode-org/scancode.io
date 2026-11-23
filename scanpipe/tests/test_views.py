@@ -967,22 +967,26 @@ class ScanPipeViewsTest(TestCase):
         run = self.project1.add_pipeline("analyze_docker_image")
         url = reverse("project_execute_pipelines", args=[self.project1.slug])
 
-        response = self.client.get(url, follow=True)
+        response = self.client.get(url)
+        self.assertEqual(405, response.status_code)
+        mock_execute_task.assert_not_called()
+
+        response = self.client.post(url, follow=True)
         expected = "Pipelines run started."
         self.assertContains(response, expected)
         mock_execute_task.assert_called_once()
         self.assertRedirects(response, self.project1.get_absolute_url())
 
         run.set_task_queued()
-        response = self.client.get(url)
+        response = self.client.post(url)
         self.assertEqual(404, response.status_code)
 
         run.set_task_started(run.pk)
-        response = self.client.get(url)
+        response = self.client.post(url)
         self.assertEqual(404, response.status_code)
 
         run.set_task_stopped()
-        response = self.client.get(url)
+        response = self.client.post(url)
         self.assertEqual(404, response.status_code)
 
     @mock.patch("scanpipe.models.Run.stop_task")
@@ -990,11 +994,15 @@ class ScanPipeViewsTest(TestCase):
         run = self.project1.add_pipeline("analyze_docker_image")
         url = reverse("project_stop_pipeline", args=[self.project1.slug, run.uuid])
 
-        response = self.client.get(url)
+        response = self.client.post(url)
         self.assertEqual(404, response.status_code)
 
         run.set_task_started(run.pk)
-        response = self.client.get(url, follow=True)
+        response = self.client.get(url)
+        self.assertEqual(405, response.status_code)
+        mock_stop_task.assert_not_called()
+
+        response = self.client.post(url, follow=True)
         expected = f"Pipeline {run.pipeline_name} stopped."
         self.assertContains(response, expected)
         mock_stop_task.assert_called_once()
@@ -1004,14 +1012,43 @@ class ScanPipeViewsTest(TestCase):
         run = self.project1.add_pipeline("analyze_docker_image")
         url = reverse("project_delete_pipeline", args=[self.project1.slug, run.uuid])
 
-        response = self.client.get(url, follow=True)
+        response = self.client.get(url)
+        self.assertEqual(405, response.status_code)
+        mock_delete_task.assert_not_called()
+
+        response = self.client.post(url, follow=True)
         expected = f"Pipeline {run.pipeline_name} deleted."
         self.assertContains(response, expected)
         mock_delete_task.assert_called_once()
 
         run.set_task_stopped()
-        response = self.client.get(url)
+        response = self.client.post(url)
         self.assertEqual(404, response.status_code)
+
+    def test_scanpipe_views_pipeline_actions_are_post_forms(self):
+        run = self.project1.add_pipeline("do_nothing")
+
+        response = self.client.get(self.project1.get_absolute_url())
+        execute_url = reverse("project_execute_pipelines", args=[self.project1.slug])
+        expected = f'id="execute-pipelines-form" method="post" action="{execute_url}"'
+        self.assertContains(response, expected)
+        self.assertNotContains(response, f'href="{execute_url}"')
+
+        run_detail_url = reverse("run_detail", args=[run.uuid])
+        delete_url = reverse(
+            "project_delete_pipeline", args=[self.project1.slug, run.uuid]
+        )
+        response = self.client.get(run_detail_url)
+        self.assertContains(response, f'<form method="post" action="{delete_url}"')
+        self.assertContains(response, "csrfmiddlewaretoken")
+        self.assertNotContains(response, f'href="{delete_url}"')
+
+        run.set_task_started(run.pk)
+        stop_url = reverse("project_stop_pipeline", args=[self.project1.slug, run.uuid])
+        response = self.client.get(run_detail_url)
+        self.assertContains(response, f'<form method="post" action="{stop_url}"')
+        self.assertContains(response, "csrfmiddlewaretoken")
+        self.assertNotContains(response, f'href="{stop_url}"')
 
     def test_scanpipe_views_delete_webhook_view(self):
         webhook = self.project1.add_webhook_subscription(target_url="https://localhost")

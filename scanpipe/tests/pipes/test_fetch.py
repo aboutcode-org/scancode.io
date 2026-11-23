@@ -24,6 +24,7 @@ import json
 import os
 import socket
 import tempfile
+import time
 from pathlib import Path
 from unittest import mock
 
@@ -1120,3 +1121,52 @@ class ScanPipeFetchPipesTest(TestCase):
         fetch.set_project_purl_from_input_url(project3, ["not-a-url"])
         project3.refresh_from_db()
         self.assertEqual("", project3.purl)
+
+    def test_scanpipe_pipes_fetch_is_url_safe_for_purl_inference(self):
+        supported_urls = [
+            "https://registry.npmjs.org/lodash/-/lodash-4.17.21.tgz",
+            "https://github.com/nexB/scancode-toolkit/archive/v3.1.1.zip",
+            "https://files.pythonhosted.org/packages/py2.py3/w/wheel/"
+            "wheel-0.29.0-py2.py3-none-any.whl",
+        ]
+        for url in supported_urls:
+            self.assertTrue(fetch.is_url_safe_for_purl_inference(url), msg=url)
+
+        rejected_urls = [
+            "https://github.com/a/b/archive/" + "x/" * 24 + "oops",
+            "https://github.com/a/b/archive/" + "x%2F" * 24 + "oops",
+            "https://pypi.org/packages/" + "a-" * 128 + "a%0A.whl",
+            "https://pypi.org/packages/" + "a-" * 128 + "a\n.whl",
+            "https://example.com/" + "a" * 512,
+        ]
+        for url in rejected_urls:
+            self.assertFalse(fetch.is_url_safe_for_purl_inference(url), msg=url)
+
+    @mock.patch("packageurl.contrib.url2purl.get_purl")
+    def test_scanpipe_pipes_fetch_set_project_purl_from_input_url_unsafe_url(
+        self, mock_get_purl
+    ):
+        project = Project.objects.create(name="purl_from_unsafe_url")
+        unsafe_urls = [
+            "https://github.com/a/b/archive/" + "x/" * 32 + "oops",
+            "https://pypi.org/packages/" + "a-" * 256 + "a%0A.whl",
+        ]
+        for url in unsafe_urls:
+            fetch.set_project_purl_from_input_url(project, [url])
+        mock_get_purl.assert_not_called()
+
+    def test_scanpipe_pipes_fetch_set_project_purl_from_input_url_bounded_time(self):
+        project = Project.objects.create(name="purl_from_url_bounded_time")
+        unsafe_urls = [
+            "https://github.com/a/b/archive/" + "x/" * 32 + "oops",
+            "https://pypi.org/packages/" + "a-" * 128 + "a%0A.whl",
+            "https://pypi.org/packages/" + "a-" * 256 + "a%0A.whl",
+        ]
+        for url in unsafe_urls:
+            start_time = time.monotonic()
+            fetch.set_project_purl_from_input_url(project, [url])
+            elapsed_seconds = time.monotonic() - start_time
+            self.assertLess(elapsed_seconds, 1, msg=url)
+
+        project.refresh_from_db()
+        self.assertEqual("", project.purl)

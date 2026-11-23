@@ -96,6 +96,11 @@ def is_available():
     return url_exists(FEDERATEDCODE_GIT_ACCOUNT_URL)
 
 
+def is_single_path_segment(value):
+    """Return True if ``value`` is a single directory name, not a path."""
+    return Path(value).name == value and value != ".."
+
+
 def get_package_repository(project_purl, logger=None):
     """Return the Git repository URL and scan path for a given package."""
     project_package_url = PackageURL.from_string(project_purl)
@@ -103,6 +108,11 @@ def get_package_repository(project_purl, logger=None):
     git_account_url = f"{FEDERATEDCODE_GIT_ACCOUNT_URL}/"
     package_base_dir = hashid.get_package_base_dir(purl=project_purl)
     package_repo_name = package_base_dir.parts[0]
+
+    has_parent_directory = ".." in package_base_dir.parts
+    is_version_valid = is_single_path_segment(project_package_url.version)
+    if has_parent_directory or not is_version_valid:
+        raise ValueError(f"Project PURL cannot be used as a scan path: {project_purl}")
 
     package_scan_path = (
         package_base_dir / project_package_url.version / "scancodeio.json"
@@ -150,6 +160,9 @@ def check_federatedcode_eligibility(project):
 
     if not project_package_url.version:
         raise Exception("Missing version in Project PURL.")
+
+    if not is_single_path_segment(project_package_url.version):
+        raise Exception("Invalid version in Project PURL: it must not be a path.")
 
 
 def check_federatedcode_configured_and_available(logger=None):
@@ -282,7 +295,10 @@ def add_scan_result(project, repo, package_scan_file, logger=None):
     """Add package scan result to the local Git repository."""
     relative_scan_file_path = Path(*package_scan_file.parts[1:])
 
-    write_to = Path(repo.working_dir) / relative_scan_file_path
+    repo_dir = Path(repo.working_dir).resolve()
+    write_to = (repo_dir / relative_scan_file_path).resolve()
+    if not write_to.is_relative_to(repo_dir):
+        raise ValueError(f"Scan file path outside the repository: {package_scan_file}")
 
     write_to.parent.mkdir(parents=True, exist_ok=True)
     results_generator = JSONResultsGenerator(project)
