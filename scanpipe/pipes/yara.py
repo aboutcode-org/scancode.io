@@ -205,38 +205,28 @@ def match_resources_by_yara(project, logger=None):
             )
             continue
 
+        if not matches:
+            continue
+
+        yara_rules = [match.rule for match in matches]
+        matched_strings = {}
         for match in matches:
-            purl = match.purl
-            package_data = purl.to_dict()
-            name = purl.name
-            version = match.version
+            pipes.update_or_create_package(
+                project=project,
+                package_data=match.purl.to_dict(),
+                codebase_resources=[codebase_resource],
+            )
+            matched_strings[match.rule] = match.matched_strings_dict()
 
-            match_extra_data = {
-                "matched_by": "yara",
-                "yara_rule": match.rule,
-                "matched_strings": match.matched_strings_dict(),
-            }
+        resource_extra_data = {
+            "matched_by": "yara",
+            "yara_rules": yara_rules,
+            "matched_strings": matched_strings,
+        }
 
-            # Group matching files under a single package record and
-            # backfill version if found.
-            existing_pkg = project.discoveredpackages.filter(name=name).first()
-            if existing_pkg:
-                if version and not existing_pkg.version:
-                    existing_pkg.update(version=version)
-                package = existing_pkg
-            else:
-                package_data["extra_data"] = match_extra_data
-                package = pipes.update_or_create_package(
-                    project=project,
-                    package_data=package_data,
-                )
-
-            if package:
-                package.codebase_resources.add(codebase_resource)
-
-            codebase_resource.update_extra_data(match_extra_data)
-            codebase_resource.update(status=flag.MATCHED_BY_YARA_RULE)
-            matched_count += 1
+        codebase_resource.update_extra_data(resource_extra_data)
+        codebase_resource.update(status=flag.MATCHED_BY_YARA_RULE)
+        matched_count += 1
 
     if logger:
         logger(f"{matched_count:,d} resources matched via YARA rules.")
