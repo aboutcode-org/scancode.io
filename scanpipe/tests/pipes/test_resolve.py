@@ -76,6 +76,15 @@ class ScanPipeResolvePipesTest(TestCase):
         input_location = self.data / "cyclonedx" / "laravel-7.12.0" / "bom.1.7.json"
         self.assertEqual("cyclonedx", resolve.get_default_package_type(input_location))
 
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            upper_json = Path(tmp_dir) / "spdx_doc.JSON"
+            upper_json.write_text('{"SPDXID": "SPDXRef-DOCUMENT"}')
+            self.assertEqual("spdx", resolve.get_default_package_type(upper_json))
+
+            upper_yml = Path(tmp_dir) / "spdx_doc.YML"
+            upper_yml.write_text("SPDXID: SPDXRef-DOCUMENT\n")
+            self.assertEqual("spdx", resolve.get_default_package_type(upper_yml))
+
     def test_scanpipe_pipes_resolve_set_license_expression(self):
         extracted_license_statement = {"license": "MIT"}
         data = resolve.set_license_expression(
@@ -288,6 +297,14 @@ class ScanPipeResolvePipesTest(TestCase):
         self.assertIsInstance(spdx_document, dict)
         self.assertEqual("SPDXRef-DOCUMENT", spdx_document["SPDXID"])
         self.assertEqual("SPDX-2.2", spdx_document["spdxVersion"])
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            upper_yml = Path(tmp_dir) / "test.YML"
+            upper_yml.write_text(input_location.read_text())
+            spdx_document = resolve.get_spdx_document_from_file(upper_yml)
+            self.assertIsInstance(spdx_document, dict)
+            self.assertEqual("SPDXRef-DOCUMENT", spdx_document["SPDXID"])
+            self.assertEqual("SPDX-2.2", spdx_document["spdxVersion"])
 
     def test_scanpipe_pipes_resolve_spdx_package_to_package_data(self):
         p1 = Project.objects.create(name="Analysis")

@@ -20,6 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
+import tempfile
 from pathlib import Path
 from unittest import TestCase
 
@@ -412,3 +413,69 @@ class ScanPipeSPDXPipesTest(TestCase):
 
         with self.assertRaises(Exception):
             spdx.validate_document({}, self.schema_2_3)
+
+    def test_spdx_is_spdx_document(self):
+        document_location = self.data / "spdx" / "example-2.3.1.json"
+        self.assertTrue(spdx.is_spdx_document(document_location))
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp_path = Path(tmp_dir)
+
+            # Valid SPDX YAML document
+            yaml_spdx = tmp_path / "valid.spdx.yaml"
+            yaml_spdx.write_text("SPDXID: SPDXRef-DOCUMENT\nname: test\n")
+            self.assertTrue(spdx.is_spdx_document(yaml_spdx))
+
+            # Case-insensitive extensions
+            upper_json = tmp_path / "test.JSON"
+            upper_json.write_text('{"SPDXID": "SPDXRef-DOCUMENT"}')
+            self.assertTrue(spdx.is_spdx_document(upper_json))
+
+            upper_yml = tmp_path / "test.YML"
+            upper_yml.write_text("SPDXID: SPDXRef-DOCUMENT")
+            self.assertTrue(spdx.is_spdx_document(upper_yml))
+
+            # Top-level list in JSON
+            json_list = tmp_path / "list.json"
+            json_list.write_text('[{"name": "foo"}]')
+            self.assertFalse(spdx.is_spdx_document(json_list))
+
+            # Top-level list in YAML
+            yaml_list = tmp_path / "list.yaml"
+            yaml_list.write_text("- item1\n- item2\n")
+            self.assertFalse(spdx.is_spdx_document(yaml_list))
+
+            # JSON and YAML without SPDXID
+            no_spdx_json = tmp_path / "no_spdx.json"
+            no_spdx_json.write_text('{"name": "test"}')
+            self.assertFalse(spdx.is_spdx_document(no_spdx_json))
+
+            no_spdx_yaml = tmp_path / "no_spdx.yaml"
+            no_spdx_yaml.write_text("name: test")
+            self.assertFalse(spdx.is_spdx_document(no_spdx_yaml))
+
+            # Primitive types in JSON and YAML
+            str_json = tmp_path / "string.json"
+            str_json.write_text('"just a string"')
+            self.assertFalse(spdx.is_spdx_document(str_json))
+
+            str_yaml = tmp_path / "string.yaml"
+            str_yaml.write_text("just a string")
+            self.assertFalse(spdx.is_spdx_document(str_yaml))
+
+            int_json = tmp_path / "number.json"
+            int_json.write_text("42")
+            self.assertFalse(spdx.is_spdx_document(int_json))
+
+            # Empty file
+            empty_file = tmp_path / "empty.json"
+            empty_file.write_text("")
+            self.assertFalse(spdx.is_spdx_document(empty_file))
+
+            # Non-json/yaml file
+            txt_file = tmp_path / "file.txt"
+            txt_file.write_text('{"SPDXID": "SPDXRef-DOCUMENT"}')
+            self.assertFalse(spdx.is_spdx_document(txt_file))
+
+            # Non-existent file
+            self.assertFalse(spdx.is_spdx_document(tmp_path / "non_existent.json"))

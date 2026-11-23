@@ -701,15 +701,16 @@ def validate_document(document, schema=SPDX_SCHEMA_2_3_PATH):
 
 def is_spdx_document(input_location):
     """Return True if the file at `input_location` is a SPDX Document."""
-    input_location = str(input_location)
-    data = {}
+    location_lower = str(input_location).lower()
 
     with suppress(Exception):
-        if input_location.endswith(".json"):
+        data = {}
+        if location_lower.endswith(".json"):
             data = json.loads(Path(input_location).read_text())
-        elif input_location.endswith((".yml", ".yaml")):
+        elif location_lower.endswith((".yml", ".yaml")):
             data = saneyaml.load(Path(input_location).read_text())
 
-    if data.get("SPDXID"):
-        return True
+        if isinstance(data, dict) and data.get("SPDXID"):
+            return True
+
     return False
