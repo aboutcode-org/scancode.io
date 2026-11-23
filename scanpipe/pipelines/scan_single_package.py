@@ -22,6 +22,7 @@
 
 import json
 
+from django.conf import settings
 from django.core.serializers.json import DjangoJSONEncoder
 
 from commoncode.hash import multi_checksums
@@ -137,3 +138,15 @@ class ScanSinglePackage(Pipeline):
 
         with output_file.open("w") as summary_file:
             summary_file.write(json.dumps(summary, indent=2, cls=DjangoJSONEncoder))
+
+        # Ensure SITE_URL is properly configured for notifications
+        if not settings.SITE_URL:
+            self.project.add_error(
+                description="SITE_URL is not configured. Notifications may fail.",
+                model=self.pipeline_name,
+                details={
+                    "error_type": "ConfigurationError",
+                    "setting": "SITE_URL",
+                    "recommendation": "Set SITE_URL in your Django settings or environment variables (e.g., http://localhost:8001/)."
+                }
+            )
