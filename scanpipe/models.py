@@ -2912,8 +2912,7 @@ class CodebaseResource(
             "See https://en.wikipedia.org/wiki/Media_type"
         ),
     )
-    file_type = models.CharField(
-        max_length=1024,
+    file_type = models.TextField(
         blank=True,
         help_text=_("Descriptive file type for this resource."),
     )
