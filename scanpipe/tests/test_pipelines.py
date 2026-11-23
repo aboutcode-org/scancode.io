@@ -36,6 +36,7 @@ from unittest import skipIf
 from django.test import TestCase
 from django.test import tag
 
+import requests
 from packageurl import PackageURL
 from scancode.cli_test_utils import purl_with_fake_uuid
 from scorecode.models import PackageScore
@@ -1839,15 +1840,24 @@ class PipelinesIntegrationTest(TestCase):
                 ],
             },
         ]
-        response_json = {"results": vulnerability_data}
-        mock_bulk_search_by_purl.return_value = response_json
+        mock_bulk_search_by_purl.return_value = vulnerability_data
 
         exitcode, out = pipeline.execute()
         self.assertEqual(0, exitcode, msg=out)
 
         package1.refresh_from_db()
-        expected = vulnerability_data[0]["affected_by_vulnerabilities"]
+        expected = [
+            *vulnerability_data[0]["affected_by_vulnerabilities"],
+            *vulnerability_data[1]["affected_by_vulnerabilities"],
+        ]
         self.assertEqual(expected, package1.affected_by_vulnerabilities)
+
+        run = project1.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+        mock_bulk_search_by_purl.side_effect = requests.HTTPError("503 Server Error")
+        exitcode, out = pipeline.execute()
+        self.assertEqual(1, exitcode, msg=out)
+        self.assertIn("503 Server Error", out)
 
     @mock.patch("scorecode.ossf_scorecard.is_available")
     def test_scanpipe_fetch_scores_pipeline_integration(self, mock_is_available):

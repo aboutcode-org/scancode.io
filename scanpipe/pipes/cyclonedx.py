@@ -217,9 +217,33 @@ def cyclonedx_component_to_package_data(
 
 
 def get_components(bom):
-    """Return components from CycloneDX BOM except for the metadata.component."""
+    """
+    Return components from CycloneDX BOM, including the metadata.component nested
+    components, except for the metadata.component itself.
+    """
     for component in bom.components:
         yield from component.get_all_nested_components(include_self=True)
+
+    if metadata_component := bom.metadata.component:
+        yield from metadata_component.get_all_nested_components(include_self=False)
+
+
+def add_metadata_component_children(cyclonedx_document_json):
+    """
+    Return the CycloneDX document with the components nested in the
+    metadata.component added to the root components, as the metadata is not loaded.
+    """
+    metadata = cyclonedx_document_json.get("metadata") or {}
+    metadata_component = metadata.get("component") or {}
+    metadata_children = metadata_component.get("components", [])
+    if not metadata_children:
+        return cyclonedx_document_json
+
+    root_components = cyclonedx_document_json.get("components") or []
+    return {
+        **cyclonedx_document_json,
+        "components": [*root_components, *metadata_children],
+    }
 
 
 def delete_ignored_root_properties(cyclonedx_document_json):
@@ -316,6 +340,7 @@ def get_bom_instance_from_file(input_location):
         cyclonedx_document = json.loads(document_data)
 
         # Apply a few fixes pre-validation for maximum compatibility
+        cyclonedx_document = add_metadata_component_children(cyclonedx_document)
         cyclonedx_document = delete_ignored_root_properties(cyclonedx_document)
         cyclonedx_document = cleanup_components_properties(cyclonedx_document)
 

@@ -76,6 +76,19 @@ class ScanPipeCycloneDXPipesTest(TestCase):
         ]
         self.assertEqual(sorted(expected), (sorted(purls)))
 
+    def test_scanpipe_cyclonedx_get_components_metadata_component_children(self):
+        grandchild = Component(name="grandchild", bom_ref="grandchild")
+        child = Component(name="child", bom_ref="child", components=[grandchild])
+        application = Component(name="application", components=[child])
+        top = Component(name="top", bom_ref="top")
+        bom = Bom(components=[top])
+        bom.metadata.component = application
+
+        component_names = [
+            component.name for component in cyclonedx.get_components(bom)
+        ]
+        self.assertEqual(["child", "grandchild", "top"], sorted(component_names))
+
     def test_scanpipe_cyclonedx_resolve_license(self):
         license = cdx_license_model.LicenseExpression("OFL-1.1 AND Apache-2.0")
         result = cyclonedx.resolve_license(license)
@@ -269,6 +282,27 @@ class ScanPipeCycloneDXPipesTest(TestCase):
         ]
         self.assertEqual(expected, sorted(cdx_vulnerability_data.keys()))
 
+    def test_scanpipe_cyclonedx_resolve_cyclonedx_packages_metadata_children(self):
+        for extension in ["json", "xml"]:
+            input_location = self.data / f"metadata_component_children.cdx.{extension}"
+            packages = cyclonedx.resolve_cyclonedx_packages(input_location)
+
+            self.assertEqual(3, len(packages), msg=extension)
+            packages_by_uid = {package["package_uid"]: package for package in packages}
+            expected = [
+                "pkg:pypi/child@1.0",
+                "pkg:pypi/grandchild@2.0",
+                "pkg:pypi/top@3.0",
+            ]
+            self.assertEqual(expected, sorted(packages_by_uid), msg=extension)
+
+            child_package = packages_by_uid["pkg:pypi/child@1.0"]
+            affected_by = child_package["affected_by_vulnerabilities"]
+            advisory_uids = [
+                vulnerability["advisory_uid"] for vulnerability in affected_by
+            ]
+            self.assertEqual(["CVE-2024-0001"], advisory_uids, msg=extension)
+
     def test_scanpipe_cyclonedx_resolve_cyclonedx_packages_pre_validation(self):
         # This SBOM includes multiple deserialization issues that are "fixed"
         # by the pre-validation cleanup.
@@ -314,3 +348,25 @@ class ScanPipeCycloneDXPipesTest(TestCase):
         results = cyclonedx.delete_ignored_root_properties(cyclonedx_document_json)
         self.assertIn("components", results)
         self.assertNotIn("metadata", results)
+
+    def test_scanpipe_cyclonedx_add_metadata_component_children(self):
+        child = {"bom-ref": "pkg:type/child", "components": [{"bom-ref": "grandchild"}]}
+        cyclonedx_document_json = {
+            "metadata": {"component": {"bom-ref": "subject", "components": [child]}},
+            "components": [{"bom-ref": "pkg:type/top"}],
+        }
+        results = cyclonedx.add_metadata_component_children(cyclonedx_document_json)
+        expected = [{"bom-ref": "pkg:type/top"}, child]
+        self.assertEqual(expected, results["components"])
+        self.assertEqual(cyclonedx_document_json["metadata"], results["metadata"])
+
+        cyclonedx_document_json = {"metadata": {"component": {"components": [child]}}}
+        results = cyclonedx.add_metadata_component_children(cyclonedx_document_json)
+        self.assertEqual([child], results["components"])
+
+        cyclonedx_document_json = {"metadata": {"component": {"bom-ref": "subject"}}}
+        results = cyclonedx.add_metadata_component_children(cyclonedx_document_json)
+        self.assertEqual(cyclonedx_document_json, results)
+
+        results = cyclonedx.add_metadata_component_children({"metadata": None})
+        self.assertEqual({"metadata": None}, results)
