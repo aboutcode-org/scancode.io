@@ -85,13 +85,13 @@ class ScanPipeD2DPipesTest(TestCase):
         self.assertEqual(2, len(from_files))
         self.assertEqual(2, len(to_files))
 
-        _, input_location = tempfile.mkstemp(prefix="")
+        _, input_location = tempfile.mkstemp(prefix="untagged-")
         self.project1.copy_input_from(input_location)
         url_with_fragment = "https://download.url#from"
         input_source1 = self.project1.add_input_source(
             download_url=url_with_fragment, filename=Path(input_location).name
         )
-        _, input_location = tempfile.mkstemp(prefix="")
+        _, input_location = tempfile.mkstemp(prefix="untagged-")
         self.project1.copy_input_from(input_location)
         url_with_fragment = "https://download.url#to"
         input_source2 = self.project1.add_input_source(
