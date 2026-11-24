@@ -24,7 +24,7 @@
 # Stage app-core: app code and Python dependencies
 # ======================================================================================
 
-FROM ghcr.io/astral-sh/uv:0.13.7-python3.14-trixie-slim AS app-core
+FROM ghcr.io/astral-sh/uv:0.13.9-python3.14-trixie-slim AS app-core
 
 # Compile bytecode for faster startup
 ENV UV_COMPILE_BYTECODE=1
