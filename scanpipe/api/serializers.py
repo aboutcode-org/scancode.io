@@ -158,16 +158,20 @@ class InputSourceSerializer(serializers.ModelSerializer):
 
 def is_absolute_http_url(url):
     """
-    Return True if the `url` has an http(s) scheme and a host.
+    Return True if the `url` has an http(s) scheme and a host, and no whitespace.
 
     Django's URLValidator is not used here as it rejects single-label hosts,
     such as ``http://dejacode:8000/``, which are common in container networks.
     """
     try:
         parsed = urlparse(url)
-        return parsed.scheme in ("http", "https") and bool(parsed.hostname)
+        has_scheme_and_host = parsed.scheme in ("http", "https") and bool(
+            parsed.hostname
+        )
     except ValueError:
         return False
+    # urlparse drops tabs and newlines and keeps spaces: none belong in a URL.
+    return has_scheme_and_host and not any(char.isspace() for char in url)
 
 
 class WebhookSubscriptionSerializer(serializers.ModelSerializer):

@@ -626,6 +626,8 @@ class ScanPipeAPITest(TransactionTestCase):
             "ftp://example.com/webhook",
             "http:///webhook",
             "http://[::1/webhook",
+            "http://exa mple.com/webhook",
+            "http://example\t.com/webhook",
         ]
         for url in invalid:
             self.assertFalse(is_absolute_http_url(url), msg=url)
