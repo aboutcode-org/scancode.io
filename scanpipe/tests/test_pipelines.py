@@ -53,6 +53,7 @@ from scanpipe.pipelines import is_pipeline
 from scanpipe.pipelines import scan_single_package
 from scanpipe.pipelines.find_origins import FindOrigins
 from scanpipe.pipelines.find_vulnerabilities import FindVulnerabilities
+from scanpipe.pipelines.scan_and_match_with_yara import ScanAndMatchWithYara
 from scanpipe.pipelines.scan_nix_package import ScanNixPackage
 from scanpipe.pipes import d2d
 from scanpipe.pipes import flag
@@ -61,6 +62,7 @@ from scanpipe.pipes import maven
 from scanpipe.pipes import nix
 from scanpipe.pipes import output
 from scanpipe.pipes import scancode
+from scanpipe.pipes import yara
 from scanpipe.pipes.input import copy_input
 from scanpipe.settings import scanpipe_settings
 from scanpipe.tests import FIXTURES_REGEN
@@ -199,6 +201,19 @@ class ScanPipePipelinesTest(TestCase):
 
         mock_missing_commands.return_value = []
         self.assertIsNone(ScanNixPackage.get_availability())
+
+    @mock.patch("scanpipe.pipes.yara.is_available")
+    def test_scanpipe_scan_and_match_with_yara_get_availability(
+        self, mock_is_available
+    ):
+        mock_is_available.return_value = False
+        self.assertEqual(
+            "yara-python is not installed.",
+            ScanAndMatchWithYara.get_availability(),
+        )
+
+        mock_is_available.return_value = True
+        self.assertIsNone(ScanAndMatchWithYara.get_availability())
 
     def test_scanpipe_scan_nix_package_selected_groups(self):
         project1 = make_project()
@@ -2851,3 +2866,31 @@ class PipelinesIntegrationTest(TestCase):
             ],
             warnings,
         )
+
+    @skipIf(not yara.is_available(), "yara-python is required to run YARA tests.")
+    def test_scanpipe_scan_and_match_with_yara_pipeline_integration(self):
+        project1 = make_project()
+
+        input_file = project1.input_path / "jq_main.c"
+        input_file.write_text(
+            "/* jq - commandline JSON processor */\n"
+            "/* jq-1.7.1 */\n"
+            "void jq_init() {}\n"
+            "void jq_compile() {}\n"
+        )
+
+        run = project1.add_pipeline(pipeline_name="scan_and_match_with_yara")
+        pipeline = run.make_pipeline_instance()
+
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+
+        self.assertEqual(1, project1.discoveredpackages.count())
+        package = project1.discoveredpackages.first()
+        self.assertEqual("pkg:generic/jq@1.7.1", package.package_url)
+        self.assertEqual("1.7.1", package.version)
+        self.assertEqual(1, project1.codebaseresources.files().count())
+        matched_resource = project1.codebaseresources.files().first()
+        self.assertEqual(flag.MATCHED_BY_YARA_RULE, matched_resource.status)
+        self.assertEqual(["jq_detection"], matched_resource.extra_data["yara_rules"])
+        self.assertIn(matched_resource, package.codebase_resources.all())
