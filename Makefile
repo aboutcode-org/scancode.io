@@ -27,6 +27,8 @@
 IMAGE_NAME=scancodeio
 COMPOSE=docker compose -f docker-compose.yml -f docker-compose.dev.yml
 MANAGE=${COMPOSE} exec web ./manage.py
+# Fresh container from the latest scancodeio:dev build, independent of the running stack
+RUN_MANAGE=${COMPOSE} run --rm web ./manage.py
 UV_DOCKER=docker run --rm \
 	--user "$$(id -u):$$(id -g)" \
 	--env UV_CACHE_DIR=/tmp/uv-cache \
@@ -67,11 +69,11 @@ shell:
 # make test              - full suite
 # make test k=<pattern>  - filter by name, e.g. make test k=test_name
 test:
-	${MANAGE} test --noinput $(if $(k),-k $(k),)
+	${RUN_MANAGE} test --noinput $(if $(k),-k $(k),)
 
 fasttest:
 	@echo "-> Run the test suite without the PipelinesIntegrationTest"
-	${MANAGE} test --noinput --exclude-tag slow
+	${RUN_MANAGE} test --noinput --exclude-tag slow
 
 migrations:
 	@echo "-> Creates new database migrations"
@@ -100,8 +102,8 @@ build-full:
 	docker image prune --force
 
 regen-fixtures:
-	@echo "-> Regenerate test fixtures from the running Docker stack"
-	${COMPOSE} exec -e SCANCODEIO_TEST_FIXTURES_REGEN=1 web ./manage.py test
+	@echo "-> Regenerate test fixtures in a fresh container"
+	${COMPOSE} run --rm --env SCANCODEIO_TEST_FIXTURES_REGEN=1 web ./manage.py test
 
 outdated:
 	@echo "-> Check for outdated packages (with 3 days cooldown)"
