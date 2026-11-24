@@ -4,7 +4,7 @@ x-description: "Full ScanCode.io stack: all services, local image build"
 
 services:
   db:
-    image: docker.io/library/postgres:17.11
+    image: docker.io/library/postgres:17.12
     env_file:
       - docker.env
     volumes:
@@ -18,7 +18,7 @@ services:
       retries: 5
 
   redis:
-    image: docker.io/library/redis:8.10.3-alpine
+    image: docker.io/library/redis:8.12.0-alpine
     # Enable redis data persistence using the "Append Only File" with the
     # default policy of fsync every second. See https://redis.io/topics/persistence
     command: redis-server --appendonly yes --loglevel warning
@@ -81,7 +81,7 @@ services:
         condition: service_started
 
   nginx:
-    image: docker.io/library/nginx:1.31.9-alpine-slim
+    image: docker.io/library/nginx:1.31.10-alpine-slim
     ports:
       - "${NGINX_PUBLISHED_HTTP_PORT:-80}:80"
       - "${NGINX_PUBLISHED_HTTPS_PORT:-443}:443"
@@ -95,7 +95,7 @@ services:
     restart: always
 
   clamav:
-    image: docker.io/clamav/clamav:1.5.4_base-debian13-slim
+    image: docker.io/clamav/clamav:1.5.5_base-debian13-slim
     volumes:
       - clamav_data:/var/lib/clamav
       - workspace:/var/scancodeio/workspace/
