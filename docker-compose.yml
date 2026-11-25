@@ -32,7 +32,7 @@ services:
       retries: 5
 
   web:
-    image: ghcr.io/aboutcode-org/scancode.io:v38.3.1-full
+    image: ghcr.io/aboutcode-org/scancode.io:v38.3.2-full
     platform: linux/amd64
     command: sh -c "
         ./manage.py migrate &&
@@ -57,7 +57,7 @@ services:
         condition: service_healthy
 
   worker:
-    image: ghcr.io/aboutcode-org/scancode.io:v38.3.1-full
+    image: ghcr.io/aboutcode-org/scancode.io:v38.3.2-full
     platform: linux/amd64
     # Ensure that potential db migrations run first by waiting until "web" is up
     command: wait-for-it --strict --timeout=600 web:8000 -- sh -c "

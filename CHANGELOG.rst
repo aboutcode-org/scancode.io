@@ -5,6 +5,51 @@ Changelog
 
 * Migrate VulnerableCode integration to API v3
 
+v38.3.2 (2026-11-25)
+--------------------
+
+**Security:** this release fixes vulnerabilities reported by Trail of Bits, see the
+`security advisories <https://github.com/aboutcode-org/scancode.io/security/advisories>`_.
+Upgrading is recommended for all deployments.
+
+**Upgrade notes:**
+
+* Input URLs, Docker registries, git repositories, and webhooks only connect to
+  public addresses. List the private services they must reach in the new
+  ``SCANCODEIO_ALLOWED_PRIVATE_HOSTS`` setting, as ``host:port`` entries: for
+  example the DejaCode instance receiving the webhooks (the host and port of its
+  ``SITE_URL``), the ``SCANCODEIO_GLOBAL_WEBHOOK`` target, internal artifact
+  repositories and Docker registries, and a private HTTP(S) proxy. Webhooks to a
+  private host that is not listed are rejected when created, and fail when
+  delivered. The host and port of the ``PURLDB_URL`` setting are always allowed,
+  for the webhooks of the PurlDB scan worker.
+* The configuration files found in the scanned codebase (``scancode-config.yml``,
+  ``policies.yml``, and the ``.scancode/`` directory) are ignored by default.
+  Provide them as project inputs, or enable the new
+  ``SCANCODEIO_TRUST_CODEBASE_CONFIG`` setting if all scanned codebases are trusted.
+* The vulnerability lookup requires VulnerableCode 40.2.0 or later, and the pipeline
+  run fails when VulnerableCode returns an error or an incomplete response.
+* Starting, stopping, and deleting a pipeline run require a POST request.
+
+**Changes:**
+
+* fix: enforce destination checks on outbound HTTP, git and webhook connections by @tdruez in https://github.com/aboutcode-org/scancode.io/pull/2377
+* fix: complete and fail-closed vulnerability lookups, include CycloneDX metadata children by @tdruez in https://github.com/aboutcode-org/scancode.io/pull/2377
+* fix: render imported URLs as links only for http and https schemes by @tdruez in https://github.com/aboutcode-org/scancode.io/pull/2377
+* fix: require POST for pipeline actions, validate FederatedCode paths, bound PURL inference by @tdruez in https://github.com/aboutcode-org/scancode.io/pull/2377
+* fix: ignore the configuration files found in the scanned codebase by default by @tdruez in https://github.com/aboutcode-org/scancode.io/pull/2377
+* fix: reload the page without URL credentials #2243 by @tdruez in https://github.com/aboutcode-org/scancode.io/pull/2376
+* chore: upgrade dependencies, uv and service images by @tdruez in https://github.com/aboutcode-org/scancode.io/pull/2375
+* fix: store ``CodebaseResource.file_type`` as a TextField #1833 by @tdruez in https://github.com/aboutcode-org/scancode.io/pull/2370
+* fix: use the generic type for SPDX packages without a PURL #1914 by @tdruez in https://github.com/aboutcode-org/scancode.io/pull/2369
+* fix: do not share the ``seen_resources`` default across ``get_resource_tree`` calls by @tdruez in https://github.com/aboutcode-org/scancode.io/pull/2368
+* fix: raise a clear error when rerunning a pipeline on existing resources #1712 by @tdruez in https://github.com/aboutcode-org/scancode.io/pull/2367
+* fix: unhandled AttributeError on JSON and YAML lists in ``is_spdx_document`` by @Rucha0901 in https://github.com/aboutcode-org/scancode.io/pull/2361
+* fix: skip matched extensions in ``match_unmapped_resources`` by @AradhyaTiwari10 in https://github.com/aboutcode-org/scancode.io/pull/2339
+* fix: ignore macOS ``.DS_Store`` files by default #1874 by @codewithfourtix in https://github.com/aboutcode-org/scancode.io/pull/2286
+* fix: update link references from nexB/scancode.io to aboutcode-org/scancode.io by @chinyeungli in https://github.com/aboutcode-org/scancode.io/pull/2357
+* fix: update the Docker nginx image by @ziadhany in https://github.com/aboutcode-org/scancode.io/pull/2353
+
 v38.3.1 (2026-11-18)
 --------------------
 
