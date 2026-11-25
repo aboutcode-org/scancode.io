@@ -22,7 +22,6 @@
 
 import os
 import shutil
-from itertools import zip_longest
 from pathlib import Path
 
 from django.core.exceptions import FieldDoesNotExist
@@ -199,18 +198,22 @@ worksheet_name_to_model = {
 def get_worksheet_data(worksheet):
     """Yield the data of each non-empty row of the provided ``worksheet`` as a dict."""
     # A sparse worksheet generates every empty row up to its last row number, as wide
-    # as its declared dimension, from a few bytes of input: the dimension is ignored,
-    # the rows are limited to the XLSX format maximum, and yielded one at a time.
+    # as its declared dimension or its last cell, from a few bytes of input: the
+    # dimension is ignored, the rows are limited to the XLSX format maximum and to the
+    # header columns, and yielded one at a time.
     worksheet.reset_dimensions()
     try:
         header = [cell.value for cell in next(worksheet.rows)]
     except StopIteration:
         return
 
-    for row in worksheet.iter_rows(min_row=2, max_row=MAX_ROW, values_only=True):
+    rows = worksheet.iter_rows(
+        min_row=2, max_row=MAX_ROW, max_col=len(header), values_only=True
+    )
+    for row in rows:
         is_empty_row = all(value is None for value in row)
         if not is_empty_row:
-            yield dict(zip_longest(header, row[: len(header)]))
+            yield dict(zip(header, row))
 
 
 def clean_xlsx_field_value(model_class, field_name, value):

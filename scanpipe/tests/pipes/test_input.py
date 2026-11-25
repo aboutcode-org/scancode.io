@@ -247,7 +247,12 @@ class ScanPipeInputPipesTest(TestCase):
         worksheet_data = input.get_worksheet_data(worksheet=workbook["RESOURCES"])
 
         self.assertIsInstance(worksheet_data, types.GeneratorType)
-        expected = [{"path": "sparse/file.txt", "type": "file", "name": "file.txt"}]
+        # The rows after the XLSX maximum, and the values outside of the header
+        # columns are ignored. The short rows are padded with None.
+        expected = [
+            {"path": "sparse/file.txt", "type": "file", "name": "file.txt"},
+            {"path": "sparse/short.txt", "type": None, "name": None},
+        ]
         self.assertEqual(expected, list(worksheet_data))
 
     def test_scanpipe_pipes_input_load_inventory_from_xlsx_sparse_rows(self):
@@ -255,7 +260,7 @@ class ScanPipeInputPipesTest(TestCase):
         input_location = self.data / "outputs" / "sparse_rows_inventory.xlsx"
         input.load_inventory_from_xlsx(project1, input_location)
         resource_paths = list(project1.codebaseresources.values_list("path", flat=True))
-        self.assertEqual(["sparse/file.txt"], resource_paths)
+        self.assertEqual(["sparse/file.txt", "sparse/short.txt"], resource_paths)
 
     def test_scanpipe_pipes_input_load_inventory_from_xlsx_layers_sheet(self):
         project1 = Project.objects.create(name="Analysis")
