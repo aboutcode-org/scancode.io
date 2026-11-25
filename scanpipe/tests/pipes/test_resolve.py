@@ -493,13 +493,15 @@ class ScanPipeResolvePipesTest(TestCase):
         parent = make_package(
             p1, "pkg:type/parent", extra_data={"depends_on": ["child"]}
         )
-        child = make_package(p1, "pkg:type/child", package_uid="child")
+        child_purl = "pkg:maven/org.example/child@1.2.3?classifier=sources#src/main"
+        child = make_package(p1, child_purl, package_uid="child")
 
         created_count = resolve.create_dependencies_from_packages_extra_data(p1)
         self.assertEqual(1, created_count)
         dependency = p1.discovereddependencies.get()
         self.assertEqual(parent, dependency.for_package)
         self.assertEqual(child, dependency.resolved_to_package)
+        self.assertEqual(child_purl, dependency.package_url)
         self.assertTrue(dependency.is_runtime)
         self.assertTrue(dependency.is_pinned)
         self.assertTrue(dependency.is_direct)

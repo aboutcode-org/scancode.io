@@ -36,6 +36,7 @@ from attributecode.model import PathField
 from packagedcode import APPLICATION_PACKAGE_DATAFILE_HANDLERS
 from packagedcode.licensing import get_license_detections_and_expression
 from packageurl import PackageURL
+from packageurl.contrib.django.models import PACKAGE_URL_FIELDS
 
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
@@ -184,6 +185,10 @@ def create_dependencies_from_packages_extra_data(project):
                 is_runtime=True,
                 is_pinned=True,
                 is_direct=True,
+                **{
+                    field_name: getattr(resolved_to_package, field_name)
+                    for field_name in PACKAGE_URL_FIELDS
+                },
             )
             created_count += 1
 
