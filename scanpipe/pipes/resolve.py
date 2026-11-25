@@ -186,8 +186,8 @@ def create_dependencies_from_packages_extra_data(project):
                 is_pinned=True,
                 is_direct=True,
                 **{
-                    field: getattr(resolved_to_package, field)
-                    for field in PACKAGE_URL_FIELDS
+                    field_name: getattr(resolved_to_package, field_name)
+                    for field_name in PACKAGE_URL_FIELDS
                 },
             )
             created_count += 1

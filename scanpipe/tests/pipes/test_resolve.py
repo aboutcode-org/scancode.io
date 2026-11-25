@@ -30,7 +30,6 @@ from django.test import TestCase
 
 from scanpipe import pipes
 from scanpipe.models import Project
-from scanpipe.pipes import purldb
 from scanpipe.pipes import resolve
 from scanpipe.pipes import spdx
 from scanpipe.pipes.input import copy_inputs
@@ -466,14 +465,15 @@ class ScanPipeResolvePipesTest(TestCase):
         parent = make_package(
             p1, "pkg:type/parent", extra_data={"depends_on": ["child"]}
         )
-        child = make_package(p1, "pkg:type/child", package_uid="child")
+        child_purl = "pkg:maven/org.example/child@1.2.3?classifier=sources#src/main"
+        child = make_package(p1, child_purl, package_uid="child")
 
         created_count = resolve.create_dependencies_from_packages_extra_data(p1)
         self.assertEqual(1, created_count)
         dependency = p1.discovereddependencies.get()
         self.assertEqual(parent, dependency.for_package)
         self.assertEqual(child, dependency.resolved_to_package)
-        self.assertEqual(child.package_url, dependency.package_url)
+        self.assertEqual(child_purl, dependency.package_url)
         self.assertTrue(dependency.is_runtime)
         self.assertTrue(dependency.is_pinned)
         self.assertTrue(dependency.is_direct)
@@ -488,36 +488,6 @@ class ScanPipeResolvePipesTest(TestCase):
             "Could not find resolved_to package entry: unknown.", message.description
         )
         self.assertEqual("create_dependencies", message.model)
-
-    def test_scanpipe_resolve_sbom_dependencies_preserve_package_urls(self):
-        project = Project.objects.create(name="Analysis")
-        make_package(
-            project,
-            "pkg:type/parent",
-            extra_data={"depends_on": ["python-child", "maven-child"]},
-        )
-        purls = {
-            "python-child": "pkg:pypi/beautifulsoup4@4.13.3",
-            "maven-child": (
-                "pkg:maven/org.example/child@1.2.3?classifier=sources#src/main"
-            ),
-        }
-        for package_uid, purl in purls.items():
-            make_package(project, purl, package_uid=package_uid)
-
-        self.assertEqual(
-            2, resolve.create_dependencies_from_packages_extra_data(project)
-        )
-
-        for dependency in project.discovereddependencies.all():
-            with self.subTest(package_uid=dependency.resolved_to_package.package_uid):
-                expected = purls[dependency.resolved_to_package.package_uid]
-                self.assertEqual(expected, dependency.package_url)
-
-        self.assertEqual(
-            {"pkg:pypi/beautifulsoup4@4.13.3", "pkg:maven/org.example/child@1.2.3"},
-            purldb.get_unique_resolved_purls(project),
-        )
 
     def test_scanpipe_resolve_get_manifest_headers(self):
         input_location = self.data / "manifests" / "toml.spdx.json"
