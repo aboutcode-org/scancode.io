@@ -224,15 +224,6 @@ def get_manifest_resources(project):
         manifest_type = get_default_package_type(input_location=resource.location)
         if manifest_type:
             resource.update(status=flag.APPLICATION_PACKAGE)
-        elif is_spdx_tag_value_file(resource.location):
-            project.add_warning(
-                description=(
-                    "SPDX tag-value documents are not supported, "
-                    "please provide the SPDX document in JSON or YAML format."
-                ),
-                model="get_manifest_resources",
-                object_instance=resource,
-            )
 
     return project.codebaseresources.filter(status=flag.APPLICATION_PACKAGE)
 
@@ -503,16 +494,6 @@ def resolve_spdx_dependencies(input_location):
     ]
 
 
-def is_spdx_tag_value_file(input_location):
-    """
-    Return True if the file at `input_location` has the ".spdx" extension of the
-    SPDX tag-value format but does not contain an SPDX JSON document.
-    """
-    if not str(input_location).endswith(".spdx"):
-        return False
-    return not spdx.is_spdx_document(input_location)
-
-
 def get_default_package_type(input_location):
     """
     Return the package type associated with the provided `input_location`.
@@ -527,15 +508,10 @@ def get_default_package_type(input_location):
     if input_location.endswith((".spdx.json", ".spdx.yml")):
         return "spdx"
 
-    # ".spdx" is the usual extension of the SPDX tag-value format, which is not
-    # supported: only consider a ".spdx" file that contains an SPDX JSON document.
-    if input_location.endswith(".spdx") and spdx.is_spdx_document(input_location):
-        return "spdx"
-
     if input_location.endswith(("bom.json", ".cdx.json", "bom.xml", ".cdx.xml")):
         return "cyclonedx"
 
-    if input_location.lower().endswith((".json", ".xml", ".yml", ".yaml")):
+    if input_location.lower().endswith((".json", ".xml", ".yml", ".yaml", ".spdx")):
         if cyclonedx.is_cyclonedx_bom(input_location):
             return "cyclonedx"
         if spdx.is_spdx_document(input_location):

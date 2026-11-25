@@ -324,13 +324,6 @@ class ScanPipeResolvePipesTest(TestCase):
             with self.assertRaisesMessage(Exception, "is not valid"):
                 resolve.get_spdx_document_from_file(input_location)
 
-    def test_scanpipe_pipes_resolve_is_spdx_tag_value_file(self):
-        input_location = self.data / "spdx" / "tag-value.spdx"
-        self.assertTrue(resolve.is_spdx_tag_value_file(input_location))
-
-        input_location = self.manifest_location / "toml.spdx.json"
-        self.assertFalse(resolve.is_spdx_tag_value_file(input_location))
-
     def test_scanpipe_pipes_resolve_spdx_package_to_package_data(self):
         p1 = Project.objects.create(name="Analysis")
         package = pipes.update_or_create_package(p1, package_data1)

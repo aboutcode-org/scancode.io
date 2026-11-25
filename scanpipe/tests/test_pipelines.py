@@ -2231,9 +2231,12 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual("toml", project1.discoveredpackages.get().name)
 
         message = project1.projectmessages.get(severity="warning")
-        self.assertIn("SPDX tag-value documents are not supported", message.description)
-        resource_path = message.details["resource_path"]
-        self.assertEqual("tag-value.spdx", resource_path.split("/")[-1])
+        expected_description = (
+            "SPDX tag-value documents are not supported, "
+            "please provide the SPDX document in JSON or YAML format."
+        )
+        self.assertEqual(expected_description, message.description)
+        self.assertEqual({"resource_path": "tag-value.spdx"}, message.details)
 
     def test_scanpipe_load_sbom_pipeline_cyclonedx_integration(self):
         pipeline_name = "load_sbom"

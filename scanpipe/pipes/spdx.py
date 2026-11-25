@@ -716,3 +716,18 @@ def is_spdx_document(input_location):
             return True
 
     return False
+
+
+def is_spdx_tag_value_document(input_location):
+    """
+    Return True if the file at `input_location` is a SPDX Document in the
+    tag-value format, usually stored with the ".spdx" extension.
+    """
+    if not str(input_location).lower().endswith(".spdx"):
+        return False
+
+    with suppress(Exception):
+        text = Path(input_location).read_text()
+        return bool(re.search(r"^SPDXVersion:", text, re.MULTILINE))
+
+    return False
