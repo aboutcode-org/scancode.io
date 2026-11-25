@@ -1004,7 +1004,8 @@ def to_cyclonedx(project, version="1.6"):
 
 def get_expression_as_attribution_links(parsed_expression):
     template = '<a href="#license_{symbol.key}">{symbol.wrapped.spdx_license_key}</a>'
-    return parsed_expression.simplify().render(template=template)
+    # Not simplified: simplify() is quadratic in the number of license symbols.
+    return parsed_expression.render(template=template)
 
 
 def render_template(template_string, context):
@@ -1077,7 +1078,8 @@ def get_package_data_for_attribution(package, licensing):
         package_licenses = [symbol.wrapped for symbol in set(license_symbols)]
         package_data["licenses"] = package_licenses
 
-        expression_links = get_expression_as_attribution_links(parsed)
+        deduplicated_expression = licensing.dedup(parsed)
+        expression_links = get_expression_as_attribution_links(deduplicated_expression)
         package_data["expression_links"] = expression_links
 
     return package_data

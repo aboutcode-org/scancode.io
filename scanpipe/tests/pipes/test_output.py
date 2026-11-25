@@ -713,13 +713,24 @@ class ScanPipeOutputPipesTest(TestCase):
         parsed_expression = licensing.parse(expression)
         rendered = output.get_expression_as_attribution_links(parsed_expression)
         expected = (
+            '<a href="#license_mit">MIT</a>'
+            " AND "
             '<a href="#license_gpl-2.0">GPL-2.0-only</a>'
             " WITH "
             '<a href="#license_classpath-exception-2.0">Classpath-exception-2.0</a>'
-            " AND "
-            '<a href="#license_mit">MIT</a>'
         )
         self.assertEqual(expected, rendered)
+
+    def test_scanpipe_pipes_outputs_get_expression_as_attribution_links_bounded(self):
+        licensing = get_licensing()
+        expression = " OR ".join(["mit", "apache-2.0", "bsd-new", "isc"] * 500)
+        parsed_expression = licensing.parse(expression)
+
+        with mock.patch.object(type(parsed_expression), "simplify") as mock_simplify:
+            rendered = output.get_expression_as_attribution_links(parsed_expression)
+
+        mock_simplify.assert_not_called()
+        self.assertEqual(2000, rendered.count("<a href="))
 
     def test_scanpipe_pipes_outputs_render_template(self):
         template_location = str(self.data / "outputs" / "render_me.html")
@@ -782,8 +793,8 @@ class ScanPipeOutputPipesTest(TestCase):
         data = output.get_package_data_for_attribution(package, get_licensing())
         self.assertEqual("pkg:deb/debian/adduser@3.118?arch=all", data["package_url"])
         expected = (
-            '<a href="#license_gpl-2.0">GPL-2.0-only</a> '
-            'AND <a href="#license_mit">MIT</a>'
+            '<a href="#license_mit">MIT</a> '
+            'AND <a href="#license_gpl-2.0">GPL-2.0-only</a>'
         )
         self.assertEqual(expected, data["expression_links"])
         expected = ["mit", "gpl-2.0"]
