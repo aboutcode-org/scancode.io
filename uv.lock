@@ -2998,7 +2998,7 @@ packages = [
 
 [[package]]
 name = "scancodeio"
-version = "38.3.1"
+version = "38.3.2"
 source = { editable = "." }
 dependencies = [
     { name = "aboutcode-api-auth" },
