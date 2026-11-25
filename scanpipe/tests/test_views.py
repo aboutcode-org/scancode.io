@@ -1385,6 +1385,25 @@ class ScanPipeViewsTest(TestCase):
         response = self.client.get(url, data=data)
         self.assertContains(response, '<table class="diff"')
 
+    def test_scanpipe_views_codebase_relation_diff_view_bounded_work(self):
+        url = reverse("resource_diff", args=[self.project1.slug])
+        from_lines = [f"from line {index}" for index in range(600)]
+        to_lines = [f"to line {index}" for index in range(600)]
+        (self.project1.codebase_path / "from.txt").write_text("\n".join(from_lines))
+        (self.project1.codebase_path / "to.txt").write_text("\n".join(to_lines))
+        from_resource = make_resource_file(self.project1, path="from.txt")
+        to_resource = make_resource_file(self.project1, path="to.txt")
+        data = {"from_path": from_resource.path, "to_path": to_resource.path}
+
+        response = self.client.get(url, data=data)
+        expected = "Cannot diff files with that many changed lines"
+        self.assertContains(response, expected, status_code=400)
+
+        with mock.patch("scanpipe.views.RESOURCE_DIFF_MAX_FILE_SIZE", 100):
+            response = self.client.get(url, data=data)
+        expected = "Cannot diff files larger than 100 bytes"
+        self.assertContains(response, expected, status_code=400)
+
     def test_scanpipe_views_codebase_relation_diff_view_path_traversal(self):
         url = reverse("resource_diff", args=[self.project1.slug])
         (self.project1.codebase_path / "a.txt").write_text("content")
