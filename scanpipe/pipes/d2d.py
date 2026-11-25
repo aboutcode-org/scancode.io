@@ -20,13 +20,13 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
+import fnmatch
 import re
 from collections import Counter
 from collections import defaultdict
 from contextlib import suppress
 from dataclasses import dataclass
 from pathlib import Path
-from re import match as regex_match
 
 from django.contrib.postgres.aggregates.general import ArrayAgg
 from django.core.exceptions import MultipleObjectsReturned
@@ -53,7 +53,6 @@ from aboutcode.pipeline import LoopProgress
 from scanpipe import pipes
 from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
-from scanpipe.models import convert_glob_to_django_regex
 from scanpipe.pipes import d2d_config
 from scanpipe.pipes import flag
 from scanpipe.pipes import get_resource_diff_ratio
@@ -985,6 +984,17 @@ def _map_javascript_resource(
             resource.update(status=flag.MAPPED)
 
 
+def convert_glob_to_regex(glob_pattern):
+    """
+    Return the compiled regex matching the paths of ``glob_pattern``, where ``*``
+    and ``?`` are the only wildcards.
+    """
+    # The fnmatch translation does not backtrack on consecutive wildcards, unlike a
+    # ".*" per wildcard. A "[" is escaped to stay a literal character.
+    literal_bracket_pattern = glob_pattern.replace("[", "[[]")
+    return re.compile(fnmatch.translate(literal_bracket_pattern))
+
+
 @dataclass
 class AboutFileIndexes:
     """
@@ -994,11 +1004,11 @@ class AboutFileIndexes:
     patterns and other About file data.
     """
 
-    # Mapping of About file paths and the regex pattern
-    # string for the files documented
+    # Mapping of About file paths and the compiled regex
+    # for the files documented
     regex_by_about_path: dict
-    # Mapping of About file paths and a list of path pattern
-    # strings, for the files to be ignored
+    # Mapping of About file paths and a list of compiled
+    # regexes, for the files to be ignored
     ignore_regex_by_about_path: dict
     # Resource objects for About files present in the codebase,
     # by their path
@@ -1051,13 +1061,13 @@ class AboutFileIndexes:
                 continue
             else:
                 count_indexed_about_files += 1
-                regex = convert_glob_to_django_regex(files_pattern)
+                regex = convert_glob_to_regex(files_pattern)
                 regex_by_about_path[about_file_resource.path] = regex
 
             if extra_data := package_data.get("extra_data"):
                 ignore_regex = []
                 for pattern in extra_data.get("ignored_resources", []):
-                    ignore_regex.append(convert_glob_to_django_regex(pattern))
+                    ignore_regex.append(convert_glob_to_regex(pattern))
                 if ignore_regex:
                     ignore_regex_by_about_path[about_file_resource.path] = ignore_regex
 
@@ -1086,8 +1096,8 @@ class AboutFileIndexes:
         None.
         """
         resource_mapped = False
-        for about_path, regex_pattern in self.regex_by_about_path.items():
-            if regex_match(pattern=regex_pattern, string=to_resource.path):
+        for about_path, regex in self.regex_by_about_path.items():
+            if regex.match(to_resource.path):
                 resource_mapped = True
                 break
 
@@ -1096,8 +1106,8 @@ class AboutFileIndexes:
 
         ignore_regex_patterns = self.ignore_regex_by_about_path.get(about_path, [])
         ignore_resource = False
-        for ignore_regex_pattern in ignore_regex_patterns:
-            if regex_match(pattern=ignore_regex_pattern, string=to_resource.path):
+        for ignore_regex in ignore_regex_patterns:
+            if ignore_regex.match(to_resource.path):
                 ignore_resource = True
                 break
 
