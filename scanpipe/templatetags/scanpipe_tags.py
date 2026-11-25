@@ -27,8 +27,11 @@ from django import template
 from scancode_config import __version__ as scancode_toolkit_version
 
 from scancodeio import __version__ as scancodeio_version
+from scancodeio.auth import is_authenticated_when_required
 
 register = template.Library()
+
+register.filter(is_authenticated_when_required)
 
 
 @register.simple_tag
