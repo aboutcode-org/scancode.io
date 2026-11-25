@@ -22,10 +22,13 @@
 
 import json
 import tempfile
+import types
 from pathlib import Path
 
 from django.core.management import call_command
 from django.test import TestCase
+
+import openpyxl
 
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
@@ -235,6 +238,24 @@ class ScanPipeInputPipesTest(TestCase):
         self.assertEqual(2, project1.discoveredpackages.count())
         self.assertEqual(8, project1.discovereddependencies.count())
         self.assertEqual(0, project1.codebaserelations.count())
+
+    def test_scanpipe_pipes_input_get_worksheet_data_sparse_rows(self):
+        input_location = self.data / "outputs" / "sparse_rows_inventory.xlsx"
+        workbook = openpyxl.load_workbook(
+            input_location, read_only=True, data_only=True
+        )
+        worksheet_data = input.get_worksheet_data(worksheet=workbook["RESOURCES"])
+
+        self.assertIsInstance(worksheet_data, types.GeneratorType)
+        expected = [{"path": "sparse/file.txt", "type": "file", "name": "file.txt"}]
+        self.assertEqual(expected, list(worksheet_data))
+
+    def test_scanpipe_pipes_input_load_inventory_from_xlsx_sparse_rows(self):
+        project1 = Project.objects.create(name="Analysis")
+        input_location = self.data / "outputs" / "sparse_rows_inventory.xlsx"
+        input.load_inventory_from_xlsx(project1, input_location)
+        resource_paths = list(project1.codebaseresources.values_list("path", flat=True))
+        self.assertEqual(["sparse/file.txt"], resource_paths)
 
     def test_scanpipe_pipes_input_load_inventory_from_xlsx_layers_sheet(self):
         project1 = Project.objects.create(name="Analysis")

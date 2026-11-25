@@ -22,6 +22,7 @@
 
 import os
 import shutil
+from itertools import zip_longest
 from pathlib import Path
 
 from django.core.exceptions import FieldDoesNotExist
@@ -29,6 +30,7 @@ from django.core.validators import EMPTY_VALUES
 from django.db import models
 
 import openpyxl
+from openpyxl.xml.constants import MAX_ROW
 from typecode.contenttype import get_type
 
 from scanpipe import pipes
@@ -195,17 +197,20 @@ worksheet_name_to_model = {
 
 
 def get_worksheet_data(worksheet):
-    """Return the data from provided ``worksheet`` as a list of dict."""
+    """Yield the data of each non-empty row of the provided ``worksheet`` as a dict."""
+    # A sparse worksheet generates every empty row up to its last row number, as wide
+    # as its declared dimension, from a few bytes of input: the dimension is ignored,
+    # the rows are limited to the XLSX format maximum, and yielded one at a time.
+    worksheet.reset_dimensions()
     try:
         header = [cell.value for cell in next(worksheet.rows)]
     except StopIteration:
-        return {}
+        return
 
-    worksheet_data = [
-        dict(zip(header, row))
-        for row in worksheet.iter_rows(min_row=2, values_only=True)
-    ]
-    return worksheet_data
+    for row in worksheet.iter_rows(min_row=2, max_row=MAX_ROW, values_only=True):
+        is_empty_row = all(value is None for value in row)
+        if not is_empty_row:
+            yield dict(zip_longest(header, row[: len(header)]))
 
 
 def clean_xlsx_field_value(model_class, field_name, value):
@@ -269,7 +274,7 @@ def load_inventory_from_xlsx(project, input_location, extra_data_prefix=None):
                 object_maker_func(project, cleaned_data)
 
     if "LAYERS" in workbook:
-        layers_data = get_worksheet_data(worksheet=workbook["LAYERS"])
+        layers_data = list(get_worksheet_data(worksheet=workbook["LAYERS"]))
         extra_data = {"layers": layers_data}
         if extra_data_prefix:
             extra_data = {extra_data_prefix: extra_data}
