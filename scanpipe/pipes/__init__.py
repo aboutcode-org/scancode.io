@@ -252,14 +252,11 @@ def ignore_dependency_scope(project, dependency_data):
         return False
 
     dependency_package_type = dependency_data.get("package_type")
-    if not dependency_package_type:
+    purl = dependency_data.get("purl")
+    if not dependency_package_type and purl:
         # Dependency data from a scancode-toolkit scan has no "package_type"
         # entry: derive the type from the purl instead.
-        try:
-            purl = dependency_data.get("purl") or ""
-            dependency_package_type = PackageURL.from_string(purl).type
-        except ValueError:
-            dependency_package_type = None
+        dependency_package_type = PackageURL.from_string(purl).type
     dependency_scope = dependency_data.get("scope")
     if dependency_package_type and dependency_scope:
         if dependency_scope in ignored_scope_index.get(dependency_package_type, []):

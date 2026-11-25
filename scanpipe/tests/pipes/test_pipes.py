@@ -238,8 +238,6 @@ class ScanPipePipesTest(TestCase):
 
     def test_scanpipe_pipes_ignore_dependency_scope_package_type_from_purl(self):
         # https://github.com/aboutcode-org/scancode.io/issues/2215
-        # Dependency data from a scancode-toolkit scan has no "package_type"
-        # entry: the type must be derived from the purl.
         p1 = Project.objects.create(name="Analysis")
         p1.settings = {
             "ignored_dependency_scopes": [
