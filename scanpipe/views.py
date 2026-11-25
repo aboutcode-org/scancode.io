@@ -2780,6 +2780,8 @@ class ProjectDependencyTreeView(ConditionalLoginRequired, generic.DetailView):
         return context
 
     def get_dependency_tree(self, project):
+        self.expanded_package_ids = set()
+
         root_packages = (
             project.discoveredpackages.root_packages()
             .order_by("name")
@@ -2801,6 +2803,23 @@ class ProjectDependencyTreeView(ConditionalLoginRequired, generic.DetailView):
         return dependency_tree
 
     def get_node(self, package):
+        node = {
+            "name": str(package),
+            "url": package.get_absolute_url(),
+            "compliance_alert": package.compliance_alert,
+            "has_compliance_issue": package.has_compliance_issue,
+            "is_vulnerable": package.is_vulnerable,
+            "children": [],
+        }
+
+        # A package is expanded once: expanding it on each path grows exponentially
+        # with the depth of the shared dependencies, and never ends on a cycle.
+        if package.id in self.expanded_package_ids:
+            node["is_repeated"] = True
+            return node
+
+        self.expanded_package_ids.add(package.id)
+
         # Resolved dependencies
         children = [
             self.get_node(child_package)
@@ -2817,14 +2836,7 @@ class ProjectDependencyTreeView(ConditionalLoginRequired, generic.DetailView):
                 }
             )
 
-        node = {
-            "name": str(package),
-            "url": package.get_absolute_url(),
-            "compliance_alert": package.compliance_alert,
-            "has_compliance_issue": package.has_compliance_issue,
-            "is_vulnerable": package.is_vulnerable,
-            "children": children,
-        }
+        node["children"] = children
         return node
 
 

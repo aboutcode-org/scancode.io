@@ -1658,11 +1658,71 @@ class ScanPipeViewsTest(TestCase):
         }
         self.assertEqual(expected_tree, response.context["dependency_tree"])
 
-        # Adding a circular reference such as: Project -> A -> B -> C -> B -> C -> ...
+        # A circular reference such as: Project -> A -> B -> C -> B is cut on the
+        # second visit of B.
         make_dependency(project, for_package=c, resolved_to_package=b)
         response = self.client.get(url)
-        self.assertTrue(response.context["recursion_error"])
-        self.assertContains(response, "The dependency tree cannot be rendered")
+        self.assertNotIn("recursion_error", response.context)
+        a_node = response.context["dependency_tree"]["children"][0]
+        c_node = a_node["children"][0]["children"][0]
+        self.assertEqual("pkg:type/c", c_node["name"])
+        self.assertEqual(["pkg:type/b"], [node["name"] for node in c_node["children"]])
+        self.assertTrue(c_node["children"][0]["is_repeated"])
+
+    @mock.patch("scanpipe.models.DiscoveredPackage.get_absolute_url")
+    def test_scanpipe_views_project_dependency_tree_shared_dependencies(
+        self, mock_get_url
+    ):
+        mock_get_url.return_value = "mocked-url"
+        project = Project.objects.create(name="project")
+        # Each package depends on both packages of the next level.
+        level_count = 10
+        levels = [
+            [
+                make_package(project, f"pkg:type/level{level}-{name}")
+                for name in ("a", "b")
+            ]
+            for level in range(level_count)
+        ]
+        for packages, next_level_packages in zip(levels, levels[1:]):
+            for package in packages:
+                for next_level_package in next_level_packages:
+                    make_dependency(
+                        project,
+                        for_package=package,
+                        resolved_to_package=next_level_package,
+                    )
+
+        url = reverse("project_dependency_tree", args=[project.slug])
+        response = self.client.get(url)
+        dependency_tree = response.context["dependency_tree"]
+
+        def get_nodes(node):
+            for child in node["children"]:
+                yield child
+                yield from get_nodes(child)
+
+        nodes = list(get_nodes(dependency_tree))
+        # Each package is expanded once, instead of once per path to it (2,046 nodes).
+        self.assertEqual(2 + 4 * (level_count - 1), len(nodes))
+        repeated_names = [node["name"] for node in nodes if node.get("is_repeated")]
+        self.assertEqual(2 * (level_count - 1), len(repeated_names))
+
+        level0_a = dependency_tree["children"][0]
+        level0_b = dependency_tree["children"][1]
+        self.assertEqual("pkg:type/level0-a", level0_a["name"])
+        self.assertEqual(2, len(level0_a["children"][0]["children"]))
+        expected_repeated_node = {
+            "name": "pkg:type/level1-a",
+            "url": "mocked-url",
+            "compliance_alert": "",
+            "has_compliance_issue": False,
+            "is_vulnerable": False,
+            "children": [],
+            "is_repeated": True,
+        }
+        self.assertEqual(expected_repeated_node, level0_b["children"][0])
+        self.assertContains(response, "listed above")
 
     def test_scanpipe_policies_broken_policies_project_details(self):
         broken_policies = self.data / "policies" / "broken_policies.yml"
