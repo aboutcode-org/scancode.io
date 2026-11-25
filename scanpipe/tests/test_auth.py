@@ -149,9 +149,6 @@ class ScanCodeIOAuthTest(TestCase):
             ("project_results", [a_uuid, a_string]),
             ("resource_raw", [a_uuid, a_int]),
             ("resource_detail", [a_uuid, a_int]),
-            ("project_execute_pipelines", [a_uuid]),
-            ("project_stop_pipeline", [a_uuid, a_uuid]),
-            ("project_delete_pipeline", [a_uuid, a_uuid]),
             ("run_detail", [a_uuid]),
             ("run_status", [a_uuid]),
             ("license_list", None),
@@ -161,6 +158,17 @@ class ScanCodeIOAuthTest(TestCase):
         for viewname, args in views:
             url = reverse(viewname, args=args)
             response = self.client.get(url)
+            self.assertEqual(302, response.status_code, msg=viewname)
+
+        post_only_views = [
+            ("project_execute_pipelines", [a_uuid]),
+            ("project_stop_pipeline", [a_uuid, a_uuid]),
+            ("project_delete_pipeline", [a_uuid, a_uuid]),
+        ]
+
+        for viewname, args in post_only_views:
+            url = reverse(viewname, args=args)
+            response = self.client.post(url)
             self.assertEqual(302, response.status_code, msg=viewname)
 
     def test_scancodeio_auth_api_required_authentication(self):

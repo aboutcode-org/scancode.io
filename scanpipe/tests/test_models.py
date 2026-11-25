@@ -23,6 +23,7 @@
 import io
 import json
 import shutil
+import socket
 import sys
 import tempfile
 import uuid
@@ -57,6 +58,7 @@ from rq.job import JobStatus
 from scorecode.models import PackageScore
 
 from scancodeio import __version__ as scancodeio_version
+from scanpipe.models import WEBHOOK_RESPONSE_TEXT_MAX_LENGTH
 from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
@@ -75,6 +77,7 @@ from scanpipe.models import convert_glob_to_django_regex
 from scanpipe.models import get_project_work_directory
 from scanpipe.models import normalize_package_url_data
 from scanpipe.pipes.fetch import Download
+from scanpipe.pipes.fetch import NoCredentialsAuth
 from scanpipe.pipes.input import copy_input
 from scanpipe.settings import scanpipe_settings
 from scanpipe.tests import dependency_data1
@@ -705,12 +708,66 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(expected, project.vulnerabilities)
         self.assertEqual(4, project.vulnerability_count)
 
+    @override_settings(SCANPIPE={"TRUST_CODEBASE_CONFIG": True})
     def test_scanpipe_project_get_codebase_config_directory(self):
         self.assertIsNone(self.project1.get_codebase_config_directory())
         (self.project1.codebase_path / scanpipe_settings.CONFIG_DIR).mkdir()
         config_directory = str(self.project1.get_codebase_config_directory())
         self.assertTrue(config_directory.endswith("codebase/.scancode"))
 
+    def test_scanpipe_project_codebase_config_not_trusted_by_default(self):
+        (self.project1.codebase_path / scanpipe_settings.CONFIG_DIR).mkdir()
+        dir1_path = self.project1.codebase_path / "dir1"
+        dir1_path.mkdir()
+        (dir1_path / scanpipe_settings.CONFIG_FILE).write_text(
+            "ignored_vulnerabilities:\n  - VCID-1\n"
+        )
+        (dir1_path / "policies.yml").touch()
+
+        self.assertIsNone(self.project1.get_codebase_config_directory())
+        self.assertIsNone(self.project1.get_input_config_file())
+        self.assertIsNone(self.project1.get_input_policies_file())
+        self.assertEqual({}, self.project1.get_env())
+        # The lookups have no side effects.
+        self.assertEqual(0, self.project1.projectmessages.count())
+
+        with override_settings(SCANPIPE={"TRUST_CODEBASE_CONFIG": True}):
+            expected = {"ignored_vulnerabilities": ["VCID-1"]}
+            self.assertEqual(expected, self.project1.get_env())
+
+        config_file = self.project1.input_path / scanpipe_settings.CONFIG_FILE
+        config_file.write_text("product_name: from-input\n")
+        self.assertEqual({"product_name": "from-input"}, self.project1.get_env())
+
+    def test_scanpipe_project_add_ignored_codebase_config_warning(self):
+        self.project1.add_ignored_codebase_config_warning()
+        self.assertEqual(0, self.project1.projectmessages.count())
+
+        (self.project1.codebase_path / scanpipe_settings.CONFIG_DIR).mkdir()
+        dir1_path = self.project1.codebase_path / "dir1"
+        dir1_path.mkdir()
+        (dir1_path / scanpipe_settings.CONFIG_FILE).touch()
+        (dir1_path / "policies.yml").touch()
+
+        with override_settings(SCANPIPE={"TRUST_CODEBASE_CONFIG": True}):
+            self.project1.add_ignored_codebase_config_warning()
+        self.assertEqual(0, self.project1.projectmessages.count())
+
+        self.project1.add_ignored_codebase_config_warning()
+        warning = self.project1.projectmessages.get()
+        self.assertEqual("warning", warning.severity)
+        self.assertIn("SCANCODEIO_TRUST_CODEBASE_CONFIG", warning.description)
+        expected_resources = [
+            "codebase/dir1/scancode-config.yml",
+            "codebase/dir1/policies.yml",
+            "codebase/.scancode",
+        ]
+        self.assertEqual(expected_resources, warning.details["resources"])
+
+        self.project1.add_ignored_codebase_config_warning()
+        self.assertEqual(1, self.project1.projectmessages.count())
+
+    @override_settings(SCANPIPE={"TRUST_CODEBASE_CONFIG": True})
     def test_scanpipe_project_get_input_config_file(self):
         self.assertIsNone(self.project1.get_input_config_file())
 
@@ -761,6 +818,7 @@ class ScanPipeModelsTest(TestCase):
         self.assertFalse(self.project1.is_in_codebase(codebase_path / "outside_link"))
         self.assertFalse(self.project1.is_in_codebase(codebase_path / ".." / "input"))
 
+    @override_settings(SCANPIPE={"TRUST_CODEBASE_CONFIG": True})
     def test_scanpipe_project_get_input_config_file_outside_symlink(self):
         outside_dir = Path(tempfile.mkdtemp())
         (outside_dir / scanpipe_settings.CONFIG_FILE).touch()
@@ -2417,8 +2475,16 @@ class ScanPipeModelsTest(TestCase):
         self.assertFalse(webhook.include_results)
         self.assertTrue(webhook.is_active)
 
-    @mock.patch("requests.post")
-    def test_scanpipe_webhook_subscription_model_deliver_method(self, mock_post):
+    @staticmethod
+    def make_addrinfo(ip_address):
+        return [(socket.AF_INET, socket.SOCK_STREAM, 6, "", (ip_address, 0))]
+
+    @mock.patch("socket.getaddrinfo")
+    @mock.patch("requests.sessions.Session.request")
+    def test_scanpipe_webhook_subscription_model_deliver_method(
+        self, mock_post, mock_getaddrinfo
+    ):
+        mock_getaddrinfo.return_value = self.make_addrinfo("93.184.216.34")
         webhook = self.project1.add_webhook_subscription(target_url="https://url")
         run1 = self.create_run()
 
@@ -2452,6 +2518,82 @@ class ScanPipeModelsTest(TestCase):
 
         self.assertEqual(3, webhook.deliveries.count())
         self.assertFalse(mock_post.call_args.kwargs["allow_redirects"])
+
+    @mock.patch("socket.getaddrinfo")
+    @mock.patch("requests.sessions.Session.request")
+    def test_scanpipe_webhook_subscription_model_deliver_rejects_private_target(
+        self, mock_request, mock_getaddrinfo
+    ):
+        mock_getaddrinfo.return_value = self.make_addrinfo("169.254.169.254")
+        target_url = "http://169.254.169.254/latest/meta-data/"
+        webhook = self.project1.add_webhook_subscription(target_url=target_url)
+        run1 = self.create_run()
+
+        webhook_delivery = webhook.deliver(pipeline_run=run1)
+        self.assertEqual(f"Unsafe URL: {target_url}", webhook_delivery.delivery_error)
+        self.assertFalse(webhook_delivery.delivered)
+        mock_request.assert_not_called()
+
+    @mock.patch("urllib3.util.connection.create_connection")
+    @mock.patch("socket.getaddrinfo")
+    def test_scanpipe_webhook_subscription_model_deliver_rejects_changed_dns_answer(
+        self, mock_getaddrinfo, mock_create_connection
+    ):
+        # A public address when the URL is checked, then a private one when the
+        # connection resolves the host again.
+        mock_getaddrinfo.side_effect = [
+            self.make_addrinfo("93.184.216.34"),
+            self.make_addrinfo("127.0.0.1"),
+        ]
+        mock_create_connection.side_effect = OSError("blocked in tests")
+        target_url = "http://rebinding.example/hook"
+        webhook = self.project1.add_webhook_subscription(target_url=target_url)
+        run1 = self.create_run()
+
+        webhook_delivery = webhook.deliver(pipeline_run=run1)
+        self.assertIn(
+            "does not resolve to public addresses only",
+            webhook_delivery.delivery_error,
+        )
+        self.assertFalse(webhook_delivery.delivered)
+        mock_create_connection.assert_not_called()
+
+    @mock.patch("socket.getaddrinfo")
+    @mock.patch("requests.sessions.Session.request")
+    def test_scanpipe_webhook_subscription_model_deliver_bounds_response_text(
+        self, mock_request, mock_getaddrinfo
+    ):
+        mock_getaddrinfo.return_value = self.make_addrinfo("93.184.216.34")
+        mock_request.return_value = mock.Mock(status_code=200, text="a" * 2000)
+        webhook = self.project1.add_webhook_subscription(target_url="https://url")
+        run1 = self.create_run()
+
+        webhook_delivery = webhook.deliver(pipeline_run=run1)
+        expected = "a" * WEBHOOK_RESPONSE_TEXT_MAX_LENGTH
+        self.assertEqual(expected, webhook_delivery.response_text)
+
+    @mock.patch("socket.getaddrinfo")
+    @mock.patch("requests.sessions.Session.request", autospec=True)
+    def test_scanpipe_webhook_subscription_model_deliver_allowed_private_host(
+        self, mock_request, mock_getaddrinfo
+    ):
+        mock_getaddrinfo.return_value = self.make_addrinfo("10.0.0.5")
+        mock_request.return_value = mock.Mock(status_code=200, text="Ok")
+        target_url = "http://dejacode.internal:8000/hook"
+        webhook = self.project1.add_webhook_subscription(target_url=target_url)
+        run1 = self.create_run()
+
+        scanpipe_settings_override = {
+            "ALLOWED_PRIVATE_HOSTS": ["dejacode.internal:8000"],
+            "FETCH_BASIC_AUTH": {"dejacode.internal:8000": ("user", "password")},
+        }
+        with override_settings(SCANPIPE=scanpipe_settings_override):
+            webhook_delivery = webhook.deliver(pipeline_run=run1)
+
+        self.assertTrue(webhook_delivery.success)
+        # The fetch credentials are not sent to the webhooks.
+        request_session = mock_request.call_args.args[0]
+        self.assertIsInstance(request_session.auth, NoCredentialsAuth)
 
     def test_scanpipe_webhook_subscription_model_get_payload(self):
         webhook = self.project1.add_webhook_subscription(target_url="https://localhost")

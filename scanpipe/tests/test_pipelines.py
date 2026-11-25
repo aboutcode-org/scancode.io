@@ -34,8 +34,10 @@ from unittest import mock
 from unittest import skipIf
 
 from django.test import TestCase
+from django.test import override_settings
 from django.test import tag
 
+import requests
 from packageurl import PackageURL
 from scancode.cli_test_utils import purl_with_fake_uuid
 from scorecode.models import PackageScore
@@ -674,6 +676,7 @@ class ScanPipePipelinesTest(TestCase):
         pipeline = run.make_pipeline_instance()
         self.assertEqual({"product_name": "Product"}, pipeline.env)
 
+    @override_settings(SCANPIPE={"TRUST_CODEBASE_CONFIG": True})
     def test_scanpipe_pipeline_class_env_reloaded_after_extraction(self):
         project1 = make_project()
 
@@ -694,6 +697,22 @@ class ScanPipePipelinesTest(TestCase):
             "ignored_patterns": ["*.tmp", "tests/*"],
         }
         self.assertEqual(expected, pipeline.env)
+        self.assertEqual(0, project1.projectmessages.count())
+
+    def test_scanpipe_pipeline_class_env_ignores_untrusted_archive_config(self):
+        project1 = make_project()
+
+        input_location = self.data / "settings" / "archived-scancode-config.zip"
+        project1.copy_input_from(input_location)
+        run = project1.add_pipeline("scan_codebase")
+        pipeline = run.make_pipeline_instance()
+
+        pipeline.copy_inputs_to_codebase_directory()
+        pipeline.extract_archives()
+
+        self.assertEqual({}, pipeline.env)
+        warning = project1.projectmessages.get()
+        self.assertIn("SCANCODEIO_TRUST_CODEBASE_CONFIG", warning.description)
 
     def test_scanpipe_pipeline_class_flag_ignored_resources(self):
         project1 = make_project()
@@ -1839,15 +1858,24 @@ class PipelinesIntegrationTest(TestCase):
                 ],
             },
         ]
-        response_json = {"results": vulnerability_data}
-        mock_bulk_search_by_purl.return_value = response_json
+        mock_bulk_search_by_purl.return_value = vulnerability_data
 
         exitcode, out = pipeline.execute()
         self.assertEqual(0, exitcode, msg=out)
 
         package1.refresh_from_db()
-        expected = vulnerability_data[0]["affected_by_vulnerabilities"]
+        expected = [
+            *vulnerability_data[0]["affected_by_vulnerabilities"],
+            *vulnerability_data[1]["affected_by_vulnerabilities"],
+        ]
         self.assertEqual(expected, package1.affected_by_vulnerabilities)
+
+        run = project1.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+        mock_bulk_search_by_purl.side_effect = requests.HTTPError("503 Server Error")
+        exitcode, out = pipeline.execute()
+        self.assertEqual(1, exitcode, msg=out)
+        self.assertIn("503 Server Error", out)
 
     @mock.patch("scorecode.ossf_scorecard.is_available")
     def test_scanpipe_fetch_scores_pipeline_integration(self, mock_is_available):

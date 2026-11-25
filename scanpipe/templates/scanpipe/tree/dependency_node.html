@@ -5,6 +5,9 @@
 {% endif %}
 
 <span class="ml-1">
+  {% if node.is_repeated %}
+    <span class="tag is-light" title="This package is already listed above">listed above</span>
+  {% endif %}
   {% if node.url %}
     <a href="{{ node.url }}" target="_blank">
       <i class="fa-solid fa-square-arrow-up-right fa-sm" title="View details"></i>

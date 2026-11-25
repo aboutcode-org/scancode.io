@@ -25,6 +25,11 @@ file. That file will have to be uploaded as one of the Project inputs:
   configuration file as part of the project inputs with the ``--input-file`` option.
 - In the :ref:`rest_api`: Using the ``upload_file`` or ``input_urls`` fields.
 
+.. note::
+    A ``scancode-config.yml`` file found in the scanned codebase, for example in an
+    extracted archive, is ignored unless
+    :ref:`scancodeio_settings_trust_codebase_config` is enabled.
+
 Template
 ^^^^^^^^
 

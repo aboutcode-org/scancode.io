@@ -502,6 +502,52 @@ class ScanPipeViewsTest(TestCase):
         )
         self.assertContains(response, expected, html=True)
 
+    def test_scanpipe_views_project_details_project_inputs_panel(self):
+        input1 = self.project1.add_input_source(
+            filename="archive.zip",
+            is_uploaded=True,
+            tag="v1.0",
+        )
+        input2 = self.project1.add_input_source(
+            download_url="https://example.com/package.tar.gz",
+        )
+        url = self.project1.get_absolute_url()
+        response = self.client.get(url)
+
+        self.assertContains(
+            response,
+            'aria-controls="dropdown-input-archivezip"',
+        )
+        self.assertContains(
+            response,
+            'id="dropdown-input-archivezip"',
+        )
+        self.assertContains(
+            response,
+            '<span class="tag is-info is-light">v1.0</span>',
+        )
+        self.assertContains(
+            response,
+            f'data-label="{input1.filename}"',
+        )
+
+        input2_uuid = str(input2.uuid)
+        self.assertContains(
+            response,
+            f'aria-controls="dropdown-input-{input2_uuid}"',
+        )
+        self.assertContains(
+            response,
+            f'id="dropdown-input-{input2_uuid}"',
+        )
+        self.assertContains(
+            response,
+            f'data-label="{input2.download_url}"',
+        )
+
+        self.assertNotContains(response, 'aria-controls="dropdown-input-"')
+        self.assertNotContains(response, 'id="dropdown-input-"')
+
     def test_scanpipe_views_project_details_add_pipelines(self):
         url = self.project1.get_absolute_url()
         data = {
@@ -600,6 +646,10 @@ class ScanPipeViewsTest(TestCase):
         }
         response = self.client.post(url, data, follow=True)
         self.assertContains(response, "Tag updated.")
+        self.assertContains(
+            response,
+            '<span class="tag is-info is-light">new value</span>',
+        )
         input_source.refresh_from_db()
         self.assertEqual(data["tag"], input_source.tag)
 
@@ -967,22 +1017,26 @@ class ScanPipeViewsTest(TestCase):
         run = self.project1.add_pipeline("analyze_docker_image")
         url = reverse("project_execute_pipelines", args=[self.project1.slug])
 
-        response = self.client.get(url, follow=True)
+        response = self.client.get(url)
+        self.assertEqual(405, response.status_code)
+        mock_execute_task.assert_not_called()
+
+        response = self.client.post(url, follow=True)
         expected = "Pipelines run started."
         self.assertContains(response, expected)
         mock_execute_task.assert_called_once()
         self.assertRedirects(response, self.project1.get_absolute_url())
 
         run.set_task_queued()
-        response = self.client.get(url)
+        response = self.client.post(url)
         self.assertEqual(404, response.status_code)
 
         run.set_task_started(run.pk)
-        response = self.client.get(url)
+        response = self.client.post(url)
         self.assertEqual(404, response.status_code)
 
         run.set_task_stopped()
-        response = self.client.get(url)
+        response = self.client.post(url)
         self.assertEqual(404, response.status_code)
 
     @mock.patch("scanpipe.models.Run.stop_task")
@@ -990,11 +1044,15 @@ class ScanPipeViewsTest(TestCase):
         run = self.project1.add_pipeline("analyze_docker_image")
         url = reverse("project_stop_pipeline", args=[self.project1.slug, run.uuid])
 
-        response = self.client.get(url)
+        response = self.client.post(url)
         self.assertEqual(404, response.status_code)
 
         run.set_task_started(run.pk)
-        response = self.client.get(url, follow=True)
+        response = self.client.get(url)
+        self.assertEqual(405, response.status_code)
+        mock_stop_task.assert_not_called()
+
+        response = self.client.post(url, follow=True)
         expected = f"Pipeline {run.pipeline_name} stopped."
         self.assertContains(response, expected)
         mock_stop_task.assert_called_once()
@@ -1004,14 +1062,43 @@ class ScanPipeViewsTest(TestCase):
         run = self.project1.add_pipeline("analyze_docker_image")
         url = reverse("project_delete_pipeline", args=[self.project1.slug, run.uuid])
 
-        response = self.client.get(url, follow=True)
+        response = self.client.get(url)
+        self.assertEqual(405, response.status_code)
+        mock_delete_task.assert_not_called()
+
+        response = self.client.post(url, follow=True)
         expected = f"Pipeline {run.pipeline_name} deleted."
         self.assertContains(response, expected)
         mock_delete_task.assert_called_once()
 
         run.set_task_stopped()
-        response = self.client.get(url)
+        response = self.client.post(url)
         self.assertEqual(404, response.status_code)
+
+    def test_scanpipe_views_pipeline_actions_are_post_forms(self):
+        run = self.project1.add_pipeline("do_nothing")
+
+        response = self.client.get(self.project1.get_absolute_url())
+        execute_url = reverse("project_execute_pipelines", args=[self.project1.slug])
+        expected = f'id="execute-pipelines-form" method="post" action="{execute_url}"'
+        self.assertContains(response, expected)
+        self.assertNotContains(response, f'href="{execute_url}"')
+
+        run_detail_url = reverse("run_detail", args=[run.uuid])
+        delete_url = reverse(
+            "project_delete_pipeline", args=[self.project1.slug, run.uuid]
+        )
+        response = self.client.get(run_detail_url)
+        self.assertContains(response, f'<form method="post" action="{delete_url}"')
+        self.assertContains(response, "csrfmiddlewaretoken")
+        self.assertNotContains(response, f'href="{delete_url}"')
+
+        run.set_task_started(run.pk)
+        stop_url = reverse("project_stop_pipeline", args=[self.project1.slug, run.uuid])
+        response = self.client.get(run_detail_url)
+        self.assertContains(response, f'<form method="post" action="{stop_url}"')
+        self.assertContains(response, "csrfmiddlewaretoken")
+        self.assertNotContains(response, f'href="{stop_url}"')
 
     def test_scanpipe_views_delete_webhook_view(self):
         webhook = self.project1.add_webhook_subscription(target_url="https://localhost")
@@ -1298,6 +1385,25 @@ class ScanPipeViewsTest(TestCase):
         response = self.client.get(url, data=data)
         self.assertContains(response, '<table class="diff"')
 
+    def test_scanpipe_views_codebase_relation_diff_view_bounded_work(self):
+        url = reverse("resource_diff", args=[self.project1.slug])
+        from_lines = [f"from line {index}" for index in range(600)]
+        to_lines = [f"to line {index}" for index in range(600)]
+        (self.project1.codebase_path / "from.txt").write_text("\n".join(from_lines))
+        (self.project1.codebase_path / "to.txt").write_text("\n".join(to_lines))
+        from_resource = make_resource_file(self.project1, path="from.txt")
+        to_resource = make_resource_file(self.project1, path="to.txt")
+        data = {"from_path": from_resource.path, "to_path": to_resource.path}
+
+        response = self.client.get(url, data=data)
+        expected = "Cannot diff files with that many changed lines"
+        self.assertContains(response, expected, status_code=400)
+
+        with mock.patch("scanpipe.views.RESOURCE_DIFF_MAX_FILE_SIZE", 100):
+            response = self.client.get(url, data=data)
+        expected = "Cannot diff files larger than 100 bytes"
+        self.assertContains(response, expected, status_code=400)
+
     def test_scanpipe_views_codebase_relation_diff_view_path_traversal(self):
         url = reverse("resource_diff", args=[self.project1.slug])
         (self.project1.codebase_path / "a.txt").write_text("content")
@@ -1571,11 +1677,71 @@ class ScanPipeViewsTest(TestCase):
         }
         self.assertEqual(expected_tree, response.context["dependency_tree"])
 
-        # Adding a circular reference such as: Project -> A -> B -> C -> B -> C -> ...
+        # A circular reference such as: Project -> A -> B -> C -> B is cut on the
+        # second visit of B.
         make_dependency(project, for_package=c, resolved_to_package=b)
         response = self.client.get(url)
-        self.assertTrue(response.context["recursion_error"])
-        self.assertContains(response, "The dependency tree cannot be rendered")
+        self.assertNotIn("recursion_error", response.context)
+        a_node = response.context["dependency_tree"]["children"][0]
+        c_node = a_node["children"][0]["children"][0]
+        self.assertEqual("pkg:type/c", c_node["name"])
+        self.assertEqual(["pkg:type/b"], [node["name"] for node in c_node["children"]])
+        self.assertTrue(c_node["children"][0]["is_repeated"])
+
+    @mock.patch("scanpipe.models.DiscoveredPackage.get_absolute_url")
+    def test_scanpipe_views_project_dependency_tree_shared_dependencies(
+        self, mock_get_url
+    ):
+        mock_get_url.return_value = "mocked-url"
+        project = Project.objects.create(name="project")
+        # Each package depends on both packages of the next level.
+        level_count = 10
+        levels = [
+            [
+                make_package(project, f"pkg:type/level{level}-{name}")
+                for name in ("a", "b")
+            ]
+            for level in range(level_count)
+        ]
+        for packages, next_level_packages in zip(levels, levels[1:]):
+            for package in packages:
+                for next_level_package in next_level_packages:
+                    make_dependency(
+                        project,
+                        for_package=package,
+                        resolved_to_package=next_level_package,
+                    )
+
+        url = reverse("project_dependency_tree", args=[project.slug])
+        response = self.client.get(url)
+        dependency_tree = response.context["dependency_tree"]
+
+        def get_nodes(node):
+            for child in node["children"]:
+                yield child
+                yield from get_nodes(child)
+
+        nodes = list(get_nodes(dependency_tree))
+        # Each package is expanded once, instead of once per path to it (2,046 nodes).
+        self.assertEqual(2 + 4 * (level_count - 1), len(nodes))
+        repeated_names = [node["name"] for node in nodes if node.get("is_repeated")]
+        self.assertEqual(2 * (level_count - 1), len(repeated_names))
+
+        level0_a = dependency_tree["children"][0]
+        level0_b = dependency_tree["children"][1]
+        self.assertEqual("pkg:type/level0-a", level0_a["name"])
+        self.assertEqual(2, len(level0_a["children"][0]["children"]))
+        expected_repeated_node = {
+            "name": "pkg:type/level1-a",
+            "url": "mocked-url",
+            "compliance_alert": "",
+            "has_compliance_issue": False,
+            "is_vulnerable": False,
+            "children": [],
+            "is_repeated": True,
+        }
+        self.assertEqual(expected_repeated_node, level0_b["children"][0])
+        self.assertContains(response, "listed above")
 
     def test_scanpipe_policies_broken_policies_project_details(self):
         broken_policies = self.data / "policies" / "broken_policies.yml"

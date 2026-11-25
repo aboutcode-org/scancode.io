@@ -1948,6 +1948,22 @@ class ScanPipeD2DPipesTest(TestCase):
             flag.IGNORED_WHITESPACE_FILE, non_whitespace_resource.status
         )
 
+    def test_scanpipe_pipes_d2d_convert_glob_to_regex(self):
+        regex = d2d.convert_glob_to_regex("*flume-ng-node-*.jar*")
+        self.assertTrue(regex.match("to/flume-ng-node-1.9.0.jar-extract/a.class"))
+        self.assertFalse(regex.match("to/flume-ng-core-1.9.0.jar"))
+
+        regex = d2d.convert_glob_to_regex("lib/file?.[ch]")
+        self.assertTrue(regex.match("lib/file1.[ch]"))
+        self.assertFalse(regex.match("lib/file1.c"))
+        self.assertFalse(regex.match("lib/file12.[ch]"))
+
+        # Consecutive wildcards, followed by a missing character, do not backtrack
+        # on each way to split the path between them.
+        regex = d2d.convert_glob_to_regex("*" + "a*" * 18 + "b")
+        self.assertFalse(regex.match("to/" + "a" * 36 + "c"))
+        self.assertTrue(regex.match("to/" + "a" * 36 + "b"))
+
     def test_scanpipe_pipes_create_about_file_indexes(self):
         input_dir = self.project1.input_path
         input_resources = [
@@ -1991,9 +2007,7 @@ class ScanPipeD2DPipesTest(TestCase):
         self.assertIn(
             about_path, list(about_file_indexes.about_resources_by_path.keys())
         )
-        about_regex = d2d.convert_glob_to_django_regex(
-            glob_pattern="*flume-ng-node-*.jar*"
-        )
+        about_regex = d2d.convert_glob_to_regex(glob_pattern="*flume-ng-node-*.jar*")
         self.assertEqual(
             about_file_indexes.regex_by_about_path.get(about_path), about_regex
         )

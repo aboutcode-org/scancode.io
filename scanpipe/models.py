@@ -878,11 +878,61 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
     def get_codebase_config_directory(self):
         """
         Return the ``.scancode`` config directory if available in the `codebase`
-        directory.
+        directory, when the ``TRUST_CODEBASE_CONFIG`` setting is enabled.
         """
+        if not scanpipe_settings.TRUST_CODEBASE_CONFIG:
+            return
+
         config_directory = self.codebase_path / scanpipe_settings.CONFIG_DIR
         if config_directory.exists():
             return config_directory
+
+    def get_codebase_subdirectory_files(self, filename):
+        """Return the ``filename`` files of the codebase/ immediate subdirectories."""
+        return [
+            path
+            for path in self.codebase_path.glob(f"*/{filename}")
+            if self.is_in_codebase(path)
+        ]
+
+    def add_ignored_codebase_config_warning(self):
+        """
+        Add a warning about the configuration files found in the codebase, ignored
+        as the ``TRUST_CODEBASE_CONFIG`` setting is disabled.
+        """
+        if scanpipe_settings.TRUST_CODEBASE_CONFIG:
+            return
+
+        warning_description = (
+            "Configuration files found in the codebase are ignored. Provide them as "
+            "project inputs, or enable the SCANCODEIO_TRUST_CODEBASE_CONFIG setting "
+            "if all scanned codebases are trusted."
+        )
+        # The archives are extracted on each pipeline run of the project.
+        if self.projectmessages.filter(description=warning_description).exists():
+            return
+
+        ignored_paths = [
+            path
+            for filename in [scanpipe_settings.CONFIG_FILE, "policies.yml"]
+            for path in self.get_codebase_subdirectory_files(filename)
+        ]
+        config_directory = self.codebase_path / scanpipe_settings.CONFIG_DIR
+        if config_directory.exists():
+            ignored_paths.append(config_directory)
+
+        if not ignored_paths:
+            return
+
+        self.add_warning(
+            warning_description,
+            model="Project",
+            details={
+                "resources": [
+                    str(path.relative_to(self.work_path)) for path in ignored_paths
+                ]
+            },
+        )
 
     def get_file_from_work_directory(self, filename):
         """
@@ -894,18 +944,22 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         2. If exactly one ``filename`` file exists in a codebase/ immediate
         subdirectory, return it.
         3. If multiple ``filename`` files are found in subdirectories, report an error.
+
+        The codebase/ subdirectories are only searched when the
+        ``TRUST_CODEBASE_CONFIG`` setting is enabled.
         """
         # Check for the ``filename`` file in the root of the input/ directory.
         root_file = self.input_path / filename
         if root_file.exists():
             return root_file
 
+        # The codebase is the scanned content: its files cannot configure the scan
+        # unless the operator trusts it.
+        if not scanpipe_settings.TRUST_CODEBASE_CONFIG:
+            return
+
         # Search for files in immediate codebase/ subdirectories.
-        subdir_files = [
-            path
-            for path in self.codebase_path.glob(f"*/{filename}")
-            if self.is_in_codebase(path)
-        ]
+        subdir_files = self.get_codebase_subdirectory_files(filename)
 
         # If exactly one file is found in codebase/ subdirectories, return it.
         if len(subdir_files) == 1:
@@ -4715,6 +4769,10 @@ class WebhookSubscriptionQuerySet(ProjectRelatedQuerySet):
         return self.filter(is_active=True)
 
 
+# Only the start of a Webhook response is kept, as a delivery diagnostic.
+WEBHOOK_RESPONSE_TEXT_MAX_LENGTH = 500
+
+
 class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):
     """
     A model to define Webhook subscriptions for Project pipeline execution events.
@@ -4868,6 +4926,8 @@ class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):
 
     def deliver(self, pipeline_run, timeout=10):
         """Deliver this Webhook by sending a POST request to the `target_url`."""
+        from scanpipe.pipes import fetch
+
         logger.info(f"Delivering Webhook {self.uuid}")
 
         if not self.is_active:
@@ -4889,13 +4949,13 @@ class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):
         )
 
         try:
-            # A redirect could lead the request from the target to an internal service.
-            response = requests.post(
-                url=self.target_url,
+            response = fetch.send_safe_request(
+                self.target_url,
+                "post",
+                include_credentials=False,
                 data=json.dumps(payload, cls=DjangoJSONEncoder),
                 headers={"Content-Type": "application/json"},
                 timeout=timeout,
-                allow_redirects=False,
             )
         except requests.exceptions.RequestException as exception:
             logger.error(exception)
@@ -4904,7 +4964,7 @@ class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):
             return delivery
 
         delivery.response_status_code = response.status_code
-        delivery.response_text = response.text
+        delivery.response_text = response.text[:WEBHOOK_RESPONSE_TEXT_MAX_LENGTH]
         delivery.save()
 
         if delivery.success:

@@ -39,12 +39,13 @@
         Add pipeline
       </button>
       {% if project.can_start_pipelines %}
-        <a class="button is-success is-fullwidth ml-2 execute-pipeline-link" href="{% url 'project_execute_pipelines' project.slug %}">
+        <button type="submit" form="execute-pipelines-form" class="button is-success is-fullwidth ml-2">
           <span class="icon width-1">
             <i class="fa-solid fa-play-circle"></i>
           </span>
           <span>Run pipelines</span>
-        </a>
+        </button>
+        <form id="execute-pipelines-form" method="post" action="{% url 'project_execute_pipelines' project.slug %}" data-submit-overlay>{% csrf_token %}</form>
       {% endif %}
     {% endif %}
   </div>

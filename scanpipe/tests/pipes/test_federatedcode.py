@@ -105,3 +105,59 @@ class ScanPipeFederatedCodeTest(TestCase):
 
         # clean up
         shutil.rmtree(repo.working_dir)
+
+    def test_scanpipe_pipes_federatedcode_is_single_path_segment(self):
+        self.assertTrue(federatedcode.is_single_path_segment("v1.2.3"))
+        self.assertTrue(federatedcode.is_single_path_segment("1.0..2"))
+        self.assertFalse(federatedcode.is_single_path_segment(".."))
+        self.assertFalse(federatedcode.is_single_path_segment("."))
+        self.assertFalse(federatedcode.is_single_path_segment("../v1.2.3"))
+        self.assertFalse(federatedcode.is_single_path_segment("v1.2.3/.."))
+        self.assertFalse(federatedcode.is_single_path_segment("/v1.2.3"))
+
+    def test_scanpipe_pipes_federatedcode_get_package_repository_path_traversal(self):
+        project_purls = [
+            "pkg:npm/foobar@..%2F..%2Fbaz%2Fv1.2.3",
+            "pkg:npm/foobar@%2E%2E",
+            "pkg:npm/foobar@v1.2.3%2Fextra",
+            "pkg:generic/%2E%2E/%2E%2E/foobar@v1.2.3",
+            "pkg:generic/foo%2F..%2F..%2Fbar@v1.2.3",
+        ]
+        for project_purl in project_purls:
+            with self.assertRaisesMessage(ValueError, "cannot be used as a scan path"):
+                federatedcode.get_package_repository(project_purl=project_purl)
+
+    @patch("scanpipe.pipes.federatedcode.is_available")
+    @patch("scanpipe.pipes.federatedcode.is_configured")
+    def test_scanpipe_pipes_federatedcode_check_eligibility_version_path(
+        self, mock_is_configured, mock_is_available
+    ):
+        mock_is_configured.return_value = True
+        mock_is_available.return_value = True
+        self.project1.add_input_source(download_url="https://example.com/foobar.zip")
+
+        self.project1.update(purl="pkg:npm/foobar@v1.2.3")
+        federatedcode.check_federatedcode_eligibility(self.project1)
+
+        self.project1.update(purl="pkg:npm/foobar@..%2F..%2Fbaz")
+        expected = "Invalid version in Project PURL: it must not be a path."
+        with self.assertRaisesMessage(Exception, expected):
+            federatedcode.check_federatedcode_eligibility(self.project1)
+
+    def test_scanpipe_pipes_federatedcode_add_scan_result_outside_repository(self):
+        local_dir = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, local_dir)
+        repo = git.Repo.init(local_dir / "repo")
+        outside_dir = local_dir / "outside"
+
+        package_scan_file = Path("repo/../outside/scancodeio.json")
+        with self.assertRaisesMessage(ValueError, "outside the repository"):
+            federatedcode.add_scan_result(self.project1, repo, package_scan_file)
+        self.assertFalse(outside_dir.exists())
+
+        outside_dir.mkdir()
+        (local_dir / "repo" / "npm").symlink_to(outside_dir)
+        package_scan_file = Path("repo/npm/foobar/v1.2.3/scancodeio.json")
+        with self.assertRaisesMessage(ValueError, "outside the repository"):
+            federatedcode.add_scan_result(self.project1, repo, package_scan_file)
+        self.assertEqual([], list(outside_dir.iterdir()))

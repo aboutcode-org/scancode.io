@@ -20,6 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
+import socket
 import uuid
 from unittest import mock
 
@@ -34,6 +35,7 @@ from scanpipe.forms import InputsBaseForm
 from scanpipe.forms import PipelineRunStepSelectionForm
 from scanpipe.forms import ProjectForm
 from scanpipe.forms import ProjectSettingsForm
+from scanpipe.forms import WebhookSubscriptionForm
 from scanpipe.models import Project
 from scanpipe.models import Run
 from scanpipe.tests import global_policies
@@ -378,3 +380,29 @@ class ScanPipeFormsTest(TestCase):
         form.save()
         run.refresh_from_db()
         self.assertEqual(["step1"], run.selected_steps)
+
+    @mock.patch("socket.getaddrinfo")
+    def test_scanpipe_forms_webhook_subscription_form_target_url(
+        self, mock_getaddrinfo
+    ):
+        mock_getaddrinfo.return_value = [
+            (socket.AF_INET, socket.SOCK_STREAM, 6, "", ("127.0.0.1", 0))
+        ]
+        data = {"target_url": "http://localhost:8000/hook"}
+        form = WebhookSubscriptionForm(data=data)
+        self.assertFalse(form.is_valid())
+        expected = (
+            "Enter an http:// or https:// URL whose host resolves to public "
+            "addresses only. Private hosts must be listed in the "
+            "SCANCODEIO_ALLOWED_PRIVATE_HOSTS setting."
+        )
+        self.assertEqual([expected], form.errors["target_url"])
+
+        mock_getaddrinfo.return_value = [
+            (socket.AF_INET, socket.SOCK_STREAM, 6, "", ("93.184.216.34", 0))
+        ]
+        data = {"target_url": "https://example.com/hook"}
+        form = WebhookSubscriptionForm(data=data)
+        self.assertTrue(form.is_valid())
+        webhook = form.save(project=self.project1)
+        self.assertEqual("https://example.com/hook", webhook.target_url)

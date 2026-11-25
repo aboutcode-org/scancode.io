@@ -34,6 +34,7 @@ from typecode import get_type
 from aboutcode.pipeline import LoopProgress
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
+from scanpipe.pipes.fetch import get_git_environment
 from scanpipe.pipes.symbols import TS_QUERIES
 from scanpipe.pipes.symbols import SymbolExtractor
 from scanpipe.pipes.symbols import create_sha256_fingerprint
@@ -694,7 +695,8 @@ def collect_patch_symbols(patches, logger=None):
     for vcs_url, repo_patches in repo_progress.iter(patches_by_repo.items()):
         with tempfile.TemporaryDirectory(prefix="symbol-reachability-") as repo_path:
             try:
-                repo = Repo.clone_from(vcs_url, repo_path)
+                git_environment = get_git_environment(vcs_url)
+                repo = Repo.clone_from(vcs_url, repo_path, env=git_environment)
             except Exception as e:
                 raise Exception(f"Failed to clone repository {vcs_url}: {e!r}")
 

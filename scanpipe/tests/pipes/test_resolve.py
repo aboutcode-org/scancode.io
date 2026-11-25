@@ -518,13 +518,15 @@ class ScanPipeResolvePipesTest(TestCase):
         parent = make_package(
             p1, "pkg:type/parent", extra_data={"depends_on": ["child"]}
         )
-        child = make_package(p1, "pkg:type/child", package_uid="child")
+        child_purl = "pkg:maven/org.example/child@1.2.3?classifier=sources#src/main"
+        child = make_package(p1, child_purl, package_uid="child")
 
         created_count = resolve.create_dependencies_from_packages_extra_data(p1)
         self.assertEqual(1, created_count)
         dependency = p1.discovereddependencies.get()
         self.assertEqual(parent, dependency.for_package)
         self.assertEqual(child, dependency.resolved_to_package)
+        self.assertEqual(child_purl, dependency.package_url)
         self.assertTrue(dependency.is_runtime)
         self.assertTrue(dependency.is_pinned)
         self.assertTrue(dependency.is_direct)
@@ -554,6 +556,22 @@ class ScanPipeResolvePipesTest(TestCase):
         ]
         headers = resolve.get_manifest_headers(resource)
         self.assertEqual(expected, list(headers.keys()))
+
+    def test_scanpipe_resolve_get_manifest_headers_spdx_yaml(self):
+        input_location = self.data / "manifests" / "curl-7.70.0-v2.2.spdx.yml"
+        resource = mock.Mock(location=input_location)
+        expected = [
+            "SPDXID",
+            "spdxVersion",
+            "creationInfo",
+            "name",
+            "dataLicense",
+            "documentNamespace",
+        ]
+        headers = resolve.get_manifest_headers(resource)
+        self.assertEqual(expected, list(headers.keys()))
+        self.assertEqual("SPDX-2.2", headers["spdxVersion"])
+        self.assertEqual("3.9", headers["creationInfo"]["licenseListVersion"])
 
     def test_get_data_from_manifests_returns_tuple_when_no_resources(self):
         project1 = Project.objects.create(name="TestEmptyManifest")

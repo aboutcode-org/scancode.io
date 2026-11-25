@@ -86,7 +86,7 @@ class ScanPipeTasksTest(TestCase):
         self.assertIsNone(run2.task_end_date)
 
     @override_settings(SCANPIPE={"ASYNC": False})
-    @mock.patch("requests.post")
+    @mock.patch("scanpipe.pipes.fetch.send_safe_request")
     @mock.patch("scanpipe.pipelines.Pipeline.execute")
     def test_scanpipe_tasks_execute_pipeline_task_subscriptions(
         self, mock_execute, mock_post

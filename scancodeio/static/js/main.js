@@ -26,6 +26,23 @@
 
 'use strict';
 
+// URL credentials
+
+// Credentials in the document URL ("user:password@host") break fetch() with relative
+// paths and the htmx history (replaceState), see #2243.
+// The browser keeps the Basic auth after the reload.
+function removeUrlCredentials() {
+  const documentUrl = new URL(document.URL);
+  const hasCredentials = documentUrl.username || documentUrl.password;
+  if (!hasCredentials) return;
+
+  documentUrl.username = "";
+  documentUrl.password = "";
+  window.location.replace(documentUrl.href);
+}
+
+removeUrlCredentials();
+
 let rootEl = document.documentElement;
 
 // Modals
