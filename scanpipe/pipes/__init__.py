@@ -565,6 +565,25 @@ def get_resource_diff_ratio(resource_a, resource_b):
         )
 
 
+# The HTML diff of two resources compares each pair of lines of their replaced
+# blocks: these limits bound the work of a diff, done during the web request.
+RESOURCE_DIFF_MAX_FILE_SIZE = 5_000_000
+RESOURCE_DIFF_MAX_REPLACED_LINE_PAIRS = 250_000
+
+
+def get_replaced_line_pairs_count(from_lines, to_lines):
+    """
+    Return the number of line pairs compared by the HTML diff of ``from_lines`` and
+    ``to_lines``, in their blocks of lines replaced by other lines.
+    """
+    matcher = difflib.SequenceMatcher(a=from_lines, b=to_lines)
+    return sum(
+        (from_end - from_start) * (to_end - to_start)
+        for tag, from_start, from_end, to_start, to_end in matcher.get_opcodes()
+        if tag == "replace"
+    )
+
+
 def poll_until_success(check, sleep=10, **kwargs):
     """
     Given a function `check`, which returns the status of a run, return True

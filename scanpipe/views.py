@@ -41,6 +41,7 @@ from django.db.models.manager import Manager
 from django.http import FileResponse
 from django.http import Http404
 from django.http import HttpResponse
+from django.http import HttpResponseBadRequest
 from django.http import HttpResponseRedirect
 from django.http import JsonResponse
 from django.http import QueryDict
@@ -100,9 +101,12 @@ from scanpipe.models import Project
 from scanpipe.models import ProjectMessage
 from scanpipe.models import Run
 from scanpipe.models import RunInProgressError
+from scanpipe.pipes import RESOURCE_DIFF_MAX_FILE_SIZE
+from scanpipe.pipes import RESOURCE_DIFF_MAX_REPLACED_LINE_PAIRS
 from scanpipe.pipes import compliance
 from scanpipe.pipes import count_group_by
 from scanpipe.pipes import filename_now
+from scanpipe.pipes import get_replaced_line_pairs_count
 from scanpipe.pipes import matchcode
 from scanpipe.pipes import output
 from scanpipe.pipes import purldb
@@ -2277,8 +2281,21 @@ def codebase_resource_diff_view(request, slug):
     if not (from_resource.is_text and to_resource.is_text):
         raise Http404("Cannot diff on binary files")
 
+    has_too_large_file = any(
+        resource.location_path.stat().st_size > RESOURCE_DIFF_MAX_FILE_SIZE
+        for resource in (from_resource, to_resource)
+    )
+    if has_too_large_file:
+        return HttpResponseBadRequest(
+            f"Cannot diff files larger than {RESOURCE_DIFF_MAX_FILE_SIZE:,} bytes"
+        )
+
     from_lines = from_resource.location_path.read_text().splitlines()
     to_lines = to_resource.location_path.read_text().splitlines()
+    replaced_line_pairs_count = get_replaced_line_pairs_count(from_lines, to_lines)
+    if replaced_line_pairs_count > RESOURCE_DIFF_MAX_REPLACED_LINE_PAIRS:
+        return HttpResponseBadRequest("Cannot diff files with that many changed lines")
+
     html = difflib.HtmlDiff().make_file(from_lines, to_lines)
 
     return HttpResponse(html)
@@ -2780,6 +2797,8 @@ class ProjectDependencyTreeView(ConditionalLoginRequired, generic.DetailView):
         return context
 
     def get_dependency_tree(self, project):
+        self.expanded_package_ids = set()
+
         root_packages = (
             project.discoveredpackages.root_packages()
             .order_by("name")
@@ -2801,6 +2820,23 @@ class ProjectDependencyTreeView(ConditionalLoginRequired, generic.DetailView):
         return dependency_tree
 
     def get_node(self, package):
+        node = {
+            "name": str(package),
+            "url": package.get_absolute_url(),
+            "compliance_alert": package.compliance_alert,
+            "has_compliance_issue": package.has_compliance_issue,
+            "is_vulnerable": package.is_vulnerable,
+            "children": [],
+        }
+
+        # A package is expanded once: expanding it on each path grows exponentially
+        # with the depth of the shared dependencies, and never ends on a cycle.
+        if package.id in self.expanded_package_ids:
+            node["is_repeated"] = True
+            return node
+
+        self.expanded_package_ids.add(package.id)
+
         # Resolved dependencies
         children = [
             self.get_node(child_package)
@@ -2817,14 +2853,7 @@ class ProjectDependencyTreeView(ConditionalLoginRequired, generic.DetailView):
                 }
             )
 
-        node = {
-            "name": str(package),
-            "url": package.get_absolute_url(),
-            "compliance_alert": package.compliance_alert,
-            "has_compliance_issue": package.has_compliance_issue,
-            "is_vulnerable": package.is_vulnerable,
-            "children": children,
-        }
+        node["children"] = children
         return node
 
 
