@@ -31,6 +31,8 @@ from django.test import override_settings
 from django.urls import reverse
 
 from scancodeio.auth import is_authenticated_when_required
+from scanpipe.templatetags.scanpipe_tags import scancode_toolkit_version_tag
+from scanpipe.templatetags.scanpipe_tags import scancodeio_version_tag
 
 User = get_user_model()
 
@@ -99,6 +101,23 @@ class ScanCodeIOAuthTest(TestCase):
         self.assertContains(response, expected)
         self.assertContains(response, profile_url)
         self.assertContains(response, "Profile settings")
+
+    def test_scancodeio_auth_navbar_header_versions_hidden_from_anonymous(self):
+        versions = [scancodeio_version_tag(), scancode_toolkit_version_tag()]
+
+        response = self.client.get(login_url)
+        for version in versions:
+            self.assertNotContains(response, version)
+
+        with override_settings(SCANCODEIO_REQUIRE_AUTHENTICATION=False):
+            response = self.client.get(login_url)
+        for version in versions:
+            self.assertContains(response, version)
+
+        self.client.login(username=self.basic_user.username, password=TEST_PASSWORD)
+        response = self.client.get(project_list_url)
+        for version in versions:
+            self.assertContains(response, version)
 
     def test_scancodeio_auth_logout_view(self):
         response = self.client.get(logout_url)

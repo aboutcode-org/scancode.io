@@ -62,7 +62,7 @@
           </form>
         </div>
       </div>
-    {% else %}
+    {% elif user|is_authenticated_when_required %}
       <div class="navbar-item navbar-item is-cursor-help">
         <div class="dropdown is-right is-hoverable">
           <div class="dropdown-trigger has-text-grey-light">
