@@ -50,6 +50,12 @@ services:
       - static:/var/scancodeio/static/
       - healthycode_venv:/opt/healthycode
     restart: always
+    healthcheck:
+      test: ["CMD", "wait-for-it", "--timeout=2", "localhost:8000"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 600s
     depends_on:
       db:
         condition: service_healthy
