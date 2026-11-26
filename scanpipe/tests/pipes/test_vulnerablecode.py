@@ -42,6 +42,7 @@ from scanpipe.pipes.vulnerablecode import get_all_results
 from scanpipe.pipes.vulnerablecode import get_api_link
 from scanpipe.pipes.vulnerablecode import get_packages_by_plain_purl
 from scanpipe.pipes.vulnerablecode import get_plain_purl
+from scanpipe.pipes.vulnerablecode import get_purl_lookup_key
 from scanpipe.pipes.vulnerablecode import get_vulnerabilities_by_plain_purl
 from scanpipe.pipes.vulnerablecode import request_json
 from scanpipe.tests import make_package
@@ -156,6 +157,12 @@ class ScanPipeVulnerableCodeTest(TestCase):
         self.assertEqual("pkg:maven/org.apache/commons@1.0", get_plain_purl(purl))
         purl = "pkg:npm/express@4.18.2"
         self.assertEqual(purl, get_plain_purl(purl))
+
+    def test_scanpipe_pipes_vulnerablecode_get_purl_lookup_key(self):
+        lookup_key = get_purl_lookup_key("pkg:nuget/System.IO.Pipelines@4.5.0-Beta")
+        self.assertEqual("pkg:nuget/system.io.pipelines@4.5.0-Beta", lookup_key)
+        lookup_key = get_purl_lookup_key("pkg:maven/Org.Example/Lib@1.0")
+        self.assertEqual("pkg:maven/Org.Example/Lib@1.0", lookup_key)
 
     def test_scanpipe_pipes_vulnerablecode_get_packages_by_plain_purl(self):
         package1 = make_package(self.project1, "pkg:deb/debian/adduser@3.118?arch=all")
@@ -392,6 +399,31 @@ class ScanPipeVulnerableCodeTest(TestCase):
         fetch_vulnerabilities(packages=[package])
         package.refresh_from_db()
         self.assertEqual(advisories, package.affected_by_vulnerabilities)
+
+    @mock.patch("scanpipe.pipes.vulnerablecode.bulk_search_by_purl")
+    def test_scanpipe_pipes_vulnerablecode_fetch_vulnerabilities_nuget_name_case(
+        self, mock_search_by_purl
+    ):
+        purls = [
+            "pkg:nuget/System.IO.Pipelines@4.5.0",
+            "pkg:nuget/system.io.pipelines@4.5.0",
+            "pkg:nuget/SYSTEM.IO.PIPELINES@4.5.0",
+        ]
+        packages = [make_package(self.project1, purl) for purl in purls]
+        mock_search_by_purl.return_value = [
+            make_package_data("pkg:nuget/System.IO.Pipelines@4.5.0", ["ID-1"]),
+        ]
+
+        fetch_vulnerabilities(packages=packages)
+
+        self.assertEqual(purls, mock_search_by_purl.call_args.args[0])
+        for package in packages:
+            package.refresh_from_db()
+            advisory_uids = [
+                vulnerability["advisory_uid"]
+                for vulnerability in package.affected_by_vulnerabilities
+            ]
+            self.assertEqual(["ID-1"], advisory_uids)
 
     @mock.patch("scanpipe.pipes.vulnerablecode.session.request")
     @mock.patch(
