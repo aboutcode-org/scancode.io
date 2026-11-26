@@ -207,6 +207,17 @@ def update_datafile_paths(pom_file_dict):
     return scanned_pom_packages, scanned_pom_deps
 
 
+def get_and_operand(license_expression):
+    """
+    Return the ``license_expression`` to combine with AND: an OR expression is
+    grouped in parentheses, as AND takes precedence over OR.
+    """
+    licensing = Licensing()
+    if isinstance(licensing.parse(license_expression), licensing.OR):
+        return f"({license_expression})"
+    return license_expression
+
+
 def update_package_license_from_resource_if_missing(project):
     """Populate missing licenses to packages based on resource data."""
     for package in project.discoveredpackages.all():
@@ -222,7 +233,10 @@ def update_package_license_from_resource_if_missing(project):
                 ).distinct()
             )
             if detected_licenses:
-                license_expression = " AND ".join(detected_licenses)
+                license_expression = " AND ".join(
+                    get_and_operand(detected_license)
+                    for detected_license in detected_licenses
+                )
                 declared_license_expression = str(Licensing().dedup(license_expression))
                 package.declared_license_expression = declared_license_expression
                 package.save()
