@@ -11,6 +11,9 @@ using ScanCode.io.
     locally on your machine and **running with Docker**.
     If you do not have it installed, see our :ref:`installation` guide for instructions.
 
+.. tip::
+    To run a single pipeline without installing ScanCode.io, see :ref:`quickstart`.
+
 Requirements
 ------------
 
@@ -34,14 +37,21 @@ Instructions
 
 .. code-block:: console
 
-    $ curl https://files.pythonhosted.org/packages/c0/e8/578887011652048c2d273bf98839a11020891917f3aa638a0bc9ac04d653/asgiref-3.3.0-py3-none-any.whl --output ~/codedrop/asgiref-3.3.0-py3-none-any.whl
+    $ curl --location https://files.pythonhosted.org/packages/c0/e8/578887011652048c2d273bf98839a11020891917f3aa638a0bc9ac04d653/asgiref-3.3.0-py3-none-any.whl --output ~/codedrop/asgiref-3.3.0-py3-none-any.whl
 
-- Create an alias to the ``scanpipe`` command executed through the
-  ``docker compose`` command line interface with:
+- From the directory where ScanCode.io is installed, start the ``web`` service and
+  wait until it is ready to accept commands:
 
 .. code-block:: console
 
-    $ alias scanpipe="docker compose -f ${PWD}/docker-compose.yml run --volume ~/codedrop/:/codedrop:ro web scanpipe"
+    $ docker compose up --detach --wait web
+
+- From the same directory, create an alias to the ``scanpipe`` command executed
+  through the ``docker compose`` command line interface with:
+
+.. code-block:: console
+
+    $ alias scanpipe="docker compose -f ${PWD}/docker-compose.yml run --rm --volume ~/codedrop/:/codedrop:ro web scanpipe"
 
 - Create a new project named ``asgiref``:
 
@@ -80,8 +90,8 @@ Instructions
     :guilabel:`codebase/` directory where ``extractcode`` will be executed before
     running ``scancode``.
     Alternatively, the codebase content can be manually copied to the
-    :guilabel:`codebase/` directory in which case the ``--input`` option can be
-    omitted.
+    :guilabel:`codebase/` directory in which case the ``add-input`` step can be
+    skipped.
 
 - Run the ``scan_codebase`` pipeline on your project. The pipeline execution
   progress is shown within the following command's output:
@@ -92,18 +102,16 @@ Instructions
 
 .. code-block:: console
 
-    >> Pipeline scan_codebase run in progress..
-       Pipeline [scan_codebase] starting
-       Step [copy_inputs_to_codebase_directory] starting
-       Step [copy_inputs_to_codebase_directory] completed in 0.00 seconds
-       Step [extract_archives] starting
+    >> Start the scan_codebase pipeline execution...
+       INFO Scan 18 codebase resources with scan_for_package_data
        [...]
-       Pipeline completed
        scan_codebase successfully executed on project asgiref
 
-- Finally, export the scan results as JSON format::
+- Finally, export the scan results as JSON format:
 
-  $ scanpipe output --project asgiref --format json --print > asgiref-3.3.0_results.json
+.. code-block:: console
+
+    $ scanpipe output --project asgiref --format json --print > asgiref-3.3.0_results.json
 
 .. tip::
     The ``inputs`` and ``pipelines`` can be provided at the same time when
@@ -112,19 +120,18 @@ Instructions
     project input, add the ``scan_codebase`` pipeline to the project, and
     execute it:
 
-.. code-block:: bash
+    .. code-block:: bash
 
-    $ scanpipe create-project asgiref2 \
-        --input-file /codedrop/asgiref-3.3.0-py3-none-any.whl \
-        --pipeline scan_codebase \
-        --execute
+        $ scanpipe create-project asgiref2 \
+            --input-file /codedrop/asgiref-3.3.0-py3-none-any.whl \
+            --pipeline scan_codebase \
+            --execute
 
-.. code-block:: console
+    .. code-block:: console
 
-    >> Project asgiref2 created with work directory /var/scancodeio/workspace/projects/asgiref2-bea7a5e9
-       File copied to the project inputs directory:
-       - asgiref-3.3.0-py3-none-any.whl
-       Start the scan_codebase pipeline execution...
-       [...]
-       Pipeline completed
-       scan_codebase successfully executed on project asgiref2
+        >> Project asgiref2 created with work directory /var/scancodeio/workspace/projects/asgiref2-bea7a5e9
+           File copied to the project inputs directory:
+           - asgiref-3.3.0-py3-none-any.whl
+           Start the scan_codebase pipeline execution...
+           [...]
+           scan_codebase successfully executed on project asgiref2

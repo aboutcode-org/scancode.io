@@ -12,6 +12,9 @@ learn some of the ScanCode.io basic commands.
     locally on your machine and **running with Docker**.
     If you do not have it installed, see our :ref:`installation` guide for instructions.
 
+.. tip::
+    To run a single pipeline without installing ScanCode.io, see :ref:`quickstart`.
+
 Requirements
 ------------
 
@@ -36,14 +39,21 @@ Instructions
 
 .. code-block:: console
 
-    $ curl https://github.com/aboutcode-org/scancode.io-tutorial/releases/download/sample-images/30-alpine-nickolashkraus-staticbox-latest.tar --output ~/codedrop/30-alpine-nickolashkraus-staticbox-latest.tar
+    $ curl --location https://github.com/aboutcode-org/scancode.io-tutorial/releases/download/sample-images/30-alpine-nickolashkraus-staticbox-latest.tar --output ~/codedrop/30-alpine-nickolashkraus-staticbox-latest.tar
 
-- Create an alias to the ``scanpipe`` command executed through the
-  ``docker compose`` command line interface with:
+- From the directory where ScanCode.io is installed, start the ``web`` service and
+  wait until it is ready to accept commands:
 
 .. code-block:: console
 
-    $ alias scanpipe="docker compose -f ${PWD}/docker-compose.yml run --volume ~/codedrop/:/codedrop:ro web scanpipe"
+    $ docker compose up --detach --wait web
+
+- From the same directory, create an alias to the ``scanpipe`` command executed
+  through the ``docker compose`` command line interface with:
+
+.. code-block:: console
+
+    $ alias scanpipe="docker compose -f ${PWD}/docker-compose.yml run --rm --volume ~/codedrop/:/codedrop:ro web scanpipe"
 
 - Create a new project named ``staticbox``:
 
@@ -104,7 +114,7 @@ Instructions
     project and their execution status.
     You can use this to get a quick overview of the pipelines that have been
     already running, pipelines with **"SUCCESS"** or **"FAILURE"** status, and those
-    will be running next, pipelines with **"NOT_STARTED"** status as shown below.
+    will be running next, pipelines with **"NOT_STARTED"** status as shown above.
 
 - Run the ``analyze_docker_image`` pipeline on this project. In the output, you will be
   shown the pipeline's execution progress:
@@ -115,13 +125,9 @@ Instructions
 
 .. code-block:: console
 
-    >> Pipeline analyze_docker_image run in progress...
-       Pipeline [analyze_docker_image] starting
-       Step [extract_images] starting
-       Step [extract_images] completed in 0.18 seconds
-       Step [extract_layers] starting
+    >> Start the analyze_docker_image pipeline execution...
+       INFO Scan 70 codebase resources with scan_for_package_data
        [...]
-       Pipeline completed
        analyze_docker_image successfully executed on project staticbox
 
 - Executing the ``show-pipeline`` command again will also confirm the success
