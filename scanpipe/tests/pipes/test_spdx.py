@@ -420,15 +420,15 @@ class ScanPipeSPDXPipesTest(TestCase):
 
         with tempfile.TemporaryDirectory() as tmp_dir:
             tmp_path = Path(tmp_dir)
-            files = {
+            content_by_filename = {
                 "upper.SPDX": "SPDXVersion: SPDX-2.3\n",
                 "empty.spdx": "",
                 "yaml.spdx": "SPDXID: SPDXRef-DOCUMENT\n",
                 "json.spdx": '{"SPDXID": "SPDXRef-DOCUMENT"}',
                 "tag-value.txt": "SPDXVersion: SPDX-2.3\n",
             }
-            for name, content in files.items():
-                (tmp_path / name).write_text(content)
+            for filename, content in content_by_filename.items():
+                (tmp_path / filename).write_text(content)
 
             self.assertTrue(spdx.is_spdx_tag_value_document(tmp_path / "upper.SPDX"))
             for name in ("empty.spdx", "yaml.spdx", "json.spdx", "tag-value.txt"):

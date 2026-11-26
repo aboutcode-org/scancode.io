@@ -23,7 +23,6 @@
 from scanpipe.models import DiscoveredDependency
 from scanpipe.pipelines.scan_codebase import ScanCodebase
 from scanpipe.pipes import resolve
-from scanpipe.pipes import spdx
 
 
 class LoadSBOM(ScanCodebase):
@@ -54,17 +53,7 @@ class LoadSBOM(ScanCodebase):
     def get_sbom_inputs(self):
         """Locate all the SBOMs among the codebase resources."""
         self.manifest_resources = resolve.get_manifest_resources(self.project)
-
-        for resource in self.project.codebaseresources.no_status():
-            if spdx.is_spdx_tag_value_document(resource.location):
-                self.project.add_warning(
-                    description=(
-                        "SPDX tag-value documents are not supported, "
-                        "please provide the SPDX document in JSON or YAML format."
-                    ),
-                    model="get_sbom_inputs",
-                    object_instance=resource,
-                )
+        resolve.warn_spdx_tag_value_documents(self.project)
 
     def get_data_from_sboms(self):
         """Get data from SBOMs."""

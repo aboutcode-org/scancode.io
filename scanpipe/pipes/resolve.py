@@ -228,6 +228,23 @@ def get_manifest_resources(project):
     return project.codebaseresources.filter(status=flag.APPLICATION_PACKAGE)
 
 
+def warn_spdx_tag_value_documents(project):
+    """Add a project warning for each SPDX tag-value document, as not supported."""
+    spdx_resources = project.codebaseresources.no_status().filter(
+        extension__iexact=".spdx"
+    )
+    for resource in spdx_resources:
+        if spdx.is_spdx_tag_value_document(resource.location):
+            project.add_warning(
+                description=(
+                    "SPDX tag-value documents are not supported, "
+                    "please provide the SPDX document in JSON or YAML format."
+                ),
+                model="warn_spdx_tag_value_documents",
+                object_instance=resource,
+            )
+
+
 def resolve_pypi_packages(input_location):
     """Resolve the PyPI packages from the ``input_location`` requirements file."""
     python_version = f"{sys.version_info.major}{sys.version_info.minor}"
