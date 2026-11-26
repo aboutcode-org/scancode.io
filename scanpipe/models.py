@@ -110,6 +110,10 @@ class RunNotAllowedToStart(Exception):
     """Previous Runs have not completed yet."""
 
 
+class RunNotStoppable(Exception):
+    """The Run execution cannot be stopped."""
+
+
 class UUIDPKModel(models.Model):
     uuid = models.UUIDField(
         verbose_name=_("UUID"),
@@ -382,13 +386,22 @@ class AbstractTaskFieldsModel(models.Model):
         """Set the task as "stopped" using a special 99 exitcode value."""
         self.set_task_ended(exitcode=99)
 
+    @property
+    def can_stop(self):
+        """Return True if the task is running and can be stopped."""
+        return self.status == self.Status.RUNNING and scanpipe_settings.ASYNC
+
     def stop_task(self):
         """Stop a "running" task."""
-        self.append_to_log("Stop task requested")
-
+        # A synchronous execution runs in the process of a web request or a command,
+        # which cannot be signaled: the Run would be reported stopped while it keeps
+        # running, then completed.
         if not scanpipe_settings.ASYNC:
-            self.set_task_stopped()
-            return
+            raise RunNotStoppable(
+                "A pipeline cannot be stopped when SCANCODEIO_ASYNC is disabled."
+            )
+
+        self.append_to_log("Stop task requested")
 
         job_status = self.job_status
 

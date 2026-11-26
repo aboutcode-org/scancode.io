@@ -158,6 +158,9 @@ the following setting to your ``.env`` file::
 
     SCANCODEIO_ASYNC=False
 
+.. note::
+    A synchronous pipeline run cannot be stopped.
+
 SCANCODEIO_TASK_TIMEOUT
 ^^^^^^^^^^^^^^^^^^^^^^^
 

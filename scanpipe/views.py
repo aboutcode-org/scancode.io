@@ -101,6 +101,7 @@ from scanpipe.models import Project
 from scanpipe.models import ProjectMessage
 from scanpipe.models import Run
 from scanpipe.models import RunInProgressError
+from scanpipe.models import RunNotStoppable
 from scanpipe.pipes import RESOURCE_DIFF_MAX_FILE_SIZE
 from scanpipe.pipes import RESOURCE_DIFF_MAX_REPLACED_LINE_PAIRS
 from scanpipe.pipes import compliance
@@ -1491,7 +1492,12 @@ def stop_pipeline_view(request, slug, run_uuid):
     if run.status != run.Status.RUNNING:
         raise Http404("Pipeline is not running.")
 
-    run.stop_task()
+    try:
+        run.stop_task()
+    except RunNotStoppable as error:
+        messages.error(request, str(error))
+        return redirect(project)
+
     messages.success(request, f"Pipeline {run.pipeline_name} stopped.")
     return redirect(project)
 

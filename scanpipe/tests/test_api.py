@@ -1307,12 +1307,21 @@ class ScanPipeAPITest(TransactionTestCase):
 
         run1.set_task_started(run1.pk)
         response = self.csrf_client.post(url)
+        self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
+        expected = {
+            "status": "A pipeline cannot be stopped when SCANCODEIO_ASYNC is disabled."
+        }
+        self.assertEqual(expected, response.data)
+        run1.refresh_from_db()
+        self.assertEqual(Run.Status.RUNNING, run1.status)
+
+        with override_settings(SCANPIPE={"ASYNC": True}):
+            with mock.patch("scanpipe.models.Run.stop_task") as mock_stop_task:
+                response = self.csrf_client.post(url)
         self.assertEqual(status.HTTP_200_OK, response.status_code)
         expected = {"status": "Pipeline analyze_docker_image stopped."}
         self.assertEqual(expected, response.data)
-
-        run1.refresh_from_db()
-        self.assertTrue(run1.task_stopped)
+        mock_stop_task.assert_called_once()
 
     @override_settings(SCANPIPE={"ASYNC": False})
     def test_scanpipe_api_run_action_delete_pipeline(self):
