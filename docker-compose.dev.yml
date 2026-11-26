@@ -21,6 +21,8 @@ services:
     command: sh -c "
       ./manage.py migrate --check || ./manage.py migrate;
       ./manage.py runserver --skip-checks 0.0.0.0:8001"
+    healthcheck:
+      test: ["CMD", "wait-for-it", "--timeout=2", "localhost:8001"]
     volumes:
       - ./aboutcode:/opt/scancodeio/aboutcode
       - ./scancodeio:/opt/scancodeio/scancodeio
