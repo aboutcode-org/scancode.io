@@ -52,7 +52,11 @@ def report_failure(job, connection, type, value, traceback):
     run.set_task_ended(exitcode=1, output=f"value={value} trace={traceback}")
 
 
-def execute_pipeline_task(run_pk):
+def execute_pipeline_task(run_pk, start_next_run=True):
+    """
+    Execute the pipeline of the ``run_pk`` Run, then start the next Run of the
+    project on success, unless ``start_next_run`` is False.
+    """
     info(f"Enter `execute_pipeline_task` Run.pk={run_pk}", run_pk)
 
     run = get_run_instance(run_pk)
@@ -76,5 +80,5 @@ def execute_pipeline_task(run_pk):
     if run.task_succeeded:
         # We keep the temporary files available for debugging in case of error
         project.clear_tmp_directory()
-        if next_run:
+        if next_run and start_next_run:
             next_run.start()

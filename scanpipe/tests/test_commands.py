@@ -60,20 +60,20 @@ from scanpipe.tests import make_resource_file
 scanpipe_app = apps.get_app_config("scanpipe")
 
 
-def task_success(run_pk):
+def task_success(run_pk, start_next_run=True):
     run = Run.objects.get(pk=run_pk)
     run.task_exitcode = 0
     run.save()
 
 
-def task_failure(run_pk):
+def task_failure(run_pk, start_next_run=True):
     run = Run.objects.get(pk=run_pk)
     run.task_output = "Error log"
     run.task_exitcode = 1
     run.save()
 
 
-def raise_interrupt(run_pk):
+def raise_interrupt(run_pk, start_next_run=True):
     raise KeyboardInterrupt
 
 
@@ -653,6 +653,46 @@ class ScanPipeManagementCommandTest(TestCase):
                 mock_start.assert_called_once()
         self.assertIsNone(returned_value)
 
+    @mock.patch("scanpipe.pipelines.Pipeline.execute")
+    def test_scanpipe_management_command_execute_project_function_all_runs(
+        self, mock_execute
+    ):
+        project = make_project(name="my_project")
+        run1 = project.add_pipeline("do_nothing")
+        run2 = project.add_pipeline("do_nothing")
+        run3 = project.add_pipeline("do_nothing")
+
+        mock_execute.side_effect = [(0, ""), (1, "Error log")]
+        expected = "Error during do_nothing execution:\nError log"
+        with self.assertRaisesMessage(CommandError, expected):
+            commands.execute_project(project)
+
+        run1.refresh_from_db()
+        run2.refresh_from_db()
+        run3.refresh_from_db()
+        self.assertEqual(Run.Status.SUCCESS, run1.status)
+        self.assertEqual(Run.Status.FAILURE, run2.status)
+        self.assertEqual(Run.Status.NOT_STARTED, run3.status)
+
+    @override_settings(SCANPIPE={"ASYNC": True})
+    @mock.patch("django_rq.enqueue")
+    @mock.patch("scanpipe.pipelines.Pipeline.execute")
+    def test_scanpipe_management_command_execute_project_function_async_setting(
+        self, mock_execute, mock_enqueue
+    ):
+        project = make_project(name="my_project")
+        run1 = project.add_pipeline("do_nothing")
+        run2 = project.add_pipeline("do_nothing")
+
+        mock_execute.return_value = 0, ""
+        commands.execute_project(project)
+
+        mock_enqueue.assert_not_called()
+        run1.refresh_from_db()
+        run2.refresh_from_db()
+        self.assertEqual(Run.Status.SUCCESS, run1.status)
+        self.assertEqual(Run.Status.SUCCESS, run2.status)
+
     def test_scanpipe_management_command_status(self):
         project = make_project(name="my_project")
         run = project.add_pipeline(self.pipeline_name)
@@ -1104,6 +1144,18 @@ class ScanPipeManagementCommandTest(TestCase):
 
         self.assertEqual("do_nothing", runs[1]["pipeline_name"])
         self.assertEqual(["Group1", "Group2"], runs[1]["selected_groups"])
+
+    @mock.patch("scanpipe.pipelines.Pipeline.execute")
+    def test_scanpipe_management_command_run_later_pipeline_failure(self, mock_execute):
+        mock_execute.side_effect = [(0, ""), (1, "Error log")]
+        input_location = self.data / "codebase"
+
+        out = StringIO()
+        expected = "Error during do_nothing execution:\nError log"
+        with redirect_stdout(out):
+            with self.assertRaisesMessage(CommandError, expected):
+                call_command("run", "inspect_packages", "do_nothing", input_location)
+        self.assertEqual("", out.getvalue())
 
     @mock.patch("scanpipe.pipes.fetch.is_safe_url", return_value=True)
     @mock.patch("scanpipe.pipes.fetch.check_url")

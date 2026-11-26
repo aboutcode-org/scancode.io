@@ -400,7 +400,7 @@ def add_project_inputs(
         handle_copy_codebase(project=project, copy_from=copy_from, command=command)
 
 
-def execute_project(project, run_async=False, command=None):  # noqa: C901
+def execute_project(project, run_async=False, command=None):
     verbosity = getattr(command, "verbosity", 1) if command else 0
     run = project.get_next_run()
 
@@ -418,11 +418,20 @@ def execute_project(project, run_async=False, command=None):  # noqa: C901
             command.stdout.write(msg, command.style.SUCCESS)
         return
 
+    # Each run is executed in this process, whatever the ASYNC setting: a run started
+    # at the end of the previous one would be queued for a worker, or would not
+    # report its failure to this command.
+    while run:
+        execute_run(run=run, verbosity=verbosity, command=command)
+        run = project.get_next_run()
+
+
+def execute_run(run, verbosity, command=None):
     if verbosity > 0:
         command.stdout.write(f"Start the {run.pipeline_name} pipeline execution...")
 
     try:
-        tasks.execute_pipeline_task(run.pk)
+        tasks.execute_pipeline_task(run.pk, start_next_run=False)
     except KeyboardInterrupt:
         run.set_task_stopped()
         raise CommandError("Pipeline execution stopped.")
@@ -437,7 +446,7 @@ def execute_project(project, run_async=False, command=None):  # noqa: C901
         msg = f"Error during {run.pipeline_name} execution:\n{run.task_output}"
         raise CommandError(msg)
     elif verbosity > 0:
-        msg = f"{run.pipeline_name} successfully executed on project {project}"
+        msg = f"{run.pipeline_name} successfully executed on project {run.project}"
         command.stdout.write(msg, command.style.SUCCESS)
 
 
