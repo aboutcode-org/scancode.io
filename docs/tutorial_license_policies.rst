@@ -19,7 +19,11 @@ Refer to :ref:`policies` for details about the policies system.
 Instructions
 ------------
 
-Create a ``policies.yml`` file with the following content:
+This tutorial uses the ``scanpipe`` alias and the :guilabel:`~/codedrop/` directory
+from the :ref:`tutorial_cli_analyze_codebase` tutorial.
+
+Create a ``policies.yml`` file in the :guilabel:`~/codedrop/` directory with the
+following content:
 
 .. code-block:: yaml
 
@@ -31,14 +35,13 @@ Create a ``policies.yml`` file with the following content:
         label: Prohibited License
         compliance_alert: error
 
-Run the following command to create a project and run the ``scan_codebase`` pipeline
-(make sure to use the proper path for the policies.yml file):
+Run the following command to create a project and run the ``scan_codebase`` pipeline:
 
 .. code-block:: bash
 
     $ scanpipe create-project cuckoo-filter-with-policies \
         --input-url https://files.pythonhosted.org/packages/75/fc/f5b2e466d763dcc381d5127b73ffc265e8cdaf39ddafa422b7896e625432/cuckoo_filter-1.0.6.tar.gz \
-        --input-file policies.yml \
+        --input-file /codedrop/policies.yml \
         --pipeline scan_codebase \
         --execute
 
@@ -48,38 +51,20 @@ Generate results:
 
     $ scanpipe output --print --project cuckoo-filter-with-policies
 
-The computed compliance alerts are now included in the results, available for each
-detected license, and computed at the codebase resource level, for example:
+The computed compliance alerts are now included in the results, at the package and
+codebase resource level, for example:
 
 .. code-block:: json
 
     {
-      "for_packages": [],
+      "for_packages": [
+        "pkg:pypi/cuckoo-filter@.?uuid=de6718b4-2031-4c3e-bffe-ac9e01ccbd87"
+      ],
       "compliance_alert": "error",
       "path": "cuckoo_filter-1.0.6.tar.gz-extract/cuckoo_filter-1.0.6/README.md",
-      "licenses": [
-        {
-          "key": "mit",
-          "name": "MIT License",
-          "policy": {
-            "label": "Recommended License",
-            "compliance_alert": ""
-          },
-        },
-        {
-          "key": "gpl-3.0",
-          "name": "GNU General Public License 3.0",
-          "policy": {
-            "label": "Prohibited License",
-            "compliance_alert": "error"
-          }
-        }
-      ],
-      "license_expressions": [
-        "mit OR gpl-3.0"
-      ],
+      "detected_license_expression": "(mit OR gpl-3.0) AND gpl-1.0-plus AND gpl-3.0",
       "status": "scanned",
-      "name": "README",
+      "name": "README.md",
       "[...]": "[...]"
     }
 
@@ -150,7 +135,7 @@ Add a ``scorecard_score_thresholds`` section to your ``policies.yml`` file, for 
 Scorecard Compliance in Results
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-When you run a the addon pipeline fetch_scores with scorecard thresholds defined in your
+When you run the ``fetch_scores`` addon pipeline with scorecard thresholds defined in your
 ``policies.yml``, the computed scorecard compliance alert is included in the project's
 ``extra_data`` field.
 
@@ -185,17 +170,19 @@ in the project:
 
 .. code-block:: bash
 
-    5 compliance issues detected on this project.
+    6 compliance issues detected.
     [packages]
      > ERROR: 3
+       pkg:pypi/cuckoo-filter@1.0.6
+       pkg:pypi/cuckoo-filter@1.0.6
        pkg:pypi/cuckoo-filter@.
-       pkg:pypi/cuckoo-filter@1.0.6
-       pkg:pypi/cuckoo-filter@1.0.6
+    [license_detections]
+     > ERROR: 2
+       gpl_3_0-6ac50262-73f5-3091-88d6-6d17479cfd66
+       mit_or_gpl_3_0__and_gpl_1_0_plus_and_gpl_3_0-ff9c915f-95d8-b9a5-ab9b-bbaaa09c306f
     [resources]
      > ERROR: 1
        cuckoo_filter-1.0.6.tar.gz-extract/cuckoo_filter-1.0.6/README.md
-    [license clarity]
-     > ERROR
 
 .. tip::
     In case of compliance alerts, the command returns a non-zero exit code which

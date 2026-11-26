@@ -44,7 +44,7 @@ create an **environment file**, **pull the Docker images**, and **start the serv
     git clone https://github.com/aboutcode-org/scancode.io.git && cd scancode.io
     make envfile
     docker compose pull
-    docker compose up -d
+    docker compose up -d --wait
 
 Go to http://localhost/ on a web browser to **access the web UI**.
 
@@ -111,7 +111,7 @@ Upgrade the App
     cd scancode.io
     git pull
     docker compose pull
-    docker compose up -d
+    docker compose up -d --wait
 
 The ``docker-compose.yml`` file references the image of a given ScanCode.io release:
 ``git pull`` updates it to the latest release.

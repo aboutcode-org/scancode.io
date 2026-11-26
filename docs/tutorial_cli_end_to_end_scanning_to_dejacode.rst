@@ -60,7 +60,12 @@ Fetch codebase to scan
 
 We are using this repo for our tutorial: https://github.com/aboutcode-org/scancode-workbench
 
-We download the following: https://github.com/aboutcode-org/scancode-workbench/archive/refs/tags/v4.0.2.tar.gz
+Download the source archive of the v4.0.2 release:
+
+.. code-block:: shell
+
+    curl --location --output scancode-workbench-4.0.2.tar.gz \
+      https://github.com/aboutcode-org/scancode-workbench/archive/refs/tags/v4.0.2.tar.gz
 
 Extract the checkout and delete the archive:
 
@@ -72,7 +77,8 @@ Extract the checkout and delete the archive:
 Create scancode-config.yml config file
 --------------------------------------
 
-Add the scancode-config.yml file for ScanCode.io.
+Add the scancode-config.yml file for ScanCode.io at the root of the
+``scancode-workbench-4.0.2`` directory.
 
 Here we provide the product name and version and also configure it to
 ignore test files and development dependencies.
@@ -84,7 +90,7 @@ ignore test files and development dependencies.
     product_name: scancode-workbench
     product_version: '4.0.2'
     ignored_patterns:
-      - 'tests/*'
+      - '*/tests/*'
     ignored_dependency_scopes:
       - package_type: npm
         scope: devDependencies
@@ -145,9 +151,9 @@ Download the latest DepLock binary depending on your OS and architecture:
 Run ScanCode Package Detection
 -------------------------------
 
-Execute the following command to run the ScanCode scanner
-with **inspect_packages** pipeline with static resolution
-on the codebase in our current directory.
+From the directory containing ``scancode-workbench-4.0.2``, execute the following
+command to run the ScanCode scanner with **inspect_packages** pipeline with static
+resolution on the codebase.
 The ``SCANCODEIO_TRUST_CODEBASE_CONFIG`` setting applies the ``scancode-config.yml``
 file of this codebase, see :ref:`scancodeio_settings_trust_codebase_config`.
 
@@ -157,7 +163,7 @@ file of this codebase, see :ref:`scancodeio_settings_trust_codebase_config`.
       -v "$(pwd)":/code \
       --env SCANCODEIO_TRUST_CODEBASE_CONFIG=True \
       ghcr.io/aboutcode-org/scancode.io:latest \
-      sh -c "run inspect_packages:StaticResolver /code" \
+      run inspect_packages:StaticResolver /code \
       > results.json
 
 
