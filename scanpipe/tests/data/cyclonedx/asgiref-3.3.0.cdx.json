@@ -148,7 +148,7 @@
     {
       "affects": [
         {
-          "ref": "urn:cdx:pkg:pypi/asgiref@3.3.0?uuid=e522e5ca-fd0c-4566-8632-bb3e82c5f7eb"
+          "ref": "pkg:pypi/asgiref@3.3.0?uuid=e522e5ca-fd0c-4566-8632-bb3e82c5f7eb"
         }
       ],
       "bom-ref": "BomRef",

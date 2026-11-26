@@ -1,1 +1,1 @@
-{"affects": [{"ref": "urn:cdx:pkg:pypi/django@4.0.10"}], "source": {"name": "VulnerableCode"}}
+{"affects": [{"ref": "pkg:pypi/django@4.0.10"}], "source": {"name": "VulnerableCode"}}

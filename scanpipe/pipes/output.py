@@ -835,7 +835,7 @@ def to_spdx(project, version=spdx.SPDX_SPEC_VERSION_2_3, include_files=False):
 
 
 def vulnerability_as_cyclonedx(vulnerability_data, component_bom_ref):
-    affects = [cdx_vulnerability.BomTarget(ref=f"urn:cdx:{component_bom_ref}")]
+    affects = [cdx_vulnerability.BomTarget(ref=str(component_bom_ref))]
 
     source = cdx_vulnerability.VulnerabilitySource(
         name="VulnerableCode",
