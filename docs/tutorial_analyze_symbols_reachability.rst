@@ -103,4 +103,5 @@ Run the ``analyze_symbols_reachability`` pipeline
     An advisory is considered ``REACHABLE`` if it is reachable through at least
     one resource. If no resource is ``REACHABLE`` and at least one result is
     ``UNKNOWN``, the advisory status is ``UNKNOWN``. Otherwise, its status is
-    ``NOT_REACHABLE``.
+    ``NOT_REACHABLE``. An advisory without any resource result, for example when
+    the language of its patch or of the code is not supported, is ``UNKNOWN``.

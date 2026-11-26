@@ -42,6 +42,7 @@ from scanpipe.pipes.reachability import ResourceAnalyzer
 from scanpipe.pipes.reachability import ResourcePatchMatcher
 from scanpipe.pipes.reachability import classify_reachability
 from scanpipe.pipes.reachability import collect_patch_symbols
+from scanpipe.pipes.reachability import generate_advisory_reachability_report
 from scanpipe.pipes.symbols import TS_QUERIES
 from scanpipe.pipes.symbols import SymbolExtractor
 
@@ -243,7 +244,7 @@ class SymbolReachabilityPipesTest(TestCase):
                 "advisories": [
                     {
                         "advisory_uid": "AVID-1",
-                        "is_reachable": ReachabilityStatus.NOT_REACHABLE.value,
+                        "is_reachable": ReachabilityStatus.UNKNOWN.value,
                         "details": [
                             {
                                 "resource_path": "src/file2.py",
@@ -251,7 +252,7 @@ class SymbolReachabilityPipesTest(TestCase):
                                     "vcs_url": "https://example.com",
                                     "commit_hash": "def456",
                                 },
-                                "is_reachable": ReachabilityStatus.NOT_REACHABLE.value,
+                                "is_reachable": ReachabilityStatus.UNKNOWN.value,
                                 "tool_details": [],
                                 "vulnerable_symbols": [],
                                 "fixed_symbols": [],
@@ -262,7 +263,7 @@ class SymbolReachabilityPipesTest(TestCase):
                                     "vcs_url": "https://example.com",
                                     "commit_hash": "abc123",
                                 },
-                                "is_reachable": ReachabilityStatus.NOT_REACHABLE.value,
+                                "is_reachable": ReachabilityStatus.UNKNOWN.value,
                                 "tool_details": [],
                                 "vulnerable_symbols": ["vuln_sym1"],
                                 "fixed_symbols": ["fixed_sym1"],
@@ -271,7 +272,7 @@ class SymbolReachabilityPipesTest(TestCase):
                     },
                     {
                         "advisory_uid": "AVID-2",
-                        "is_reachable": "no",
+                        "is_reachable": ReachabilityStatus.UNKNOWN.value,
                         "details": [
                             {
                                 "resource_path": "src/file3.py",
@@ -279,7 +280,7 @@ class SymbolReachabilityPipesTest(TestCase):
                                     "vcs_url": "https://example2.com",
                                     "commit_hash": "46a4asf",
                                 },
-                                "is_reachable": ReachabilityStatus.NOT_REACHABLE.value,
+                                "is_reachable": ReachabilityStatus.UNKNOWN.value,
                                 "tool_details": [],
                                 "vulnerable_symbols": [],
                                 "fixed_symbols": [],
@@ -290,7 +291,7 @@ class SymbolReachabilityPipesTest(TestCase):
                                     "vcs_url": "https://example.com",
                                     "commit_hash": "abc123",
                                 },
-                                "is_reachable": ReachabilityStatus.NOT_REACHABLE.value,
+                                "is_reachable": ReachabilityStatus.UNKNOWN.value,
                                 "tool_details": [],
                                 "vulnerable_symbols": ["vuln_sym1"],
                                 "fixed_symbols": ["fixed_sym1"],
@@ -301,6 +302,48 @@ class SymbolReachabilityPipesTest(TestCase):
             }
 
             self.assertEqual(report, expected_report)
+
+    def test_scanpipe_pipes_reachability_generate_advisory_report_statuses(self):
+        def make_resource(path, advisory_uid, is_reachable):
+            resource = MagicMock()
+            resource.path = path
+            resource.extra_data = {
+                "symbols_reachability": [
+                    {"advisory_uids": [advisory_uid], "is_reachable": is_reachable}
+                ]
+            }
+            return resource
+
+        not_reachable = ReachabilityStatus.NOT_REACHABLE.value
+        unknown = ReachabilityStatus.UNKNOWN.value
+        reachable = ReachabilityStatus.REACHABLE.value
+        patches = [{"advisory_uids": ["NO-RESULT", "NO", "UNKNOWN", "YES"]}]
+        candidate_resources = [
+            make_resource("no.py", "NO", not_reachable),
+            make_resource("unknown1.py", "UNKNOWN", unknown),
+            make_resource("unknown2.py", "UNKNOWN", not_reachable),
+            make_resource("yes1.py", "YES", not_reachable),
+            make_resource("yes2.py", "YES", reachable),
+        ]
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_file = os.path.join(tmpdir, "reachability.json")
+            self.project1.get_output_file_path = MagicMock(return_value=output_file)
+            report = generate_advisory_reachability_report(
+                self.project1, patches, candidate_resources
+            )
+
+        status_by_advisory = {
+            advisory["advisory_uid"]: advisory["is_reachable"]
+            for advisory in report["advisories"]
+        }
+        expected = {
+            "NO-RESULT": unknown,
+            "NO": not_reachable,
+            "UNKNOWN": unknown,
+            "YES": reachable,
+        }
+        self.assertEqual(expected, status_by_advisory)
 
     def _run_reachability_pipeline(
         self,

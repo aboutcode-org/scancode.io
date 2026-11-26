@@ -785,6 +785,9 @@ def generate_advisory_reachability_report(project, patches, candidate_resources)
     through at least one resource or patch. If no reachable result exists,
     but at least one result is UNKNOWN, the advisory status is UNKNOWN.
     Otherwise, it is NOT_REACHABLE.
+
+    An advisory without any result is UNKNOWN: no analysis supports a NOT_REACHABLE
+    conclusion, for example when its patch or code language is not supported.
     """
     status_priority = {
         ReachabilityStatus.REACHABLE.value: 3,
@@ -803,7 +806,7 @@ def generate_advisory_reachability_report(project, patches, candidate_resources)
             if adv_uid not in advisory_map:
                 adv_data = {
                     "advisory_uid": adv_uid,
-                    "is_reachable": ReachabilityStatus.NOT_REACHABLE.value,
+                    "is_reachable": ReachabilityStatus.UNKNOWN.value,
                     "details": [],
                 }
                 advisory_map[adv_uid] = adv_data
@@ -813,7 +816,7 @@ def generate_advisory_reachability_report(project, patches, candidate_resources)
         for report in resource.extra_data.get("symbols_reachability", []):
             advisory_uids = report.get("advisory_uids", [])
             is_reachable = (
-                report.get("is_reachable") or ReachabilityStatus.NOT_REACHABLE.value
+                report.get("is_reachable") or ReachabilityStatus.UNKNOWN.value
             )
             patch = report.get("patch", {})
 
@@ -821,7 +824,7 @@ def generate_advisory_reachability_report(project, patches, candidate_resources)
                 if adv_uid not in advisory_map:
                     adv_data = {
                         "advisory_uid": adv_uid,
-                        "is_reachable": ReachabilityStatus.NOT_REACHABLE.value,
+                        "is_reachable": ReachabilityStatus.UNKNOWN.value,
                         "details": [],
                     }
                     advisory_map[adv_uid] = adv_data
@@ -838,10 +841,12 @@ def generate_advisory_reachability_report(project, patches, candidate_resources)
 
                 advisory_map[adv_uid]["details"].append(tool_details)
 
+                is_first_result = len(advisory_map[adv_uid]["details"]) == 1
                 current_status = advisory_map[adv_uid]["is_reachable"]
-                if status_priority.get(is_reachable, 0) > status_priority.get(
-                    current_status, 0
-                ):
+                has_higher_priority = status_priority.get(
+                    is_reachable, 0
+                ) > status_priority.get(current_status, 0)
+                if is_first_result or has_higher_priority:
                     advisory_map[adv_uid]["is_reachable"] = is_reachable
 
     reachability_output_path = project.get_output_file_path("reachability", "json")
