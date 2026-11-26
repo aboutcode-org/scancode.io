@@ -126,12 +126,8 @@ Instructions
 .. code-block:: console
 
     >> Start the analyze_docker_image pipeline execution...
-       Pipeline [analyze_docker_image] starting
-       Step [extract_images] starting
-       Step [extract_images] completed in 0.18 seconds
-       Step [extract_layers] starting
+       INFO Scan 70 codebase resources with scan_for_package_data
        [...]
-       Pipeline completed
        analyze_docker_image successfully executed on project staticbox
 
 - Executing the ``show-pipeline`` command again will also confirm the success

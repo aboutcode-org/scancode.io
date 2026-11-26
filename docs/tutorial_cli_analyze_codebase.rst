@@ -103,12 +103,8 @@ Instructions
 .. code-block:: console
 
     >> Start the scan_codebase pipeline execution...
-       Pipeline [scan_codebase] starting
-       Step [copy_inputs_to_codebase_directory] starting
-       Step [copy_inputs_to_codebase_directory] completed in 0.00 seconds
-       Step [extract_archives] starting
+       INFO Scan 18 codebase resources with scan_for_package_data
        [...]
-       Pipeline completed
        scan_codebase successfully executed on project asgiref
 
 - Finally, export the scan results as JSON format:
@@ -138,5 +134,4 @@ Instructions
            - asgiref-3.3.0-py3-none-any.whl
            Start the scan_codebase pipeline execution...
            [...]
-           Pipeline completed
            scan_codebase successfully executed on project asgiref2
