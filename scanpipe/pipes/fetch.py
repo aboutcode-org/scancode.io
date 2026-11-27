@@ -703,7 +703,10 @@ def fetch_git_repo(url, to=None):
     filename = url.split("/")[-1]
     to_path = Path(download_directory) / filename
 
-    git.Repo.clone_from(url=url, to_path=to_path, depth=1, env=git_env)
+    # GitLab redirects a clone URL without the ".git" suffix, and the redirects are
+    # not followed.
+    clone_url = url if url.endswith(".git") else f"{url}.git"
+    git.Repo.clone_from(url=clone_url, to_path=to_path, depth=1, env=git_env)
 
     return Download(
         uri=url,
@@ -752,6 +755,26 @@ def fetch_package_url(url, to=None):
     raise ValueError(f"Could not resolve a download URL for {url}.")
 
 
+# The hosts where the home URL of a repository, without the ".git" suffix, is cloned.
+GIT_REPOSITORY_HOSTS = ("github.com", "www.github.com", "gitlab.com", "www.gitlab.com")
+
+
+def is_git_repository_home_url(url):
+    """
+    Return True if ``url`` is the home URL of a GitHub or GitLab repository, such as
+    https://gitlab.com/libeigen/eigen
+    """
+    parsed_url = urlparse(url.rstrip("/"))
+    path_segments = parsed_url.path.strip("/").split("/")
+    return (
+        parsed_url.scheme == "https"
+        and parsed_url.hostname in GIT_REPOSITORY_HOSTS
+        and not parsed_url.query
+        and not parsed_url.fragment
+        and len(path_segments) == 2
+    )
+
+
 SCHEME_TO_FETCHER_MAPPING = {
     "http": fetch_http,
     "https": fetch_http,
@@ -775,6 +798,9 @@ def get_fetcher(url):
         # the server, so only the HTTP URLs are cloned.
         if not url.startswith(("http://", "https://")):
             raise ValueError("Only http:// and https:// Git URLs are supported.")
+        return fetch_git_repo
+
+    if is_git_repository_home_url(url):
         return fetch_git_repo
 
     if url.startswith("pkg:"):

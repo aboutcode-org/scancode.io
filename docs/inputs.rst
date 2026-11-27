@@ -204,9 +204,14 @@ Git Repository
 You can provide a **Git repository URL** as project input. The repository will be cloned
 (with only the latest commit history) at the start of pipeline execution.
 
-Example::
+Examples::
 
     https://github.com/aboutcode-org/scancode.io.git
+    https://gitlab.com/libeigen/eigen
+
+A URL ending with ``.git`` is cloned from any host. The home URL of a GitHub or GitLab
+repository, such as ``https://gitlab.com/libeigen/eigen``, is also cloned. For a
+GitLab project in a subgroup, use the URL ending with ``.git``.
 
 .. note::
     Use an ``https://`` URL. The redirects are not followed, so an ``http://`` URL
