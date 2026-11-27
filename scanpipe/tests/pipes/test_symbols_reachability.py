@@ -43,6 +43,7 @@ from scanpipe.pipes.reachability import ResourcePatchMatcher
 from scanpipe.pipes.reachability import classify_reachability
 from scanpipe.pipes.reachability import collect_patch_symbols
 from scanpipe.pipes.reachability import generate_advisory_reachability_report
+from scanpipe.pipes.reachability import set_advisories_reachability
 from scanpipe.pipes.symbols import TS_QUERIES
 from scanpipe.pipes.symbols import SymbolExtractor
 
@@ -302,6 +303,22 @@ class SymbolReachabilityPipesTest(TestCase):
             }
 
             self.assertEqual(report, expected_report)
+
+    def test_scanpipe_pipes_reachability_set_advisories_reachability(self):
+        status_priority = {"yes": 3, "unknown": 2, "no": 1}
+        advisories = [
+            {"is_reachable": "unknown", "details": []},
+            {"is_reachable": "unknown", "details": [{"is_reachable": "no"}]},
+            {
+                "is_reachable": "unknown",
+                "details": [{"is_reachable": "no"}, {"is_reachable": "yes"}],
+            },
+        ]
+
+        set_advisories_reachability(advisories, status_priority)
+
+        statuses = [advisory["is_reachable"] for advisory in advisories]
+        self.assertEqual(["unknown", "no", "yes"], statuses)
 
     def test_scanpipe_pipes_reachability_generate_advisory_report_statuses(self):
         def make_resource(path, advisory_uid, is_reachable):

@@ -770,6 +770,21 @@ def match_patches_to_resources(
             )
 
 
+def set_advisories_reachability(advisories, status_priority):
+    """
+    Set the reachability of each of the ``advisories`` to the status of its details
+    with the highest ``status_priority``. An advisory without details is unchanged.
+    """
+
+    def get_status_priority(status):
+        return status_priority.get(status, 0)
+
+    for advisory in advisories:
+        detail_statuses = [detail["is_reachable"] for detail in advisory["details"]]
+        if detail_statuses:
+            advisory["is_reachable"] = max(detail_statuses, key=get_status_priority)
+
+
 def generate_advisory_reachability_report(project, patches, candidate_resources):
     """
     Generate a reachability report summarizing status by advisory.
@@ -841,13 +856,7 @@ def generate_advisory_reachability_report(project, patches, candidate_resources)
 
                 advisory_map[adv_uid]["details"].append(tool_details)
 
-                is_first_result = len(advisory_map[adv_uid]["details"]) == 1
-                current_status = advisory_map[adv_uid]["is_reachable"]
-                has_higher_priority = status_priority.get(
-                    is_reachable, 0
-                ) > status_priority.get(current_status, 0)
-                if is_first_result or has_higher_priority:
-                    advisory_map[adv_uid]["is_reachable"] = is_reachable
+    set_advisories_reachability(advisory_map.values(), status_priority)
 
     reachability_output_path = project.get_output_file_path("reachability", "json")
 
