@@ -212,6 +212,27 @@ class ScanPipeFetchPipesTest(TestCase):
         expected = f"{proxied_api_url}/packages?page=2"
         self.assertEqual(expected, fetch.get_api_link(link_url, proxied_api_url))
 
+    def test_scanpipe_pipes_fetch_get_api_link_outside_of_the_api(self):
+        api_url = "https://proxy.example/vulnerablecode/api/v3"
+        outside_link_urls = [
+            "http://vulnerablecode/api/v3/../../../purldb/api/collect/",
+            "http://vulnerablecode/api/v3/%2e%2e/%2E%2E/purldb/api/",
+            "http://vulnerablecode/api/v3/./packages",
+            "http://vulnerablecode/purldb/api/packages/",
+            "http://vulnerablecode/",
+        ]
+        for link_url in outside_link_urls:
+            expected = f"Link outside of the service API: {link_url}"
+            with self.assertRaisesMessage(ValueError, expected):
+                fetch.get_api_link(link_url, api_url)
+
+    def test_scanpipe_pipes_fetch_is_under_path(self):
+        self.assertTrue(fetch.is_under_path("/api/v3", "/api/v3"))
+        self.assertTrue(fetch.is_under_path("/api/v3/packages", "/api/v3/"))
+        self.assertTrue(fetch.is_under_path("/packages", ""))
+        self.assertFalse(fetch.is_under_path("/api/v3x", "/api/v3"))
+        self.assertFalse(fetch.is_under_path("/api", "/api/v3"))
+
     def test_scanpipe_pipes_fetch_get_api_link_path(self):
         api_path = "/vulnerablecode/api/v3"
         cases = [

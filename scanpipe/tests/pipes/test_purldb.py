@@ -243,6 +243,23 @@ class ScanPipePurlDBTest(TestCase):
         self.assertEqual(expected_data, mock_request_post_call_kwargs["data"])
         self.project1.runs.all().delete()
 
+    @mock.patch("scanpipe.pipes.purldb.PURLDB_API_URL", "https://purldb.example/api/")
+    @mock.patch("scanpipe.pipes.purldb.request_get")
+    def test_scanpipe_pipes_purldb_get_package_data(self, mock_request_get):
+        mock_request_get.return_value = {"name": "package"}
+
+        package_instance_url = "http://purldb:8000/api/packages/package-id/"
+        package_data = purldb.get_package_data(package_instance_url)
+        self.assertEqual({"name": "package"}, package_data)
+        expected_url = "https://purldb.example/api/packages/package-id/"
+        mock_request_get.assert_called_once_with(url=expected_url)
+
+        mock_request_get.reset_mock()
+        outside_url = "http://purldb:8000/api/../admin/"
+        with self.assertRaisesMessage(ValueError, "Link outside of the service API"):
+            purldb.get_package_data(outside_url)
+        mock_request_get.assert_not_called()
+
     @mock.patch("scanpipe.pipes.purldb.request_post")
     def test_scanpipe_pipes_purldb_collect_response_results(self, mock_request_post):
         api_url = "https://purldb.example/api/"

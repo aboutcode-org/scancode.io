@@ -245,8 +245,8 @@ class ScanPipeVulnerableCodeTest(TestCase):
                 make_page(["result1"], count=2, next_url="https://other.example/")
             ),
         ]
-        expected_message = "URL outside of the VulnerableCode API"
-        with self.assertRaisesMessage(VulnerableCodeError, expected_message):
+        expected_message = "Link outside of the service API: https://other.example/"
+        with self.assertRaisesMessage(ValueError, expected_message):
             get_all_results("GET", PACKAGES_URL, api_url=API_URL)
         self.assertEqual(1, mock_request.call_count)
 

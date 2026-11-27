@@ -407,6 +407,14 @@ def populate_purldb_with_discovered_dependencies(project, logger=logger.info):
     )
 
 
+def get_package_data(package_instance_url):
+    """
+    Return the data of the PurlDB package at `package_instance_url`, a link
+    returned in a PurlDB response.
+    """
+    return request_get(url=fetch.get_api_link(package_instance_url, PURLDB_API_URL))
+
+
 def find_packages(payload):
     """Get Packages using provided `payload` filters on the PurlDB package list."""
     package_api_url = f"{PURLDB_API_URL}packages/"

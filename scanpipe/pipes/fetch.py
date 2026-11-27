@@ -287,6 +287,12 @@ class NoCredentialsAuth(request_auth.AuthBase):
         return prepared_request
 
 
+def is_under_path(path, base_path):
+    """Return True if the `path` is the `base_path` or one of its sub-paths."""
+    base_path = base_path.rstrip("/")
+    return path == base_path or path.startswith(f"{base_path}/")
+
+
 def get_api_link_path(link_path, api_path):
     """
     Return the `link_path` under the `api_path`, with the path prefix that a proxy
@@ -296,7 +302,7 @@ def get_api_link_path(link_path, api_path):
     api_path = api_path.rstrip("/")
     service_path = api_path
     while service_path:
-        if link_path == service_path or link_path.startswith(f"{service_path}/"):
+        if is_under_path(link_path, service_path):
             proxy_path_prefix = api_path.removesuffix(service_path)
             return f"{proxy_path_prefix}{link_path}"
         _, _, remaining_path = service_path.lstrip("/").partition("/")
@@ -310,11 +316,20 @@ def get_api_link(link_url, api_url):
     scheme, host, and path prefix of the configured `api_url`.
     The services build their links from the request host and scheme, which depend
     on the proxy in front of them. The credentials of a service session are only
-    sent to its configured host, never to a host taken from a response.
+    sent to its configured API, never to a URL taken from a response: a link
+    outside of the API raises a ValueError.
     """
     link_parts = urlsplit(link_url)
     api_parts = urlsplit(api_url)
     link_path = get_api_link_path(link_parts.path, api_parts.path)
+
+    # The dot segments are resolved when the request is sent, and could reach
+    # another application served on the same host.
+    path_segments = unquote(link_path).split("/")
+    has_dot_segment = any(segment in (".", "..") for segment in path_segments)
+    if has_dot_segment or not is_under_path(link_path, api_parts.path):
+        raise ValueError(f"Link outside of the service API: {link_url}")
+
     return urlunsplit(
         (api_parts.scheme, api_parts.netloc, link_path, link_parts.query, "")
     )
