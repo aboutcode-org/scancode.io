@@ -52,7 +52,8 @@ class Command(BaseCommand):
             "input_location",
             help=(
                 "Input location: file, directory, and URL supported."
-                'Multiple values can be provided using the "input1,input2" syntax.'
+                'Multiple values can be provided using the "input1,input2" syntax. '
+                'Encode the commas of a Package URL qualifier value as "%%2C".'
             ),
         )
         parser.add_argument("--project", required=False, help="Project name.")
@@ -93,7 +94,7 @@ class Command(BaseCommand):
         input_options = defaultdict(list)
 
         for location in input_location.split(","):
-            if location.startswith(tuple(SCHEME_TO_FETCHER_MAPPING.keys())):
+            if location.startswith((*SCHEME_TO_FETCHER_MAPPING.keys(), "pkg:")):
                 input_options["input_urls"].append(location)
 
             else:
