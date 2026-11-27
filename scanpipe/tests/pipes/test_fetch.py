@@ -85,6 +85,31 @@ class ScanPipeFetchPipesTest(TestCase):
         expected = "Unencrypted git:// URLs are not supported. Use https:// instead."
         self.assertEqual(expected, str(cm.exception))
 
+    def test_scanpipe_pipes_fetch_get_fetcher_git_repository_home_url(self):
+        home_urls = [
+            "https://github.com/aboutcode-org/scancode.io",
+            "https://github.com/aboutcode-org/scancode.io/",
+            "https://www.github.com/aboutcode-org/scancode.io",
+            "https://gitlab.com/libeigen/eigen",
+            "https://GitLab.com/libeigen/eigen",
+        ]
+        for url in home_urls:
+            self.assertEqual(fetch.fetch_git_repo, fetch.get_fetcher(url), url)
+
+        not_home_urls = [
+            "http://github.com/aboutcode-org/scancode.io",
+            "https://github.com/aboutcode-org",
+            "https://github.com/aboutcode-org/scancode.io/archive/v1.0.tar.gz",
+            "https://github.com/aboutcode-org/scancode.io/tree/main",
+            "https://github.com/aboutcode-org/scancode.io?tab=readme",
+            "https://github.com/aboutcode-org/scancode.io#readme",
+            "https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.gz",
+            "https://github.com.example.org/aboutcode-org/scancode.io",
+            "https://example.org/aboutcode-org/scancode.io",
+        ]
+        for url in not_home_urls:
+            self.assertEqual(fetch.fetch_http, fetch.get_fetcher(url), url)
+
     def test_scanpipe_pipes_fetch_get_fetcher_refuses_unsupported_git_urls(self):
         unsupported_git_urls = [
             "/srv/repository/.git",
@@ -529,6 +554,19 @@ class ScanPipeFetchPipesTest(TestCase):
         self.assertEqual("", download.size)
         self.assertEqual("", download.sha1)
         self.assertEqual("", download.md5)
+
+    @mock.patch("scanpipe.pipes.fetch.is_safe_url", return_value=True)
+    @mock.patch("git.repo.base.Repo.clone_from")
+    def test_scanpipe_pipes_fetch_git_repo_home_url(
+        self, mock_clone_from, mock_is_safe_url
+    ):
+        url = "https://gitlab.com/libeigen/eigen/"
+        download = fetch.fetch_git_repo(url)
+
+        clone_url = mock_clone_from.call_args.kwargs["url"]
+        self.assertEqual("https://gitlab.com/libeigen/eigen.git", clone_url)
+        self.assertEqual("https://gitlab.com/libeigen/eigen", download.uri)
+        self.assertEqual("eigen", download.filename)
 
     @mock.patch("scanpipe.pipes.fetch.is_safe_url", return_value=False)
     @mock.patch("git.repo.base.Repo.clone_from")
