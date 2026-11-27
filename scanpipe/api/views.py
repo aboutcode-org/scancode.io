@@ -587,10 +587,8 @@ class RunViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
 
         try:
             run.stop_task()
-        except RunNotStoppable:
-            return ErrorResponse(
-                "A pipeline cannot be stopped when SCANCODEIO_ASYNC is disabled."
-            )
+        except RunNotStoppable as error:
+            return ErrorResponse(str(error))
 
         return Response({"status": f"Pipeline {run.pipeline_name} stopped."})
 
