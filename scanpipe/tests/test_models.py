@@ -1397,6 +1397,14 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(Run.Status.RUNNING, run1.status)
         self.assertEqual("", run1.log)
 
+    @override_settings(SCANPIPE={"ASYNC": False})
+    def test_scanpipe_run_model_delete_running_synchronous_run(self):
+        run1 = self.create_run(task_start_date=timezone.now())
+        expected = "A pipeline cannot be stopped when SCANCODEIO_ASYNC is disabled."
+        with self.assertRaisesMessage(RunNotStoppable, expected):
+            run1.delete()
+        self.assertTrue(Run.objects.filter(pk=run1.pk).exists())
+
     @override_settings(SCANPIPE={"ASYNC": True})
     @mock.patch("scanpipe.models.send_stop_job_command")
     @mock.patch("scanpipe.models.Run.job_status", new_callable=mock.PropertyMock)
