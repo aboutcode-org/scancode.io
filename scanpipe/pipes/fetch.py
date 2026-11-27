@@ -287,18 +287,36 @@ class NoCredentialsAuth(request_auth.AuthBase):
         return prepared_request
 
 
+def get_api_link_path(link_path, api_path):
+    """
+    Return the `link_path` under the `api_path`, with the path prefix that a proxy
+    in front of the service adds, such as "/vulnerablecode" in the
+    "/vulnerablecode/api/v3" `api_path`: the service builds its links without it.
+    """
+    api_path = api_path.rstrip("/")
+    service_path = api_path
+    while service_path:
+        if link_path == service_path or link_path.startswith(f"{service_path}/"):
+            proxy_path_prefix = api_path.removesuffix(service_path)
+            return f"{proxy_path_prefix}{link_path}"
+        _, _, remaining_path = service_path.lstrip("/").partition("/")
+        service_path = f"/{remaining_path}" if remaining_path else ""
+    return link_path
+
+
 def get_api_link(link_url, api_url):
     """
     Return the path and query of the `link_url` returned by a service on the
-    scheme and host of the configured `api_url`.
+    scheme, host, and path prefix of the configured `api_url`.
     The services build their links from the request host and scheme, which depend
     on the proxy in front of them. The credentials of a service session are only
     sent to its configured host, never to a host taken from a response.
     """
     link_parts = urlsplit(link_url)
     api_parts = urlsplit(api_url)
+    link_path = get_api_link_path(link_parts.path, api_parts.path)
     return urlunsplit(
-        (api_parts.scheme, api_parts.netloc, link_parts.path, link_parts.query, "")
+        (api_parts.scheme, api_parts.netloc, link_path, link_parts.query, "")
     )
 
 

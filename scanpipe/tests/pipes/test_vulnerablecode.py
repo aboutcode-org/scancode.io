@@ -266,6 +266,23 @@ class ScanPipeVulnerableCodeTest(TestCase):
         self.assertEqual(f"{PACKAGES_URL}?page=2", next_request_url)
 
     @mock.patch("scanpipe.pipes.vulnerablecode.session.request")
+    def test_scanpipe_pipes_vulnerablecode_get_all_results_proxy_path_prefix(
+        self, mock_request
+    ):
+        # A proxy serving VulnerableCode under a path prefix, absent from its links.
+        api_url = "https://proxy.example/vulnerablecode/api/v3"
+        packages_url = f"{api_url}/packages"
+        next_url = "http://vulnerablecode:8000/api/v3/packages?page=2"
+        mock_request.side_effect = [
+            make_response(make_page(["result1"], count=2, next_url=next_url)),
+            make_response(make_page(["result2"], count=2)),
+        ]
+        all_results = get_all_results("GET", packages_url, api_url=api_url)
+        self.assertEqual(["result1", "result2"], all_results)
+        next_request_url = mock_request.call_args_list[1].args[1]
+        self.assertEqual(f"{packages_url}?page=2", next_request_url)
+
+    @mock.patch("scanpipe.pipes.vulnerablecode.session.request")
     def test_scanpipe_pipes_vulnerablecode_bulk_search_by_purl(self, mock_request):
         purls = [f"pkg:deb/debian/fixture-{index:03d}@1.0" for index in range(101)]
         package_entries = [make_package_data(purl, []) for purl in purls]

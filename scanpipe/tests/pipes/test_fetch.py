@@ -207,6 +207,29 @@ class ScanPipeFetchPipesTest(TestCase):
         expected = f"{api_url}/packages?page=2"
         self.assertEqual(expected, fetch.get_api_link(link_url, api_url))
 
+        proxied_api_url = "https://proxy.example/vulnerablecode/api/v3"
+        link_url = "http://vulnerablecode:8000/api/v3/packages?page=2"
+        expected = f"{proxied_api_url}/packages?page=2"
+        self.assertEqual(expected, fetch.get_api_link(link_url, proxied_api_url))
+
+    def test_scanpipe_pipes_fetch_get_api_link_path(self):
+        api_path = "/vulnerablecode/api/v3"
+        cases = [
+            ("/vulnerablecode/api/v3/packages", "/vulnerablecode/api/v3/packages"),
+            ("/api/v3/packages", "/vulnerablecode/api/v3/packages"),
+            ("/api/v3", "/vulnerablecode/api/v3"),
+            ("/v3/packages", "/vulnerablecode/api/v3/packages"),
+            ("/other/packages", "/other/packages"),
+            ("/api/v3x/packages", "/api/v3x/packages"),
+        ]
+        for link_path, expected in cases:
+            api_link_path = fetch.get_api_link_path(link_path, api_path)
+            self.assertEqual(expected, api_link_path, link_path)
+
+        api_link_path = fetch.get_api_link_path("/api/packages/", "/api/")
+        self.assertEqual("/api/packages/", api_link_path)
+        self.assertEqual("/packages", fetch.get_api_link_path("/packages", ""))
+
     @mock.patch("fetchcode.pypi.fetch_json_response")
     def test_scanpipe_pipes_fetch_get_pypi_download_url(self, mock_fetch_json):
         package_url = "pkg:pypi/owned-selector@1.0"
