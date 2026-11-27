@@ -167,7 +167,10 @@ def collect_response_results(
     if response and response.get("count"):
         results.extend(response["results"])
         next_page = response.get("next")
-        while next_page:
+        # A page holds at least one result: the count bounds the number of requests.
+        remaining_page_requests = response["count"]
+        while next_page and remaining_page_requests:
+            remaining_page_requests -= 1
             next_page_url = fetch.get_api_link(next_page, api_url)
             response = request_post(url=next_page_url, data=data, timeout=timeout)
             # A failed request returns None, the same next page would be requested

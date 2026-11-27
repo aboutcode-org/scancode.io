@@ -294,6 +294,24 @@ class ScanPipePurlDBTest(TestCase):
 
         self.assertEqual([], purldb.collect_response_results(None, data={}))
 
+    @mock.patch("scanpipe.pipes.purldb.request_post")
+    def test_scanpipe_pipes_purldb_collect_response_results_bounded(
+        self, mock_request_post
+    ):
+        api_url = "https://purldb.example/api/"
+        endless_page = {
+            "count": 2,
+            "results": [1],
+            "next": "https://purldb.example/api/packages/?page=2",
+        }
+        mock_request_post.return_value = endless_page
+
+        results = purldb.collect_response_results(
+            endless_page, data={}, api_url=api_url
+        )
+        self.assertEqual([1, 1, 1], results)
+        self.assertEqual(2, mock_request_post.call_count)
+
     def test_scanpipe_pipes_purldb_create_project_name(self):
         download_url = "https://registry.npmjs.org/asdf/-/asdf-1.0.1.tgz"
         scannable_uri_uuid = "52b2930d-6e85-4b3e-ba3e-17dd9a618650"
