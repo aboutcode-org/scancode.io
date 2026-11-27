@@ -159,6 +159,17 @@ def request_post(url, data=None, headers=None, files=None, timeout=DEFAULT_TIMEO
         logger.debug(f"{label} [Exception] {exception}")
 
 
+def get_api_link(link_url, api_url):
+    """
+    Return the `link_url` of a PurlDB response on the configured `api_url`.
+    Raise a PurlDBException for a link outside of the PurlDB API.
+    """
+    try:
+        return fetch.get_api_link(link_url, api_url)
+    except ValueError as error:
+        raise PurlDBException(error) from error
+
+
 def collect_response_results(
     response, data, timeout=DEFAULT_TIMEOUT, api_url=PURLDB_API_URL
 ):
@@ -171,7 +182,7 @@ def collect_response_results(
         remaining_page_requests = response["count"]
         while next_page and remaining_page_requests:
             remaining_page_requests -= 1
-            next_page_url = fetch.get_api_link(next_page, api_url)
+            next_page_url = get_api_link(next_page, api_url)
             response = request_post(url=next_page_url, data=data, timeout=timeout)
             # A failed request returns None, the same next page would be requested
             # forever.
@@ -415,7 +426,7 @@ def get_package_data(package_instance_url):
     Return the data of the PurlDB package at `package_instance_url`, a link
     returned in a PurlDB response.
     """
-    return request_get(url=fetch.get_api_link(package_instance_url, PURLDB_API_URL))
+    return request_get(url=get_api_link(package_instance_url, PURLDB_API_URL))
 
 
 def find_packages(payload):

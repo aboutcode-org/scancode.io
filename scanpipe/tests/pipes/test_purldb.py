@@ -256,9 +256,25 @@ class ScanPipePurlDBTest(TestCase):
 
         mock_request_get.reset_mock()
         outside_url = "http://purldb:8000/api/../admin/"
-        with self.assertRaisesMessage(ValueError, "Link outside of the service API"):
+        expected = "Link outside of the service API"
+        with self.assertRaisesMessage(purldb.PurlDBException, expected):
             purldb.get_package_data(outside_url)
         mock_request_get.assert_not_called()
+
+    @mock.patch("scanpipe.pipes.purldb.request_post")
+    def test_scanpipe_pipes_purldb_collect_response_results_outside_link(
+        self, mock_request_post
+    ):
+        api_url = "https://purldb.example/api/"
+        first_page = {
+            "count": 2,
+            "results": [1],
+            "next": "https://purldb.example/api/../admin/",
+        }
+        expected = "Link outside of the service API"
+        with self.assertRaisesMessage(purldb.PurlDBException, expected):
+            purldb.collect_response_results(first_page, data={}, api_url=api_url)
+        mock_request_post.assert_not_called()
 
     @mock.patch("scanpipe.pipes.purldb.request_post")
     def test_scanpipe_pipes_purldb_collect_response_results(self, mock_request_post):

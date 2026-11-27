@@ -342,8 +342,12 @@ def send_project_json_to_matchcode(
     if not response:
         raise MatchCodeIOException("Invalid response from MatchCode.io")
 
-    match_url = fetch.get_api_link(response["url"], api_url)
-    run_url = fetch.get_api_link(response["runs"][0]["url"], api_url)
+    try:
+        match_url = fetch.get_api_link(response["url"], api_url)
+        run_url = fetch.get_api_link(response["runs"][0]["url"], api_url)
+    except ValueError as error:
+        raise MatchCodeIOException(error) from error
+
     return match_url, run_url
 
 

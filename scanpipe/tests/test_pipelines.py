@@ -29,6 +29,7 @@ import sys
 import tempfile
 import zipfile
 from contextlib import redirect_stderr
+from functools import partial
 from pathlib import Path
 from unittest import mock
 from unittest import skipIf
@@ -62,6 +63,7 @@ from scanpipe.pipes import matchcode
 from scanpipe.pipes import maven
 from scanpipe.pipes import nix
 from scanpipe.pipes import output
+from scanpipe.pipes import purldb
 from scanpipe.pipes import scancode
 from scanpipe.pipes.input import copy_input
 from scanpipe.settings import scanpipe_settings
@@ -79,6 +81,14 @@ from scanpipe.tests.pipelines.with_groups import WithGroups
 from scanpipe.tests.pipelines.with_post_steps import WithPostSteps
 
 from_docker_image = os.environ.get("FROM_DOCKER_IMAGE")
+
+# The MatchCode.io and PurlDB API URLs are not configured in the tests.
+send_project_json_to_test_matchcode = partial(
+    matchcode.send_project_json_to_matchcode, api_url="https://matchcode.example/api/"
+)
+match_resources_in_test_purldb = partial(
+    purldb.match_resources, api_url="https://purldb.example/api/"
+)
 
 
 class ScanPipePipelinesTest(TestCase):
@@ -1993,6 +2003,76 @@ class PipelinesIntegrationTest(TestCase):
         package = project1.discoveredpackages.get()
         self.assertEqual("pkg:pypi/six@1.17.0", package.purl)
         self.assertEqual(six_path, package.codebase_resources.get().path)
+
+    @mock.patch(
+        "scanpipe.pipes.matchcode.send_project_json_to_matchcode",
+        side_effect=send_project_json_to_test_matchcode,
+    )
+    @mock.patch("scanpipe.pipes.matchcode.request_post")
+    @mock.patch("scanpipe.pipes.matchcode.is_configured", return_value=True)
+    def test_scanpipe_find_origins_pipeline_matchcode_link_outside_of_the_api(
+        self, mock_matchcode_is_configured, mock_matchcode_request_post, mock_send
+    ):
+        project1 = make_project()
+        outside_url = "https://matchcode.example/api/../admin/"
+        mock_matchcode_request_post.return_value = {
+            "url": outside_url,
+            "runs": [{"url": "https://matchcode.example/api/runs/1/"}],
+        }
+
+        pipeline = project1.add_pipeline("find_origins").make_pipeline_instance()
+        pipeline.find_matchcode_origin_matches()
+
+        error = project1.projectmessages.get()
+        expected = f"Link outside of the service API: {outside_url}"
+        self.assertEqual(expected, error.description)
+        self.assertEqual("find_origins", error.model)
+
+    @mock.patch(
+        "scanpipe.pipes.purldb.match_resources",
+        side_effect=match_resources_in_test_purldb,
+    )
+    @mock.patch("scanpipe.pipes.purldb.request_post")
+    @mock.patch("scanpipe.pipes.purldb.is_configured", return_value=True)
+    @mock.patch("scanpipe.pipes.matchcode.match_codebase")
+    @mock.patch("scanpipe.pipes.matchcode.is_configured", return_value=True)
+    def test_scanpipe_find_origins_pipeline_purldb_link_outside_of_the_api(
+        self,
+        mock_matchcode_is_configured,
+        mock_match_codebase,
+        mock_purldb_is_configured,
+        mock_purldb_request_post,
+        mock_match_resources,
+    ):
+        project1 = make_project()
+        six_path = "exact-copy/myapp/_vendor/six.py"
+        make_resource_file(
+            project1, six_path, sha1="dc13d8e9efab2d3f3c9a0e6d2c3f8d0bf2d1c4e8"
+        )
+        find_origins_data = self.data / "find-origins"
+        match_results = json.loads(
+            (find_origins_data / "matchcode-results.json").read_text()
+        )
+        match_results["files"] = [
+            resource
+            for resource in match_results["files"]
+            if resource["path"] == six_path
+        ]
+        mock_match_codebase.return_value = match_results
+        outside_url = "https://purldb.example/api/../admin/"
+        mock_purldb_request_post.return_value = {
+            "count": 2,
+            "results": [],
+            "next": outside_url,
+        }
+
+        pipeline = project1.add_pipeline("find_origins").make_pipeline_instance()
+        pipeline.find_matchcode_origin_matches()
+
+        error = project1.projectmessages.get()
+        expected = f"Link outside of the service API: {outside_url}"
+        self.assertEqual(expected, error.description)
+        self.assertEqual("find_origins", error.model)
 
     @mock.patch("scanpipe.pipes.scanoss.scan_codebase")
     @mock.patch("scanpipe.pipes.scanoss.get_uvx_location")

@@ -108,6 +108,21 @@ class MatchCodePipesTest(TestCase):
             matchcode.send_project_json_to_matchcode(self.project1)
         self.assertEqual("Invalid response from MatchCode.io", str(context.exception))
 
+    @mock.patch("scanpipe.pipes.matchcode.request_post")
+    def test_scanpipe_pipes_matchcode_send_project_json_to_matchcode_outside_link(
+        self, mock_request_post
+    ):
+        outside_url = "https://matchcode.example/api/../admin/"
+        mock_request_post.return_value = {
+            "url": outside_url,
+            "runs": [{"url": "https://matchcode.example/api/runs/1/"}],
+        }
+        expected = f"Link outside of the service API: {outside_url}"
+        with self.assertRaisesMessage(matchcode.MatchCodeIOException, expected):
+            matchcode.send_project_json_to_matchcode(
+                self.project1, api_url="https://matchcode.example/api/"
+            )
+
     @mock.patch("scanpipe.pipes.matchcode.request_get")
     @mock.patch("scanpipe.pipes.matchcode.is_available")
     def test_scanpipe_pipes_matchcode_get_run_url_status(
