@@ -125,6 +125,31 @@ class ScanPipeFlagPipesTest(TestCase):
         self.assertIn(r2, ignored_qs)
         self.assertIn(r3, ignored_qs)
 
+        project4 = make_project()
+        nupkg_metadata_paths = [
+            "a.nupkg-extract/_rels/.rels",
+            "a.nupkg-extract/[Content_Types].xml",
+            "a.nupkg-extract/package/services/metadata/core-properties/a.psmdcp",
+            "a.nupkg-extract/.signature.p7s",
+            "a.nupkg-extract/icon.png",
+            "a.nupkg-extract/lib/net8.0/a.runtimeconfig.json",
+            "a.nupkg-extract/lib/net8.0/a.dll.config",
+            "a.nupkg-extract/tools/a.exe.config",
+            "a.nupkg-extract/a.shasum",
+        ]
+        for path in nupkg_metadata_paths:
+            make_resource_file(project4, path)
+        make_resource_file(project4, "a.nupkg-extract/lib/net8.0/a.dll")
+        make_resource_file(project4, "docs/icon.png")
+        make_resource_file(project4, "app/a.dll.config")
+        updated = flag.flag_ignored_patterns(
+            project4.codebaseresources.no_status(), flag.DEFAULT_IGNORED_PATTERNS
+        )
+        self.assertEqual(9, updated)
+        ignored_qs = project4.codebaseresources.status(flag.IGNORED_PATTERN)
+        ignored_paths = sorted(ignored_qs.values_list("path", flat=True))
+        self.assertEqual(sorted(nupkg_metadata_paths), ignored_paths)
+
     def test_scanpipe_pipes_flag_flag_not_analyzed_codebase_resources(self):
         resource1 = CodebaseResource.objects.create(
             project=self.project1, path="filename.ext"

@@ -82,6 +82,16 @@ DEFAULT_IGNORED_PATTERNS = [
     "*/__MACOSX*",  # macOS metadata folder
     ".DS_Store",  # macOS Finder metadata, when located in the root dir
     "*/.DS_Store",
+    # NuGet package metadata, only in extracted .nupkg archives
+    "*.nupkg-extract/_rels/.rels",
+    "*.nupkg-extract/[Content_Types].xml",
+    "*.nupkg-extract/package/services/metadata/*",
+    "*.nupkg-extract/.signature.p7s",
+    "*.nupkg-extract/*.png",
+    "*.nupkg-extract/*.runtimeconfig.json",
+    "*.nupkg-extract/*.dll.config",
+    "*.nupkg-extract/*.exe.config",
+    "*.nupkg-extract/*.shasum",
 ]
 
 
