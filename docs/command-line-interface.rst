@@ -687,11 +687,14 @@ Optional arguments:
 Delete all project data and their related work directories created more than a
 specified number of days ago.
 
+Projects with queued or running pipeline runs are skipped with a warning. The
+confirmation count and ``--dry-run`` output include only eligible projects.
+
 Optional arguments:
 
 - ``---retain-days RETAIN_DAYS`` Specify the number of days to retain data.
-  All data older than this number of days will be deleted.
-  **Defaults to 0 (delete all data)**.
+  Eligible projects older than this number of days will be deleted.
+  **Defaults to 0 (delete all eligible projects)**.
 
   For example, to delete all projects created more than one week ago::
 

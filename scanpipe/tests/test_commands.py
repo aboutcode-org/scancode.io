@@ -46,7 +46,6 @@ from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.models import Run
-from scanpipe.models import RunInProgressError
 from scanpipe.models import WebhookSubscription
 from scanpipe.pipes import flag
 from scanpipe.pipes import purldb
@@ -988,30 +987,34 @@ class ScanPipeManagementCommandTest(TestCase):
         expected = "1 projects would be deleted:\n- project3"
         self.assertEqual(expected, out_value)
 
-    def test_scanpipe_management_command_flush_projects_skip_running(self):
-        project1 = make_project("project1")
-        make_project("project2")
-        run = project1.add_pipeline("analyze_docker_image")
-        run.set_task_started(task_id=1)
+    def test_scanpipe_management_command_flush_projects_skips_active_runs(self):
+        running = make_project("running")
+        run = running.add_pipeline("analyze_docker_image")
+        run.set_task_started(task_id=run.pk)
+        queued = make_project("queued")
+        queued.add_pipeline("analyze_docker_image").set_task_queued()
+        eligible = make_project("eligible")
 
-        options = ["--no-color", "--no-input"]
-        with self.assertRaises(RunInProgressError):
-            call_command("flush-projects", *options)
-
-        if not Project.objects.filter(name="project2").exists():
-            make_project("project2")
+        warnings = (
+            "Skipping queued: pipeline run in progress\n"
+            "Skipping running: pipeline run in progress\n"
+        )
+        out = StringIO()
+        call_command("flush-projects", "--no-color", "--dry-run", stdout=out)
+        expected = warnings + "1 projects would be deleted:\n- eligible"
+        self.assertEqual(expected, out.getvalue().strip())
+        self.assertTrue(Project.objects.filter(pk=eligible.pk).exists())
 
         out = StringIO()
-        options = ["--no-color", "--no-input", "--skip-running"]
-        call_command("flush-projects", *options, stdout=out)
-        out_value = out.getvalue().strip()
-        expected = (
-            "Skipping project1: pipeline run in progress\n"
-            "1 project and its related data have been removed."
+        with mock.patch("builtins.input", return_value="yes") as confirm:
+            call_command("flush-projects", "--no-color", stdout=out)
+        confirm.assert_called_once()
+        self.assertIn(
+            "You have requested the deletion of 1 project.\n", confirm.call_args.args[0]
         )
-        self.assertEqual(expected, out_value)
-        self.assertTrue(Project.objects.filter(name="project1").exists())
-        self.assertFalse(Project.objects.filter(name="project2").exists())
+        expected = warnings + "1 project and its related data have been removed."
+        self.assertEqual(expected, out.getvalue().strip())
+        self.assertCountEqual(Project.objects.all(), [running, queued])
 
     def test_scanpipe_management_command_create_user(self):
         out = StringIO()
