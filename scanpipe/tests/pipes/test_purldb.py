@@ -243,25 +243,90 @@ class ScanPipePurlDBTest(TestCase):
         self.assertEqual(expected_data, mock_request_post_call_kwargs["data"])
         self.project1.runs.all().delete()
 
+    @mock.patch("scanpipe.pipes.purldb.PURLDB_API_URL", "https://purldb.example/api/")
+    @mock.patch("scanpipe.pipes.purldb.request_get")
+    def test_scanpipe_pipes_purldb_get_package_data(self, mock_request_get):
+        mock_request_get.return_value = {"name": "package"}
+
+        package_instance_url = "http://purldb:8000/api/packages/package-id/"
+        package_data = purldb.get_package_data(package_instance_url)
+        self.assertEqual({"name": "package"}, package_data)
+        expected_url = "https://purldb.example/api/packages/package-id/"
+        mock_request_get.assert_called_once_with(url=expected_url)
+
+        mock_request_get.reset_mock()
+        outside_url = "http://purldb:8000/api/../admin/"
+        expected = "Link outside of the service API"
+        with self.assertRaisesMessage(purldb.PurlDBException, expected):
+            purldb.get_package_data(outside_url)
+        mock_request_get.assert_not_called()
+
+    @mock.patch("scanpipe.pipes.purldb.request_post")
+    def test_scanpipe_pipes_purldb_collect_response_results_outside_link(
+        self, mock_request_post
+    ):
+        api_url = "https://purldb.example/api/"
+        first_page = {
+            "count": 2,
+            "results": [1],
+            "next": "https://purldb.example/api/../admin/",
+        }
+        expected = "Link outside of the service API"
+        with self.assertRaisesMessage(purldb.PurlDBException, expected):
+            purldb.collect_response_results(first_page, data={}, api_url=api_url)
+        mock_request_post.assert_not_called()
+
     @mock.patch("scanpipe.pipes.purldb.request_post")
     def test_scanpipe_pipes_purldb_collect_response_results(self, mock_request_post):
-        first_page = {"count": 3, "results": [1], "next": "http://purldb/?page=2"}
-        second_page = {"count": 3, "results": [2], "next": "http://purldb/?page=3"}
+        api_url = "https://purldb.example/api/"
+        first_page = {
+            "count": 3,
+            "results": [1],
+            "next": "http://purldb:8000/api/packages/?page=2",
+        }
+        second_page = {
+            "count": 3,
+            "results": [2],
+            "next": "https://attacker.example/api/packages/?page=3",
+        }
         last_page = {"count": 3, "results": [3], "next": None}
         mock_request_post.side_effect = [second_page, last_page]
 
-        results = purldb.collect_response_results(first_page, data={})
+        results = purldb.collect_response_results(first_page, data={}, api_url=api_url)
         self.assertEqual([1, 2, 3], results)
-        self.assertEqual(2, mock_request_post.call_count)
+        requested_urls = [call.kwargs["url"] for call in mock_request_post.mock_calls]
+        expected_urls = [
+            "https://purldb.example/api/packages/?page=2",
+            "https://purldb.example/api/packages/?page=3",
+        ]
+        self.assertEqual(expected_urls, requested_urls)
 
         # Regression test: a failed next page request looped forever.
         mock_request_post.reset_mock()
         mock_request_post.side_effect = [second_page, None]
-        results = purldb.collect_response_results(first_page, data={})
+        results = purldb.collect_response_results(first_page, data={}, api_url=api_url)
         self.assertEqual([1, 2], results)
         self.assertEqual(2, mock_request_post.call_count)
 
         self.assertEqual([], purldb.collect_response_results(None, data={}))
+
+    @mock.patch("scanpipe.pipes.purldb.request_post")
+    def test_scanpipe_pipes_purldb_collect_response_results_bounded(
+        self, mock_request_post
+    ):
+        api_url = "https://purldb.example/api/"
+        endless_page = {
+            "count": 2,
+            "results": [1],
+            "next": "https://purldb.example/api/packages/?page=2",
+        }
+        mock_request_post.return_value = endless_page
+
+        results = purldb.collect_response_results(
+            endless_page, data={}, api_url=api_url
+        )
+        self.assertEqual([1, 1, 1], results)
+        self.assertEqual(2, mock_request_post.call_count)
 
     def test_scanpipe_pipes_purldb_create_project_name(self):
         download_url = "https://registry.npmjs.org/asdf/-/asdf-1.0.1.tgz"

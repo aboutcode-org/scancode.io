@@ -88,13 +88,14 @@ class MatchCodePipesTest(TestCase):
 
         mock_request_post.side_effect = mock_request_post_return
 
-        match_url, run_url = matchcode.send_project_json_to_matchcode(self.project1)
-        expected_match_url = (
-            "http://192.168.1.12/api/matching/65bf1e6d-6bff-4841-9c9b-db5cf25edfa7/"
+        # The returned links are requested with the credentials: they are rebuilt on
+        # the configured host, not on the host of the response.
+        api_url = "https://matchcode.example/api/"
+        match_url, run_url = matchcode.send_project_json_to_matchcode(
+            self.project1, api_url=api_url
         )
-        expected_run_url = (
-            "http://192.168.1.12/api/runs/52b2930d-6e85-4b3e-ba3e-17dd9a618650/"
-        )
+        expected_match_url = f"{api_url}matching/65bf1e6d-6bff-4841-9c9b-db5cf25edfa7/"
+        expected_run_url = f"{api_url}runs/52b2930d-6e85-4b3e-ba3e-17dd9a618650/"
         self.assertEqual(expected_match_url, match_url)
         self.assertEqual(expected_run_url, run_url)
 
@@ -106,6 +107,21 @@ class MatchCodePipesTest(TestCase):
         with self.assertRaises(matchcode.MatchCodeIOException) as context:
             matchcode.send_project_json_to_matchcode(self.project1)
         self.assertEqual("Invalid response from MatchCode.io", str(context.exception))
+
+    @mock.patch("scanpipe.pipes.matchcode.request_post")
+    def test_scanpipe_pipes_matchcode_send_project_json_to_matchcode_outside_link(
+        self, mock_request_post
+    ):
+        outside_url = "https://matchcode.example/api/../admin/"
+        mock_request_post.return_value = {
+            "url": outside_url,
+            "runs": [{"url": "https://matchcode.example/api/runs/1/"}],
+        }
+        expected = f"Link outside of the service API: {outside_url}"
+        with self.assertRaisesMessage(matchcode.MatchCodeIOException, expected):
+            matchcode.send_project_json_to_matchcode(
+                self.project1, api_url="https://matchcode.example/api/"
+            )
 
     @mock.patch("scanpipe.pipes.matchcode.request_get")
     @mock.patch("scanpipe.pipes.matchcode.is_available")

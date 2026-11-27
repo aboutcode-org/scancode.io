@@ -35,6 +35,7 @@ from univers.versions import InvalidVersion
 
 from aboutcode.pipeline import LoopProgress
 from scanpipe.pipes import _clean_package_data
+from scanpipe.pipes import fetch
 
 
 class PurlDBException(Exception):
@@ -158,14 +159,31 @@ def request_post(url, data=None, headers=None, files=None, timeout=DEFAULT_TIMEO
         logger.debug(f"{label} [Exception] {exception}")
 
 
-def collect_response_results(response, data, timeout=DEFAULT_TIMEOUT):
+def get_api_link(link_url, api_url):
+    """
+    Return the `link_url` of a PurlDB response on the configured `api_url`.
+    Raise a PurlDBException for a link outside of the PurlDB API.
+    """
+    try:
+        return fetch.get_api_link(link_url, api_url)
+    except ValueError as error:
+        raise PurlDBException(error) from error
+
+
+def collect_response_results(
+    response, data, timeout=DEFAULT_TIMEOUT, api_url=PURLDB_API_URL
+):
     """Return all results from a purldb API response."""
     results = []
     if response and response.get("count"):
         results.extend(response["results"])
         next_page = response.get("next")
-        while next_page:
-            response = request_post(url=next_page, data=data, timeout=timeout)
+        # A page holds at least one result: the count bounds the number of requests.
+        remaining_page_requests = response["count"]
+        while next_page and remaining_page_requests:
+            remaining_page_requests -= 1
+            next_page_url = get_api_link(next_page, api_url)
+            response = request_post(url=next_page_url, data=data, timeout=timeout)
             # A failed request returns None, the same next page would be requested
             # forever.
             if not (response and response.get("count")):
@@ -195,7 +213,9 @@ def match_packages(
         url=f"{api_url}packages/filter_by_checksums/", data=data, timeout=timeout
     )
 
-    packages = collect_response_results(response, data=data, timeout=timeout)
+    packages = collect_response_results(
+        response, data=data, timeout=timeout, api_url=api_url
+    )
     return packages
 
 
@@ -206,7 +226,9 @@ def match_resources(sha1_list, timeout=DEFAULT_TIMEOUT, api_url=PURLDB_API_URL):
         url=f"{api_url}resources/filter_by_checksums/", data=data, timeout=timeout
     )
 
-    resources = collect_response_results(response, data=data, timeout=timeout)
+    resources = collect_response_results(
+        response, data=data, timeout=timeout, api_url=api_url
+    )
     return resources
 
 
@@ -397,6 +419,14 @@ def populate_purldb_with_discovered_dependencies(project, logger=logger.info):
         chunk_size=10,
         logger=logger,
     )
+
+
+def get_package_data(package_instance_url):
+    """
+    Return the data of the PurlDB package at `package_instance_url`, a link
+    returned in a PurlDB response.
+    """
+    return request_get(url=get_api_link(package_instance_url, PURLDB_API_URL))
 
 
 def find_packages(payload):

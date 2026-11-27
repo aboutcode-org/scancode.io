@@ -745,7 +745,7 @@ def match_purldb_resource(
             package_instance_url = result["package"]
             if package_instance_url not in package_data_by_purldb_urls:
                 # Get and cache package data if we do not have it
-                if package_data := purldb.request_get(url=package_instance_url):
+                if package_data := purldb.get_package_data(package_instance_url):
                     package_data_by_purldb_urls[package_instance_url] = package_data
             else:
                 # Use cached package data
@@ -770,7 +770,7 @@ def match_purldb_directory(project, resource):
 
     if results := purldb.match_directory(fingerprint=fingerprint):
         package_url = results[0]["package"]
-        if package_data := purldb.request_get(url=package_url):
+        if package_data := purldb.get_package_data(package_url):
             return create_package_from_purldb_data(
                 project, [resource], package_data, flag.MATCHED_TO_PURLDB_DIRECTORY
             )

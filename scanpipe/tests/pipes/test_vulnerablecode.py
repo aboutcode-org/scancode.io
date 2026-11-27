@@ -39,7 +39,6 @@ from scanpipe.pipes.vulnerablecode import fetch_vulnerabilities
 from scanpipe.pipes.vulnerablecode import filter_vulnerabilities
 from scanpipe.pipes.vulnerablecode import get_affected_by_vulnerabilities
 from scanpipe.pipes.vulnerablecode import get_all_results
-from scanpipe.pipes.vulnerablecode import get_api_link
 from scanpipe.pipes.vulnerablecode import get_packages_by_plain_purl
 from scanpipe.pipes.vulnerablecode import get_plain_purl
 from scanpipe.pipes.vulnerablecode import get_purl_lookup_key
@@ -246,8 +245,8 @@ class ScanPipeVulnerableCodeTest(TestCase):
                 make_page(["result1"], count=2, next_url="https://other.example/")
             ),
         ]
-        expected_message = "URL outside of the VulnerableCode API"
-        with self.assertRaisesMessage(VulnerableCodeError, expected_message):
+        expected_message = "Link outside of the service API: https://other.example/"
+        with self.assertRaisesMessage(ValueError, expected_message):
             get_all_results("GET", PACKAGES_URL, api_url=API_URL)
         self.assertEqual(1, mock_request.call_count)
 
@@ -266,10 +265,22 @@ class ScanPipeVulnerableCodeTest(TestCase):
         next_request_url = mock_request.call_args_list[1].args[1]
         self.assertEqual(f"{PACKAGES_URL}?page=2", next_request_url)
 
-    def test_scanpipe_pipes_vulnerablecode_get_api_link(self):
-        link_url = "http://vulnerablecode:8000/api/v3/packages/1/advisories?page=3"
-        expected = f"{PACKAGES_URL}/1/advisories?page=3"
-        self.assertEqual(expected, get_api_link(link_url, API_URL))
+    @mock.patch("scanpipe.pipes.vulnerablecode.session.request")
+    def test_scanpipe_pipes_vulnerablecode_get_all_results_proxy_path_prefix(
+        self, mock_request
+    ):
+        # A proxy serving VulnerableCode under a path prefix, absent from its links.
+        api_url = "https://proxy.example/vulnerablecode/api/v3"
+        packages_url = f"{api_url}/packages"
+        next_url = "http://vulnerablecode:8000/api/v3/packages?page=2"
+        mock_request.side_effect = [
+            make_response(make_page(["result1"], count=2, next_url=next_url)),
+            make_response(make_page(["result2"], count=2)),
+        ]
+        all_results = get_all_results("GET", packages_url, api_url=api_url)
+        self.assertEqual(["result1", "result2"], all_results)
+        next_request_url = mock_request.call_args_list[1].args[1]
+        self.assertEqual(f"{packages_url}?page=2", next_request_url)
 
     @mock.patch("scanpipe.pipes.vulnerablecode.session.request")
     def test_scanpipe_pipes_vulnerablecode_bulk_search_by_purl(self, mock_request):

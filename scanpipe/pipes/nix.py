@@ -30,6 +30,7 @@ from contextlib import suppress
 from itertools import islice
 from pathlib import Path
 from urllib.parse import urlencode
+from urllib.parse import urlsplit
 
 import requests
 from license_expression import Licensing
@@ -353,8 +354,20 @@ def get_release_branches(session):
             ref["ref"].removeprefix("refs/heads/") for ref in response.json()
         )
         url = response.links.get("next", {}).get("url")
+        if url and not is_github_api_url(url):
+            raise ValueError(f"Next page outside of the GitHub API: {url}")
 
     return sorted(branches, reverse=True)
+
+
+def is_github_api_url(url):
+    """
+    Return True if the `url` has the scheme and host of the GitHub API.
+    The session sends the GitHub credentials to every requested URL. GitHub pages
+    the results under another path than the repository one, so the path is not
+    checked.
+    """
+    return urlsplit(url)[:2] == urlsplit(NIXPKGS_API_URL)[:2]
 
 
 def run_nix_command(arguments, timeout, cache_directory=None):

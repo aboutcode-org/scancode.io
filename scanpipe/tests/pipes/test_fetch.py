@@ -197,6 +197,60 @@ class ScanPipeFetchPipesTest(TestCase):
         self.assertEqual(project.tmp_path, downloaded_file.directory)
         self.assertTrue(Path(project.tmp_path, "Django-5.2.tar.gz").exists())
 
+    def test_scanpipe_pipes_fetch_get_api_link(self):
+        api_url = "https://vulnerablecode.example/api/v3"
+        link_url = "http://vulnerablecode:8000/api/v3/packages/1/advisories?page=3"
+        expected = f"{api_url}/packages/1/advisories?page=3"
+        self.assertEqual(expected, fetch.get_api_link(link_url, api_url))
+
+        link_url = "https://attacker.example/api/v3/packages?page=2"
+        expected = f"{api_url}/packages?page=2"
+        self.assertEqual(expected, fetch.get_api_link(link_url, api_url))
+
+        proxied_api_url = "https://proxy.example/vulnerablecode/api/v3"
+        link_url = "http://vulnerablecode:8000/api/v3/packages?page=2"
+        expected = f"{proxied_api_url}/packages?page=2"
+        self.assertEqual(expected, fetch.get_api_link(link_url, proxied_api_url))
+
+    def test_scanpipe_pipes_fetch_get_api_link_outside_of_the_api(self):
+        api_url = "https://proxy.example/vulnerablecode/api/v3"
+        outside_link_urls = [
+            "http://vulnerablecode/api/v3/../../../purldb/api/collect/",
+            "http://vulnerablecode/api/v3/%2e%2e/%2E%2E/purldb/api/",
+            "http://vulnerablecode/api/v3/./packages",
+            "http://vulnerablecode/purldb/api/packages/",
+            "http://vulnerablecode/",
+        ]
+        for link_url in outside_link_urls:
+            expected = f"Link outside of the service API: {link_url}"
+            with self.assertRaisesMessage(ValueError, expected):
+                fetch.get_api_link(link_url, api_url)
+
+    def test_scanpipe_pipes_fetch_is_under_path(self):
+        self.assertTrue(fetch.is_under_path("/api/v3", "/api/v3"))
+        self.assertTrue(fetch.is_under_path("/api/v3/packages", "/api/v3/"))
+        self.assertTrue(fetch.is_under_path("/packages", ""))
+        self.assertFalse(fetch.is_under_path("/api/v3x", "/api/v3"))
+        self.assertFalse(fetch.is_under_path("/api", "/api/v3"))
+
+    def test_scanpipe_pipes_fetch_get_api_link_path(self):
+        api_path = "/vulnerablecode/api/v3"
+        cases = [
+            ("/vulnerablecode/api/v3/packages", "/vulnerablecode/api/v3/packages"),
+            ("/api/v3/packages", "/vulnerablecode/api/v3/packages"),
+            ("/api/v3", "/vulnerablecode/api/v3"),
+            ("/v3/packages", "/vulnerablecode/api/v3/packages"),
+            ("/other/packages", "/other/packages"),
+            ("/api/v3x/packages", "/api/v3x/packages"),
+        ]
+        for link_path, expected in cases:
+            api_link_path = fetch.get_api_link_path(link_path, api_path)
+            self.assertEqual(expected, api_link_path, link_path)
+
+        api_link_path = fetch.get_api_link_path("/api/packages/", "/api/")
+        self.assertEqual("/api/packages/", api_link_path)
+        self.assertEqual("/packages", fetch.get_api_link_path("/packages", ""))
+
     @mock.patch("fetchcode.pypi.fetch_json_response")
     def test_scanpipe_pipes_fetch_get_pypi_download_url(self, mock_fetch_json):
         package_url = "pkg:pypi/owned-selector@1.0"

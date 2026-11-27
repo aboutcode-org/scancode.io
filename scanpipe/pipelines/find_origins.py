@@ -71,7 +71,7 @@ class FindOrigins(Pipeline):
             return
 
         # A tool failure is recorded and does not prevent running the other tools.
-        with self.save_errors(matchcode.MatchCodeIOException):
+        with self.save_errors(matchcode.MatchCodeIOException, purldb.PurlDBException):
             match_results = matchcode.match_codebase(self.project)
             matchcode.save_match_results(self.project, match_results)
 

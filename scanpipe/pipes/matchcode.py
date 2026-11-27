@@ -42,6 +42,7 @@ from summarycode.classify import LEGAL_STARTS_ENDS
 from scanpipe.models import OriginMatch
 from scanpipe.pipes import codebase
 from scanpipe.pipes import create_origin_matches
+from scanpipe.pipes import fetch
 from scanpipe.pipes import flag
 from scanpipe.pipes import make_origin_match
 from scanpipe.pipes import poll_until_success
@@ -341,8 +342,12 @@ def send_project_json_to_matchcode(
     if not response:
         raise MatchCodeIOException("Invalid response from MatchCode.io")
 
-    match_url = response["url"]
-    run_url = response["runs"][0]["url"]
+    try:
+        match_url = fetch.get_api_link(response["url"], api_url)
+        run_url = fetch.get_api_link(response["runs"][0]["url"], api_url)
+    except ValueError as error:
+        raise MatchCodeIOException(error) from error
+
     return match_url, run_url
 
 

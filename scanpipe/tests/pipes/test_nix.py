@@ -265,6 +265,26 @@ class ScanPipeNixPipesTest(TestCase):
             "https://api.github.com/page-2", session.get.call_args_list[1].args[0]
         )
 
+    def test_scanpipe_nix_get_release_branches_next_page_outside_github(self):
+        for next_page_url in [
+            "https://attacker.example/page-2",
+            "http://api.github.com/page-2",
+        ]:
+            session = mock.Mock()
+            session.get.return_value = make_response(
+                json_data=[{"ref": "refs/heads/release-24.11"}],
+                links={"next": {"url": next_page_url}},
+            )
+            expected = f"Next page outside of the GitHub API: {next_page_url}"
+            with self.assertRaisesMessage(ValueError, expected):
+                nix.get_release_branches(session)
+            self.assertEqual(1, session.get.call_count)
+
+    def test_scanpipe_nix_is_github_api_url(self):
+        self.assertTrue(nix.is_github_api_url("https://api.github.com/repositories/1"))
+        self.assertFalse(nix.is_github_api_url("http://api.github.com/repositories/1"))
+        self.assertFalse(nix.is_github_api_url("https://api.github.com.example/"))
+
     @mock.patch("scanpipe.pipes.nix.subprocess.run")
     def test_scanpipe_nix_run_nix_command(self, mock_run):
         mock_run.return_value = subprocess.CompletedProcess(

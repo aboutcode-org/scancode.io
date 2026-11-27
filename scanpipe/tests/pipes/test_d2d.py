@@ -197,6 +197,7 @@ class ScanPipeD2DPipesTest(TestCase):
             self.assertEqual(flag.MATCHED_TO_PURLDB_PACKAGE, resource.status)
             self.assertEqual(package, resource.discovered_packages.get())
 
+    @mock.patch("scanpipe.pipes.purldb.PURLDB_API_URL", "http://private.purldb.io/api/")
     @mock.patch("scanpipe.pipes.purldb.request_get")
     def test_scanpipe_pipes_d2d_match_purldb_directories(self, mock_request_get):
         to_1 = make_resource_directory(
@@ -1241,6 +1242,7 @@ class ScanPipeD2DPipesTest(TestCase):
         self.assertEqual(from_resource, relation[0].from_resource)
         self.assertEqual(from_resource, relation[1].from_resource)
 
+    @mock.patch("scanpipe.pipes.purldb.PURLDB_API_URL", "http://example.com/api/")
     @mock.patch("scanpipe.pipes.purldb.match_resources")
     @mock.patch("scanpipe.pipes.purldb.request_get")
     def test_scanpipe_pipes_d2d_match_js_purldb(self, mock_match_resource, mock_get):
@@ -2598,9 +2600,10 @@ class ScanPipeD2DPipesTest(TestCase):
             ).count(),
         )
 
+    @mock.patch("scanpipe.pipes.purldb.get_package_data", return_value=None)
     @mock.patch("scanpipe.pipes.purldb.match_resources")
     def test_scanpipe_pipes_d2d_match_purldb_resource_no_package_data(
-        self, mock_match_resource
+        self, mock_match_resource, mock_get_package_data
     ):
         to_1 = make_resource_file(
             self.project1,
