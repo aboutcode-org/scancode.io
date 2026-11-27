@@ -260,10 +260,6 @@ class ScanPipeFetchPipesTest(TestCase):
         self.assertEqual(wheel_url, mock_get.call_args[0][0])
         self.assertTrue(Path(downloaded_file.directory, wheel_name).exists())
 
-        package_url = f"pkg:pypi/django@5.2?filename={wheel_name}"
-        fetch.fetch_package_url(package_url)
-        self.assertEqual(wheel_url, mock_get.call_args[0][0])
-
     @mock.patch("scanpipe.pipes.fetch.validate_docker_registry")
     @mock.patch("scanpipe.pipes.fetch.get_docker_image_platform")
     @mock.patch("scanpipe.pipes.fetch._get_skopeo_location")

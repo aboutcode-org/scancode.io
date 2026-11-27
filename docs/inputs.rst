@@ -95,8 +95,7 @@ Resolves to: ``https://files.pythonhosted.org/packages/.../Django-5.0.tar.gz``
     used as the preferred choice.
 
 A specific distribution is selected with its exact name in the ``file_name``
-qualifier, also supported as ``filename``, and the input fails when the release has
-no such distribution::
+qualifier, and the input fails when the release has no such distribution::
 
     pkg:pypi/django@5.0?file_name=Django-5.0-py3-none-any.whl
 

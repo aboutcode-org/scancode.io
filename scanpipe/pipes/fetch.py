@@ -695,9 +695,7 @@ def fetch_package_url(url, to=None):
     # PyPI is not supported by purl2url.
     # It requires an API call to resolve download URLs.
     if purl.type == "pypi":
-        # The "filename" spelling is used in the examples of the PURL specification.
-        qualifiers = purl.qualifiers
-        file_name = qualifiers.get("file_name") or qualifiers.get("filename")
+        file_name = purl.qualifiers.get("file_name")
         if download_url := get_pypi_download_url(url, file_name):
             return fetch_http(download_url, to=to)
 
