@@ -88,10 +88,12 @@ This directory allows to provide configuration files and customization for a Sca
 project directly through the codebase files.
 
 For example, to provide a custom attribution template to your project, add it in a
-:guilabel:`.scancode/` directory located at the root of your codebase before uploading
-it to ScanCode.io. The expected location of the attribution template is::
+:guilabel:`.scancode/` directory located at the root of the project codebase. The
+expected location of the attribution template is::
 
-  .scancode/templates/attribution.html
+  codebase/.scancode/templates/attribution.html
+
+See :ref:`output_files_attribution` for when this location is used.
 
 This directory is only used when :ref:`scancodeio_settings_trust_codebase_config`
 is enabled.

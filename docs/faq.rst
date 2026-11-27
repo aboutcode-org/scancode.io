@@ -362,6 +362,12 @@ How can I provide my license policies?
 
 For detailed information about the policies system, refer to :ref:`policies`.
 
+How can I customize the attribution output?
+-------------------------------------------
+
+Provide your own template with the ``attribution_template`` project setting, see
+:ref:`output_files_attribution`.
+
 Can you analyze Dockerfiles?
 ----------------------------
 
