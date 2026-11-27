@@ -45,6 +45,7 @@ from scancode_config import __version__ as scancode_toolkit_version
 from scanpipe import pipes
 from scanpipe.models import CodebaseResource
 from scanpipe.models import Project
+from scanpipe.pipes import cyclonedx
 from scanpipe.pipes import flag
 from scanpipe.pipes import output
 from scanpipe.settings import scanpipe_settings
@@ -390,6 +391,38 @@ class ScanPipeOutputPipesTest(TestCase):
             "http://cyclonedx.org/schema/bom-1.5.schema.json", results_json["$schema"]
         )
         self.assertEqual("1.5", results_json["specVersion"])
+
+    def test_scanpipe_pipes_outputs_to_cyclonedx_vulnerabilities_roundtrip(self):
+        project = make_project(name="project")
+        data = self.data / "cyclonedx/django-4.0.10-vulnerability.json"
+        vulnerabilities = json.loads(data.read_text())["affected_by_vulnerabilities"]
+        make_package(
+            project,
+            "pkg:pypi/django@4.0.10",
+            package_uid="pkg:pypi/django@4.0.10?uuid=1",
+            affected_by_vulnerabilities=vulnerabilities[0:1],
+        )
+        make_package(
+            project,
+            "pkg:pypi/asgiref@3.3.0",
+            affected_by_vulnerabilities=vulnerabilities[1:3],
+        )
+
+        output_file = output.to_cyclonedx(project=project)
+        packages_data = cyclonedx.resolve_cyclonedx_packages(output_file)
+
+        advisory_ids_by_name = {
+            package_data["name"]: sorted(
+                vulnerability["advisory_id"]
+                for vulnerability in package_data["affected_by_vulnerabilities"]
+            )
+            for package_data in packages_data
+        }
+        expected = {
+            "django": ["PYSEC-2023-61"],
+            "asgiref": ["GHSA-rrqc-c2jx-6jgv", "PYSEC-2023-100"],
+        }
+        self.assertEqual(expected, advisory_ids_by_name)
 
     def test_scanpipe_pipes_outputs_get_cyclonedx_bom_dependency_tree(self):
         project = make_project(name="project")

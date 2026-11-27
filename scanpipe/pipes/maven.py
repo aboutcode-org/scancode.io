@@ -34,6 +34,7 @@ from urllib.parse import urlparse
 import requests
 from defusedxml import ElementTree as SafeElementTree
 from license_expression import Licensing
+from license_expression import combine_expressions
 from packageurl import PackageURL
 from packageurl.contrib import purl2url
 
@@ -222,8 +223,15 @@ def update_package_license_from_resource_if_missing(project):
                 ).distinct()
             )
             if detected_licenses:
-                license_expression = " AND ".join(detected_licenses)
-                declared_license_expression = str(Licensing().dedup(license_expression))
+                licensing = Licensing()
+                license_expression = combine_expressions(
+                    detected_licenses, licensing=licensing
+                )
+                # Flattened for dedup to merge the licenses of the nested AND
+                # operands, such as "mit AND (mit AND apache-2.0)".
+                if isinstance(license_expression, licensing.AND):
+                    license_expression = license_expression.flatten()
+                declared_license_expression = str(licensing.dedup(license_expression))
                 package.declared_license_expression = declared_license_expression
                 package.save()
 

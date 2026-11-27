@@ -29,6 +29,7 @@ from unittest import mock
 from django.test import TestCase
 
 import requests
+from license_expression import Licensing
 from packageurl import PackageURL
 
 from scanpipe.models import DiscoveredDependency
@@ -177,6 +178,50 @@ class ScanPipeMavenPipesTest(TestCase):
 
         for package in project1.discoveredpackages.all():
             self.assertEqual(package.get_declared_license_expression(), "apache-2.0")
+
+    def test_scanpipe_maven_update_package_license_from_resource_if_missing_dedup(self):
+        project1 = make_project()
+        package = make_package(project1, "pkg:maven/org.example/library@1.0")
+        resource_expressions = ["mit AND apache-2.0", "apache-2.0 AND bsd-new"]
+        for index, expression in enumerate(resource_expressions):
+            resource = make_resource_file(
+                project1,
+                path=f"library/file{index}.java",
+                detected_license_expression=expression,
+            )
+            resource.discovered_packages.add(package)
+
+        maven.update_package_license_from_resource_if_missing(project1)
+
+        package.refresh_from_db()
+        declared_license_expression = package.get_declared_license_expression()
+        license_keys = Licensing().license_keys(
+            declared_license_expression, unique=False
+        )
+        self.assertEqual(["apache-2.0", "bsd-new", "mit"], sorted(license_keys))
+
+    def test_scanpipe_maven_update_package_license_from_resource_if_missing_grouping(
+        self,
+    ):
+        project1 = make_project()
+        package = make_package(project1, "pkg:maven/org.example/library@1.0")
+        resource_expressions = ["mit OR gpl-2.0", "apache-2.0"]
+        for index, expression in enumerate(resource_expressions):
+            resource = make_resource_file(
+                project1,
+                path=f"library/file{index}.java",
+                detected_license_expression=expression,
+            )
+            resource.discovered_packages.add(package)
+
+        maven.update_package_license_from_resource_if_missing(project1)
+
+        package.refresh_from_db()
+        declared_license_expression = package.get_declared_license_expression()
+        is_equivalent = Licensing().is_equivalent(
+            declared_license_expression, "(mit OR gpl-2.0) AND apache-2.0"
+        )
+        self.assertTrue(is_equivalent, declared_license_expression)
 
     def test_scanpipe_maven_update_package_license_from_resource_if_missing_no_change(
         self,

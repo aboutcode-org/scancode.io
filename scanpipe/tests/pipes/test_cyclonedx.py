@@ -282,6 +282,17 @@ class ScanPipeCycloneDXPipesTest(TestCase):
         ]
         self.assertEqual(expected, sorted(cdx_vulnerability_data.keys()))
 
+    def test_scanpipe_cyclonedx_resolve_cyclonedx_packages_legacy_vulnerability_ref(
+        self,
+    ):
+        input_location = self.data / "legacy-urn-cdx-vulnerability.cdx.json"
+        packages = cyclonedx.resolve_cyclonedx_packages(input_location)
+        self.assertEqual(1, len(packages))
+
+        affected_by = packages[0]["affected_by_vulnerabilities"]
+        advisory_uids = [vulnerability["advisory_uid"] for vulnerability in affected_by]
+        self.assertEqual(["PYSEC-2023-61"], advisory_uids)
+
     def test_scanpipe_cyclonedx_resolve_cyclonedx_packages_metadata_children(self):
         for extension in ["json", "xml"]:
             input_location = self.data / f"metadata_component_children.cdx.{extension}"

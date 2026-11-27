@@ -59,6 +59,10 @@ VULNERABLECODE_USER_AGENT = getattr(
 session.headers.update({"User-Agent": VULNERABLECODE_USER_AGENT})
 
 
+# Package types where the package names are case-insensitive.
+CASE_INSENSITIVE_NAME_TYPES = ("nuget",)
+
+
 class VulnerableCodeError(Exception):
     """VulnerableCode returned an unexpected or incomplete response."""
 
@@ -109,6 +113,19 @@ def get_plain_purl(purl):
         version=package_url.version,
     )
     return plain_package_url.to_string()
+
+
+def get_purl_lookup_key(plain_purl):
+    """
+    Return the key of the `plain_purl` to match the PURLs of a VulnerableCode
+    response: the names of the `CASE_INSENSITIVE_NAME_TYPES` packages are lowercased.
+    """
+    package_url = PackageURL.from_string(plain_purl)
+    if package_url.type not in CASE_INSENSITIVE_NAME_TYPES:
+        return plain_purl
+
+    lowercase_name_package_url = package_url._replace(name=package_url.name.lower())
+    return lowercase_name_package_url.to_string()
 
 
 def get_packages_by_plain_purl(packages):
@@ -230,19 +247,23 @@ def get_affected_by_vulnerabilities(
 
 def get_vulnerabilities_by_plain_purl(plain_purls, chunk_size):
     """
-    Return the vulnerabilities of each matched plain PURL from `plain_purls`.
+    Return the vulnerabilities of each matched plain PURL from `plain_purls`, by
+    `get_purl_lookup_key` of the plain PURL.
     The vulnerabilities of all the qualifiers and subpath variants of a plain PURL
     are merged, without duplicates.
     """
     vulnerabilities_by_plain_purl = defaultdict(dict)
 
     for purls_batch in chunked(plain_purls, chunk_size):
+        requested_lookup_keys = {
+            get_purl_lookup_key(plain_purl) for plain_purl in purls_batch
+        }
         for package_data in bulk_search_by_purl(purls_batch):
-            plain_purl = get_plain_purl(package_data["purl"])
-            if plain_purl not in purls_batch:
+            lookup_key = get_purl_lookup_key(get_plain_purl(package_data["purl"]))
+            if lookup_key not in requested_lookup_keys:
                 raise VulnerableCodeError(f"Unexpected PURL: {package_data['purl']}")
 
-            vulnerabilities_by_uid = vulnerabilities_by_plain_purl[plain_purl]
+            vulnerabilities_by_uid = vulnerabilities_by_plain_purl[lookup_key]
             for vulnerability in get_affected_by_vulnerabilities(package_data):
                 advisory_uid = vulnerability["advisory_uid"]
                 vulnerabilities_by_uid.setdefault(advisory_uid, vulnerability)
@@ -281,11 +302,15 @@ def fetch_vulnerabilities(
     )
 
     unsaved_objects = []
-    for plain_purl, affected_by in vulnerabilities_by_plain_purl.items():
+    for plain_purl, plain_purl_packages in packages_by_plain_purl.items():
+        affected_by = vulnerabilities_by_plain_purl.get(get_purl_lookup_key(plain_purl))
+        if affected_by is None:
+            continue
+
         if ignore_set:
             affected_by = filter_vulnerabilities(affected_by, ignore_set)
 
-        for package in packages_by_plain_purl[plain_purl]:
+        for package in plain_purl_packages:
             package.affected_by_vulnerabilities = affected_by
             unsaved_objects.append(package)
 

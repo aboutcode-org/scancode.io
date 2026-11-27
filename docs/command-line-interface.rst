@@ -509,7 +509,8 @@ images together.
 `$ scanpipe execute --project PROJECT`
 --------------------------------------
 
-Executes the next pipeline of the ``PROJECT`` project queue.
+Executes the pipelines of the ``PROJECT`` project queue, one after the other.
+The command fails on the first pipeline that does not succeed.
 
 Optional arguments:
 

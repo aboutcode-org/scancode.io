@@ -666,6 +666,23 @@ def fetch_git_repo(url, to=None):
     )
 
 
+def get_pypi_download_url(url, file_name):
+    """
+    Return the download URL of the PyPI package `url`: its distribution named
+    `file_name` when provided, or else its source distribution.
+    """
+    if not file_name:
+        return PyPIFetcher.get_download_url(url, preferred_type="sdist")
+
+    # The distribution selected by its file name is the one that is scanned:
+    # there is no fallback on another distribution of the release.
+    for url_info in PyPIFetcher.get_urls_info(url):
+        if url_info.get("filename") == file_name:
+            return url_info["url"]
+
+    raise ValueError(f"No {file_name} distribution found for {url}.")
+
+
 def fetch_package_url(url, to=None):
     """Fetch a package from the provided `url` and return a `Download` object."""
     # Ensure the provided Package URL is valid, or raise a ValueError.
@@ -678,7 +695,8 @@ def fetch_package_url(url, to=None):
     # PyPI is not supported by purl2url.
     # It requires an API call to resolve download URLs.
     if purl.type == "pypi":
-        if download_url := PyPIFetcher.get_download_url(url, preferred_type="sdist"):
+        file_name = purl.qualifiers.get("file_name")
+        if download_url := get_pypi_download_url(url, file_name):
             return fetch_http(download_url, to=to)
 
     raise ValueError(f"Could not resolve a download URL for {url}.")

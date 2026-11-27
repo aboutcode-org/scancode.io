@@ -1057,6 +1057,18 @@ class ScanPipeViewsTest(TestCase):
         self.assertContains(response, expected)
         mock_stop_task.assert_called_once()
 
+    @override_settings(SCANPIPE={"ASYNC": False})
+    def test_scanpipe_views_stop_pipeline_view_synchronous(self):
+        run = self.project1.add_pipeline("analyze_docker_image")
+        run.set_task_started(run.pk)
+        url = reverse("project_stop_pipeline", args=[self.project1.slug, run.uuid])
+
+        response = self.client.post(url, follow=True)
+        expected = "A pipeline cannot be stopped when SCANCODEIO_ASYNC is disabled."
+        self.assertContains(response, expected)
+        run.refresh_from_db()
+        self.assertEqual(run.Status.RUNNING, run.status)
+
     @mock.patch("scanpipe.models.Run.delete_task")
     def test_scanpipe_views_delete_pipeline_view(self, mock_delete_task):
         run = self.project1.add_pipeline("analyze_docker_image")
@@ -1095,10 +1107,15 @@ class ScanPipeViewsTest(TestCase):
 
         run.set_task_started(run.pk)
         stop_url = reverse("project_stop_pipeline", args=[self.project1.slug, run.uuid])
-        response = self.client.get(run_detail_url)
+        with override_settings(SCANPIPE={"ASYNC": True}):
+            response = self.client.get(run_detail_url)
         self.assertContains(response, f'<form method="post" action="{stop_url}"')
         self.assertContains(response, "csrfmiddlewaretoken")
         self.assertNotContains(response, f'href="{stop_url}"')
+
+        with override_settings(SCANPIPE={"ASYNC": False}):
+            response = self.client.get(run_detail_url)
+        self.assertNotContains(response, stop_url)
 
     def test_scanpipe_views_delete_webhook_view(self):
         webhook = self.project1.add_webhook_subscription(target_url="https://localhost")

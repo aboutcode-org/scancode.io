@@ -63,6 +63,22 @@ class ScanPipeTasksTest(TestCase):
         self.assertEqual(0, run2.task_exitcode)
         self.assertEqual("", run2.task_output)
 
+    @override_settings(SCANPIPE={"ASYNC": False})
+    @mock.patch("scanpipe.pipelines.Pipeline.execute")
+    def test_scanpipe_tasks_execute_pipeline_no_start_next_run(self, mock_execute):
+        project = Project.objects.create(name="my_project")
+        run = project.add_pipeline("do_nothing")
+        run2 = project.add_pipeline("do_nothing")
+
+        mock_execute.return_value = 0, ""
+        tasks.execute_pipeline_task(run.pk, start_next_run=False)
+        mock_execute.assert_called_once()
+
+        run.refresh_from_db()
+        self.assertEqual(0, run.task_exitcode)
+        run2.refresh_from_db()
+        self.assertEqual(run2.Status.NOT_STARTED, run2.status)
+
     @mock.patch("scanpipe.pipelines.Pipeline.execute")
     def test_scanpipe_tasks_execute_pipeline_no_run_next_on_failure(self, mock_execute):
         project = Project.objects.create(name="my_project")

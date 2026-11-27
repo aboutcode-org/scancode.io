@@ -71,6 +71,7 @@ from scanpipe.models import ProjectMessage
 from scanpipe.models import Run
 from scanpipe.models import RunInProgressError
 from scanpipe.models import RunNotAllowedToStart
+from scanpipe.models import RunNotStoppable
 from scanpipe.models import ScorecardCheck
 from scanpipe.models import WebhookSubscription
 from scanpipe.models import convert_glob_to_django_regex
@@ -1377,12 +1378,44 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(Run.Status.STOPPED, run1.status)
         self.assertTrue(run1.task_stopped)
 
+    def test_scanpipe_run_model_can_stop_property(self):
+        run1 = self.create_run()
+        with override_settings(SCANPIPE={"ASYNC": True}):
+            self.assertFalse(run1.can_stop)
+            run1.set_task_started(run1.pk)
+            self.assertTrue(run1.can_stop)
+        with override_settings(SCANPIPE={"ASYNC": False}):
+            self.assertFalse(run1.can_stop)
+
     @override_settings(SCANPIPE={"ASYNC": False})
     def test_scanpipe_run_model_stop_task_method(self):
-        run1 = self.create_run()
+        run1 = self.create_run(task_start_date=timezone.now())
+        expected = "A pipeline cannot be stopped when SCANCODEIO_ASYNC is disabled."
+        with self.assertRaisesMessage(RunNotStoppable, expected):
+            run1.stop_task()
+        run1.refresh_from_db()
+        self.assertEqual(Run.Status.RUNNING, run1.status)
+        self.assertEqual("", run1.log)
+
+    @override_settings(SCANPIPE={"ASYNC": False})
+    def test_scanpipe_run_model_delete_running_synchronous_run(self):
+        run1 = self.create_run(task_start_date=timezone.now())
+        expected = "A pipeline cannot be stopped when SCANCODEIO_ASYNC is disabled."
+        with self.assertRaisesMessage(RunNotStoppable, expected):
+            run1.delete()
+        self.assertTrue(Run.objects.filter(pk=run1.pk).exists())
+
+    @override_settings(SCANPIPE={"ASYNC": True})
+    @mock.patch("scanpipe.models.send_stop_job_command")
+    @mock.patch("scanpipe.models.Run.job_status", new_callable=mock.PropertyMock)
+    def test_scanpipe_run_model_stop_task_method_async(
+        self, mock_job_status, mock_send_stop_job_command
+    ):
+        run1 = self.create_run(task_start_date=timezone.now())
+        mock_job_status.return_value = JobStatus.STARTED
         run1.stop_task()
+        mock_send_stop_job_command.assert_called_once()
         self.assertEqual(Run.Status.STOPPED, run1.status)
-        self.assertTrue(run1.task_stopped)
         self.assertIn("Stop task requested", run1.log)
 
     @override_settings(SCANPIPE={"ASYNC": False})

@@ -57,6 +57,7 @@ from scanpipe.filters import ResourceFilterSet
 from scanpipe.models import Project
 from scanpipe.models import Run
 from scanpipe.models import RunInProgressError
+from scanpipe.models import RunNotStoppable
 from scanpipe.pipes import filename_now
 from scanpipe.pipes import output
 from scanpipe.pipes.compliance import get_project_compliance_alerts
@@ -584,7 +585,11 @@ class RunViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
         if run.status != run.Status.RUNNING:
             return ErrorResponse("Pipeline is not running.")
 
-        run.stop_task()
+        try:
+            run.stop_task()
+        except RunNotStoppable as error:
+            return ErrorResponse(str(error))
+
         return Response({"status": f"Pipeline {run.pipeline_name} stopped."})
 
     @action(detail=True, methods=["post"])

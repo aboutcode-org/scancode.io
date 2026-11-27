@@ -750,7 +750,8 @@ This action starts (send to the task queue) a pipeline run for execution.
 Stop pipeline
 ^^^^^^^^^^^^^
 
-This action stops a "running" pipeline.
+This action stops a "running" pipeline. It requires the asynchronous execution,
+see :ref:`scancodeio_settings_async`.
 
 ``POST /api/runs/8d5c3962-5fca-47d7-b8c8-47a19247714e/stop_pipeline/``
 

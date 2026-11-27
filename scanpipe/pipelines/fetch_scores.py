@@ -23,8 +23,8 @@
 
 from scorecode import ossf_scorecard
 
-from scanpipe.models import DiscoveredPackageScore
 from scanpipe.pipelines import Pipeline
+from scanpipe.pipes import scorecard
 from scanpipe.pipes import scorecard_compliance
 
 
@@ -34,6 +34,7 @@ class FetchScores(Pipeline):
 
     This pipeline retrieves ScoreCode data for each package in the project
     and stores it in the corresponding package instances.
+    The packages are scored from their GitHub or GitLab VCS URL.
 
     ScoreCode data refers to metadata retrieved from the OpenSSF Scorecard tool,
     which evaluates open source packages based on security and quality checks.
@@ -60,12 +61,7 @@ class FetchScores(Pipeline):
 
     def fetch_packages_scorecode_info(self):
         """Fetch ScoreCode information for each of the project's discovered packages."""
-        for package in self.project.discoveredpackages.all():
-            if scorecard_data := ossf_scorecard.fetch_scorecard_info(package=package):
-                DiscoveredPackageScore.create_from_package_and_scorecard(
-                    scorecard_data=scorecard_data,
-                    package=package,
-                )
+        scorecard.fetch_packages_scores(self.project)
 
     def evaluate_compliance_alerts(self):
         """Evaluate scorecard compliance alerts for the project."""

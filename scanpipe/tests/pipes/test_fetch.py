@@ -197,6 +197,69 @@ class ScanPipeFetchPipesTest(TestCase):
         self.assertEqual(project.tmp_path, downloaded_file.directory)
         self.assertTrue(Path(project.tmp_path, "Django-5.2.tar.gz").exists())
 
+    @mock.patch("fetchcode.pypi.fetch_json_response")
+    def test_scanpipe_pipes_fetch_get_pypi_download_url(self, mock_fetch_json):
+        package_url = "pkg:pypi/owned-selector@1.0"
+        wheel_url = "https://files.pythonhosted.org/owned_selector-1.0-py3-none-any.whl"
+        sdist_url = "https://files.pythonhosted.org/owned_selector-1.0.tar.gz"
+        mock_fetch_json.return_value = {
+            "urls": [
+                {
+                    "filename": "owned_selector-1.0-py3-none-any.whl",
+                    "packagetype": "bdist_wheel",
+                    "url": wheel_url,
+                },
+                {
+                    "filename": "owned_selector-1.0.tar.gz",
+                    "packagetype": "sdist",
+                    "url": sdist_url,
+                },
+            ]
+        }
+
+        download_url = fetch.get_pypi_download_url(package_url, file_name=None)
+        self.assertEqual(sdist_url, download_url)
+
+        wheel_name = "owned_selector-1.0-py3-none-any.whl"
+        download_url = fetch.get_pypi_download_url(package_url, file_name=wheel_name)
+        self.assertEqual(wheel_url, download_url)
+
+        expected = f"No OWNED_SELECTOR-1.0.tar.gz distribution found for {package_url}."
+        with self.assertRaisesMessage(ValueError, expected):
+            fetch.get_pypi_download_url(
+                package_url, file_name="OWNED_SELECTOR-1.0.tar.gz"
+            )
+
+    @mock.patch("scanpipe.pipes.fetch.is_safe_url", return_value=True)
+    @mock.patch("fetchcode.pypi.fetch_json_response")
+    @mock.patch("requests.sessions.Session.get")
+    def test_scanpipe_pipes_fetch_pypi_package_url_file_name(
+        self, mock_get, mock_fetch_json, mock_is_safe_url
+    ):
+        wheel_name = "Django-5.2-py3-none-any.whl"
+        package_url = f"pkg:pypi/django@5.2?file_name={wheel_name}"
+        wheel_url = f"https://files.pythonhosted.org/packages/{wheel_name}"
+        sdist_url = "https://files.pythonhosted.org/packages/Django-5.2.tar.gz"
+        mock_fetch_json.return_value = {
+            "urls": [
+                {
+                    "filename": "Django-5.2.tar.gz",
+                    "packagetype": "sdist",
+                    "url": sdist_url,
+                },
+                {
+                    "filename": wheel_name,
+                    "packagetype": "bdist_wheel",
+                    "url": wheel_url,
+                },
+            ]
+        }
+        mock_get.return_value = make_mock_response(url=wheel_url)
+
+        downloaded_file = fetch.fetch_package_url(package_url)
+        self.assertEqual(wheel_url, mock_get.call_args[0][0])
+        self.assertTrue(Path(downloaded_file.directory, wheel_name).exists())
+
     @mock.patch("scanpipe.pipes.fetch.validate_docker_registry")
     @mock.patch("scanpipe.pipes.fetch.get_docker_image_platform")
     @mock.patch("scanpipe.pipes.fetch._get_skopeo_location")

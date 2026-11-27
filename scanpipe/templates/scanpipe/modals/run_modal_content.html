@@ -62,7 +62,7 @@
           </div>
         </div>
       {% endif %}
-      {% if run.status == run.Status.RUNNING %}
+      {% if run.can_stop %}
         <form method="post" action="{% url 'project_stop_pipeline' project.slug run.uuid %}" data-submit-overlay>{% csrf_token %}
           <button type="submit" class="button is-ghost is-borderless has-text-danger has-text-weight-normal p-0">
             <i class="fa-solid fa-ban mr-1"></i>
