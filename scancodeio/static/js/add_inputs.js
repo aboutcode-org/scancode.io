@@ -103,12 +103,24 @@ function removeFile(fileName) {
   fileInput.files = dataTransfer.files;
 }
 
+function isDirectoryItem(item) {
+  return item.webkitGetAsEntry()?.isDirectory ?? false;
+}
+
 function dropHandler(event) {
   disableEvent(event);
 
+  const droppedItems = Array.from(event.dataTransfer.items).filter(item => item.kind === "file");
+  const droppedFiles = droppedItems
+    .filter(item => !isDirectoryItem(item))
+    .map(item => item.getAsFile());
+  const hasDroppedDirectory = droppedFiles.length < droppedItems.length;
+  directoryWarning.classList.toggle("is-hidden", !hasDroppedDirectory);
+  inputFilesBox.classList.toggle("mb-0", hasDroppedDirectory);
+
   // Merge existing files and dropped files, let updateFiles handle dedup
   const dataTransfer = new DataTransfer();
-  for (const file of [...fileInput.files, ...event.dataTransfer.files]) {
+  for (const file of [...fileInput.files, ...droppedFiles]) {
     dataTransfer.items.add(file);
   }
 
@@ -118,6 +130,13 @@ function dropHandler(event) {
 
 // Handle drag and drop events
 const inputFilesBox = document.querySelector("#input_files_box");
+
+const directoryWarning = document.createElement("p");
+directoryWarning.className = "help is-danger is-hidden";
+directoryWarning.textContent =
+  "Folders are not supported, upload an archive (such as .zip or .tar.gz) instead.";
+inputFilesBox.after(directoryWarning);
+
 inputFilesBox.addEventListener("dragenter", disableEvent);
 inputFilesBox.addEventListener("dragover", disableEvent);
 inputFilesBox.addEventListener("drop", dropHandler);
