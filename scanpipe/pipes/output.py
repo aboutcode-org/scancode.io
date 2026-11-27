@@ -36,6 +36,7 @@ from django.core.serializers.json import DjangoJSONEncoder
 from django.forms.models import model_to_dict
 from django.template import Context
 from django.template import Template
+from django.utils.html import escape
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 
@@ -1093,8 +1094,9 @@ def get_package_data_for_attribution(package, licensing):
             parsed = licensing.parse(license_expression)
         except ExpressionError:
             # An invalid expression is rendered as is, escaped, instead of failing
-            # the attribution of the whole project.
-            package_data["expression_links"] = license_expression
+            # the attribution of the whole project. It is escaped here as custom
+            # attribution templates can still render the links with "|safe".
+            package_data["expression_links"] = escape(license_expression)
             return package_data
 
         license_symbols = get_package_expression_symbols(parsed)

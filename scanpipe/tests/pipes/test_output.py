@@ -885,6 +885,20 @@ class ScanPipeOutputPipesTest(TestCase):
         self.assertIn(expected, attribution)
         self.assertNotIn("<script>alert(1)", attribution)
 
+    def test_scanpipe_pipes_outputs_get_package_data_for_attribution_invalid(self):
+        project = make_project(name="Analysis")
+        package_data = dict(package_data1)
+        package_data["declared_license_expression"] = "mit AND <script>alert(1)"
+        package = pipes.update_or_create_package(project, package_data)
+
+        data = output.get_package_data_for_attribution(package, get_licensing())
+
+        # A custom template can render the links with "|safe".
+        rendered = output.render_template(
+            "{{ package.expression_links|safe }}", {"package": data}
+        )
+        self.assertEqual("mit AND &lt;script&gt;alert(1)", rendered)
+
 
 class ScanPipeXLSXOutputPipesTest(TestCase):
     def test_add_xlsx_worksheet_does_truncates_long_strings_over_max_len(self):
