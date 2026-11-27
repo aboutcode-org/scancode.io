@@ -22,7 +22,10 @@
 
 import sys
 
+from django.core.management import CommandError
+
 from scanpipe.management.commands import ProjectCommand
+from scanpipe.models import RunInProgressError
 
 
 class Command(ProjectCommand):
@@ -52,7 +55,10 @@ class Command(ProjectCommand):
                     self.stdout.write("Deletion cancelled.")
                 sys.exit(0)
 
-        self.project.delete()
+        try:
+            self.project.delete()
+        except RunInProgressError as error:
+            raise CommandError(error)
 
         if self.verbosity > 0:
             msg = f"All the {self.project} project data have been removed."

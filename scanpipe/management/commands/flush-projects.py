@@ -28,12 +28,15 @@ from django.template.defaultfilters import pluralize
 from django.utils import timezone
 
 from scanpipe.models import Project
+from scanpipe.models import Run
+from scanpipe.models import RunInProgressError
 
 
 class Command(BaseCommand):
     help = (
         "Delete all project data and their related work directories created more than "
-        "a specified number of days ago."
+        "a specified number of days ago. Projects with queued or running pipelines "
+        "are skipped."
     )
 
     def add_arguments(self, parser):
@@ -83,6 +86,11 @@ class Command(BaseCommand):
             ),
         )
 
+    def warn_skipped_project(self, project):
+        self.stdout.write(
+            f"Skipping {project}: pipeline run in progress", self.style.WARNING
+        )
+
     def handle(self, *inputs, **options):
         verbosity = options["verbosity"]
         retain_days = options["retain_days"]
@@ -101,7 +109,14 @@ class Command(BaseCommand):
         if pipelines:
             projects = projects.filter(runs__pipeline_name__in=pipelines)
 
-        projects_count = projects.count()
+        active_runs = Run.objects.queued_or_running()
+        if verbosity > 0:
+            for project in projects.filter(runs__in=active_runs):
+                self.warn_skipped_project(project)
+
+        # Use the same project list for confirmation and deletion.
+        projects = list(projects.exclude(runs__in=active_runs))
+        projects_count = len(projects)
         if projects_count == 0:
             if verbosity > 0:
                 self.stdout.write("No projects to delete.")
@@ -128,7 +143,13 @@ class Command(BaseCommand):
 
         deletion_count = 0
         for project in projects:
-            project.delete()
+            try:
+                project.delete()
+            except RunInProgressError:
+                # A pipeline may have been queued since selecting the projects.
+                if verbosity > 0:
+                    self.warn_skipped_project(project)
+                continue
             deletion_count += 1
 
         if verbosity > 0:
