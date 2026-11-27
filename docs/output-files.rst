@@ -334,18 +334,25 @@ Attribution
 ScanCode.io can generate attribution notices of the discovered packages of a project.
 The output format is a HTML page.
 
-The default template output can be customized providing your own template in the
-:guilabel:`.scancode` config directory :ref:`scancodeio_settings_config_dir`.
+The default template output can be customized providing your own template.
 
 You usually want to start with a copy of the default template available at
 ``scanpipe/templates/scanpipe/attribution.html`` and add your modifications.
 
-You can then place your custom template file into the :guilabel:`.scancode` config
-directory in your input files, such as it will end up at
-``codebase/.scancode/templates/attribution.html`` on extraction.
-This directory is only used when :ref:`scancodeio_settings_trust_codebase_config`
-is enabled. Otherwise, provide the template content with the
-``attribution_template`` setting of the :ref:`project_configuration`.
+Provide the template content with the
+:ref:`project_configuration_settings_attribution_template` project setting, from the
+:ref:`user_interface_project_settings` form or a ``scancode-config.yml`` file.
+
+When :ref:`scancodeio_settings_trust_codebase_config` is enabled, the template can
+also be provided in the :guilabel:`.scancode` config directory
+:ref:`scancodeio_settings_config_dir` of the codebase.
+The template is only found at the root of the project codebase, as
+``codebase/.scancode/templates/attribution.html``. This is the case when the codebase
+is copied with ``--copy-codebase``, or when the input archive is extracted by the
+``scan_single_package`` pipeline. Other pipelines, such as ``scan_codebase``, extract
+input archives in a ``<archive>-extract/`` subdirectory where the template is not
+found.
+The ``attribution_template`` project setting takes precedence over this file.
 
 The following variable are available as the template context:
 

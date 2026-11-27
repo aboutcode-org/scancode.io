@@ -198,3 +198,22 @@ Instead of providing a separate ``policies.yml`` file, policies can be directly
 defined within the project configuration.
 This can be done through the web UI, see :ref:`user_interface_project_settings`,
 or by using a ``scancode-config.yml`` file.
+
+.. _project_configuration_settings_attribution_template:
+
+attribution_template
+^^^^^^^^^^^^^^^^^^^^
+
+Provide a custom template for the :ref:`output_files_attribution` output, in place of
+the default one.
+
+This can be done through the web UI, see :ref:`user_interface_project_settings`,
+or by using a ``scancode-config.yml`` file:
+
+.. code-block:: yaml
+
+    attribution_template: |
+      <h1>Attribution for {{ project.name }}</h1>
+      {% for package in packages %}
+        <p>{{ package.package_url }}</p>
+      {% endfor %}
