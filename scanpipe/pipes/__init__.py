@@ -576,6 +576,17 @@ def get_resource_diff_ratio(resource_a, resource_b):
 # blocks: these limits bound the work of a diff, done during the web request.
 RESOURCE_DIFF_MAX_FILE_SIZE = 5_000_000
 RESOURCE_DIFF_MAX_REPLACED_LINE_PAIRS = 250_000
+# The difflib line pair comparison of Python before 3.14 is much slower: 250,000
+# pairs take about 50 seconds, 10,000 pairs about half a second.
+RESOURCE_DIFF_MAX_REPLACED_LINE_PAIRS_BEFORE_PYTHON_3_14 = 10_000
+
+
+def get_resource_diff_max_replaced_line_pairs(python_version_info=None):
+    """Return the maximum replaced line pairs of a diff for the running Python."""
+    python_version_info = python_version_info or sys.version_info
+    if python_version_info < (3, 14):
+        return RESOURCE_DIFF_MAX_REPLACED_LINE_PAIRS_BEFORE_PYTHON_3_14
+    return RESOURCE_DIFF_MAX_REPLACED_LINE_PAIRS
 
 
 def get_replaced_line_pairs_count(from_lines, to_lines):

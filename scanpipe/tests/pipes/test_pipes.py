@@ -37,6 +37,7 @@ from scanpipe.models import OriginMatch
 from scanpipe.models import Project
 from scanpipe.pipes import flag
 from scanpipe.pipes import get_replaced_line_pairs_count
+from scanpipe.pipes import get_resource_diff_max_replaced_line_pairs
 from scanpipe.pipes import get_resource_diff_ratio
 from scanpipe.pipes import get_text_str_diff_ratio
 from scanpipe.pipes import scancode
@@ -609,6 +610,14 @@ class ScanPipePipesTransactionTest(TransactionTestCase):
         self.assertEqual(0, get_replaced_line_pairs_count(lines, lines + ["e"]))
         self.assertEqual(1, get_replaced_line_pairs_count(lines, ["a", "x", "c", "d"]))
         self.assertEqual(9, get_replaced_line_pairs_count(lines, ["a", "x", "y", "z"]))
+
+    def test_scanpipe_pipes_get_resource_diff_max_replaced_line_pairs(self):
+        max_line_pairs = get_resource_diff_max_replaced_line_pairs((3, 12, 13))
+        self.assertEqual(10_000, max_line_pairs)
+        max_line_pairs = get_resource_diff_max_replaced_line_pairs((3, 13, 8))
+        self.assertEqual(10_000, max_line_pairs)
+        max_line_pairs = get_resource_diff_max_replaced_line_pairs((3, 14, 0))
+        self.assertEqual(250_000, max_line_pairs)
 
     def test_scanpipe_pipes_get_resource_diff_ratio(self):
         project1 = Project.objects.create(name="Analysis")

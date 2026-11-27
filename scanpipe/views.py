@@ -103,11 +103,11 @@ from scanpipe.models import Run
 from scanpipe.models import RunInProgressError
 from scanpipe.models import RunNotStoppable
 from scanpipe.pipes import RESOURCE_DIFF_MAX_FILE_SIZE
-from scanpipe.pipes import RESOURCE_DIFF_MAX_REPLACED_LINE_PAIRS
 from scanpipe.pipes import compliance
 from scanpipe.pipes import count_group_by
 from scanpipe.pipes import filename_now
 from scanpipe.pipes import get_replaced_line_pairs_count
+from scanpipe.pipes import get_resource_diff_max_replaced_line_pairs
 from scanpipe.pipes import matchcode
 from scanpipe.pipes import output
 from scanpipe.pipes import purldb
@@ -2299,7 +2299,7 @@ def codebase_resource_diff_view(request, slug):
     from_lines = from_resource.location_path.read_text().splitlines()
     to_lines = to_resource.location_path.read_text().splitlines()
     replaced_line_pairs_count = get_replaced_line_pairs_count(from_lines, to_lines)
-    if replaced_line_pairs_count > RESOURCE_DIFF_MAX_REPLACED_LINE_PAIRS:
+    if replaced_line_pairs_count > get_resource_diff_max_replaced_line_pairs():
         return HttpResponseBadRequest("Cannot diff files with that many changed lines")
 
     html = difflib.HtmlDiff().make_file(from_lines, to_lines)
