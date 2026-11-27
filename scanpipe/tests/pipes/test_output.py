@@ -29,6 +29,7 @@ import uuid
 import zipfile
 from dataclasses import dataclass
 from pathlib import Path
+from types import SimpleNamespace
 from unittest import mock
 
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -754,6 +755,18 @@ class ScanPipeOutputPipesTest(TestCase):
         )
         self.assertEqual(expected, rendered)
 
+    def test_scanpipe_pipes_outputs_attribution_link_template_escaping(self):
+        symbol = SimpleNamespace(
+            key='"><script>alert(1)</script>',
+            wrapped=SimpleNamespace(spdx_license_key="<b>MIT</b>"),
+        )
+        rendered = output.AttributionLinkTemplate().format(symbol=symbol)
+        expected = (
+            '<a href="#license_&quot;&gt;&lt;script&gt;alert(1)&lt;/script&gt;">'
+            "&lt;b&gt;MIT&lt;/b&gt;</a>"
+        )
+        self.assertEqual(expected, rendered)
+
     def test_scanpipe_pipes_outputs_get_expression_as_attribution_links_bounded(self):
         licensing = get_licensing()
         expression = " OR ".join(["mit", "apache-2.0", "bsd-new", "isc"] * 500)
@@ -858,6 +871,19 @@ class ScanPipeOutputPipesTest(TestCase):
 
         output_file = output.to_attribution(project=project)
         self.assertEqual("EMPTY_TEMPLATE", output_file.read_text())
+
+    def test_scanpipe_pipes_outputs_to_attribution_invalid_expression(self):
+        project = make_project(name="Analysis")
+        package_data = dict(package_data1)
+        package_data["declared_license_expression"] = "mit AND <script>alert(1)"
+        pipes.update_or_create_package(project, package_data)
+
+        output_file = output.to_attribution(project=project)
+
+        attribution = output_file.read_text()
+        expected = "This package is licensed under mit AND &lt;script&gt;alert(1)"
+        self.assertIn(expected, attribution)
+        self.assertNotIn("<script>alert(1)", attribution)
 
 
 class ScanPipeXLSXOutputPipesTest(TestCase):

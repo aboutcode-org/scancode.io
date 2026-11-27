@@ -36,6 +36,8 @@ from django.core.serializers.json import DjangoJSONEncoder
 from django.forms.models import model_to_dict
 from django.template import Context
 from django.template import Template
+from django.utils.html import format_html
+from django.utils.safestring import mark_safe
 
 import saneyaml
 import xlsxwriter
@@ -46,6 +48,7 @@ from cyclonedx.output import OutputFormat
 from cyclonedx.output import make_outputter
 from cyclonedx.schema import SchemaVersion
 from cyclonedx.validation.json import JsonStrictValidator
+from license_expression import ExpressionError
 from license_expression import Licensing
 from license_expression import ordered_unique
 from licensedcode.cache import build_spdx_license_expression
@@ -1002,10 +1005,24 @@ def to_cyclonedx(project, version="1.6"):
     return output_file
 
 
+class AttributionLinkTemplate:
+    """
+    License expression ``render()`` template of a link to the license text of each
+    license symbol, with escaped values.
+    """
+
+    def format(self, symbol):
+        return format_html(
+            '<a href="#license_{}">{}</a>', symbol.key, symbol.wrapped.spdx_license_key
+        )
+
+
 def get_expression_as_attribution_links(parsed_expression):
-    template = '<a href="#license_{symbol.key}">{symbol.wrapped.spdx_license_key}</a>'
     # Not simplified: simplify() is quadratic in the number of license symbols.
-    return parsed_expression.render(template=template)
+    expression_links = parsed_expression.render(template=AttributionLinkTemplate())
+    # Each license symbol is escaped by format_html(), the operators and the
+    # parentheses added by render() are fixed text.
+    return mark_safe(expression_links)  # noqa: S308
 
 
 def render_template(template_string, context):
@@ -1072,7 +1089,14 @@ def get_package_data_for_attribution(package, licensing):
     package_data["package_url"] = package.package_url
 
     if license_expression := package.declared_license_expression:
-        parsed = licensing.parse(license_expression)
+        try:
+            parsed = licensing.parse(license_expression)
+        except ExpressionError:
+            # An invalid expression is rendered as is, escaped, instead of failing
+            # the attribution of the whole project.
+            package_data["expression_links"] = license_expression
+            return package_data
+
         license_symbols = get_package_expression_symbols(parsed)
 
         package_licenses = [symbol.wrapped for symbol in set(license_symbols)]
