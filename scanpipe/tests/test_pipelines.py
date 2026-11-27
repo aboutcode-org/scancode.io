@@ -2213,6 +2213,31 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual("MIT", discoveredpackage.extracted_license_statement)
         self.assertEqual("mit", discoveredpackage.declared_license_expression)
 
+    def test_scanpipe_load_sbom_pipeline_spdx_tag_value_not_supported(self):
+        pipeline_name = "load_sbom"
+        project1 = make_project()
+
+        project1.copy_input_from(self.data / "manifests" / "toml.spdx.json")
+        project1.copy_input_from(self.data / "spdx" / "tag-value.spdx")
+
+        run = project1.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+
+        # the SPDX JSON document is still loaded
+        self.assertEqual(1, project1.discoveredpackages.count())
+        self.assertEqual("toml", project1.discoveredpackages.get().name)
+
+        message = project1.projectmessages.get(severity="warning")
+        expected_description = (
+            "SPDX tag-value documents are not supported, "
+            "please provide the SPDX document in JSON or YAML format."
+        )
+        self.assertEqual(expected_description, message.description)
+        self.assertEqual({"resource_path": "tag-value.spdx"}, message.details)
+
     def test_scanpipe_load_sbom_pipeline_cyclonedx_integration(self):
         pipeline_name = "load_sbom"
         project1 = make_project()

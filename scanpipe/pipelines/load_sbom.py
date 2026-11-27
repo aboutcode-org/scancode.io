@@ -53,6 +53,7 @@ class LoadSBOM(ScanCodebase):
     def get_sbom_inputs(self):
         """Locate all the SBOMs among the codebase resources."""
         self.manifest_resources = resolve.get_manifest_resources(self.project)
+        resolve.warn_spdx_tag_value_documents(self.project)
 
     def get_data_from_sboms(self):
         """Get data from SBOMs."""

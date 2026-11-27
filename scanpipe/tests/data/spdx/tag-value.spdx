@@ -1,0 +1,11 @@
+SPDXVersion: SPDX-2.3
+DataLicense: CC0-1.0
+SPDXID: SPDXRef-DOCUMENT
+DocumentName: demo
+DocumentNamespace: https://example.com/demo
+Creator: Tool: demo
+Created: 2026-01-01T00:00:00Z
+
+PackageName: demo
+SPDXID: SPDXRef-Package-demo
+PackageDownloadLocation: NOASSERTION

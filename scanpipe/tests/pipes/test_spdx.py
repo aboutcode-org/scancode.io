@@ -414,6 +414,26 @@ class ScanPipeSPDXPipesTest(TestCase):
         with self.assertRaises(Exception):
             spdx.validate_document({}, self.schema_2_3)
 
+    def test_spdx_is_spdx_tag_value_document(self):
+        tag_value = self.data / "spdx" / "tag-value.spdx"
+        self.assertTrue(spdx.is_spdx_tag_value_document(tag_value))
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp_path = Path(tmp_dir)
+            content_by_filename = {
+                "upper.SPDX": "SPDXVersion: SPDX-2.3\n",
+                "empty.spdx": "",
+                "yaml.spdx": "SPDXID: SPDXRef-DOCUMENT\n",
+                "json.spdx": '{"SPDXID": "SPDXRef-DOCUMENT"}',
+                "tag-value.txt": "SPDXVersion: SPDX-2.3\n",
+            }
+            for filename, content in content_by_filename.items():
+                (tmp_path / filename).write_text(content)
+
+            self.assertTrue(spdx.is_spdx_tag_value_document(tmp_path / "upper.SPDX"))
+            for name in ("empty.spdx", "yaml.spdx", "json.spdx", "tag-value.txt"):
+                self.assertFalse(spdx.is_spdx_tag_value_document(tmp_path / name))
+
     def test_spdx_is_spdx_document(self):
         document_location = self.data / "spdx" / "example-2.3.1.json"
         self.assertTrue(spdx.is_spdx_document(document_location))
@@ -444,6 +464,16 @@ class ScanPipeSPDXPipesTest(TestCase):
             yaml_list = tmp_path / "list.yaml"
             yaml_list.write_text("- item1\n- item2\n")
             self.assertFalse(spdx.is_spdx_document(yaml_list))
+
+            # SPDX JSON document saved with the ".spdx" extension
+            spdx_json = tmp_path / "document.spdx"
+            spdx_json.write_text('{"SPDXID": "SPDXRef-DOCUMENT"}')
+            self.assertTrue(spdx.is_spdx_document(spdx_json))
+
+            # SPDX tag-value document
+            tag_value = tmp_path / "tag-value.spdx"
+            tag_value.write_text("SPDXVersion: SPDX-2.3\nSPDXID: SPDXRef-DOCUMENT\n")
+            self.assertFalse(spdx.is_spdx_document(tag_value))
 
             # JSON and YAML without SPDXID
             no_spdx_json = tmp_path / "no_spdx.json"

@@ -61,6 +61,17 @@ class ScanPipeResolvePipesTest(TestCase):
         input_location = self.manifest_location / "curl-7.70.0.yaml"
         self.assertEqual("spdx", resolve.get_default_package_type(input_location))
 
+        # ".spdx" is the extension of the SPDX tag-value format, which is not supported
+        input_location = self.data / "spdx" / "tag-value.spdx"
+        self.assertIsNone(resolve.get_default_package_type(input_location))
+
+        # an SPDX JSON document stored with the ".spdx" extension is supported
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            input_location = Path(tmp_dir) / "toml.spdx"
+            spdx_json = self.manifest_location / "toml.spdx.json"
+            input_location.write_text(spdx_json.read_text())
+            self.assertEqual("spdx", resolve.get_default_package_type(input_location))
+
         input_location = self.data / "cyclonedx" / "nested.cdx.json"
         self.assertEqual("cyclonedx", resolve.get_default_package_type(input_location))
 
@@ -305,6 +316,28 @@ class ScanPipeResolvePipesTest(TestCase):
             self.assertIsInstance(spdx_document, dict)
             self.assertEqual("SPDXRef-DOCUMENT", spdx_document["SPDXID"])
             self.assertEqual("SPDX-2.2", spdx_document["spdxVersion"])
+
+    def test_scanpipe_pipes_resolve_get_spdx_document_from_file_invalid_json(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            input_location = Path(tmp_dir) / "invalid.spdx.json"
+            input_location.write_text("not json")
+            with self.assertRaisesMessage(Exception, "is not valid"):
+                resolve.get_spdx_document_from_file(input_location)
+
+    def test_scanpipe_pipes_resolve_warn_spdx_tag_value_documents(self):
+        project = make_project()
+        project.copy_input_from(self.data / "spdx" / "tag-value.spdx")
+        project.copy_input_from(self.manifest_location / "toml.spdx.json")
+        copy_inputs(project.inputs(), project.codebase_path)
+        pipes.collect_and_create_codebase_resources(project)
+
+        resolve.warn_spdx_tag_value_documents(project)
+
+        message = project.projectmessages.get()
+        self.assertEqual("warning", message.severity)
+        self.assertEqual("warn_spdx_tag_value_documents", message.model)
+        self.assertEqual({"resource_path": "tag-value.spdx"}, message.details)
+        self.assertIn("SPDX tag-value documents are not supported", message.description)
 
     def test_scanpipe_pipes_resolve_spdx_package_to_package_data(self):
         p1 = Project.objects.create(name="Analysis")

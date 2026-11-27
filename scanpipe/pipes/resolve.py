@@ -228,6 +228,23 @@ def get_manifest_resources(project):
     return project.codebaseresources.filter(status=flag.APPLICATION_PACKAGE)
 
 
+def warn_spdx_tag_value_documents(project):
+    """Add a project warning for each SPDX tag-value document, as not supported."""
+    spdx_resources = project.codebaseresources.no_status().filter(
+        extension__iexact=".spdx"
+    )
+    for resource in spdx_resources:
+        if spdx.is_spdx_tag_value_document(resource.location):
+            project.add_warning(
+                description=(
+                    "SPDX tag-value documents are not supported, "
+                    "please provide the SPDX document in JSON or YAML format."
+                ),
+                model="warn_spdx_tag_value_documents",
+                object_instance=resource,
+            )
+
+
 def resolve_pypi_packages(input_location):
     """Resolve the PyPI packages from the ``input_location`` requirements file."""
     python_version = f"{sys.version_info.major}{sys.version_info.minor}"
@@ -456,12 +473,11 @@ def get_spdx_document_from_file(input_location):
     """Return the loaded SPDX document from the `input_location` file."""
     input_path = Path(input_location)
 
-    if input_path.suffix.lower() in (".yml", ".yaml"):
-        spdx_document = saneyaml.load(input_path.read_text())
-    else:
-        spdx_document = json.loads(input_path.read_text())
-
     try:
+        if input_path.suffix.lower() in (".yml", ".yaml"):
+            spdx_document = saneyaml.load(input_path.read_text())
+        else:
+            spdx_document = json.loads(input_path.read_text())
         spdx.validate_document(spdx_document)
     except Exception as e:
         raise Exception(f'SPDX document "{input_path.name}" is not valid: {e}')
@@ -506,13 +522,13 @@ def get_default_package_type(input_location):
         if handler.is_datafile(input_location):
             return handler.default_package_type
 
-    if input_location.endswith((".spdx", ".spdx.json", ".spdx.yml")):
+    if input_location.endswith((".spdx.json", ".spdx.yml")):
         return "spdx"
 
     if input_location.endswith(("bom.json", ".cdx.json", "bom.xml", ".cdx.xml")):
         return "cyclonedx"
 
-    if input_location.lower().endswith((".json", ".xml", ".yml", ".yaml")):
+    if input_location.lower().endswith((".json", ".xml", ".yml", ".yaml", ".spdx")):
         if cyclonedx.is_cyclonedx_bom(input_location):
             return "cyclonedx"
         if spdx.is_spdx_document(input_location):

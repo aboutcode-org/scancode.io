@@ -705,12 +705,29 @@ def is_spdx_document(input_location):
 
     with suppress(Exception):
         data = {}
-        if location_lower.endswith(".json"):
+        # ".spdx" is also used for SPDX JSON documents. A tag-value document
+        # fails to parse as JSON and is not considered a SPDX document here.
+        if location_lower.endswith((".json", ".spdx")):
             data = json.loads(Path(input_location).read_text())
         elif location_lower.endswith((".yml", ".yaml")):
             data = saneyaml.load(Path(input_location).read_text())
 
         if isinstance(data, dict) and data.get("SPDXID"):
             return True
+
+    return False
+
+
+def is_spdx_tag_value_document(input_location):
+    """
+    Return True if the file at `input_location` is a SPDX Document in the
+    tag-value format, usually stored with the ".spdx" extension.
+    """
+    if not str(input_location).lower().endswith(".spdx"):
+        return False
+
+    with suppress(Exception):
+        text = Path(input_location).read_text()
+        return bool(re.search(r"^SPDXVersion:", text, re.MULTILINE))
 
     return False
