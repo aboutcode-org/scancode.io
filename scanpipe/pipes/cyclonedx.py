@@ -375,7 +375,10 @@ def resolve_cyclonedx_packages(input_location):
     vulnerabilities = defaultdict(list)
     for vulnerability in cyclonedx_bom.vulnerabilities:
         for affected_target in vulnerability.affects:
-            vulnerabilities[str(affected_target.ref)].append(vulnerability)
+            # The SBOMs exported by previous ScanCode.io versions prefix the
+            # component bom-ref of the vulnerability targets with "urn:cdx:".
+            bom_ref = str(affected_target.ref).removeprefix("urn:cdx:")
+            vulnerabilities[bom_ref].append(vulnerability)
 
     return [
         cyclonedx_component_to_package_data(component, dependencies, vulnerabilities)
