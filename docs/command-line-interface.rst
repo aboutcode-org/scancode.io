@@ -800,6 +800,11 @@ Using a URL as input is also supported:
 
     $ run scan_single_package https://url.com/package.zip > results.json
     $ run analyze_docker_image docker://postgres:16 > results.json
+    $ run scan_single_package pkg:npm/lodash@4.17.21 > results.json
+
+Multiple inputs are separated by commas. In a Package URL, encode the commas of a
+qualifier value as ``%2C``, such as
+``pkg:deb/debian/curl@7.50.3?checksums=sha1:abc%2Csha256:def``.
 
 In the last example, the ``--format`` option is used to generate a CycloneDX SBOM
 instead of the default JSON output.

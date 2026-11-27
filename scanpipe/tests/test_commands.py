@@ -43,6 +43,7 @@ from django.utils import timezone
 import openpyxl
 
 from scanpipe.management import commands
+from scanpipe.management.commands.run import Command as RunCommand
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
@@ -1156,6 +1157,19 @@ class ScanPipeManagementCommandTest(TestCase):
             with self.assertRaisesMessage(CommandError, expected):
                 call_command("run", "inspect_packages", "do_nothing", input_location)
         self.assertEqual("", out.getvalue())
+
+    def test_scanpipe_management_command_run_get_input_options_package_url(self):
+        input_file = str(self.data / "d2d" / "jars" / "from-flume-ng-node-1.9.0.zip")
+        package_urls = [
+            "pkg:npm/lodash@4.17.21",
+            "pkg:deb/debian/curl@7.50.3?checksums=sha1:abc%2Csha256:def",
+        ]
+        input_location = ",".join([*package_urls, input_file])
+
+        input_options = RunCommand.get_input_options(input_location)
+
+        expected = {"input_urls": package_urls, "input_files": [input_file]}
+        self.assertEqual(expected, dict(input_options))
 
     @mock.patch("scanpipe.pipes.fetch.is_safe_url", return_value=True)
     @mock.patch("scanpipe.pipes.fetch.check_url")
