@@ -34,6 +34,7 @@ from urllib.parse import urlparse
 import requests
 from defusedxml import ElementTree as SafeElementTree
 from license_expression import Licensing
+from license_expression import combine_expressions
 from packageurl import PackageURL
 from packageurl.contrib import purl2url
 
@@ -207,17 +208,6 @@ def update_datafile_paths(pom_file_dict):
     return scanned_pom_packages, scanned_pom_deps
 
 
-def get_and_operand(license_expression):
-    """
-    Return the ``license_expression`` to combine with AND: an OR expression is
-    grouped in parentheses, as AND takes precedence over OR.
-    """
-    licensing = Licensing()
-    if isinstance(licensing.parse(license_expression), licensing.OR):
-        return f"({license_expression})"
-    return license_expression
-
-
 def update_package_license_from_resource_if_missing(project):
     """Populate missing licenses to packages based on resource data."""
     for package in project.discoveredpackages.all():
@@ -233,11 +223,15 @@ def update_package_license_from_resource_if_missing(project):
                 ).distinct()
             )
             if detected_licenses:
-                license_expression = " AND ".join(
-                    get_and_operand(detected_license)
-                    for detected_license in detected_licenses
+                licensing = Licensing()
+                license_expression = combine_expressions(
+                    detected_licenses, licensing=licensing
                 )
-                declared_license_expression = str(Licensing().dedup(license_expression))
+                # Flattened for dedup to merge the licenses of the nested AND
+                # operands, such as "mit AND (mit AND apache-2.0)".
+                if isinstance(license_expression, licensing.AND):
+                    license_expression = license_expression.flatten()
+                declared_license_expression = str(licensing.dedup(license_expression))
                 package.declared_license_expression = declared_license_expression
                 package.save()
 

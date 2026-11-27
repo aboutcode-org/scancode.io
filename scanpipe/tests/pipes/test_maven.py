@@ -179,14 +179,26 @@ class ScanPipeMavenPipesTest(TestCase):
         for package in project1.discoveredpackages.all():
             self.assertEqual(package.get_declared_license_expression(), "apache-2.0")
 
-    def test_scanpipe_maven_get_and_operand(self):
-        self.assertEqual("apache-2.0", maven.get_and_operand("apache-2.0"))
-        self.assertEqual("mit AND bsd-new", maven.get_and_operand("mit AND bsd-new"))
-        self.assertEqual("(mit OR gpl-2.0)", maven.get_and_operand("mit OR gpl-2.0"))
-        self.assertEqual(
-            "(mit OR gpl-2.0 AND bsd-new)",
-            maven.get_and_operand("mit OR gpl-2.0 AND bsd-new"),
+    def test_scanpipe_maven_update_package_license_from_resource_if_missing_dedup(self):
+        project1 = make_project()
+        package = make_package(project1, "pkg:maven/org.example/library@1.0")
+        resource_expressions = ["mit AND apache-2.0", "apache-2.0 AND bsd-new"]
+        for index, expression in enumerate(resource_expressions):
+            resource = make_resource_file(
+                project1,
+                path=f"library/file{index}.java",
+                detected_license_expression=expression,
+            )
+            resource.discovered_packages.add(package)
+
+        maven.update_package_license_from_resource_if_missing(project1)
+
+        package.refresh_from_db()
+        declared_license_expression = package.get_declared_license_expression()
+        license_keys = Licensing().license_keys(
+            declared_license_expression, unique=False
         )
+        self.assertEqual(["apache-2.0", "bsd-new", "mit"], sorted(license_keys))
 
     def test_scanpipe_maven_update_package_license_from_resource_if_missing_grouping(
         self,
