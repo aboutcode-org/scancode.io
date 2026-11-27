@@ -35,6 +35,7 @@ from univers.versions import InvalidVersion
 
 from aboutcode.pipeline import LoopProgress
 from scanpipe.pipes import _clean_package_data
+from scanpipe.pipes import fetch
 
 
 class PurlDBException(Exception):
@@ -158,14 +159,17 @@ def request_post(url, data=None, headers=None, files=None, timeout=DEFAULT_TIMEO
         logger.debug(f"{label} [Exception] {exception}")
 
 
-def collect_response_results(response, data, timeout=DEFAULT_TIMEOUT):
+def collect_response_results(
+    response, data, timeout=DEFAULT_TIMEOUT, api_url=PURLDB_API_URL
+):
     """Return all results from a purldb API response."""
     results = []
     if response and response.get("count"):
         results.extend(response["results"])
         next_page = response.get("next")
         while next_page:
-            response = request_post(url=next_page, data=data, timeout=timeout)
+            next_page_url = fetch.get_api_link(next_page, api_url)
+            response = request_post(url=next_page_url, data=data, timeout=timeout)
             # A failed request returns None, the same next page would be requested
             # forever.
             if not (response and response.get("count")):
@@ -195,7 +199,9 @@ def match_packages(
         url=f"{api_url}packages/filter_by_checksums/", data=data, timeout=timeout
     )
 
-    packages = collect_response_results(response, data=data, timeout=timeout)
+    packages = collect_response_results(
+        response, data=data, timeout=timeout, api_url=api_url
+    )
     return packages
 
 
@@ -206,7 +212,9 @@ def match_resources(sha1_list, timeout=DEFAULT_TIMEOUT, api_url=PURLDB_API_URL):
         url=f"{api_url}resources/filter_by_checksums/", data=data, timeout=timeout
     )
 
-    resources = collect_response_results(response, data=data, timeout=timeout)
+    resources = collect_response_results(
+        response, data=data, timeout=timeout, api_url=api_url
+    )
     return resources
 
 

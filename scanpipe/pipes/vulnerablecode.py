@@ -22,13 +22,13 @@
 
 import logging
 from collections import defaultdict
-from urllib.parse import urlsplit
-from urllib.parse import urlunsplit
 
 from django.conf import settings
 
 import requests
 from packageurl import PackageURL
+
+from scanpipe.pipes import fetch
 
 label = "VulnerableCode"
 logger = logging.getLogger(__name__)
@@ -156,20 +156,6 @@ def request_json(
     return response.json()
 
 
-def get_api_link(link_url, api_url):
-    """
-    Return the path and query of the `link_url` returned by VulnerableCode on the
-    scheme and host of the configured `api_url`.
-    VulnerableCode builds its links from the request host and scheme, which depend
-    on the proxy in front of it.
-    """
-    link_parts = urlsplit(link_url)
-    api_parts = urlsplit(api_url)
-    return urlunsplit(
-        (api_parts.scheme, api_parts.netloc, link_parts.path, link_parts.query, "")
-    )
-
-
 def get_all_results(
     method,
     url,
@@ -188,7 +174,7 @@ def get_all_results(
     # A page holds at least one result: the count bounds the number of requests.
     remaining_page_requests = expected_count
     while page_data["next"] and remaining_page_requests:
-        next_url = get_api_link(page_data["next"], api_url)
+        next_url = fetch.get_api_link(page_data["next"], api_url)
         page_data = request_json(method, next_url, data, timeout, api_url)
         all_results.extend(page_data["results"])
         remaining_page_requests -= 1
@@ -239,7 +225,7 @@ def get_affected_by_vulnerabilities(
         return affected_by
 
     if affected_by_url := package_data.get("affected_by_vulnerabilities_url"):
-        affected_by_url = get_api_link(affected_by_url, api_url)
+        affected_by_url = fetch.get_api_link(affected_by_url, api_url)
         return get_all_results("GET", affected_by_url, timeout=timeout, api_url=api_url)
 
     raise VulnerableCodeError(f"No vulnerability data for {package_data['purl']}")

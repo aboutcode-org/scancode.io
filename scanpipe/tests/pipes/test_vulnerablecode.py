@@ -39,7 +39,6 @@ from scanpipe.pipes.vulnerablecode import fetch_vulnerabilities
 from scanpipe.pipes.vulnerablecode import filter_vulnerabilities
 from scanpipe.pipes.vulnerablecode import get_affected_by_vulnerabilities
 from scanpipe.pipes.vulnerablecode import get_all_results
-from scanpipe.pipes.vulnerablecode import get_api_link
 from scanpipe.pipes.vulnerablecode import get_packages_by_plain_purl
 from scanpipe.pipes.vulnerablecode import get_plain_purl
 from scanpipe.pipes.vulnerablecode import get_purl_lookup_key
@@ -265,11 +264,6 @@ class ScanPipeVulnerableCodeTest(TestCase):
         self.assertEqual(["result1", "result2"], all_results)
         next_request_url = mock_request.call_args_list[1].args[1]
         self.assertEqual(f"{PACKAGES_URL}?page=2", next_request_url)
-
-    def test_scanpipe_pipes_vulnerablecode_get_api_link(self):
-        link_url = "http://vulnerablecode:8000/api/v3/packages/1/advisories?page=3"
-        expected = f"{PACKAGES_URL}/1/advisories?page=3"
-        self.assertEqual(expected, get_api_link(link_url, API_URL))
 
     @mock.patch("scanpipe.pipes.vulnerablecode.session.request")
     def test_scanpipe_pipes_vulnerablecode_bulk_search_by_purl(self, mock_request):

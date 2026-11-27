@@ -34,6 +34,8 @@ from pathlib import Path
 from urllib.parse import unquote
 from urllib.parse import urljoin
 from urllib.parse import urlparse
+from urllib.parse import urlsplit
+from urllib.parse import urlunsplit
 
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
@@ -283,6 +285,21 @@ class NoCredentialsAuth(request_auth.AuthBase):
 
     def __call__(self, prepared_request):
         return prepared_request
+
+
+def get_api_link(link_url, api_url):
+    """
+    Return the path and query of the `link_url` returned by a service on the
+    scheme and host of the configured `api_url`.
+    The services build their links from the request host and scheme, which depend
+    on the proxy in front of them. The credentials of a service session are only
+    sent to its configured host, never to a host taken from a response.
+    """
+    link_parts = urlsplit(link_url)
+    api_parts = urlsplit(api_url)
+    return urlunsplit(
+        (api_parts.scheme, api_parts.netloc, link_parts.path, link_parts.query, "")
+    )
 
 
 def get_request_session(uri, include_credentials=True):

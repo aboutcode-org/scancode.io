@@ -197,6 +197,16 @@ class ScanPipeFetchPipesTest(TestCase):
         self.assertEqual(project.tmp_path, downloaded_file.directory)
         self.assertTrue(Path(project.tmp_path, "Django-5.2.tar.gz").exists())
 
+    def test_scanpipe_pipes_fetch_get_api_link(self):
+        api_url = "https://vulnerablecode.example/api/v3"
+        link_url = "http://vulnerablecode:8000/api/v3/packages/1/advisories?page=3"
+        expected = f"{api_url}/packages/1/advisories?page=3"
+        self.assertEqual(expected, fetch.get_api_link(link_url, api_url))
+
+        link_url = "https://attacker.example/api/v3/packages?page=2"
+        expected = f"{api_url}/packages?page=2"
+        self.assertEqual(expected, fetch.get_api_link(link_url, api_url))
+
     @mock.patch("fetchcode.pypi.fetch_json_response")
     def test_scanpipe_pipes_fetch_get_pypi_download_url(self, mock_fetch_json):
         package_url = "pkg:pypi/owned-selector@1.0"
